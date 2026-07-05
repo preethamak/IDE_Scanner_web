@@ -237,6 +237,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .pageHero > div { min-width: 0; }
 .homeHero, .compactHero { min-height: auto; }
 .heroText { min-width: 0; }
+.consoleHero h1 { max-width: 760px; font-size: 34px; line-height: 1.08; letter-spacing: -.03em; }
 .heroCopy {
   max-width: 620px;
   margin: 6px 0 0;
@@ -255,8 +256,181 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 }
 .heroStats strong { color: var(--ink); font-weight: 620; }
 .heroButtons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.heroActions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .heroAction, .panelLink { width: fit-content; }
 .tagLine { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* --------------------------------------------------------------- landing */
+.homeShell {
+  width: min(1220px, calc(100vw - 296px));
+  margin: 0 auto;
+  padding: 28px 0 64px;
+}
+.landingHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(360px, .92fr);
+  gap: 18px;
+  align-items: stretch;
+  min-height: 430px;
+}
+.landingCopy,
+.heroConsole,
+.agentHero {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+.landingCopy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(28px, 5vw, 58px);
+}
+.landingCopy h1 {
+  max-width: 780px;
+  font-size: clamp(34px, 4.6vw, 58px);
+  line-height: .98;
+  letter-spacing: -.04em;
+}
+.landingCopy p:not(.eyebrow) {
+  max-width: 650px;
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 16px;
+}
+.landingActions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 26px; }
+.heroConsole {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.95), rgba(250,251,252,.95)),
+    var(--surface);
+}
+.consoleHeader,
+.consoleScores {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.consoleHeader span,
+.consoleScores span {
+  color: var(--soft);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.consoleHeader strong { font-size: 13px; }
+.consoleGrade strong {
+  display: block;
+  font-size: 108px;
+  line-height: .9;
+  letter-spacing: -.06em;
+}
+.consoleGrade p { max-width: 430px; color: var(--muted); }
+.consoleScores {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.consoleScores div {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  padding: 14px;
+}
+.consoleScores strong { display: block; margin-top: 7px; font-size: 26px; }
+.homeStrip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+.homeStrip span {
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  padding: 11px 12px;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+.homeCards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.homeCards article {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 20px;
+}
+.productIcon {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: #fff;
+  font-weight: 760;
+}
+.homeCards h2 { margin: 18px 0 8px; font-size: 18px; }
+.homeCards p { margin: 0; color: var(--muted); font-size: 13px; }
+.agentHero {
+  display: grid;
+  grid-template-columns: minmax(260px, .75fr) minmax(0, 1.25fr);
+  gap: 18px;
+  align-items: center;
+  margin-top: 12px;
+  padding: 22px;
+}
+.agentHero h2 { font-size: 20px; }
+.agentHero p { margin-bottom: 0; color: var(--muted); }
+.agentHero pre {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: #0f1115;
+  color: #f7f8fa;
+  padding: 18px;
+  overflow: auto;
+  font-family: "Cascadia Code", ui-monospace, monospace;
+  font-size: 13px;
+}
+
+/* ------------------------------------------------------ deployment truth */
+.deploymentBanner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 12px;
+  border: 1px solid #d9dde4;
+  border-left: 4px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+}
+.deploymentBanner h2 { margin: 4px 0 6px; font-size: 17px; }
+.deploymentBanner p { margin: 0; max-width: 780px; color: var(--muted); font-size: 13px; }
+.deploymentBanner a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 0 13px;
+  font-size: 13px;
+  font-weight: 560;
+}
 
 /* ------------------------------------------------------------- stat grid */
 .statGrid {
@@ -273,6 +447,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 }
 .stat span { display: block; color: var(--muted); font-size: 12px; font-weight: 520; }
 .stat strong { display: block; margin-top: 5px; font-size: 26px; font-weight: 640; letter-spacing: -.02em; }
+.stat:hover { border-color: #d4d7dd; }
 
 /* ------------------------------------------------------------- cards */
 .storyGrid,
@@ -310,6 +485,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .dashboardGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .commandPanel { padding: 18px; }
 .span2 { grid-column: span 2; }
+.twoScores { grid-template-columns: 1fr 1fr; }
 
 .commandPanel > .eyebrow { margin-bottom: 10px; }
 .commandPanel h2 { font-size: 15px; }
@@ -359,6 +535,34 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   font-size: 13px;
   font-weight: 540;
 }
+
+.capabilityGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.capabilityGrid article {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 16px;
+}
+.capabilityGrid span {
+  display: inline-flex;
+  margin-bottom: 18px;
+  color: var(--soft);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+.capabilityGrid strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 650;
+}
+.capabilityGrid p { margin: 0; color: var(--muted); font-size: 12.5px; line-height: 1.55; }
 
 /* ----------------------------------------------------------- command bar */
 .commandBar {
@@ -429,12 +633,13 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 /* -------------------------------------------------------------- workbench */
 .workbench {
   display: grid;
-  grid-template-columns: minmax(288px, 360px) minmax(0, 1fr);
+  grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
   gap: 12px;
   align-items: start;
 }
 .inventory, .report { min-width: 0; overflow: hidden; }
 .report { min-height: 640px; }
+.scannerHero { margin-bottom: 14px; }
 .panelHead, .reportTitle, .sectionHead {
   display: flex;
   align-items: center;
@@ -461,10 +666,11 @@ input::placeholder { color: var(--soft); }
 .extensionList { max-height: 640px; overflow: auto; }
 .extensionRow {
   display: grid;
-  grid-template-columns: 16px minmax(0, 1fr);
-  gap: 11px;
+  grid-template-columns: 16px 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
   border-bottom: 1px solid var(--line-2);
-  padding: 11px 16px;
+  padding: 10px 14px;
   cursor: pointer;
   transition: background .12s ease;
 }
@@ -478,6 +684,35 @@ input::placeholder { color: var(--soft); }
 .extensionRow small, .resultCard small, .finding small { color: var(--muted); font-size: 12px; }
 .extensionRow code { margin-top: 3px; font-size: 11px; color: var(--soft); }
 .emptyCopy { padding: 16px; color: var(--muted); font-size: 13px; }
+.extensionIcon {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-2);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+.extensionIcon.large {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+}
+.extensionIcon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
+}
+.extensionIcon b {
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 740;
+  letter-spacing: -.02em;
+}
 
 /* ---------------------------------------------------------- empty states */
 .startState {
@@ -670,6 +905,7 @@ input::placeholder { color: var(--soft); }
 }
 .resultCard:hover { background: var(--surface-2); }
 .resultTopline { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.resultIdentity { display: flex; align-items: center; min-width: 0; gap: 10px; }
 .resultTopline strong { font-size: 13px; font-weight: 580; overflow-wrap: anywhere; }
 .resultTopline b {
   flex: 0 0 auto;
@@ -702,7 +938,14 @@ input::placeholder { color: var(--soft); }
 .tag.malicious { border-color: var(--red-soft); color: var(--red); background: var(--red-soft); }
 
 .detail { border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); min-height: 540px; padding: 18px; }
+.detailTitle {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
 .detail h3 { font-size: 14px; overflow-wrap: anywhere; }
+.detailTitle span { color: var(--muted); font-size: 12px; }
 .detail > p { color: var(--muted); font-size: 13px; }
 .detailScores { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 14px 0; }
 .gradeStrip {
@@ -816,6 +1059,126 @@ input::placeholder { color: var(--soft); }
 .referenceStack, .referenceAside, .twoColumnDocs, .ruleMatrix, .historyList { padding: 16px; }
 .referenceAside .eyebrow, .sectionIntro .eyebrow, .reportBrief .eyebrow { margin-bottom: 8px; }
 .referenceAside h2, .sectionIntro h2, .twoColumnDocs h2 { margin-bottom: 12px; }
+
+.systemMap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: stretch;
+  margin-bottom: 12px;
+}
+.systemMap article {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 16px;
+}
+.systemMap article span {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--soft);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.systemMap article strong { display: block; margin-bottom: 6px; font-size: 15px; font-weight: 650; }
+.systemMap article p { margin: 0; color: var(--muted); font-size: 12.5px; }
+.systemMap > b {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  min-width: 52px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--soft);
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.modeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.modeCard {
+  border: 1px solid var(--line);
+  border-top-width: 4px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 18px;
+}
+.modeCard.good { border-top-color: var(--green); }
+.modeCard.warn { border-top-color: var(--amber); }
+.modeCard.danger { border-top-color: var(--red); }
+.modeCard h2 { margin-bottom: 8px; }
+.modeCard p { color: var(--muted); font-size: 13px; }
+.modeCard code {
+  display: inline-flex;
+  max-width: 100%;
+  border: 1px solid var(--line-2);
+  border-radius: 7px;
+  background: var(--surface-2);
+  padding: 6px 8px;
+}
+.productionPlan {
+  display: grid;
+  grid-template-columns: minmax(280px, .75fr) minmax(0, 1.25fr);
+  gap: 12px;
+  align-items: stretch;
+  margin-bottom: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 18px;
+}
+.productionPlan h2 { margin: 3px 0 8px; font-size: 17px; }
+.productionPlan p { margin: 0; color: var(--muted); font-size: 13px; }
+.pipeline {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  align-content: center;
+}
+.pipeline span {
+  min-height: 74px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  padding: 10px;
+  color: var(--ink-2);
+  text-align: center;
+  font-size: 12px;
+  font-weight: 580;
+}
+.agentCommand {
+  display: grid;
+  grid-template-columns: minmax(260px, .72fr) minmax(0, 1.28fr);
+  gap: 12px;
+  align-items: stretch;
+  margin-bottom: 12px;
+}
+.agentCommand > div,
+.agentCommand > pre {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 18px;
+}
+.agentCommand h2 { margin: 3px 0 8px; font-size: 17px; }
+.agentCommand p { margin: 0; color: var(--muted); font-size: 13px; }
+.agentCommand > pre {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
 .metricDetail, .docDetail {
   border: 1px solid var(--line);
   border-radius: var(--r-md);
@@ -997,19 +1360,24 @@ input::placeholder { color: var(--soft); }
   .brand { margin-bottom: 10px; }
   .siteNav { grid-template-columns: repeat(4, minmax(0, 1fr)); display: grid; gap: 6px; }
   .railStatus { display: none; }
-  .shell { width: min(100vw - 28px, 1200px); }
+  .shell, .homeShell { width: min(100vw - 28px, 1200px); }
   .topBar, .commandBar { top: 0; }
 }
 @media (max-width: 980px) {
-  .pageHero, .workbench, .dashboardGrid, .overviewGrid, .storyGrid, .reportBrief, .clientRiskPanel, .reportGrid, .pageGrid, .twoColumnDocs, .apiFlow, .triageBoard, .extensionDetailGrid { display: block; }
+  .pageHero, .workbench, .dashboardGrid, .overviewGrid, .storyGrid, .reportBrief, .clientRiskPanel, .reportGrid, .pageGrid, .twoColumnDocs, .apiFlow, .triageBoard, .extensionDetailGrid, .deploymentBanner, .capabilityGrid, .systemMap, .modeGrid, .productionPlan, .pipeline, .agentCommand, .landingHero, .homeStrip, .homeCards, .agentHero { display: block; }
   .statGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .consoleHero h1 { font-size: 28px; }
   .heroAction, .health { margin-top: 14px; }
-  .workbench > *, .overviewGrid > *, .storyGrid article, .clientRiskPanel > *, .commandPanel, .triageColumn, .detail, .referenceAside, .ruleMatrix, .apiFlow, .twoColumnDocs { margin-top: 12px; }
-  .statGrid > *, .dashboardGrid > *, .triageBoard > *, .extensionDetailGrid > * { margin-top: 12px; }
+  .heroActions { justify-content: flex-start; margin-top: 14px; }
+  .systemMap > b { margin: 8px 0; }
+  .pipeline span { min-height: 0; margin-top: 8px; }
+  .deploymentBanner a { margin-top: 14px; width: fit-content; }
+  .workbench > *, .overviewGrid > *, .storyGrid article, .clientRiskPanel > *, .commandPanel, .triageColumn, .detail, .referenceAside, .ruleMatrix, .apiFlow, .twoColumnDocs, .modeCard, .systemMap article, .agentCommand > *, .heroConsole, .agentHero > * { margin-top: 12px; }
+  .statGrid > *, .dashboardGrid > *, .triageBoard > *, .extensionDetailGrid > *, .capabilityGrid > *, .homeCards > *, .homeStrip > * { margin-top: 12px; }
   .commandBar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .commands { grid-column: 1 / -1; justify-content: flex-start; }
   .extensionList { max-height: 340px; }
-  .scoreDeck, .scoreExplainer, .ruleGrid, .scanSteps { grid-template-columns: 1fr; }
+  .scoreDeck, .scoreExplainer, .ruleGrid, .scanSteps, .twoScores { grid-template-columns: 1fr; }
   .span2 { grid-column: auto; }
   .historyRow { grid-template-columns: 1fr; }
   .benchmarkRow { grid-template-columns: 1fr; }
@@ -1020,7 +1388,12 @@ input::placeholder { color: var(--soft); }
   .topBar .navCta, .health, .panelHead input, select { width: 100%; margin-top: 10px; }
   .siteNav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .siteNav a { display: flex; }
-  .shell { width: min(100vw - 18px, 1200px); padding-top: 16px; }
+  .shell, .homeShell { width: min(100vw - 18px, 1200px); padding-top: 16px; }
+  .landingCopy { padding: 26px; }
+  .landingCopy h1 { font-size: 32px; line-height: 1.05; }
+  .consoleGrade strong { font-size: 78px; }
+  .consoleScores { grid-template-columns: 1fr; }
+  .consoleHero h1 { font-size: 24px; line-height: 1.14; }
   .statGrid { grid-template-columns: 1fr; }
   .commandBar { position: static; grid-template-columns: 1fr; }
   .commands button, .commands .switch { width: 100%; justify-content: center; }

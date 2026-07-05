@@ -38,7 +38,7 @@ export default function ExtensionPage({ params }: { params: Promise<{ id: string
           <h1>{extension?.extension_id || "Extension"}</h1>
           <p className="heroCopy">{extension ? extension.verdict_reason : error || "Loading latest report evidence."}</p>
         </div>
-        <Link className="heroAction" href="/triage">Back to triage</Link>
+        <Link className="heroAction" href="/scan">Back to scanner</Link>
       </section>
 
       {extension ? (

@@ -1,6 +1,6 @@
 # IDE Scanner Web
 
-Local-first Next.js website for scanning installed VS Code-compatible extensions.
+Next.js website for scanning and reviewing VS Code-compatible extension reports.
 
 This project was bootstrapped with the official `create-next-app` template and uses:
 
@@ -8,6 +8,27 @@ This project was bootstrapped with the official `create-next-app` template and u
 - TypeScript / TSX
 - Next API routes
 - The Python scanner engine from `../ide-scanner`
+
+## Production Model
+
+A hosted website cannot directly scan a visitor's Windows, macOS, or Linux machine from the browser. Browser code cannot read local IDE extension folders or execute Python.
+
+For production, run the scanner on the user machine and upload the report to this website:
+
+```bash
+IDE_SCANNER_AGENT_TOKEN=<shared-token> \
+PYTHONPATH=src python -m ide_scanner agent \
+  --server https://your-ide-scanner-web.example \
+  --all
+```
+
+On the web deployment, set the same token:
+
+```bash
+IDE_SCANNER_AGENT_TOKEN=<shared-token>
+```
+
+Uploaded reports are accepted at `POST /api/agent/reports` and stored under `.ide-scanner-reports/`.
 
 ## Run
 
@@ -56,9 +77,6 @@ IDE_SCANNER_PYTHON=/path/to/python npm run dev
 
 - `GET /api/inventory`
 - `POST /api/scans`
+- `POST /api/agent/reports`
 - `GET /api/scans/:id`
 - `GET /api/scans/:id/report`
-
-
-› The way of we display output is not good. Its a good security tool i think, its giving good data. But we are not
-  able to build good UI/UX

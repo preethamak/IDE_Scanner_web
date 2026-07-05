@@ -3,137 +3,104 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { gradeFromScores, gradeReason } from "@/lib/metrics";
-import { buildTriageBuckets, topAction } from "@/lib/triage";
-import type { InventoryResponse, ScanJobPublic, Verdict } from "@/lib/types";
+import type { ScanJobPublic, Verdict } from "@/lib/types";
 
-export default function DashboardPage() {
-  const [inventoryCount, setInventoryCount] = useState(0);
-  const [history, setHistory] = useState<ScanJobPublic[]>([]);
-  const [error, setError] = useState("");
+export default function HomePage() {
+  const [latest, setLatest] = useState<ScanJobPublic | null>(null);
 
   useEffect(() => {
-    async function loadDashboard() {
-      const [inventoryRes, historyRes] = await Promise.all([
-        fetch("/api/inventory", { cache: "no-store" }),
-        fetch("/api/scans/history", { cache: "no-store" })
-      ]);
-      const inventory = await inventoryRes.json() as InventoryResponse & { error?: string };
-      const scans = await historyRes.json() as { scans?: ScanJobPublic[]; error?: string };
-      if (!inventoryRes.ok || !historyRes.ok) {
-        setError(inventory.error || scans.error || "Dashboard data failed to load.");
-        return;
-      }
-      setInventoryCount(inventory.total_extensions || 0);
-      setHistory(scans.scans || []);
-    }
-    void loadDashboard();
+    void fetch("/api/scans/history", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data: { scans?: ScanJobPublic[] }) => {
+        setLatest((data.scans || []).find((scan) => scan.status === "complete" && scan.summary) || null);
+      })
+      .catch(() => setLatest(null));
   }, []);
 
-  const latest = history.find((scan) => scan.status === "complete" && scan.summary)?.summary || null;
-  const counts = latest?.action_counts || { malicious: 0, suspicious: 0, review: 0, clean: 0 };
-  const buckets = buildTriageBuckets(latest?.top_risk_extensions || []);
-  const maxRisk = latest?.summary.max_risk_score || 0;
-  const maxMalware = latest?.summary.max_malware_score || 0;
-  const scanned = latest?.summary.total_extensions || 0;
-  const posture = latest?.posture_summary;
+  const counts = latest?.summary?.action_counts || { malicious: 0, suspicious: 0, review: 0, clean: 0 };
+  const maxRisk = latest?.summary?.summary.max_risk_score || 0;
+  const maxMalware = latest?.summary?.summary.max_malware_score || 0;
+  const grade = latest ? gradeFromScores(maxRisk, maxMalware, counts as Record<Verdict, number>) : "-";
 
   return (
-    <main className="shell">
-      <header className="pageHero compactHero">
-        <div className="heroText">
-          <p className="eyebrow">Overview</p>
-          <h1>Posture</h1>
-          <p className="heroCopy">Latest local scan across installed IDE extensions.</p>
+    <main className="homeShell">
+      <section className="landingHero">
+        <div className="landingCopy">
+          <p className="eyebrow">IDE extension security</p>
+          <h1>Scan VS Code, Cursor, and Windsurf extensions before they become your supply-chain risk.</h1>
+          <p>
+            A local scanner for developer machines, with a web console for reports, scores, evidence, benchmarks, and production agent uploads.
+          </p>
+          <div className="landingActions">
+            <Link className="primaryAction" href="/scan">Open scanner</Link>
+            <Link className="secondaryAction" href="/settings">Deploy agent</Link>
+          </div>
         </div>
-        <Link className="heroAction primaryAction" href="/scan">New scan</Link>
-      </header>
 
-      {error ? <div className="errorBand">{error}</div> : null}
-
-      <section className="statGrid">
-        <Stat label="Installed" value={inventoryCount} />
-        <Stat label="Scanned" value={scanned} />
-        <Stat label="Max risk" value={maxRisk} />
-        <Stat label="Max malware" value={maxMalware} />
-        <Stat label="Client risk" value={posture?.score || 0} />
+        <aside className="heroConsole" aria-label="Latest scan preview">
+          <div className="consoleHeader">
+            <span>Latest report</span>
+            <strong>{latest?.source === "agent" ? "Agent upload" : latest ? "Local scan" : "No scan yet"}</strong>
+          </div>
+          <div className="consoleGrade">
+            <strong>{grade}</strong>
+            <p>{latest ? gradeReason(maxRisk, maxMalware, counts as Record<Verdict, number>) : "Run a scan or upload an agent report to populate this console."}</p>
+          </div>
+          <div className="consoleScores">
+            <MiniStat label="Extensions" value={latest?.summary?.summary.total_extensions || 0} />
+            <MiniStat label="Risk" value={maxRisk} />
+            <MiniStat label="Malware" value={maxMalware} />
+          </div>
+        </aside>
       </section>
 
-      <section className="overviewGrid">
-        <article className="commandPanel posturePanel">
-          <p className="eyebrow">Latest scan</p>
-          {latest ? (
-            <>
-              <div className="postureGrade">
-                <strong>{gradeFromScores(maxRisk, maxMalware, counts as Record<Verdict, number>)}</strong>
-                <p>{gradeReason(maxRisk, maxMalware, counts as Record<Verdict, number>)}</p>
-              </div>
-              <div className="scoreDeck" style={{ gridTemplateColumns: "1fr 1fr" }}>
-                <MiniScore label="Risk" value={maxRisk} />
-                <MiniScore label="Malware" value={maxMalware} />
-              </div>
-            </>
-          ) : (
-            <div className="postureGrade">
-              <strong>–</strong>
-              <p>No completed scan yet. Run a scan to populate posture and triage.</p>
-            </div>
-          )}
-        </article>
+      <section className="homeStrip">
+        <span>Local-first evidence</span>
+        <span>0-100 risk scoring</span>
+        <span>Agent upload path</span>
+        <span>Version diffing</span>
+        <span>Benchmark fixtures</span>
+      </section>
 
-        <article className="commandPanel">
-          <p className="eyebrow">Verdicts</p>
-          <div className="verdictMini">
-            <span>Malicious <strong>{counts.malicious || 0}</strong></span>
-            <span>Suspicious <strong>{counts.suspicious || 0}</strong></span>
-            <span>Review <strong>{counts.review || 0}</strong></span>
-            <span>Clean <strong>{counts.clean || 0}</strong></span>
-          </div>
+      <section className="homeCards">
+        <article>
+          <IconTile label="1" />
+          <h2>Find installed extensions</h2>
+          <p>Inventory supported IDE clients and show real extension icons, names, publishers, versions, and install paths.</p>
         </article>
-
-        <article className="commandPanel">
-          <p className="eyebrow">IDE/client risk</p>
-          <h2>{posture?.status || "unknown"}</h2>
-          <p>{posture ? `${posture.counts.failure} failures and ${posture.counts.warning} warnings across ${posture.clients.length} client(s).` : "Run a scan to evaluate local client posture."}</p>
-          <div className="verdictMini">
-            {(posture?.top_findings || []).slice(0, 2).map((finding) => (
-              <span key={`${finding.client}-${finding.id}`}>{finding.id} <strong>{finding.score}</strong></span>
-            ))}
-          </div>
+        <article>
+          <IconTile label="2" />
+          <h2>Score evidence</h2>
+          <p>Separate malware confidence from broader risk so suspicious capabilities are not confused with confirmed malicious behavior.</p>
+        </article>
+        <article>
+          <IconTile label="3" />
+          <h2>Upload from any OS</h2>
+          <p>Run the local agent command on Windows, macOS, or Linux and upload the report to the hosted web console.</p>
         </article>
       </section>
 
-      <div className="sectionHeader">
-        <h2>Triage</h2>
-        <Link href="/triage">{latest ? topAction(buckets) : "Open triage"}</Link>
-      </div>
-
-      <section className="dashboardGrid">
-        {buckets.map((bucket) => (
-          <article className="commandPanel" key={bucket.id}>
-            <p className="eyebrow">{bucket.label}</p>
-            <h2>{bucket.extensions.length}</h2>
-            <p>{bucket.description}</p>
-          </article>
-        ))}
+      <section className="agentHero">
+        <div>
+          <p className="eyebrow">Production command</p>
+          <h2>Hosted website plus local agent</h2>
+          <p>The browser cannot scan a visitor&apos;s filesystem. This command runs on the machine being scanned and sends the result to the website.</p>
+        </div>
+        <pre>{`python -m ide_scanner agent --server https://your-app --all`}</pre>
       </section>
     </main>
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function MiniStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="stat">
+    <div>
       <span>{label}</span>
       <strong>{value}</strong>
     </div>
   );
 }
 
-function MiniScore({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="scoreMeter compact">
-      <div className="scoreTop"><span>{label}</span><strong>{value}</strong></div>
-      <div className="meterTrack"><span style={{ width: `${Math.max(0, Math.min(100, value))}%` }} /></div>
-    </div>
-  );
+function IconTile({ label }: { label: string }) {
+  return <span className="productIcon">{label}</span>;
 }

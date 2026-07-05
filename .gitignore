@@ -19,6 +19,7 @@
 
 # production
 /build
+/.ide-scanner-reports
 
 # misc
 .DS_Store

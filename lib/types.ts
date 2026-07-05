@@ -9,6 +9,7 @@ export type InventoryExtension = {
   publisher: string;
   version: string;
   description: string;
+  icon_path?: string;
   modified_at: number | null;
 };
 
@@ -138,4 +139,14 @@ export type ScanJobPublic = {
   updatedAt: number;
   error: string | null;
   summary: ReportSummary | null;
+  source?: "local" | "agent";
+  agent?: {
+    schema_version?: string;
+    generated_at?: number;
+    hostname?: string;
+    platform?: string;
+    platform_release?: string;
+    machine?: string;
+    python?: string;
+  };
 };

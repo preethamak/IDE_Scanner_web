@@ -17,7 +17,7 @@ export default function ReportsPage() {
         <div>
           <p className="eyebrow">Output</p>
           <h1>Reports and API flow</h1>
-          <p className="heroCopy">The UI uses the same API you can automate against. Reports stay local and can be downloaded as JSON after each scan.</p>
+        <p className="heroCopy">The UI uses the same API you can automate against. Local scans and agent uploads both produce the same report shape.</p>
         </div>
         <Link className="heroAction" href="/">Create report</Link>
       </section>
@@ -26,7 +26,8 @@ export default function ReportsPage() {
         <article><span>1</span><strong>GET /api/inventory</strong><p>Discover installed extensions from VS Code, Cursor, Windsurf, and compatible folders.</p></article>
         <article><span>2</span><strong>POST /api/scans</strong><p>Start a scan for selected extension paths. The response returns a local job id.</p></article>
         <article><span>3</span><strong>GET /api/scans/:id</strong><p>Poll until the job is complete and a summary is available.</p></article>
-        <article><span>4</span><strong>GET /api/scans/:id/report</strong><p>Download the full JSON report with every finding and artifact detail.</p></article>
+        <article><span>4</span><strong>POST /api/agent/reports</strong><p>Upload a completed user-machine report from the local companion command.</p></article>
+        <article><span>5</span><strong>GET /api/scans/:id/report</strong><p>Download the full JSON report with every finding and artifact detail.</p></article>
       </section>
 
       <section className="twoColumnDocs">

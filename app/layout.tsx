@@ -14,15 +14,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const navItems = [
-    { href: "/", label: "Dashboard", meta: "Posture" },
+    { href: "/", label: "Home", meta: "Start" },
     { href: "/scan", label: "Scanner", meta: "Run" },
-    { href: "/triage", label: "Triage", meta: "Queue" },
     { href: "/metrics", label: "Metrics", meta: "Rules" },
     { href: "/benchmark", label: "Benchmark", meta: "Truth" },
     { href: "/diff", label: "Diff", meta: "Changes" },
     { href: "/history", label: "History", meta: "Reports" },
     { href: "/scoring", label: "Scoring", meta: "Grades" },
-    { href: "/settings", label: "Settings", meta: "API" }
+    { href: "/settings", label: "Wiring", meta: "Deploy" }
   ];
 
   return (
@@ -37,15 +36,15 @@ export default function RootLayout({
             <SiteNav items={navItems} />
             <div className="railStatus">
               <span>Local runtime</span>
-              <strong>On this machine</strong>
-              <p>Inventory and reports stay local unless online checks are enabled.</p>
+              <strong>Scanner host only</strong>
+              <p>The web server can scan the machine it runs on. Hosted SaaS needs a local agent.</p>
             </div>
           </aside>
           <div className="mainPane">
             <header className="topBar">
               <div>
                 <span>IDE Scanner</span>
-                <strong>Local extension security</strong>
+                <strong>Extension security console</strong>
               </div>
               <Link className="navCta" href="/scan">New scan</Link>
             </header>

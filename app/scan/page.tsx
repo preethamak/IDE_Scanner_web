@@ -1,8 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { extensionGrade, extensionGradeReason, gradeFromScores, gradeReason, metricCatalog } from "@/lib/metrics";
-import { buildTriageBuckets, topAction } from "@/lib/triage";
 import type { ExtensionSummary, InventoryExtension, InventoryResponse, ReportSummary, ScanJobPublic, Verdict } from "@/lib/types";
 
 const verdictRank: Record<string, number> = {
@@ -38,6 +38,14 @@ export default function Home() {
       return text.includes(needle);
     });
   }, [inventory, query]);
+
+  const iconByPath = useMemo(() => {
+    const icons = new Map<string, string>();
+    for (const item of inventory) {
+      if (item.icon_path) icons.set(item.path, item.icon_path);
+    }
+    return icons;
+  }, [inventory]);
 
   const results = useMemo(() => {
     const items = summary?.top_risk_extensions || [];
@@ -149,15 +157,14 @@ export default function Home() {
   const maxRisk = summary?.summary?.max_risk_score || 0;
   const maxMalware = summary?.summary?.max_malware_score || 0;
   const posture = summary?.posture_summary;
-  const triageBuckets = buildTriageBuckets(summary?.top_risk_extensions || []);
 
   return (
     <main className="shell">
-      <header className="pageHero compactHero">
+      <header className="pageHero scannerHero">
         <div className="heroText">
           <p className="eyebrow">Scanner</p>
-          <h1>Scan extensions</h1>
-          <p className="heroCopy">Select installed extensions, run a static scan, and export the report.</p>
+          <h1>Extension workbench</h1>
+          <p className="heroCopy">Select installed extensions, run a local scan, and inspect score reasons without leaving the page.</p>
         </div>
         <div className={`health ${status === "error" ? "bad" : "ok"}`}>
           <span />
@@ -205,6 +212,7 @@ export default function Home() {
             {visibleInventory.map((item) => (
               <label className="extensionRow" key={item.path}>
                 <input type="checkbox" checked={selected.has(item.path)} onChange={() => togglePath(item.path)} />
+                <ExtensionIcon name={item.display_name || item.name} iconPath={item.icon_path} />
                 <span>
                   <strong>{item.display_name || item.name}</strong>
                   <small>{item.extension_id} · {item.version} · {item.type}</small>
@@ -231,8 +239,8 @@ export default function Home() {
 
               <section className="reportBrief">
                 <div>
-                  <span>Recommended action</span>
-                  <strong>{topAction(triageBuckets)}</strong>
+                  <span>Decision</span>
+                  <strong>{recommendedAction(counts, maxRisk, maxMalware)}</strong>
                 </div>
                 <div>
                   <span>Score model</span>
@@ -295,7 +303,10 @@ export default function Home() {
                     {results.map((item) => (
                       <button className="resultCard" type="button" key={`${item.install_path}-${item.extension_id}`} onClick={() => setActive(item)}>
                         <span className="resultTopline">
-                          <strong>{item.extension_id}@{item.version}</strong>
+                          <span className="resultIdentity">
+                            <ExtensionIcon name={item.extension_id} iconPath={iconByPath.get(item.install_path)} />
+                            <strong>{item.extension_id}@{item.version}</strong>
+                          </span>
                           <b>{extensionGrade(item)}</b>
                         </span>
                         <small>{item.install_path}</small>
@@ -314,7 +325,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <Detail active={activeResult} />
+                <Detail active={activeResult} iconPath={activeResult ? iconByPath.get(activeResult.install_path) : undefined} />
               </div>
             </div>
           ) : null}
@@ -331,6 +342,13 @@ function Metric({ label, value }: { label: string; value: number }) {
       <strong>{value}</strong>
     </div>
   );
+}
+
+function recommendedAction(counts: Record<Verdict, number>, risk: number, malware: number): string {
+  if (counts.malicious > 0 || malware >= 80) return "Remove or isolate malicious extensions immediately.";
+  if (counts.suspicious > 0 || malware >= 45) return "Review suspicious extensions before allowing developer use.";
+  if (counts.review > 0 || risk >= 55) return "Review high-risk extensions and confirm publisher intent.";
+  return "No urgent extension action. Keep monitoring client posture and versions.";
 }
 
 function VerdictCard({ label, value, tone }: { label: string; value: number; tone: string }) {
@@ -373,7 +391,7 @@ function Scanning() {
   );
 }
 
-function Detail({ active }: { active: ExtensionSummary | null }) {
+function Detail({ active, iconPath }: { active: ExtensionSummary | null; iconPath?: string }) {
   if (!active) {
     return (
       <aside className="detail">
@@ -385,7 +403,13 @@ function Detail({ active }: { active: ExtensionSummary | null }) {
 
   return (
     <aside className="detail">
-      <h3>{active.extension_id}@{active.version}</h3>
+      <div className="detailTitle">
+        <ExtensionIcon name={active.extension_id} iconPath={iconPath} large />
+        <div>
+          <h3>{active.extension_id}@{active.version}</h3>
+          <span>{active.publisher || "unknown publisher"}</span>
+        </div>
+      </div>
       <p>{active.verdict_reason}</p>
       <div className="detailScores">
         <ScoreMeter label="Risk score" value={active.risk_score || 0} note="Review priority on a 0-100 scale." compact />
@@ -411,6 +435,21 @@ function Detail({ active }: { active: ExtensionSummary | null }) {
         </article>
       ))}
     </aside>
+  );
+}
+
+function ExtensionIcon({ name, iconPath, large = false }: { name: string; iconPath?: string; large?: boolean }) {
+  const src = iconPath ? `/api/extension-icons?path=${encodeURIComponent(iconPath)}` : "";
+  const initials = name
+    .split(/[.\s_-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "EX";
+  return (
+    <span className={`extensionIcon ${large ? "large" : ""}`}>
+      {src ? <Image src={src} alt="" width={large ? 48 : 34} height={large ? 48 : 34} unoptimized /> : <b>{initials}</b>}
+    </span>
   );
 }
 
