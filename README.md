@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# IDE Scanner Web
 
-## Getting Started
+Local-first Next.js website for scanning installed VS Code-compatible extensions.
 
-First, run the development server:
+This project was bootstrapped with the official `create-next-app` template and uses:
+
+- Next.js App Router
+- TypeScript / TSX
+- Next API routes
+- The Python scanner engine from `../ide-scanner`
+
+## Run
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+http://127.0.0.1:8765
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## LAN Testing
 
-## Learn More
+To access the website from another computer on the same network:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run dev:lan
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Then open the host machine's LAN IP on port `8765`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scanner Location
 
-## Deploy on Vercel
+By default the app expects the scanner repo next to this folder:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```text
+../ide-scanner
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Override it with:
+
+```bash
+IDE_SCANNER_ROOT=/path/to/ide-scanner npm run dev
+```
+
+If Python is not available as `python3` on macOS/Linux or `python` on Windows:
+
+```bash
+IDE_SCANNER_PYTHON=/path/to/python npm run dev
+```
+
+## API
+
+- `GET /api/inventory`
+- `POST /api/scans`
+- `GET /api/scans/:id`
+- `GET /api/scans/:id/report`
+
+
+› The way of we display output is not good. Its a good security tool i think, its giving good data. But we are not
+  able to build good UI/UX
