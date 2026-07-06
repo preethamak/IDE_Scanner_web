@@ -13,6 +13,45 @@ function Add-Root {
   }
 }
 
+function Limit-Text {
+  param($Value, [int]$Limit = 120)
+  if ($null -eq $Value -or -not ($Value -is [string])) { return "" }
+  $clean = ($Value -replace "\s+", " ").Trim()
+  if ($clean.Length -gt $Limit) { return $clean.Substring(0, $Limit) }
+  return $clean
+}
+
+function Compact-Manifest {
+  param($Manifest)
+  $scripts = @{}
+  if ($Manifest.scripts) {
+    foreach ($name in @("preinstall", "install", "postinstall")) {
+      if ($Manifest.scripts.$name -is [string]) {
+        $scripts[$name] = Limit-Text $Manifest.scripts.$name 180
+      }
+    }
+  }
+
+  $activation = @()
+  if ($Manifest.activationEvents) {
+    foreach ($event in $Manifest.activationEvents) {
+      if (($event -eq "*") -or ($event -eq "onStartupFinished")) {
+        $activation += $event
+      }
+    }
+  }
+
+  return [pscustomobject]@{
+    publisher = Limit-Text $Manifest.publisher
+    name = Limit-Text $Manifest.name
+    displayName = Limit-Text $Manifest.displayName
+    version = Limit-Text $Manifest.version
+    description = Limit-Text $Manifest.description 280
+    activationEvents = $activation | Select-Object -First 8
+    scripts = $scripts
+  }
+}
+
 $roots = [System.Collections.ArrayList]::new()
 $homeDir = [Environment]::GetFolderPath("UserProfile")
 $appData = $env:APPDATA
@@ -47,7 +86,7 @@ foreach ($root in $roots) {
     [void]$extensions.Add([pscustomobject]@{
       client = $root.client
       path = $_.FullName
-      package_json = $manifest
+      manifest = Compact-Manifest $manifest
     })
   }
 }

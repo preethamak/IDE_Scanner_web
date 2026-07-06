@@ -640,6 +640,41 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .inventory, .report { min-width: 0; overflow: hidden; }
 .report { min-height: 640px; }
 .scannerHero { margin-bottom: 14px; }
+.collectorPanel {
+  display: grid;
+  grid-template-columns: minmax(280px, .8fr) minmax(0, 1.2fr);
+  gap: 14px;
+  align-items: start;
+}
+.collectorLead,
+.collectorCommands article,
+.collectorFacts article {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+.collectorLead {
+  padding: 20px;
+}
+.collectorLead h2 {
+  max-width: 520px;
+  margin: 8px 0 8px;
+  font-size: 22px;
+  line-height: 1.15;
+  letter-spacing: -.02em;
+}
+.collectorLead p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+.collectorActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
 .panelHead, .reportTitle, .sectionHead {
   display: flex;
   align-items: center;
@@ -741,15 +776,12 @@ input::placeholder { color: var(--soft); }
 .scanGuide p { max-width: 540px; margin: 0 auto 22px; color: var(--muted); }
 .collectorCommands {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 10px;
   margin-bottom: 14px;
 }
 .collectorCommands article {
   min-width: 0;
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background: var(--surface);
   padding: 12px;
   text-align: left;
 }
@@ -769,6 +801,38 @@ input::placeholder { color: var(--soft); }
   overflow-x: auto;
   font-size: 11px;
   line-height: 1.55;
+}
+.collectorFacts {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.collectorFacts article {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  column-gap: 10px;
+  padding: 14px;
+}
+.collectorFacts b {
+  grid-row: span 2;
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 12px;
+}
+.collectorFacts strong {
+  display: block;
+  font-size: 13px;
+}
+.collectorFacts span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
 }
 .scanSteps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .scanSteps article {
@@ -1395,7 +1459,7 @@ input::placeholder { color: var(--soft); }
   .topBar, .commandBar { top: 0; }
 }
 @media (max-width: 980px) {
-  .pageHero, .workbench, .dashboardGrid, .overviewGrid, .storyGrid, .reportBrief, .clientRiskPanel, .reportGrid, .pageGrid, .twoColumnDocs, .apiFlow, .triageBoard, .extensionDetailGrid, .deploymentBanner, .capabilityGrid, .systemMap, .modeGrid, .productionPlan, .pipeline, .agentCommand, .landingHero, .homeStrip, .homeCards, .agentHero { display: block; }
+  .pageHero, .collectorPanel, .workbench, .dashboardGrid, .overviewGrid, .storyGrid, .reportBrief, .clientRiskPanel, .reportGrid, .pageGrid, .twoColumnDocs, .apiFlow, .triageBoard, .extensionDetailGrid, .deploymentBanner, .capabilityGrid, .systemMap, .modeGrid, .productionPlan, .pipeline, .agentCommand, .landingHero, .homeStrip, .homeCards, .agentHero { display: block; }
   .statGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .consoleHero h1 { font-size: 28px; }
   .heroAction, .health { margin-top: 14px; }
@@ -1403,12 +1467,12 @@ input::placeholder { color: var(--soft); }
   .systemMap > b { margin: 8px 0; }
   .pipeline span { min-height: 0; margin-top: 8px; }
   .deploymentBanner a { margin-top: 14px; width: fit-content; }
-  .workbench > *, .overviewGrid > *, .storyGrid article, .clientRiskPanel > *, .commandPanel, .triageColumn, .detail, .referenceAside, .ruleMatrix, .apiFlow, .twoColumnDocs, .modeCard, .systemMap article, .agentCommand > *, .heroConsole, .agentHero > * { margin-top: 12px; }
+  .collectorPanel > *, .workbench > *, .overviewGrid > *, .storyGrid article, .clientRiskPanel > *, .commandPanel, .triageColumn, .detail, .referenceAside, .ruleMatrix, .apiFlow, .twoColumnDocs, .modeCard, .systemMap article, .agentCommand > *, .heroConsole, .agentHero > * { margin-top: 12px; }
   .statGrid > *, .dashboardGrid > *, .triageBoard > *, .extensionDetailGrid > *, .capabilityGrid > *, .homeCards > *, .homeStrip > * { margin-top: 12px; }
   .commandBar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .commands { grid-column: 1 / -1; justify-content: flex-start; }
   .extensionList { max-height: 340px; }
-  .scoreDeck, .scoreExplainer, .ruleGrid, .scanSteps, .collectorCommands, .twoScores { grid-template-columns: 1fr; }
+  .scoreDeck, .scoreExplainer, .ruleGrid, .scanSteps, .collectorCommands, .collectorFacts, .twoScores { grid-template-columns: 1fr; }
   .span2 { grid-column: auto; }
   .historyRow { grid-template-columns: 1fr; }
   .benchmarkRow { grid-template-columns: 1fr; }

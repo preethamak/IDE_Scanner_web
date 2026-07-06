@@ -6,7 +6,6 @@ import json
 import os
 import platform
 import socket
-import sys
 import time
 from pathlib import Path
 from urllib.request import Request, urlopen
@@ -53,9 +52,36 @@ def discover_extensions() -> list[dict]:
             found.append({
                 "client": client,
                 "path": extension_root,
-                "package_json": manifest,
+                "manifest": compact_manifest(manifest),
             })
     return sorted(found, key=lambda item: (item["client"], item["path"]))
+
+
+def compact_manifest(manifest: dict) -> dict:
+    scripts = manifest.get("scripts") if isinstance(manifest.get("scripts"), dict) else {}
+    return {
+        "publisher": text(manifest.get("publisher")),
+        "name": text(manifest.get("name")),
+        "displayName": text(manifest.get("displayName")),
+        "version": text(manifest.get("version")),
+        "description": text(manifest.get("description"), 280),
+        "activationEvents": [
+            item for item in manifest.get("activationEvents", [])
+            if isinstance(item, str) and item in {"*", "onStartupFinished"}
+        ][:8] if isinstance(manifest.get("activationEvents"), list) else [],
+        "scripts": {
+            key: text(scripts.get(key), 180)
+            for key in ("preinstall", "install", "postinstall")
+            if isinstance(scripts.get(key), str)
+        },
+    }
+
+
+def text(value: object, limit: int = 120) -> str:
+    if not isinstance(value, str):
+        return ""
+    value = " ".join(value.split())
+    return value[:limit]
 
 
 def candidate_roots() -> list[tuple[str, Path]]:
@@ -100,7 +126,7 @@ def post_report(server: str, payload: dict, token: str) -> dict:
     if token:
         headers["Authorization"] = f"Bearer {token}"
     request = Request(endpoint, data=body, headers=headers, method="POST")
-    with urlopen(request, timeout=30) as response:
+    with urlopen(request, timeout=90) as response:
         raw = response.read().decode("utf-8")
         return json.loads(raw) if raw.strip() else {}
 

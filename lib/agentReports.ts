@@ -22,7 +22,9 @@ export type UploadedAgentReport = {
   report: unknown;
 };
 
-const reportsDir = path.join(process.cwd(), ".ide-scanner-reports");
+const reportsDir = process.env.VERCEL
+  ? path.join("/tmp", ".ide-scanner-reports")
+  : path.join(process.cwd(), ".ide-scanner-reports");
 
 export async function saveAgentReport(payload: unknown): Promise<UploadedAgentReport> {
   if (!payload || typeof payload !== "object") {

@@ -181,14 +181,15 @@ export default function Home() {
   const maxRisk = summary?.summary?.max_risk_score || 0;
   const maxMalware = summary?.summary?.max_malware_score || 0;
   const posture = summary?.posture_summary;
+  const showCollectorFirst = status !== "loading" && !summary && inventory.length === 0;
 
   return (
     <main className="shell">
       <header className="pageHero scannerHero">
         <div className="heroText">
-          <p className="eyebrow">Scanner</p>
-          <h1>Extension workbench</h1>
-          <p className="heroCopy">Select installed extensions, run a local scan, and inspect score reasons without leaving the page.</p>
+          <p className="eyebrow">Extension security console</p>
+          <h1>Scan installed IDE extensions</h1>
+          <p className="heroCopy">Run a lightweight local collector, upload only compact manifest evidence, and review installed VS Code, Cursor, and Windsurf extensions in this browser.</p>
         </div>
         <div className={`health ${status === "error" ? "bad" : "ok"}`}>
           <span />
@@ -196,34 +197,39 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="commandBar">
-        <Metric label="Installed" value={inventory.length} />
-        <Metric label="Selected" value={selected.size} />
-        <Metric label="Scanned" value={summary?.summary?.total_extensions || 0} />
-        <div className="commands">
-          <button type="button" onClick={() => void loadInventory()}>Refresh</button>
-          <button type="button" onClick={() => void loadLatestReport()}>Load latest report</button>
-          <button type="button" onClick={toggleVisible}>Select visible</button>
-          <label className="switch">
-            <input type="checkbox" checked={online} onChange={(event) => setOnline(event.target.checked)} />
-            <span>Online checks</span>
-          </label>
-          <label className="switch">
-            <input type="checkbox" checked={sandbox} onChange={(event) => setSandbox(event.target.checked)} />
-            <span>Sandbox observations</span>
-          </label>
-          <label className="switch">
-            <input type="checkbox" checked={allowExecute} disabled={!sandbox} onChange={(event) => setAllowExecute(event.target.checked)} />
-            <span>Execute sandbox</span>
-          </label>
-          <button className="primary" type="button" disabled={selected.size === 0 || status === "scanning"} onClick={() => void startScan()}>
-            {status === "scanning" ? "Scanning" : "Scan selected"}
-          </button>
-        </div>
-      </section>
+      {!showCollectorFirst ? (
+        <section className="commandBar">
+          <Metric label="Installed" value={inventory.length} />
+          <Metric label="Selected" value={selected.size} />
+          <Metric label="Scanned" value={summary?.summary?.total_extensions || 0} />
+          <div className="commands">
+            <button type="button" onClick={() => void loadInventory()}>Refresh</button>
+            <button type="button" onClick={() => void loadLatestReport()}>Load latest report</button>
+            <button type="button" onClick={toggleVisible}>Select visible</button>
+            <label className="switch">
+              <input type="checkbox" checked={online} onChange={(event) => setOnline(event.target.checked)} />
+              <span>Online checks</span>
+            </label>
+            <label className="switch">
+              <input type="checkbox" checked={sandbox} onChange={(event) => setSandbox(event.target.checked)} />
+              <span>Sandbox observations</span>
+            </label>
+            <label className="switch">
+              <input type="checkbox" checked={allowExecute} disabled={!sandbox} onChange={(event) => setAllowExecute(event.target.checked)} />
+              <span>Execute sandbox</span>
+            </label>
+            <button className="primary" type="button" disabled={selected.size === 0 || status === "scanning"} onClick={() => void startScan()}>
+              {status === "scanning" ? "Scanning" : "Scan selected"}
+            </button>
+          </div>
+        </section>
+      ) : null}
 
       {error ? <div className="errorBand">{error}</div> : null}
 
+      {showCollectorFirst ? (
+        <CollectorLaunch server={agentServer} onLoadLatest={() => void loadLatestReport()} />
+      ) : (
       <section className="workbench">
         <aside className="inventory">
           <div className="panelHead">
@@ -253,7 +259,7 @@ export default function Home() {
 
         <section className="report">
           {status === "scanning" ? <Scanning /> : null}
-          {status !== "scanning" && !summary ? <StartState server={agentServer} /> : null}
+          {status !== "scanning" && !summary ? <StartState /> : null}
           {summary ? (
             <div className="reportBody">
               <div className="reportTitle">
@@ -358,6 +364,7 @@ export default function Home() {
           ) : null}
         </section>
       </section>
+      )}
     </main>
   );
 }
@@ -391,36 +398,59 @@ function Tag({ children, tone = "" }: { children: React.ReactNode; tone?: string
   return <span className={`tag ${tone}`}>{children}</span>;
 }
 
-function StartState({ server }: { server: string }) {
-  const target = server || "https://your-deployment.example";
+function StartState() {
+  return (
+    <div className="startState">
+      <div className="scanGuide">
+        <span>Ready</span>
+        <h2>Select extensions and run a local server scan</h2>
+        <p>This mode is for development or self-hosted deployments where the server can see extension folders directly.</p>
+        <div className="scanSteps">
+          <article><b>1</b><strong>Select</strong><small>Choose one extension or scan a filtered group.</small></article>
+          <article><b>2</b><strong>Inspect</strong><small>Static package evidence is scored across {metricCatalog.length} domains.</small></article>
+          <article><b>3</b><strong>Triage</strong><small>Use verdicts, score meters, and recommendations to decide action.</small></article>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CollectorLaunch({ server, onLoadLatest }: { server: string; onLoadLatest: () => void }) {
+  const target = server || "https://ide-scanner-web.vercel.app";
   const macLinuxCommand = `curl -fsSL ${target}/collect-ide-extensions.py -o /tmp/ide-scanner-collector.py
 python3 /tmp/ide-scanner-collector.py --server ${target}`;
   const windowsCommand = `irm ${target}/collect-ide-extensions.ps1 -OutFile "$env:TEMP\\ide-scanner-collector.ps1"
 powershell -ExecutionPolicy Bypass -File "$env:TEMP\\ide-scanner-collector.ps1" -Server ${target}`;
 
   return (
-    <div className="startState">
-      <div className="scanGuide">
-        <span>Local collector</span>
-        <h2>Run a collector script on the machine with the IDEs</h2>
-        <p>The standalone collector discovers installed VS Code, Cursor, and Windsurf extensions on macOS, Windows, or Linux and sends an inventory report back to this website. It does not require the scanner package to be installed.</p>
-        <div className="collectorCommands">
-          <article>
-            <strong>macOS / Linux</strong>
-            <pre>{macLinuxCommand}</pre>
-          </article>
-          <article>
-            <strong>Windows PowerShell</strong>
-            <pre>{windowsCommand}</pre>
-          </article>
-        </div>
-        <div className="scanSteps">
-          <article><b>1</b><strong>Collect</strong><small>Run the command locally so OS-specific extension folders can be inspected.</small></article>
-          <article><b>2</b><strong>Scan</strong><small>Static package evidence is scored across {metricCatalog.length} domains on that machine.</small></article>
-          <article><b>3</b><strong>Review</strong><small>The uploaded report appears here with verdicts, scores, and recommendations.</small></article>
+    <section className="collectorPanel">
+      <div className="collectorLead">
+        <span className="eyebrow">Hosted scan path</span>
+        <h2>Collect installed extensions without uploading extension files</h2>
+        <p>The script reads only compact manifest fields from installed VS Code, Cursor, and Windsurf extensions. It does not require this repository or the scanner package on the user machine.</p>
+        <div className="collectorActions">
+          <button className="primary" type="button" onClick={onLoadLatest}>Load latest report</button>
+          <a className="panelLink" href="/history">Open history</a>
         </div>
       </div>
-    </div>
+
+      <div className="collectorCommands">
+        <article>
+          <strong>macOS / Linux</strong>
+          <pre>{macLinuxCommand}</pre>
+        </article>
+        <article>
+          <strong>Windows PowerShell</strong>
+          <pre>{windowsCommand}</pre>
+        </article>
+      </div>
+
+      <div className="collectorFacts">
+        <article><b>1</b><strong>Run locally</strong><span>OS-specific folders are discovered on the user machine.</span></article>
+        <article><b>2</b><strong>Small payload</strong><span>Only name, publisher, version, startup activation, and lifecycle scripts are sent.</span></article>
+        <article><b>3</b><strong>Review here</strong><span>Use history or load latest after the command finishes.</span></article>
+      </div>
+    </section>
   );
 }
 

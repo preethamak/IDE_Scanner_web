@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { saveAgentReport, agentReportToJob } from "@/lib/agentReports";
+import { saveAgentReport } from "@/lib/agentReports";
 import type { ExtensionSummary, FindingSummary, ReportSummary, Verdict } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 type CollectorExtension = {
   client?: unknown;
   path?: unknown;
+  manifest?: unknown;
   package_json?: unknown;
 };
 
@@ -49,7 +50,18 @@ export async function POST(request: Request) {
       summary,
       report,
     });
-    return NextResponse.json(agentReportToJob(saved), { status: 201 });
+    return NextResponse.json({
+      id: saved.id,
+      status: "complete",
+      source: "agent",
+      createdAt: saved.createdAt,
+      total_extensions: summary.summary.total_extensions,
+      review: summary.action_counts.review,
+      clean: summary.action_counts.clean,
+      max_risk_score: summary.summary.max_risk_score,
+      max_malware_score: summary.summary.max_malware_score,
+      report_url: `/api/scans/${saved.id}/report`,
+    }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "invalid collector report" }, { status: 400 });
   }
@@ -62,7 +74,8 @@ function toReportExtension(item: CollectorExtension): ExtensionSummary & {
   findings: FindingSummary[];
   scanned_files: number;
 } {
-  const manifest = item.package_json && typeof item.package_json === "object" ? item.package_json as Record<string, unknown> : {};
+  const manifestSource = item.manifest || item.package_json;
+  const manifest = manifestSource && typeof manifestSource === "object" ? manifestSource as Record<string, unknown> : {};
   const publisher = stringValue(manifest.publisher, "unknown");
   const name = stringValue(manifest.name, "unknown");
   const version = stringValue(manifest.version, "unknown");
