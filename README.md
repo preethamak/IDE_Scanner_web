@@ -11,7 +11,7 @@ This project was bootstrapped with the official `create-next-app` template and u
 
 ## Production Model
 
-The production scan path is a local collector. A hosted website cannot silently enumerate a visitor's extension folders from the browser. The user runs a small local command on macOS, Windows, or Linux; that command discovers installed VS Code, Cursor, and Windsurf extensions and posts an inventory report to this website.
+The hosted production scan path is a local collector bridge. A hosted website cannot silently enumerate a visitor's extension folders from the browser. The user runs a small local command on macOS, Windows, or Linux; that command starts a local HTTP bridge on `127.0.0.1:17865`. The website then connects to that bridge, reads installed VS Code, Cursor, and Windsurf extension metadata, and generates the dashboard in the browser.
 
 The lightweight collectors are served from:
 
@@ -19,6 +19,21 @@ The lightweight collectors are served from:
 - `/collect-ide-extensions.ps1` for Windows PowerShell without Python.
 
 They do not require `ide_scanner` or this repository to be installed on the user's machine.
+
+Primary hosted flow:
+
+```bash
+curl -fsSL https://ide-scanner-web.vercel.app/collect-ide-extensions.py -o /tmp/ide-scanner-collector.py
+python3 /tmp/ide-scanner-collector.py --serve
+```
+
+Then open the website and click **Connect local collector** followed by **Generate report**.
+
+One-shot upload remains available for networks or browsers that block localhost bridge access:
+
+```bash
+python3 /tmp/ide-scanner-collector.py --server https://ide-scanner-web.vercel.app
+```
 
 For deployments where you also want the server-local scan buttons to work, build the included container from the workspace root, not from this subdirectory. It ships Python and the scanner source with the Next.js app:
 
@@ -42,7 +57,7 @@ On the web deployment, set the same token:
 IDE_SCANNER_AGENT_TOKEN=<shared-token>
 ```
 
-Uploaded reports are accepted at `POST /api/agent/reports` and stored under `.ide-scanner-reports/`.
+Uploaded reports are accepted at `POST /api/agent/reports` and collector reports are accepted at `POST /api/collector/reports`.
 
 ## Run
 
@@ -92,5 +107,6 @@ IDE_SCANNER_PYTHON=/path/to/python npm run dev
 - `GET /api/inventory`
 - `POST /api/scans`
 - `POST /api/agent/reports`
+- `POST /api/collector/reports`
 - `GET /api/scans/:id`
 - `GET /api/scans/:id/report`

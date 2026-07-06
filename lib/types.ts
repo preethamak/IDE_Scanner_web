@@ -55,6 +55,7 @@ export type ExtensionSummary = {
     counts?: Record<string, number>;
     suppressors?: Array<{ id: string; reason: string; reduction?: number }>;
   };
+  collector_details?: Record<string, unknown>;
   finding_count: number;
   top_findings: FindingSummary[];
 };

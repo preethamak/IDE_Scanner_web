@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
+import { buildCollectorReport, type CollectorExtension } from "@/lib/collectorReport";
 import { extensionGrade, extensionGradeReason, gradeFromScores, gradeReason, metricCatalog } from "@/lib/metrics";
 import type { ExtensionSummary, InventoryExtension, InventoryResponse, LocalScannerUnavailable, ReportSummary, ScanJobPublic, Verdict } from "@/lib/types";
 
@@ -26,6 +27,9 @@ export default function Home() {
   const [filter, setFilter] = useState<Verdict | "">("");
   const [error, setError] = useState("");
   const [agentServer] = useState(() => typeof window === "undefined" ? "" : window.location.origin);
+  const [bridgeStatus, setBridgeStatus] = useState<"idle" | "checking" | "connected" | "failed" | "scanning">("idle");
+  const [bridgeCount, setBridgeCount] = useState(0);
+  const [bridgeError, setBridgeError] = useState("");
 
   useEffect(() => {
     void loadInventory();
@@ -163,6 +167,41 @@ export default function Home() {
     setStatus("report");
   }
 
+  async function connectLocalCollector() {
+    setBridgeStatus("checking");
+    setBridgeError("");
+    try {
+      const response = await fetch("http://127.0.0.1:17865/inventory", { cache: "no-store" });
+      if (!response.ok) throw new Error(`collector returned HTTP ${response.status}`);
+      const payload = await response.json() as { extensions?: CollectorExtension[] };
+      setBridgeCount(payload.extensions?.length || 0);
+      setBridgeStatus("connected");
+    } catch (error) {
+      setBridgeStatus("failed");
+      setBridgeError(error instanceof Error ? error.message : "Could not connect to local collector");
+    }
+  }
+
+  async function generateLocalCollectorReport() {
+    setBridgeStatus("scanning");
+    setBridgeError("");
+    try {
+      const response = await fetch("http://127.0.0.1:17865/scan", { method: "POST", cache: "no-store" });
+      if (!response.ok) throw new Error(`collector returned HTTP ${response.status}`);
+      const payload = await response.json() as { extensions?: CollectorExtension[] };
+      const { summary: reportSummary } = buildCollectorReport(payload.extensions || []);
+      setBridgeCount(payload.extensions?.length || 0);
+      setSummary(reportSummary);
+      setJobId(null);
+      setActive(null);
+      setStatus("report");
+      setBridgeStatus("connected");
+    } catch (error) {
+      setBridgeStatus("failed");
+      setBridgeError(error instanceof Error ? error.message : "Could not generate local collector report");
+    }
+  }
+
   async function downloadReport() {
     if (!jobId) return;
     const response = await fetch(`/api/scans/${jobId}/report`, { cache: "no-store" });
@@ -183,19 +222,28 @@ export default function Home() {
   const posture = summary?.posture_summary;
   const showCollectorFirst = status !== "loading" && !summary && inventory.length === 0;
 
+  const bridgeState = bridgeStatus === "scanning" || status === "scanning" ? "collecting" : summary ? "report" : bridgeStatus === "connected" || inventory.length > 0 ? "connected" : "bridge";
+
   return (
     <main className="shell">
       <header className="pageHero scannerHero">
         <div className="heroText">
-          <p className="eyebrow">Extension security console</p>
-          <h1>Scan installed IDE extensions</h1>
-          <p className="heroCopy">Run a lightweight local collector, upload only compact manifest evidence, and review installed VS Code, Cursor, and Windsurf extensions in this browser.</p>
+          <p className="eyebrow">Operational security console</p>
+          <h1>IDE extension scan desk</h1>
+          <p className="heroCopy">Bridge a local collector to this hosted console, generate extension risk reports, and triage VS Code, Cursor, and Windsurf inventory from one workbench.</p>
         </div>
         <div className={`health ${status === "error" ? "bad" : "ok"}`}>
           <span />
-          {status === "loading" ? "Loading scanner" : status === "error" ? "Needs attention" : "Scanner ready"}
+          {status === "loading" ? "Initializing" : status === "error" ? "Needs attention" : summary ? "Report loaded" : inventory.length > 0 ? "Collector connected" : "Awaiting bridge"}
         </div>
       </header>
+
+      <section className="scanFlow" aria-label="Hosted scan flow">
+        <FlowStep index="01" label="Start bridge" active={bridgeState === "bridge"} done={inventory.length > 0 || Boolean(summary)} />
+        <FlowStep index="02" label="Connect collector" active={bridgeState === "connected"} done={inventory.length > 0 || Boolean(summary)} />
+        <FlowStep index="03" label="Generate report" active={bridgeState === "collecting"} done={Boolean(summary)} />
+        <FlowStep index="04" label="Load latest" active={bridgeState === "report"} done={Boolean(summary)} />
+      </section>
 
       {!showCollectorFirst ? (
         <section className="commandBar">
@@ -203,7 +251,7 @@ export default function Home() {
           <Metric label="Selected" value={selected.size} />
           <Metric label="Scanned" value={summary?.summary?.total_extensions || 0} />
           <div className="commands">
-            <button type="button" onClick={() => void loadInventory()}>Refresh</button>
+            <button type="button" onClick={() => void loadInventory()}>Connect collector</button>
             <button type="button" onClick={() => void loadLatestReport()}>Load latest report</button>
             <button type="button" onClick={toggleVisible}>Select visible</button>
             <label className="switch">
@@ -219,7 +267,7 @@ export default function Home() {
               <span>Execute sandbox</span>
             </label>
             <button className="primary" type="button" disabled={selected.size === 0 || status === "scanning"} onClick={() => void startScan()}>
-              {status === "scanning" ? "Scanning" : "Scan selected"}
+              {status === "scanning" ? "Generating report" : "Generate report"}
             </button>
           </div>
         </section>
@@ -228,7 +276,15 @@ export default function Home() {
       {error ? <div className="errorBand">{error}</div> : null}
 
       {showCollectorFirst ? (
-        <CollectorLaunch server={agentServer} onLoadLatest={() => void loadLatestReport()} />
+        <CollectorLaunch
+          server={agentServer}
+          bridgeStatus={bridgeStatus}
+          bridgeCount={bridgeCount}
+          bridgeError={bridgeError}
+          onConnect={() => void connectLocalCollector()}
+          onGenerate={() => void generateLocalCollectorReport()}
+          onLoadLatest={() => void loadLatestReport()}
+        />
       ) : (
       <section className="workbench">
         <aside className="inventory">
@@ -378,6 +434,15 @@ function Metric({ label, value }: { label: string; value: number }) {
   );
 }
 
+function FlowStep({ index, label, active, done }: { index: string; label: string; active: boolean; done: boolean }) {
+  return (
+    <div className={`flowStep ${active ? "active" : ""} ${done ? "done" : ""}`}>
+      <span>{index}</span>
+      <strong>{label}</strong>
+    </div>
+  );
+}
+
 function recommendedAction(counts: Record<Verdict, number>, risk: number, malware: number): string {
   if (counts.malicious > 0 || malware >= 80) return "Remove or isolate malicious extensions immediately.";
   if (counts.suspicious > 0 || malware >= 45) return "Review suspicious extensions before allowing developer use.";
@@ -402,53 +467,86 @@ function StartState() {
   return (
     <div className="startState">
       <div className="scanGuide">
-        <span>Ready</span>
-        <h2>Select extensions and run a local server scan</h2>
-        <p>This mode is for development or self-hosted deployments where the server can see extension folders directly.</p>
+        <span>Collector connected</span>
+        <h2>Select inventory and generate a report</h2>
+        <p>The local collector is visible to the console. Pick extensions, enable optional checks, then generate a report for triage.</p>
         <div className="scanSteps">
-          <article><b>1</b><strong>Select</strong><small>Choose one extension or scan a filtered group.</small></article>
-          <article><b>2</b><strong>Inspect</strong><small>Static package evidence is scored across {metricCatalog.length} domains.</small></article>
-          <article><b>3</b><strong>Triage</strong><small>Use verdicts, score meters, and recommendations to decide action.</small></article>
+          <article><b>01</b><strong>Scope</strong><small>Filter and select one extension or a focused group.</small></article>
+          <article><b>02</b><strong>Score</strong><small>Package evidence is evaluated across {metricCatalog.length} risk domains.</small></article>
+          <article><b>03</b><strong>Act</strong><small>Use verdicts, score meters, and findings to decide response.</small></article>
         </div>
       </div>
     </div>
   );
 }
 
-function CollectorLaunch({ server, onLoadLatest }: { server: string; onLoadLatest: () => void }) {
+function CollectorLaunch({
+  server,
+  bridgeStatus,
+  bridgeCount,
+  bridgeError,
+  onConnect,
+  onGenerate,
+  onLoadLatest,
+}: {
+  server: string;
+  bridgeStatus: "idle" | "checking" | "connected" | "failed" | "scanning";
+  bridgeCount: number;
+  bridgeError: string;
+  onConnect: () => void;
+  onGenerate: () => void;
+  onLoadLatest: () => void;
+}) {
   const target = server || "https://ide-scanner-web.vercel.app";
   const macLinuxCommand = `curl -fsSL ${target}/collect-ide-extensions.py -o /tmp/ide-scanner-collector.py
+python3 /tmp/ide-scanner-collector.py --serve`;
+  const windowsCommand = `curl -fsSL ${target}/collect-ide-extensions.py -o "$env:TEMP\\ide-scanner-collector.py"
+py "$env:TEMP\\ide-scanner-collector.py" --serve`;
+  const fallbackCommand = `curl -fsSL ${target}/collect-ide-extensions.py -o /tmp/ide-scanner-collector.py
 python3 /tmp/ide-scanner-collector.py --server ${target}`;
-  const windowsCommand = `irm ${target}/collect-ide-extensions.ps1 -OutFile "$env:TEMP\\ide-scanner-collector.ps1"
-powershell -ExecutionPolicy Bypass -File "$env:TEMP\\ide-scanner-collector.ps1" -Server ${target}`;
 
   return (
     <section className="collectorPanel">
       <div className="collectorLead">
-        <span className="eyebrow">Hosted scan path</span>
-        <h2>Collect installed extensions without uploading extension files</h2>
-        <p>The script reads only compact manifest fields from installed VS Code, Cursor, and Windsurf extensions. It does not require this repository or the scanner package on the user machine.</p>
+        <span className="eyebrow">Local bridge model</span>
+        <h2>Start the local bridge, then scan from this page</h2>
+        <p>Use the bridge command on the machine you want to inspect. The website talks to <code>127.0.0.1:17865</code>, reads installed-extension metadata, and generates the dashboard in your browser. Extension files stay local.</p>
         <div className="collectorActions">
-          <button className="primary" type="button" onClick={onLoadLatest}>Load latest report</button>
+          <button type="button" onClick={onConnect} disabled={bridgeStatus === "checking" || bridgeStatus === "scanning"}>
+            {bridgeStatus === "checking" ? "Connecting" : "Connect local collector"}
+          </button>
+          <button className="primary" type="button" onClick={onGenerate} disabled={bridgeStatus !== "connected"}>
+            {bridgeStatus === "scanning" ? "Generating" : "Generate report"}
+          </button>
+          <button type="button" onClick={onLoadLatest}>Load saved report</button>
           <a className="panelLink" href="/history">Open history</a>
+        </div>
+        <div className={`bridgeStatus ${bridgeStatus}`}>
+          <strong>{bridgeStatus === "connected" ? `${bridgeCount} extensions available` : bridgeStatus === "failed" ? "Collector not reachable" : "Waiting for bridge"}</strong>
+          <span>{bridgeError || "Run the bridge command below and keep that terminal open while scanning."}</span>
         </div>
       </div>
 
       <div className="collectorCommands">
         <article>
-          <strong>macOS / Linux</strong>
+          <strong>Start local bridge · macOS / Linux</strong>
           <pre>{macLinuxCommand}</pre>
         </article>
         <article>
-          <strong>Windows PowerShell</strong>
+          <strong>Start local bridge · Windows with Python</strong>
           <pre>{windowsCommand}</pre>
+        </article>
+        <article>
+          <strong>One-shot upload fallback</strong>
+          <pre>{fallbackCommand}</pre>
         </article>
       </div>
 
       <div className="collectorFacts">
-        <article><b>1</b><strong>Run locally</strong><span>OS-specific folders are discovered on the user machine.</span></article>
-        <article><b>2</b><strong>Small payload</strong><span>Only name, publisher, version, startup activation, and lifecycle scripts are sent.</span></article>
-        <article><b>3</b><strong>Review here</strong><span>Use history or load latest after the command finishes.</span></article>
+        <article><b>01</b><strong>Start local bridge</strong><span>Run the command on the developer workstation or build image.</span></article>
+        <article><b>02</b><strong>Connect collector</strong><span>The hosted website queries the local bridge directly.</span></article>
+        <article><b>03</b><strong>Generate report</strong><span>Review versions, contribution surfaces, scripts, startup behavior, and dependency counts.</span></article>
+        <article><b>04</b><strong>Fallback upload</strong><span>Use one-shot upload only when localhost browser access is blocked.</span></article>
       </div>
     </section>
   );
@@ -458,7 +556,7 @@ function Scanning() {
   return (
     <div className="startState">
       <div className="spinner" />
-      <h2>Scanning selected extensions</h2>
+      <h2>Generating extension report</h2>
       <p>Large extension bundles can take time because files, manifests, scripts, and packaged artifacts are inspected locally.</p>
     </div>
   );
@@ -493,6 +591,7 @@ function Detail({ active, iconPath }: { active: ExtensionSummary | null; iconPat
         <span>{extensionGradeReason(active)}</span>
       </div>
       <ScoreBreakdown active={active} />
+      <CollectorDetails active={active} />
       <div className="tagLine">
         <Tag tone={active.verdict}>{active.verdict}</Tag>
         <Tag>{active.severity}</Tag>
@@ -509,6 +608,69 @@ function Detail({ active, iconPath }: { active: ExtensionSummary | null; iconPat
       ))}
     </aside>
   );
+}
+
+function CollectorDetails({ active }: { active: ExtensionSummary }) {
+  const details = active.collector_details || {};
+  const activationEvents = stringArray(details.activation_events);
+  const scripts = objectValue(details.scripts);
+  const contributes = objectValue(details.contributes);
+  const contributionEntries = Object.entries(contributes);
+  const dependencyCount = Number(details.dependency_count || 0);
+  const main = typeof details.main === "string" ? details.main : "";
+  const browser = typeof details.browser === "string" ? details.browser : "";
+
+  if (!activationEvents.length && Object.keys(scripts).length === 0 && contributionEntries.length === 0 && dependencyCount === 0 && !main && !browser) {
+    return null;
+  }
+
+  return (
+    <section className="collectorDetail">
+      <div className="scoreBreakdownHead">
+        <span>Installed metadata</span>
+        <strong>{active.source}</strong>
+      </div>
+      <div className="collectorMetaGrid">
+        {main ? <span><b>Main</b><code>{main}</code></span> : null}
+        {browser ? <span><b>Browser</b><code>{browser}</code></span> : null}
+        <span><b>Dependencies</b><strong>{dependencyCount}</strong></span>
+        {typeof details.engine_vscode === "string" && details.engine_vscode ? <span><b>VS Code engine</b><code>{details.engine_vscode}</code></span> : null}
+      </div>
+      {activationEvents.length ? <TagList label="Activation" values={activationEvents.slice(0, 10)} /> : null}
+      {Object.keys(scripts).length ? <TagList label="Lifecycle scripts" values={Object.keys(scripts)} /> : null}
+      {contributionEntries.length ? (
+        <div className="contributionList">
+          {contributionEntries.slice(0, 8).map(([name, value]) => (
+            <span key={name}><b>{name}</b><small>{contributionCount(value)} item(s)</small></span>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function TagList({ label, values }: { label: string; values: string[] }) {
+  return (
+    <div className="collectorTags">
+      <strong>{label}</strong>
+      <span>{values.map((value) => <code key={value}>{value}</code>)}</span>
+    </div>
+  );
+}
+
+function contributionCount(value: unknown): number {
+  if (Array.isArray(value)) return value.length;
+  if (value && typeof value === "object" && "count" in value && typeof value.count === "number") return value.count;
+  if (value && typeof value === "object") return Object.keys(value).length;
+  return 1;
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+function objectValue(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
 
 function ExtensionIcon({ name, iconPath, large = false }: { name: string; iconPath?: string; large?: boolean }) {
