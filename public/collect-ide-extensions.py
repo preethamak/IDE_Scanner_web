@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import json
+import mimetypes
 import os
 import platform
 import socket
@@ -67,6 +69,7 @@ def discover_extensions(compact: bool = False) -> list[dict]:
                 "client": client,
                 "path": extension_root,
                 "manifest": compact_manifest(manifest) if compact else rich_manifest(manifest),
+                "icon_data_url": "" if compact else extension_icon_data_url(package_file.parent, manifest),
             })
     return sorted(found, key=lambda item: (item["client"], item["path"]))
 
@@ -111,6 +114,28 @@ def compact_manifest(manifest: dict) -> dict:
             if isinstance(scripts.get(key), str)
         },
     }
+
+
+def extension_icon_data_url(extension_root: Path, manifest: dict) -> str:
+    icon = manifest.get("icon")
+    if not isinstance(icon, str) or not icon.strip():
+        return ""
+    try:
+        root = extension_root.resolve()
+        icon_path = (root / icon).resolve()
+        icon_path.relative_to(root)
+        if not icon_path.is_file():
+            return ""
+        size = icon_path.stat().st_size
+        if size <= 0 or size > 180_000:
+            return ""
+        mime, _ = mimetypes.guess_type(str(icon_path))
+        if mime not in {"image/png", "image/jpeg", "image/svg+xml", "image/webp", "image/gif"}:
+            return ""
+        data = base64.b64encode(icon_path.read_bytes()).decode("ascii")
+        return f"data:{mime};base64,{data}"
+    except Exception:
+        return ""
 
 
 def dependency_summary(value: object) -> dict:

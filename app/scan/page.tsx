@@ -22,6 +22,7 @@ export default function Home() {
   const [allowExecute, setAllowExecute] = useState(false);
   const [status, setStatus] = useState<"loading" | "ready" | "scanning" | "report" | "error">("loading");
   const [jobId, setJobId] = useState<string | null>(null);
+  const [localReport, setLocalReport] = useState<unknown | null>(null);
   const [summary, setSummary] = useState<ReportSummary | null>(null);
   const [active, setActive] = useState<ExtensionSummary | null>(null);
   const [filter, setFilter] = useState<Verdict | "">("");
@@ -114,6 +115,7 @@ export default function Home() {
     setStatus("scanning");
     setError("");
     setSummary(null);
+    setLocalReport(null);
     setActive(null);
     const response = await fetch("/api/scans", {
       method: "POST",
@@ -162,6 +164,7 @@ export default function Home() {
       return;
     }
     setJobId(latest.id);
+    setLocalReport(null);
     setSummary(latest.summary);
     setActive(null);
     setStatus("report");
@@ -189,9 +192,10 @@ export default function Home() {
       const response = await fetch("http://127.0.0.1:17865/scan", { method: "POST", cache: "no-store" });
       if (!response.ok) throw new Error(`collector returned HTTP ${response.status}`);
       const payload = await response.json() as { extensions?: CollectorExtension[] };
-      const { summary: reportSummary } = buildCollectorReport(payload.extensions || []);
+      const { report, summary: reportSummary } = buildCollectorReport(payload.extensions || []);
       setBridgeCount(payload.extensions?.length || 0);
       setSummary(reportSummary);
+      setLocalReport(report);
       setJobId(null);
       setActive(null);
       setStatus("report");
@@ -203,15 +207,20 @@ export default function Home() {
   }
 
   async function downloadReport() {
-    if (!jobId) return;
-    const response = await fetch(`/api/scans/${jobId}/report`, { cache: "no-store" });
-    const report = await response.json();
-    if (!response.ok) return;
+    let report = localReport;
+    let fileName = "ide-scanner-report-local-collector.json";
+    if (!report && jobId) {
+      const response = await fetch(`/api/scans/${jobId}/report`, { cache: "no-store" });
+      report = await response.json();
+      if (!response.ok) return;
+      fileName = `ide-scanner-report-${jobId}.json`;
+    }
+    if (!report) return;
     const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `ide-scanner-report-${jobId}.json`;
+    link.download = fileName;
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -393,8 +402,8 @@ export default function Home() {
                       <button className="resultCard" type="button" key={`${item.install_path}-${item.extension_id}`} onClick={() => setActive(item)}>
                         <span className="resultTopline">
                           <span className="resultIdentity">
-                            <ExtensionIcon name={item.extension_id} iconPath={iconByPath.get(item.install_path)} />
-                            <strong>{item.extension_id}@{item.version}</strong>
+                            <ExtensionIcon name={item.extension_id} iconPath={iconByPath.get(item.install_path)} iconDataUrl={item.icon_data_url} />
+                            <strong>{item.display_name || item.extension_id}@{item.version}</strong>
                           </span>
                           <b>{extensionGrade(item)}</b>
                         </span>
@@ -575,7 +584,7 @@ function Detail({ active, iconPath }: { active: ExtensionSummary | null; iconPat
   return (
     <aside className="detail">
       <div className="detailTitle">
-        <ExtensionIcon name={active.extension_id} iconPath={iconPath} large />
+        <ExtensionIcon name={active.extension_id} iconPath={iconPath} iconDataUrl={active.icon_data_url} large />
         <div>
           <h3>{active.extension_id}@{active.version}</h3>
           <span>{active.publisher || "unknown publisher"}</span>
@@ -617,10 +626,13 @@ function CollectorDetails({ active }: { active: ExtensionSummary }) {
   const contributes = objectValue(details.contributes);
   const contributionEntries = Object.entries(contributes);
   const dependencyCount = Number(details.dependency_count || 0);
+  const dependencySamples = stringArray(details.dependency_samples);
+  const categories = stringArray(details.categories);
   const main = typeof details.main === "string" ? details.main : "";
   const browser = typeof details.browser === "string" ? details.browser : "";
+  const repository = typeof details.repository === "string" ? details.repository : "";
 
-  if (!activationEvents.length && Object.keys(scripts).length === 0 && contributionEntries.length === 0 && dependencyCount === 0 && !main && !browser) {
+  if (!activationEvents.length && Object.keys(scripts).length === 0 && contributionEntries.length === 0 && dependencyCount === 0 && !main && !browser && !repository && !categories.length) {
     return null;
   }
 
@@ -635,9 +647,12 @@ function CollectorDetails({ active }: { active: ExtensionSummary }) {
         {browser ? <span><b>Browser</b><code>{browser}</code></span> : null}
         <span><b>Dependencies</b><strong>{dependencyCount}</strong></span>
         {typeof details.engine_vscode === "string" && details.engine_vscode ? <span><b>VS Code engine</b><code>{details.engine_vscode}</code></span> : null}
+        {repository ? <span><b>Repository</b><code>{repository}</code></span> : null}
       </div>
+      {categories.length ? <TagList label="Categories" values={categories.slice(0, 10)} /> : null}
       {activationEvents.length ? <TagList label="Activation" values={activationEvents.slice(0, 10)} /> : null}
       {Object.keys(scripts).length ? <TagList label="Lifecycle scripts" values={Object.keys(scripts)} /> : null}
+      {dependencySamples.length ? <TagList label="Dependencies" values={dependencySamples.slice(0, 12)} /> : null}
       {contributionEntries.length ? (
         <div className="contributionList">
           {contributionEntries.slice(0, 8).map(([name, value]) => (
@@ -673,7 +688,7 @@ function objectValue(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
 
-function ExtensionIcon({ name, iconPath, large = false }: { name: string; iconPath?: string; large?: boolean }) {
+function ExtensionIcon({ name, iconPath, iconDataUrl, large = false }: { name: string; iconPath?: string; iconDataUrl?: string; large?: boolean }) {
   const src = iconPath ? `/api/extension-icons?path=${encodeURIComponent(iconPath)}` : "";
   const initials = name
     .split(/[.\s_-]+/)
@@ -683,7 +698,12 @@ function ExtensionIcon({ name, iconPath, large = false }: { name: string; iconPa
     .join("") || "EX";
   return (
     <span className={`extensionIcon ${large ? "large" : ""}`}>
-      {src ? <Image src={src} alt="" width={large ? 48 : 34} height={large ? 48 : 34} unoptimized /> : <b>{initials}</b>}
+      {iconDataUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={iconDataUrl} alt="" width={large ? 48 : 34} height={large ? 48 : 34} />
+      ) : src ? (
+        <Image src={src} alt="" width={large ? 48 : 34} height={large ? 48 : 34} unoptimized />
+      ) : <b>{initials}</b>}
     </span>
   );
 }

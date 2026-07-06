@@ -43,6 +43,9 @@ export type ExtensionSummary = {
   version: string;
   source: string;
   install_path: string;
+  display_name?: string;
+  description?: string;
+  icon_data_url?: string;
   severity: string;
   verdict: Verdict;
   verdict_reason: string;

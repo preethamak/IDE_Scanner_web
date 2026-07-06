@@ -22,6 +22,7 @@ export type CollectorManifest = {
 export type CollectorExtension = {
   client?: unknown;
   path?: unknown;
+  icon_data_url?: unknown;
   manifest?: unknown;
   package_json?: unknown;
 };
@@ -82,6 +83,7 @@ function toReportExtension(item: CollectorExtension): ExtensionSummary & {
     publisher,
     version,
     description: stringValue(manifest.description, ""),
+    icon_data_url: stringValue(item.icon_data_url, ""),
     source: stringValue(item.client, "collector"),
     install_path: stringValue(item.path, ""),
     severity,
