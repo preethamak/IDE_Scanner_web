@@ -18,6 +18,12 @@ export type InventoryResponse = {
   extensions: InventoryExtension[];
 };
 
+export type LocalScannerUnavailable = {
+  error: string;
+  code: "LOCAL_SCANNER_UNAVAILABLE";
+  detail?: string;
+};
+
 export type FindingSummary = {
   finding_id: string;
   rule_id: string;

@@ -739,6 +739,37 @@ input::placeholder { color: var(--soft); }
 }
 .scanGuide h2 { font-size: 18px; }
 .scanGuide p { max-width: 540px; margin: 0 auto 22px; color: var(--muted); }
+.collectorCommands {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.collectorCommands article {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  padding: 12px;
+  text-align: left;
+}
+.collectorCommands strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 650;
+}
+.collectorCommands pre {
+  margin: 0;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: #111827;
+  color: #f8fafc;
+  padding: 12px;
+  overflow-x: auto;
+  font-size: 11px;
+  line-height: 1.55;
+}
 .scanSteps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .scanSteps article {
   border: 1px solid var(--line);
@@ -1377,7 +1408,7 @@ input::placeholder { color: var(--soft); }
   .commandBar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .commands { grid-column: 1 / -1; justify-content: flex-start; }
   .extensionList { max-height: 340px; }
-  .scoreDeck, .scoreExplainer, .ruleGrid, .scanSteps, .twoScores { grid-template-columns: 1fr; }
+  .scoreDeck, .scoreExplainer, .ruleGrid, .scanSteps, .collectorCommands, .twoScores { grid-template-columns: 1fr; }
   .span2 { grid-column: auto; }
   .historyRow { grid-template-columns: 1fr; }
   .benchmarkRow { grid-template-columns: 1fr; }

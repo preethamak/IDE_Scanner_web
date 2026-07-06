@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { extensionGrade, extensionGradeReason, gradeFromScores, gradeReason, metricCatalog } from "@/lib/metrics";
-import type { ExtensionSummary, InventoryExtension, InventoryResponse, ReportSummary, ScanJobPublic, Verdict } from "@/lib/types";
+import type { ExtensionSummary, InventoryExtension, InventoryResponse, LocalScannerUnavailable, ReportSummary, ScanJobPublic, Verdict } from "@/lib/types";
 
 const verdictRank: Record<string, number> = {
   malicious: 4,
@@ -25,6 +25,7 @@ export default function Home() {
   const [active, setActive] = useState<ExtensionSummary | null>(null);
   const [filter, setFilter] = useState<Verdict | "">("");
   const [error, setError] = useState("");
+  const [agentServer] = useState(() => typeof window === "undefined" ? "" : window.location.origin);
 
   useEffect(() => {
     void loadInventory();
@@ -66,13 +67,20 @@ export default function Home() {
     setStatus("loading");
     setError("");
     const response = await fetch("/api/inventory", { cache: "no-store" });
-    const data = await response.json() as InventoryResponse & { error?: string };
+    const data = await response.json() as (InventoryResponse & { error?: string }) | LocalScannerUnavailable;
     if (!response.ok) {
+      if ("code" in data && data.code === "LOCAL_SCANNER_UNAVAILABLE") {
+        setInventory([]);
+        setSelected(new Set());
+        setStatus("ready");
+        return;
+      }
       setError(data.error || "Could not load installed extensions");
       setStatus("error");
       return;
     }
-    setInventory(data.extensions || []);
+    const inventoryData = data as InventoryResponse;
+    setInventory(inventoryData.extensions || []);
     setSelected(new Set());
     setStatus("ready");
   }
@@ -139,6 +147,22 @@ export default function Home() {
     setStatus("report");
   }
 
+  async function loadLatestReport() {
+    setError("");
+    const historyResponse = await fetch("/api/scans/history", { cache: "no-store" });
+    const history = await historyResponse.json() as { scans?: ScanJobPublic[]; error?: string };
+    const latest = (history.scans || []).find((scan) => scan.status === "complete" && scan.summary);
+    if (!historyResponse.ok || !latest) {
+      setError(history.error || "No completed collector report found yet");
+      setStatus("error");
+      return;
+    }
+    setJobId(latest.id);
+    setSummary(latest.summary);
+    setActive(null);
+    setStatus("report");
+  }
+
   async function downloadReport() {
     if (!jobId) return;
     const response = await fetch(`/api/scans/${jobId}/report`, { cache: "no-store" });
@@ -168,7 +192,7 @@ export default function Home() {
         </div>
         <div className={`health ${status === "error" ? "bad" : "ok"}`}>
           <span />
-          {status === "loading" ? "Loading scanner" : status === "error" ? "Needs attention" : "Local API online"}
+          {status === "loading" ? "Loading scanner" : status === "error" ? "Needs attention" : "Scanner ready"}
         </div>
       </header>
 
@@ -178,6 +202,7 @@ export default function Home() {
         <Metric label="Scanned" value={summary?.summary?.total_extensions || 0} />
         <div className="commands">
           <button type="button" onClick={() => void loadInventory()}>Refresh</button>
+          <button type="button" onClick={() => void loadLatestReport()}>Load latest report</button>
           <button type="button" onClick={toggleVisible}>Select visible</button>
           <label className="switch">
             <input type="checkbox" checked={online} onChange={(event) => setOnline(event.target.checked)} />
@@ -220,13 +245,15 @@ export default function Home() {
                 </span>
               </label>
             ))}
-            {visibleInventory.length === 0 ? <p className="emptyCopy">No extensions match this filter.</p> : null}
+            {visibleInventory.length === 0 ? (
+              <p className="emptyCopy">No server-local extensions are listed. Run the local collector to discover installed extensions on this machine.</p>
+            ) : null}
           </div>
         </aside>
 
         <section className="report">
           {status === "scanning" ? <Scanning /> : null}
-          {status !== "scanning" && !summary ? <StartState /> : null}
+          {status !== "scanning" && !summary ? <StartState server={agentServer} /> : null}
           {summary ? (
             <div className="reportBody">
               <div className="reportTitle">
@@ -364,17 +391,33 @@ function Tag({ children, tone = "" }: { children: React.ReactNode; tone?: string
   return <span className={`tag ${tone}`}>{children}</span>;
 }
 
-function StartState() {
+function StartState({ server }: { server: string }) {
+  const target = server || "https://your-deployment.example";
+  const macLinuxCommand = `curl -fsSL ${target}/collect-ide-extensions.py -o /tmp/ide-scanner-collector.py
+python3 /tmp/ide-scanner-collector.py --server ${target}`;
+  const windowsCommand = `irm ${target}/collect-ide-extensions.ps1 -OutFile "$env:TEMP\\ide-scanner-collector.ps1"
+powershell -ExecutionPolicy Bypass -File "$env:TEMP\\ide-scanner-collector.ps1" -Server ${target}`;
+
   return (
     <div className="startState">
       <div className="scanGuide">
-        <span>Ready</span>
-        <h2>Select extensions and run a scan</h2>
-        <p>The scanner runs locally, reads installed extension packages, and produces a private report with scores, findings, and recommendations.</p>
+        <span>Local collector</span>
+        <h2>Run a collector script on the machine with the IDEs</h2>
+        <p>The standalone collector discovers installed VS Code, Cursor, and Windsurf extensions on macOS, Windows, or Linux and sends an inventory report back to this website. It does not require the scanner package to be installed.</p>
+        <div className="collectorCommands">
+          <article>
+            <strong>macOS / Linux</strong>
+            <pre>{macLinuxCommand}</pre>
+          </article>
+          <article>
+            <strong>Windows PowerShell</strong>
+            <pre>{windowsCommand}</pre>
+          </article>
+        </div>
         <div className="scanSteps">
-          <article><b>1</b><strong>Select</strong><small>Choose one extension or scan a filtered group.</small></article>
-          <article><b>2</b><strong>Inspect</strong><small>Static package evidence is scored across {metricCatalog.length} domains.</small></article>
-          <article><b>3</b><strong>Triage</strong><small>Use verdicts, score meters, and recommendations to decide action.</small></article>
+          <article><b>1</b><strong>Collect</strong><small>Run the command locally so OS-specific extension folders can be inspected.</small></article>
+          <article><b>2</b><strong>Scan</strong><small>Static package evidence is scored across {metricCatalog.length} domains on that machine.</small></article>
+          <article><b>3</b><strong>Review</strong><small>The uploaded report appears here with verdicts, scores, and recommendations.</small></article>
         </div>
       </div>
     </div>

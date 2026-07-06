@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createJob, latestCompleteReport, publicJob, setCompleteJob, updateJob } from "@/lib/jobs";
-import { runPythonBridge } from "@/lib/pythonBridge";
+import { isPythonBridgeUnavailable, localScannerUnavailableMessage, runPythonBridge } from "@/lib/pythonBridge";
 import type { ReportSummary } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -51,7 +51,7 @@ async function runScan(jobId: string, payload: { extension_paths: string[]; onli
   } catch (error) {
     updateJob(jobId, {
       status: "failed",
-      error: error instanceof Error ? error.message : "Scan failed"
+      error: isPythonBridgeUnavailable(error) ? localScannerUnavailableMessage() : error instanceof Error ? error.message : "Scan failed"
     });
   }
 }

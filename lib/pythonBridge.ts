@@ -46,6 +46,17 @@ export async function runPythonBridge<T>(command: "inventory" | "scan" | "benchm
   });
 }
 
+export function isPythonBridgeUnavailable(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  if ("code" in error && error.code === "ENOENT") return true;
+  const message = error instanceof Error ? error.message : "";
+  return message.includes("ENOENT") || message.includes("No such file or directory");
+}
+
+export function localScannerUnavailableMessage(): string {
+  return "This deployed server cannot run the local scanner. Run the scanner agent on the machine that has VS Code, Cursor, or Windsurf installed, then upload the report to this web app.";
+}
+
 function pythonCommand(): string {
   return process.env.IDE_SCANNER_PYTHON || (process.platform === "win32" ? "python" : "python3");
 }

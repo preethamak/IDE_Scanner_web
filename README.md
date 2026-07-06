@@ -11,9 +11,23 @@ This project was bootstrapped with the official `create-next-app` template and u
 
 ## Production Model
 
-A hosted website cannot directly scan a visitor's Windows, macOS, or Linux machine from the browser. Browser code cannot read local IDE extension folders or execute Python.
+The production scan path is a local collector. A hosted website cannot silently enumerate a visitor's extension folders from the browser. The user runs a small local command on macOS, Windows, or Linux; that command discovers installed VS Code, Cursor, and Windsurf extensions and posts an inventory report to this website.
 
-For production, run the scanner on the user machine and upload the report to this website:
+The lightweight collectors are served from:
+
+- `/collect-ide-extensions.py` for macOS/Linux and Windows systems with Python.
+- `/collect-ide-extensions.ps1` for Windows PowerShell without Python.
+
+They do not require `ide_scanner` or this repository to be installed on the user's machine.
+
+For deployments where you also want the server-local scan buttons to work, build the included container from the workspace root, not from this subdirectory. It ships Python and the scanner source with the Next.js app:
+
+```bash
+docker build -f ide-scanner-web/Dockerfile -t ide-scanner-web .
+docker run --rm -p 8765:8765 ide-scanner-web
+```
+
+For full static package scanning, run the scanner on the user machine and upload the report to this website:
 
 ```bash
 IDE_SCANNER_AGENT_TOKEN=<shared-token> \
