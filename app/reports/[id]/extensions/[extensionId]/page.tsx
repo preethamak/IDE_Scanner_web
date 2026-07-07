@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getImportedReport } from "@/lib/reportBundle";
-import type { ImportedReportBundle } from "@/lib/types";
+import type { ExtensionDetail, ImportedReportBundle } from "@/lib/types";
 
 export default function ReportExtensionDetailPage({ params }: { params: Promise<{ id: string; extensionId: string }> }) {
   const [report, setReport] = useState<ImportedReportBundle | null>(null);
@@ -38,6 +38,9 @@ export default function ReportExtensionDetailPage({ params }: { params: Promise<
     );
   }
 
+  const contextual = (detail.findings || []).filter((finding) => finding.actionability === "contextual");
+  const actionable = (detail.findings || []).filter((finding) => finding.actionability !== "contextual");
+
   return (
     <main className="shell">
       <section className="pageHero compactHero">
@@ -52,7 +55,7 @@ export default function ReportExtensionDetailPage({ params }: { params: Promise<
       <section className="extensionDetailGrid">
         <article className="commandPanel">
           <p className="eyebrow">Verdict</p>
-          <h2>{detail.verdict}</h2>
+          <h2>{detail.verdict_label || detail.verdict}</h2>
           <p>{detail.severity} severity</p>
         </article>
         <article className="commandPanel">
@@ -69,6 +72,11 @@ export default function ReportExtensionDetailPage({ params }: { params: Promise<
           <p className="eyebrow">Malware score</p>
           <h2>{detail.malware_score}</h2>
           <Meter value={detail.malware_score} />
+        </article>
+        <article className="commandPanel">
+          <p className="eyebrow">Context score</p>
+          <h2>{detail.context_score || 0}</h2>
+          <Meter value={detail.context_score || 0} />
         </article>
 
         <article className="commandPanel span2">
@@ -92,19 +100,15 @@ export default function ReportExtensionDetailPage({ params }: { params: Promise<
         </article>
 
         <article className="commandPanel span2 evidencePanel">
-          <h2>Findings</h2>
-          {(detail.findings || []).map((finding) => (
-            <div className="evidenceRow" key={finding.finding_id}>
-              <strong>{finding.rule_id}</strong>
-              <small>{finding.category} · {finding.severity} · confidence {finding.confidence}</small>
-              <span>{finding.evidence_summary}</span>
-              {finding.file_refs?.length ? <code>{finding.file_refs.join(", ")}</code> : null}
-              {(finding.evidence_refs || []).map((ref) => {
-                const evidence = detail.evidence?.[ref];
-                return evidence ? <p className="recommendation" key={ref}>{ref}: {evidence.summary}</p> : null;
-              })}
-            </div>
-          ))}
+          <h2>Actionable findings</h2>
+          {actionable.map((finding) => <FindingRow key={finding.finding_id} finding={finding} detail={detail} />)}
+          {!actionable.length ? <p>No actionable findings were emitted for this extension.</p> : null}
+        </article>
+
+        <article className="commandPanel span2 evidencePanel">
+          <h2>Contextual notes</h2>
+          {contextual.map((finding) => <FindingRow key={finding.finding_id} finding={finding} detail={detail} />)}
+          {!contextual.length ? <p>No contextual notes were emitted for this extension.</p> : null}
         </article>
 
         <article className="commandPanel">
@@ -132,6 +136,21 @@ export default function ReportExtensionDetailPage({ params }: { params: Promise<
 
 function Meter({ value }: { value: number }) {
   return <div className="meterTrack"><span style={{ width: `${Math.max(0, Math.min(100, value))}%` }} /></div>;
+}
+
+function FindingRow({ finding, detail }: { finding: ExtensionDetail["findings"][number]; detail: ExtensionDetail }) {
+  return (
+    <div className="evidenceRow">
+      <strong>{finding.rule_id}</strong>
+      <small>{finding.category} · {finding.severity} · {finding.evidence_class || "weak"} · {finding.actionability || "contextual"} · confidence {finding.confidence}</small>
+      <span>{finding.evidence_summary}</span>
+      {finding.file_refs?.length ? <code>{finding.file_refs.join(", ")}</code> : null}
+      {(finding.evidence_refs || []).map((ref) => {
+        const evidence = detail.evidence?.[ref];
+        return evidence ? <p className="recommendation" key={ref}>{ref}: {evidence.summary}</p> : null;
+      })}
+    </div>
+  );
 }
 
 function Fact({ label, value }: { label: string; value: string }) {

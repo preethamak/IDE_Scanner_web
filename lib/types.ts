@@ -51,7 +51,9 @@ export type ExtensionSummary = {
   verdict_reason?: string;
   malware_score: number;
   risk_score: number;
+  context_score?: number;
   grade?: string;
+  verdict_label?: string;
   dependency_count?: number;
   activation_summary?: string;
   detail_ref?: string;
@@ -79,6 +81,8 @@ export type ScannerFinding = FindingSummary & {
   evidence_refs?: string[];
   score?: number;
   evidence_type?: string;
+  evidence_class?: string;
+  actionability?: "contextual" | "review" | "investigate" | "block";
 };
 
 export type Recommendation = {
@@ -133,6 +137,7 @@ export type ScannerBundleSummary = {
     malicious: number;
     max_risk_score: number;
     max_malware_score: number;
+    max_context_score?: number;
     posture_status: string;
   };
   top_risk_extensions: BundleExtensionSummary[];

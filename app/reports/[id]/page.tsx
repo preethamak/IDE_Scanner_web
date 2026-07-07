@@ -84,6 +84,7 @@ export default function ReportDashboardPage({ params }: { params: Promise<{ id: 
       <section className="scoreDeck reportSummaryDeck">
         <ScoreCard label="Max risk score" value={summary.max_risk_score} />
         <ScoreCard label="Max malware score" value={summary.max_malware_score} />
+        <ScoreCard label="Max context score" value={summary.max_context_score || 0} />
         <article className="commandPanel">
           <p className="eyebrow">Posture</p>
           <h2>{summary.posture_status}</h2>
@@ -113,6 +114,7 @@ export default function ReportDashboardPage({ params }: { params: Promise<{ id: 
           <span>Severity</span>
           <span>Risk</span>
           <span>Malware</span>
+          <span>Context</span>
           <span>Grade</span>
           <span>Findings</span>
           <span />
@@ -136,10 +138,11 @@ function ExtensionRow({ item, reportId, rank }: { item: BundleExtensionSummary; 
           <small>{item.activation_summary || "activation not reported"} · {item.dependency_count || 0} dependencies</small>
         </span>
       </div>
-      <Tag tone={item.verdict}>{item.verdict}</Tag>
+      <Tag tone={item.verdict}>{item.verdict_label || item.verdict}</Tag>
       <Tag>{item.severity}</Tag>
       <b>{item.risk_score}</b>
       <b>{item.malware_score}</b>
+      <b>{item.context_score || 0}</b>
       <b>{item.grade || "-"}</b>
       <span className="findingTags">{stringFindings(item.top_findings).slice(0, 3).map((finding) => <code key={finding}>{finding}</code>)}</span>
       <Link className="panelLink" href={`/reports/${reportId}/extensions/${encodeURIComponent(item.extension_id)}`}>Details</Link>

@@ -704,7 +704,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .errorBand { background: var(--red-soft); color: var(--red); border-color: rgba(209, 69, 79, .22); }
 
 .reportSummaryDeck {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-bottom: 12px;
 }
 .meterTrack {
@@ -737,7 +737,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .leaderboardHead,
 .leaderboardRow {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) 110px 90px 70px 82px 70px minmax(160px, .75fr) 90px;
+  grid-template-columns: minmax(260px, 1fr) 132px 90px 70px 82px 76px 70px minmax(160px, .75fr) 90px;
   gap: 10px;
   align-items: center;
   background: var(--surface);

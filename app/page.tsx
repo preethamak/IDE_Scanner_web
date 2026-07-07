@@ -41,7 +41,7 @@ export default function HomePage() {
           </div>
           <div className="consoleScores">
             <MiniStat label="Extensions" value={summary?.total_extensions || 0} />
-            <MiniStat label="Suspicious" value={summary?.suspicious || 0} />
+            <MiniStat label="Context" value={summary?.max_context_score || 0} />
             <MiniStat label="Malware" value={summary?.max_malware_score || 0} />
           </div>
         </aside>
