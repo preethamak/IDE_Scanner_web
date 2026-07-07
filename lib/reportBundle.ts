@@ -1,6 +1,6 @@
 "use client";
 
-import type { ExtensionDetail, ImportedReportBundle, ReportMetadata, RuleMetadata, ScannerBundleSummary } from "@/lib/types";
+import type { BenchmarkBundle, BenchmarkBundleRow, ExtensionDetail, ImportedReportBundle, ReportMetadata, RuleMetadata, ScannerBundleSummary } from "@/lib/types";
 
 type ZipEntry = {
   name: string;
@@ -11,16 +11,11 @@ type ZipEntry = {
 };
 
 const STORE_KEY = "ide-scanner.importedReports.v1";
+const BENCHMARK_STORE_KEY = "ide-scanner.importedBenchmarks.v1";
 
 export async function parseReportBundle(file: File): Promise<ImportedReportBundle> {
   const bytes = new Uint8Array(await file.arrayBuffer());
-  const entries = readCentralDirectory(bytes);
-  const jsonEntries = new Map<string, unknown>();
-  for (const entry of entries) {
-    if (!entry.name.endsWith(".json")) continue;
-    const raw = await readEntry(bytes, entry);
-    jsonEntries.set(entry.name, JSON.parse(new TextDecoder().decode(raw)));
-  }
+  const jsonEntries = await readJsonEntries(bytes);
 
   const metadata = requireObject<ReportMetadata>(jsonEntries.get("metadata.json"), "metadata.json");
   const summary = requireObject<ScannerBundleSummary>(jsonEntries.get("summary.json"), "summary.json");
@@ -47,6 +42,34 @@ export async function parseReportBundle(file: File): Promise<ImportedReportBundl
   };
 }
 
+export async function parseBenchmarkBundle(file: File): Promise<BenchmarkBundle> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const jsonEntries = await readJsonEntries(bytes);
+  const metadata = requireObject<BenchmarkBundle["metadata"]>(jsonEntries.get("metadata.json"), "metadata.json");
+  const leaderboard = requireObject<{ extensions: BenchmarkBundleRow[] }>(jsonEntries.get("leaderboard.json"), "leaderboard.json");
+  const benchmark_summary = requireObject<BenchmarkBundle["benchmark_summary"]>(jsonEntries.get("benchmark_summary.json"), "benchmark_summary.json");
+  const rule_coverage = requireObject<BenchmarkBundle["rule_coverage"]>(jsonEntries.get("rule_coverage.json"), "rule_coverage.json");
+  const comparisons = objectOrEmpty(jsonEntries.get("comparisons.json"));
+  const extensions: Record<string, BenchmarkBundleRow> = {};
+  for (const [name, value] of jsonEntries) {
+    if (name.startsWith("extensions/")) {
+      const row = requireObject<BenchmarkBundleRow>(value, name);
+      extensions[row.extension_id || name] = row;
+    }
+  }
+  return {
+    id: metadata.benchmark_id || crypto.randomUUID(),
+    name: file.name,
+    importedAt: Date.now(),
+    metadata,
+    leaderboard,
+    benchmark_summary,
+    rule_coverage,
+    comparisons,
+    extensions,
+  };
+}
+
 export function saveImportedReport(bundle: ImportedReportBundle): void {
   const reports = listImportedReports().filter((item) => item.id !== bundle.id);
   reports.unshift(bundle);
@@ -69,6 +92,41 @@ export function getImportedReport(id: string): ImportedReportBundle | null {
 
 export function deleteImportedReport(id: string): void {
   localStorage.setItem(STORE_KEY, JSON.stringify(listImportedReports().filter((item) => item.id !== id)));
+}
+
+export function saveImportedBenchmark(bundle: BenchmarkBundle): void {
+  const benchmarks = listImportedBenchmarks().filter((item) => item.id !== bundle.id);
+  benchmarks.unshift(bundle);
+  localStorage.setItem(BENCHMARK_STORE_KEY, JSON.stringify(benchmarks.slice(0, 20)));
+}
+
+export function listImportedBenchmarks(): BenchmarkBundle[] {
+  if (typeof localStorage === "undefined") return [];
+  try {
+    const parsed = JSON.parse(localStorage.getItem(BENCHMARK_STORE_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed.filter(isBenchmarkBundle) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function getImportedBenchmark(id: string): BenchmarkBundle | null {
+  return listImportedBenchmarks().find((item) => item.id === id) || null;
+}
+
+export function deleteImportedBenchmark(id: string): void {
+  localStorage.setItem(BENCHMARK_STORE_KEY, JSON.stringify(listImportedBenchmarks().filter((item) => item.id !== id)));
+}
+
+async function readJsonEntries(bytes: Uint8Array): Promise<Map<string, unknown>> {
+  const entries = readCentralDirectory(bytes);
+  const jsonEntries = new Map<string, unknown>();
+  for (const entry of entries) {
+    if (!entry.name.endsWith(".json")) continue;
+    const raw = await readEntry(bytes, entry);
+    jsonEntries.set(entry.name, JSON.parse(new TextDecoder().decode(raw)));
+  }
+  return jsonEntries;
 }
 
 function readCentralDirectory(bytes: Uint8Array): ZipEntry[] {
@@ -159,5 +217,17 @@ function isImportedReportBundle(value: unknown): value is ImportedReportBundle {
     "summary" in value &&
     "leaderboard" in value &&
     "details" in value
+  );
+}
+
+function isBenchmarkBundle(value: unknown): value is BenchmarkBundle {
+  return Boolean(
+    value &&
+    typeof value === "object" &&
+    "id" in value &&
+    "metadata" in value &&
+    "leaderboard" in value &&
+    "benchmark_summary" in value &&
+    "rule_coverage" in value
   );
 }

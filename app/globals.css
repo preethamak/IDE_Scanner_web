@@ -1773,6 +1773,15 @@ input::placeholder { color: var(--soft); }
   font-size: 12px;
   text-transform: capitalize;
 }
+.fileAction {
+  cursor: pointer;
+}
+.fileAction input {
+  display: none;
+}
+.compactBenchmarkRow {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, .7fr) minmax(180px, .45fr);
+}
 .diffPreview {
   margin: 0;
   max-height: 220px;

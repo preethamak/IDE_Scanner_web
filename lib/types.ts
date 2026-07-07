@@ -252,6 +252,75 @@ export type BenchmarkResult = {
   scanner_summary: Record<string, unknown>;
 };
 
+export type BenchmarkBundleRow = {
+  extension_id: string;
+  version: string;
+  label: string;
+  exposure_types: string[];
+  expected_findings: string[];
+  ide_scanner_findings: string[];
+  matched_findings: string[];
+  matched: boolean;
+  outcome: "true_positive" | "false_positive" | "false_negative" | "true_negative" | "not_scanned";
+  severity: string;
+  verdict: Verdict | "missing";
+  risk_score: number | null;
+  malware_score: number | null;
+  evidence: Array<{
+    rule_id?: string;
+    severity?: string;
+    summary?: string;
+    file_refs?: string[];
+  }>;
+  not_reported_by_compared_tools: string[];
+  reference: string;
+};
+
+export type BenchmarkBundle = {
+  id: string;
+  name: string;
+  importedAt: number;
+  metadata: {
+    schema_version: string;
+    benchmark_id: string;
+    created_at: string;
+    dataset_id: string;
+    dataset_source: string;
+    scanner_version: string;
+    ruleset_version: string;
+    scan_id: string;
+    total_extensions: number;
+  };
+  leaderboard: { extensions: BenchmarkBundleRow[] };
+  benchmark_summary: {
+    dataset_id: string;
+    source: string;
+    total_extensions: number;
+    evaluated_extensions: number;
+    not_scanned: number;
+    credential_extension_count: number;
+    true_positives: number;
+    false_positives: number;
+    false_negatives: number;
+    true_negatives: number;
+    precision: number;
+    recall: number;
+    unique_signals: number;
+  };
+  rule_coverage: {
+    rules: Array<{
+      rule_id: string;
+      expected: number;
+      detections: number;
+      false_positives: number;
+      precision: number;
+      recall: number;
+    }>;
+  };
+  comparisons: Record<string, unknown>;
+  extensions: Record<string, BenchmarkBundleRow>;
+};
+
 export type ScanJobPublic = {
   id: string;
   status: "queued" | "running" | "complete" | "failed";
