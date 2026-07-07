@@ -1,5 +1,3 @@
-import type { ExtensionSummary, Verdict } from "@/lib/types";
-
 export const metricCatalog = [
   {
     id: "manifest-capability",
@@ -85,33 +83,3 @@ export const ruleFamilies = [
   "dangerous-github-workflow",
   "security-policy-missing"
 ];
-
-export function gradeFromScores(maxRisk: number, maxMalware: number, counts: Record<Verdict, number>): string {
-  if (counts.malicious > 0 || maxMalware >= 90) return "F";
-  if (counts.suspicious > 0 || maxRisk >= 80 || maxMalware >= 60) return "D";
-  if (counts.review > 0 || maxRisk >= 40) return "B";
-  if (maxRisk > 0 || maxMalware > 0) return "A-";
-  return "A";
-}
-
-export function gradeReason(maxRisk: number, maxMalware: number, counts: Record<Verdict, number>): string {
-  if (counts.malicious > 0 || maxMalware >= 90) return "Confirmed or authoritative malware evidence exists.";
-  if (counts.suspicious > 0 || maxRisk >= 80 || maxMalware >= 60) return "Suspicious chains or high-confidence behavior need immediate review.";
-  if (counts.review > 0 || maxRisk >= 40) return "No confirmed malware, but one or more extensions expose review-worthy capability or supply-chain risk.";
-  return "No actionable malware, abuse-chain, or sensitive-capability evidence was identified.";
-}
-
-export function extensionGrade(extension: ExtensionSummary): string {
-  if (extension.verdict === "malicious" || extension.malware_score >= 90) return "Grade F";
-  if (extension.verdict === "suspicious" || extension.risk_score >= 80 || extension.malware_score >= 60) return "Grade D";
-  if (extension.verdict === "review" || extension.risk_score >= 40) return "Grade B";
-  if (extension.risk_score > 0 || extension.malware_score > 0) return "Grade A-";
-  return "Grade A";
-}
-
-export function extensionGradeReason(extension: ExtensionSummary): string {
-  if (extension.verdict === "malicious") return "Authoritative or confirmed malware evidence.";
-  if (extension.verdict === "suspicious") return "Correlated behavior or strong non-authoritative evidence.";
-  if (extension.verdict === "review") return "Review-worthy risk without confirmed malware.";
-  return "Context findings only; no actionable malicious signal.";
-}

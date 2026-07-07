@@ -1,13 +1,12 @@
 import Link from "next/link";
 
-const reportSections = [
-  ["summary", "Totals by verdict and severity, max risk score, max malware score, and scan size."],
-  ["top_risk_extensions", "Ranked extension summaries used by the UI for triage."],
-  ["findings", "Rule-level evidence, severity, confidence, file references, and recommendations."],
-  ["artifact_inventory", "Hashed package files, risky native or packed artifacts, and known-bad hash matches."],
-  ["registry_checks", "Optional online marketplace and dependency enrichment results."],
-  ["posture_summary", "Overall IDE/client setup risk: score, status, client count, failure/warning counts, and top posture findings."],
-  ["posture", "Detailed local IDE/client posture checks for Workspace Trust, auto-approval, sideloading, startup activation, and agent-facing extension surfaces."],
+const bundleSections = [
+  ["metadata.json", "Scan identity, schema version, scanner version, ruleset version, source, profile, and completion counts."],
+  ["summary.json", "Small dashboard-first totals, top risk extensions, finding counts, severity counts, and category counts."],
+  ["leaderboard.json", "Compact table rows with scanner-owned verdict, severity, risk score, malware score, grade, top findings, and detail refs."],
+  ["extensions/*.json", "Lazy-loaded extension detail files with score explanations, findings, evidence refs, manifest, dependencies, artifacts, and recommendations."],
+  ["rules.json", "Scanner rule metadata for explanations, rule pages, false-positive notes, and benchmark tags."],
+  ["posture.json", "IDE/client posture summary and detailed posture metrics from scanner output."],
 ];
 
 export default function ReportsPage() {
@@ -15,56 +14,38 @@ export default function ReportsPage() {
     <main className="shell">
       <section className="pageHero">
         <div>
-          <p className="eyebrow">Output</p>
-          <h1>Reports and API flow</h1>
-        <p className="heroCopy">The UI uses the same API you can automate against. Local scans and agent uploads both produce the same report shape.</p>
+          <p className="eyebrow">Reports</p>
+          <h1>Scanner bundle contract</h1>
+          <p className="heroCopy">The website renders report bundles. It does not create findings, verdicts, risk scores, malware scores, or grades.</p>
         </div>
-        <Link className="heroAction" href="/">Create report</Link>
+        <Link className="heroAction" href="/scan">Import report</Link>
       </section>
 
       <section className="apiFlow">
-        <article><span>1</span><strong>GET /api/inventory</strong><p>Discover installed extensions from VS Code, Cursor, Windsurf, and compatible folders.</p></article>
-        <article><span>2</span><strong>POST /api/scans</strong><p>Start a scan for selected extension paths. The response returns a local job id.</p></article>
-        <article><span>3</span><strong>GET /api/scans/:id</strong><p>Poll until the job is complete and a summary is available.</p></article>
-        <article><span>4</span><strong>POST /api/agent/reports</strong><p>Upload a completed user-machine report from the local companion command.</p></article>
-        <article><span>5</span><strong>GET /api/scans/:id/report</strong><p>Download the full JSON report with every finding and artifact detail.</p></article>
+        <article><span>1</span><strong>Run scanner</strong><p><code>ide-scanner scan --installed --profile smart --output report.zip</code></p></article>
+        <article><span>2</span><strong>Import bundle</strong><p>Upload `report.zip`; the browser reads summary and leaderboard first.</p></article>
+        <article><span>3</span><strong>Open dashboard</strong><p>Filter and sort scanner-provided leaderboard rows.</p></article>
+        <article><span>4</span><strong>Lazy-load detail</strong><p>Extension pages load only their referenced `extensions/*.json` detail file.</p></article>
       </section>
 
       <section className="twoColumnDocs">
         <div>
-          <h2>Report sections</h2>
-          {reportSections.map(([label, detail]) => (
+          <h2>Bundle files</h2>
+          {bundleSections.map(([label, detail]) => (
             <details className="docDetail" key={label}>
               <summary><strong>{label}</strong><span>{detail}</span></summary>
               <p>{detail}</p>
             </details>
           ))}
         </div>
-        <pre className="jsonPreview">{`{
-  "summary": {
-    "total_extensions": 12,
-    "max_risk_score": 59,
-    "max_malware_score": 0,
-    "posture_score": 78,
-    "posture_status": "failure"
-  },
-  "posture_summary": {
-    "status": "failure",
-    "score": 78,
-    "counts": {
-      "failure": 2,
-      "warning": 3
-    }
-  },
-  "top_risk_extensions": [
-    {
-      "extension_id": "publisher.name",
-      "verdict": "review",
-      "risk_score": 59,
-      "malware_score": 0
-    }
-  ]
-}`}</pre>
+        <pre className="jsonPreview">{`report.zip
+  metadata.json
+  summary.json
+  leaderboard.json
+  posture.json
+  rules.json
+  extensions/
+    publisher.name@1.2.3.json`}</pre>
       </section>
     </main>
   );

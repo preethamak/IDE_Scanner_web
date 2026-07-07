@@ -21,7 +21,7 @@ export default function ScoringPage() {
         <div>
           <p className="eyebrow">Scoring model</p>
           <h1>Grades, risk, and malware score</h1>
-          <p className="heroCopy">Risk score estimates review priority. Malware score estimates malicious confidence. They are related, but intentionally not the same thing.</p>
+          <p className="heroCopy">Risk score, malware score, verdict, and grade are emitted by ide-scanner. The website renders those fields without recalculating them.</p>
         </div>
         <Link className="heroAction" href="/metrics">View metrics</Link>
       </section>
@@ -40,7 +40,7 @@ export default function ScoringPage() {
         <article>
           <span>Grade</span>
           <strong>A-F</strong>
-          <p>Readable rollup for the current report or one extension. It is derived from verdict, risk score, malware score, and count of flagged extensions.</p>
+          <p>Readable scanner-owned rollup for one extension. The UI displays the grade from `leaderboard.json` and extension detail files.</p>
         </article>
       </section>
 
