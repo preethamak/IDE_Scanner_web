@@ -36,21 +36,29 @@ export type FindingSummary = {
 };
 
 export type ExtensionSummary = {
-  instance_id: string;
+  instance_id?: string;
   extension_id: string;
   name: string;
   publisher: string;
   version: string;
   source: string;
-  install_path: string;
+  install_path?: string;
   display_name?: string;
   description?: string;
   icon_data_url?: string;
   severity: string;
   verdict: Verdict;
-  verdict_reason: string;
+  verdict_reason?: string;
   malware_score: number;
   risk_score: number;
+  grade?: string;
+  dependency_count?: number;
+  activation_summary?: string;
+  detail_ref?: string;
+  icon_ref?: string;
+  from_cache?: boolean;
+  scan_incomplete?: boolean;
+  skipped_reason?: string;
   score_details?: {
     basis?: string;
     confidence?: string;
@@ -61,6 +69,101 @@ export type ExtensionSummary = {
   collector_details?: Record<string, unknown>;
   finding_count: number;
   top_findings: FindingSummary[];
+};
+
+export type BundleExtensionSummary = Omit<ExtensionSummary, "top_findings"> & {
+  top_findings: string[];
+};
+
+export type ScannerFinding = FindingSummary & {
+  evidence_refs?: string[];
+  score?: number;
+  evidence_type?: string;
+};
+
+export type Recommendation = {
+  priority: "low" | "medium" | "high" | "critical";
+  title: string;
+  description: string;
+  action: string;
+};
+
+export type ExtensionDetail = Omit<ExtensionSummary, "top_findings"> & {
+  source: string;
+  description: string;
+  repository: string;
+  verdict_reason: string;
+  grade: string;
+  score_details: NonNullable<ExtensionSummary["score_details"]> | Record<string, unknown>;
+  score_explanation: string[];
+  recommendations: Recommendation[];
+  findings: ScannerFinding[];
+  evidence: Record<string, {
+    file?: string;
+    line?: number | null;
+    summary?: string;
+    evidence_class?: string;
+    raw?: unknown;
+  }>;
+  manifest: Record<string, unknown>;
+  dependencies: Record<string, string>;
+  artifact_inventory: Record<string, unknown>;
+  capabilities: Record<string, unknown>;
+};
+
+export type ReportMetadata = {
+  schema_version: string;
+  scan_id: string;
+  created_at: string;
+  scanner_version: string;
+  ruleset_version: string;
+  profile: string;
+  source: string;
+  total_extensions: number;
+  completed_extensions: number;
+  incomplete_extensions: number;
+};
+
+export type ScannerBundleSummary = {
+  summary: {
+    total_extensions: number;
+    clean: number;
+    review: number;
+    suspicious: number;
+    malicious: number;
+    max_risk_score: number;
+    max_malware_score: number;
+    posture_status: string;
+  };
+  top_risk_extensions: BundleExtensionSummary[];
+  finding_counts: Record<string, number>;
+  severity_counts: Record<string, number>;
+  category_counts: Record<string, number>;
+  evidence_class_counts?: Record<string, number>;
+};
+
+export type RuleMetadata = {
+  rule_id: string;
+  title: string;
+  category: string;
+  evidence_class: string;
+  default_severity: string;
+  description: string;
+  recommendation: string;
+  false_positive_notes?: string;
+  benchmark_tags?: string[];
+};
+
+export type ImportedReportBundle = {
+  id: string;
+  name: string;
+  importedAt: number;
+  metadata: ReportMetadata;
+  summary: ScannerBundleSummary;
+  leaderboard: { extensions: BundleExtensionSummary[] };
+  posture: Record<string, unknown>;
+  rules: { ruleset_version?: string; rules: RuleMetadata[] };
+  details: Record<string, ExtensionDetail>;
 };
 
 export type PostureMetric = {

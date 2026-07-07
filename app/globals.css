@@ -259,6 +259,24 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .heroActions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .heroAction, .panelLink { width: fit-content; }
 .tagLine { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  padding: 0 9px;
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+.tag.clean { background: var(--green-soft); color: var(--green); border-color: rgba(23, 147, 90, .2); }
+.tag.review { background: var(--accent-soft); color: var(--accent-ink); border-color: var(--accent-line); }
+.tag.suspicious { background: var(--amber-soft); color: var(--amber); border-color: rgba(178, 106, 0, .22); }
+.tag.malicious { background: var(--red-soft); color: var(--red); border-color: rgba(209, 69, 79, .22); }
 
 /* --------------------------------------------------------------- landing */
 .homeShell {
@@ -618,6 +636,177 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   font-weight: 540;
 }
 .health span { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+
+.scanTabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.scanTabs button.active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+.importPanel,
+.hostedScanPanel,
+.localCommandGrid {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 18px;
+}
+.importPanel {
+  grid-template-columns: minmax(0, .8fr) minmax(280px, 1fr);
+  align-items: stretch;
+}
+.dropZone {
+  display: grid;
+  place-items: center;
+  min-height: 190px;
+  border: 1px dashed #c8ccd4;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  padding: 22px;
+  text-align: center;
+  cursor: pointer;
+}
+.dropZone input { width: 1px; height: 1px; opacity: 0; position: absolute; }
+.dropZone strong { font-size: 18px; }
+.dropZone span { color: var(--muted); font-size: 13px; }
+.localCommandGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.hostedScanPanel {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, .5fr) 160px auto;
+  align-items: end;
+}
+.hostedScanPanel input,
+.hostedScanPanel select,
+.reportControls input,
+.reportControls select {
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  padding: 0 11px;
+  color: var(--ink);
+}
+.infoBand,
+.errorBand {
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+.infoBand { background: var(--accent-soft); color: var(--accent-ink); border-color: var(--accent-line); }
+.errorBand { background: var(--red-soft); color: var(--red); border-color: rgba(209, 69, 79, .22); }
+
+.reportSummaryDeck {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 12px;
+}
+.meterTrack {
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-3);
+}
+.meterTrack span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ink);
+}
+.reportControls {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) 160px 160px;
+  gap: 8px;
+  margin: 12px 0;
+}
+.leaderboardTable {
+  display: grid;
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--line);
+}
+.leaderboardHead,
+.leaderboardRow {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) 110px 90px 70px 82px 70px minmax(160px, .75fr) 90px;
+  gap: 10px;
+  align-items: center;
+  background: var(--surface);
+  padding: 10px 12px;
+}
+.leaderboardHead {
+  color: var(--soft);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.leaderboardRow > div:first-child {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+.rank {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--surface-3);
+  color: var(--muted);
+  font-weight: 700;
+}
+.leaderboardRow strong,
+.leaderboardRow small { display: block; }
+.leaderboardRow small { color: var(--muted); font-size: 12px; }
+.leaderboardRow b { font-variant-numeric: tabular-nums; }
+.findingTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.findingTags code {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: var(--surface-2);
+}
+.plainList {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+.recommendationBlock {
+  display: grid;
+  gap: 5px;
+  border-top: 1px solid var(--line-2);
+  padding: 12px 0;
+}
+.recommendationBlock:first-of-type { border-top: 0; padding-top: 0; }
+.recommendationBlock span {
+  width: fit-content;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.compactJson {
+  max-height: 320px;
+  overflow: auto;
+}
 .health.bad span { background: var(--red); }
 .errorBand {
   margin-bottom: 12px;
@@ -1609,6 +1798,17 @@ input::placeholder { color: var(--soft); }
 .historyRow strong { font-size: 13px; font-weight: 580; text-transform: capitalize; }
 .historyRow span { color: var(--muted); font-size: 12.5px; margin-right: 12px; }
 .historyRow a { justify-self: end; border: 1px solid var(--line); border-radius: var(--r-sm); padding: 6px 11px; font-size: 12px; font-weight: 540; }
+.historyActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.historyActions a,
+.historyActions button {
+  min-height: 32px;
+  padding: 0 11px;
+  font-size: 12px;
+}
 .extensionDetailGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .extensionDetailGrid code { display: block; }
 .soloPanel { padding: 20px; }
@@ -1645,6 +1845,9 @@ input::placeholder { color: var(--soft); }
   .historyRow { grid-template-columns: 1fr; }
   .benchmarkRow { grid-template-columns: 1fr; }
   .historyRow a { justify-self: start; }
+  .scanTabs, .importPanel, .localCommandGrid, .hostedScanPanel, .reportSummaryDeck, .reportControls { grid-template-columns: 1fr; }
+  .leaderboardTable { overflow-x: auto; }
+  .leaderboardHead, .leaderboardRow { min-width: 980px; }
 }
 @media (max-width: 640px) {
   .topBar, .panelHead, .reportTitle, .sectionHeader { display: block; }

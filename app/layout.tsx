@@ -15,11 +15,11 @@ export default function RootLayout({
 }>) {
   const navItems = [
     { href: "/", label: "Home", meta: "Start" },
-    { href: "/scan", label: "Scanner", meta: "Run" },
+    { href: "/scan", label: "Scan", meta: "Import" },
     { href: "/metrics", label: "Metrics", meta: "Rules" },
     { href: "/benchmark", label: "Benchmark", meta: "Truth" },
+    { href: "/history", label: "Reports", meta: "History" },
     { href: "/diff", label: "Diff", meta: "Changes" },
-    { href: "/history", label: "History", meta: "Reports" },
     { href: "/scoring", label: "Scoring", meta: "Grades" },
     { href: "/settings", label: "Wiring", meta: "Deploy" }
   ];
@@ -35,9 +35,9 @@ export default function RootLayout({
             </Link>
             <SiteNav items={navItems} />
             <div className="railStatus">
-              <span>Local runtime</span>
-              <strong>Scanner host only</strong>
-              <p>The web server can scan the machine it runs on. Hosted SaaS needs a local agent.</p>
+              <span>Report viewer</span>
+              <strong>Scanner output only</strong>
+              <p>Risk scores, grades, verdicts, and findings come from ide-scanner bundles.</p>
             </div>
           </aside>
           <div className="mainPane">
@@ -46,7 +46,7 @@ export default function RootLayout({
                 <span>IDE Scanner</span>
                 <strong>Extension security console</strong>
               </div>
-              <Link className="navCta" href="/scan">New scan</Link>
+              <Link className="navCta" href="/scan">Import</Link>
             </header>
             {children}
           </div>

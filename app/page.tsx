@@ -2,103 +2,92 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { gradeFromScores, gradeReason } from "@/lib/metrics";
-import type { ScanJobPublic, Verdict } from "@/lib/types";
+import { listImportedReports } from "@/lib/reportBundle";
+import type { ImportedReportBundle } from "@/lib/types";
 
 export default function HomePage() {
-  const [latest, setLatest] = useState<ScanJobPublic | null>(null);
+  const [latest, setLatest] = useState<ImportedReportBundle | null>(null);
 
   useEffect(() => {
-    void fetch("/api/scans/history", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((data: { scans?: ScanJobPublic[] }) => {
-        setLatest((data.scans || []).find((scan) => scan.status === "complete" && scan.summary) || null);
-      })
-      .catch(() => setLatest(null));
+    queueMicrotask(() => setLatest(listImportedReports()[0] || null));
   }, []);
 
-  const counts = latest?.summary?.action_counts || { malicious: 0, suspicious: 0, review: 0, clean: 0 };
-  const maxRisk = latest?.summary?.summary.max_risk_score || 0;
-  const maxMalware = latest?.summary?.summary.max_malware_score || 0;
-  const grade = latest ? gradeFromScores(maxRisk, maxMalware, counts as Record<Verdict, number>) : "-";
+  const summary = latest?.summary.summary;
 
   return (
     <main className="homeShell">
       <section className="landingHero">
         <div className="landingCopy">
           <p className="eyebrow">IDE extension security</p>
-          <h1>Scan VS Code, Cursor, and Windsurf extensions before they become your supply-chain risk.</h1>
+          <h1>Security scanner for VS Code, Cursor, Windsurf and VSIX extensions</h1>
           <p>
-            A local scanner for developer machines, with a web console for reports, scores, evidence, benchmarks, and production agent uploads.
+            ide-scanner decides what is risky. ide-scanner-web imports scanner bundles and renders dashboards, extension details, rules, posture, and benchmarks.
           </p>
           <div className="landingActions">
-            <Link className="primaryAction" href="/scan">Open scanner</Link>
-            <Link className="secondaryAction" href="/settings">Deploy agent</Link>
+            <Link className="primaryAction" href="/scan">Scan Extension</Link>
+            <Link className="secondaryAction" href="/scan">Upload Report</Link>
+            <Link className="secondaryAction" href="/benchmark">View Benchmarks</Link>
           </div>
         </div>
 
-        <aside className="heroConsole" aria-label="Latest scan preview">
+        <aside className="heroConsole" aria-label="Latest imported report preview">
           <div className="consoleHeader">
-            <span>Latest report</span>
-            <strong>{latest?.source === "agent" ? "Agent upload" : latest ? "Local scan" : "No scan yet"}</strong>
+            <span>Latest bundle</span>
+            <strong>{latest ? latest.metadata.profile : "No import yet"}</strong>
           </div>
           <div className="consoleGrade">
-            <strong>{grade}</strong>
-            <p>{latest ? gradeReason(maxRisk, maxMalware, counts as Record<Verdict, number>) : "Run a scan or upload an agent report to populate this console."}</p>
+            <strong>{summary?.max_risk_score ?? "--"}</strong>
+            <p>{latest ? `${latest.metadata.scan_id} imported from ${latest.metadata.source}. Scanner version ${latest.metadata.scanner_version}.` : "Import report.zip to populate this dashboard preview."}</p>
           </div>
           <div className="consoleScores">
-            <MiniStat label="Extensions" value={latest?.summary?.summary.total_extensions || 0} />
-            <MiniStat label="Risk" value={maxRisk} />
-            <MiniStat label="Malware" value={maxMalware} />
+            <MiniStat label="Extensions" value={summary?.total_extensions || 0} />
+            <MiniStat label="Suspicious" value={summary?.suspicious || 0} />
+            <MiniStat label="Malware" value={summary?.max_malware_score || 0} />
           </div>
         </aside>
       </section>
 
       <section className="homeStrip">
-        <span>Local-first evidence</span>
-        <span>0-100 risk scoring</span>
-        <span>Agent upload path</span>
-        <span>Version diffing</span>
-        <span>Benchmark fixtures</span>
+        <span>Report bundle import</span>
+        <span>Lazy extension details</span>
+        <span>Scanner-owned scores</span>
+        <span>Posture viewer</span>
+        <span>Benchmark ready</span>
       </section>
 
       <section className="homeCards">
         <article>
           <IconTile label="1" />
-          <h2>Find installed extensions</h2>
-          <p>Inventory supported IDE clients and show real extension icons, names, publishers, versions, and install paths.</p>
+          <h2>Scan locally</h2>
+          <p>Run installed extension scans with `ide-scanner scan --installed --profile smart --output report.zip`.</p>
         </article>
         <article>
           <IconTile label="2" />
-          <h2>Score evidence</h2>
-          <p>Separate malware confidence from broader risk so suspicious capabilities are not confused with confirmed malicious behavior.</p>
+          <h2>Import bundle</h2>
+          <p>Upload `report.zip`; the browser reads summary and leaderboard first, then lazy-loads extension detail files.</p>
         </article>
         <article>
           <IconTile label="3" />
-          <h2>Upload from any OS</h2>
-          <p>Run the local agent command on Windows, macOS, or Linux and upload the report to the hosted web console.</p>
+          <h2>Render evidence</h2>
+          <p>The website displays scanner-provided grades, verdicts, score explanations, recommendations, and rule metadata.</p>
         </article>
       </section>
 
       <section className="agentHero">
         <div>
-          <p className="eyebrow">Production command</p>
-          <h2>Hosted website plus local agent</h2>
-          <p>The browser cannot scan a visitor&apos;s filesystem. This command runs on the machine being scanned and sends the result to the website.</p>
+          <p className="eyebrow">Local dashboard command</p>
+          <h2>No collector bridge for installed scans</h2>
+          <p>Hosted browsers cannot read local extension folders. Installed extension scans should run through the scanner CLI or local dashboard mode.</p>
         </div>
-        <pre>{`python -m ide_scanner agent --server https://your-app --all`}</pre>
+        <pre>{`ide-scanner scan --installed --ui
+ide-scanner scan --installed --profile smart --output report.zip`}</pre>
       </section>
     </main>
   );
 }
 
 function MiniStat({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
+  return <div><span>{label}</span><strong>{value}</strong></div>;
 }
 
 function IconTile({ label }: { label: string }) {

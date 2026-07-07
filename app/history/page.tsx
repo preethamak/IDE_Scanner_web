@@ -2,44 +2,52 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { ScanJobPublic } from "@/lib/types";
+import { deleteImportedReport, listImportedReports } from "@/lib/reportBundle";
+import type { ImportedReportBundle } from "@/lib/types";
 
 export default function HistoryPage() {
-  const [scans, setScans] = useState<ScanJobPublic[]>([]);
+  const [reports, setReports] = useState<ImportedReportBundle[]>([]);
 
   useEffect(() => {
-    void fetch("/api/scans/history", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((data: { scans?: ScanJobPublic[] }) => setScans(data.scans || []));
+    queueMicrotask(() => setReports(listImportedReports()));
   }, []);
+
+  function remove(id: string) {
+    deleteImportedReport(id);
+    setReports(listImportedReports());
+  }
 
   return (
     <main className="shell">
       <section className="pageHero compactHero">
         <div>
           <p className="eyebrow">History</p>
-          <h1>Scan history</h1>
-          <p className="heroCopy">Browser-triggered local scans and uploaded agent reports from user machines.</p>
+          <h1>Imported reports</h1>
+          <p className="heroCopy">Report bundles are stored in this browser after explicit import.</p>
         </div>
-        <Link className="heroAction" href="/scan">New scan</Link>
+        <Link className="heroAction" href="/scan">Import report</Link>
       </section>
 
       <section className="historyList">
-        {scans.length === 0 ? <p>No scan jobs yet.</p> : null}
-        {scans.map((scan) => (
-          <article className="historyRow" key={scan.id}>
+        {reports.length === 0 ? <p>No imported reports yet.</p> : null}
+        {reports.map((report) => (
+          <article className="historyRow" key={report.id}>
             <div>
-              <strong>{scan.status}</strong>
-              <span>{scan.source === "agent" ? "agent upload" : "local server"}</span>
-              <span>{new Date(scan.createdAt).toLocaleString()}</span>
-              {scan.agent?.hostname ? <span>{scan.agent.hostname}</span> : null}
+              <strong>{report.metadata.scan_id}</strong>
+              <span>{new Date(report.metadata.created_at).toLocaleString()}</span>
+              <span>{report.metadata.source}</span>
+              <span>{report.metadata.profile}</span>
             </div>
             <div>
-              <span>{scan.summary?.summary.total_extensions || 0} extensions</span>
-              <span>risk {scan.summary?.summary.max_risk_score || 0}</span>
-              <span>malware {scan.summary?.summary.max_malware_score || 0}</span>
+              <span>{report.summary.summary.total_extensions} extensions</span>
+              <span>risk {report.summary.summary.max_risk_score}</span>
+              <span>malware {report.summary.summary.max_malware_score}</span>
+              <span>scanner {report.metadata.scanner_version}</span>
             </div>
-            <Link href={`/api/scans/${scan.id}/report`}>JSON</Link>
+            <div className="historyActions">
+              <Link href={`/reports/${report.id}`}>Open</Link>
+              <button type="button" onClick={() => remove(report.id)}>Delete</button>
+            </div>
           </article>
         ))}
       </section>
