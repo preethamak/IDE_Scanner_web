@@ -1,11 +1,35 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { parseReportBundle, saveImportedReport } from "@/lib/reportBundle";
-import type { ImportedReportBundle } from "@/lib/types";
+import type { ExtensionSummary, ImportedReportBundle, ScanJobPublic } from "@/lib/types";
 
 type Tab = "marketplace" | "package" | "report" | "local";
+
+function useJobPoll() {
+  const [job, setJob] = useState<ScanJobPublic | null>(null);
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => () => {
+    if (timer.current) clearInterval(timer.current);
+  }, []);
+
+  function watch(id: string) {
+    if (timer.current) clearInterval(timer.current);
+    timer.current = setInterval(async () => {
+      const res = await fetch(`/api/scans/${encodeURIComponent(id)}`, { cache: "no-store" });
+      if (!res.ok) return;
+      const next = await res.json() as ScanJobPublic;
+      setJob(next);
+      if (next.status === "complete" || next.status === "failed") {
+        if (timer.current) clearInterval(timer.current);
+      }
+    }, 1500);
+  }
+
+  return { job, setJob, watch };
+}
 
 export default function ScanPage() {
   const router = useRouter();
@@ -13,6 +37,71 @@ export default function ScanPage() {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [imported, setImported] = useState<ImportedReportBundle | null>(null);
+
+  const [marketplaceId, setMarketplaceId] = useState("");
+  const [marketplaceBusy, setMarketplaceBusy] = useState(false);
+  const [marketplaceError, setMarketplaceError] = useState("");
+  const marketplacePoll = useJobPoll();
+
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const uploadPoll = useJobPoll();
+
+  async function startMarketplaceScan() {
+    const id = marketplaceId.trim();
+    if (!id) {
+      setMarketplaceError("Enter a marketplace id, item URL, or vscode: URI");
+      return;
+    }
+    setMarketplaceError("");
+    setMarketplaceBusy(true);
+    marketplacePoll.setJob(null);
+    try {
+      const res = await fetch("/api/scans/marketplace", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [id] })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMarketplaceError(data.error || "Marketplace scan failed to start");
+        return;
+      }
+      marketplacePoll.setJob(data as ScanJobPublic);
+      marketplacePoll.watch((data as ScanJobPublic).id);
+    } catch {
+      setMarketplaceError("Could not reach the scan API");
+    } finally {
+      setMarketplaceBusy(false);
+    }
+  }
+
+  async function startUploadScan() {
+    if (!uploadFile) {
+      setUploadError("Choose a .vsix or .zip package first");
+      return;
+    }
+    setUploadError("");
+    setUploadBusy(true);
+    uploadPoll.setJob(null);
+    try {
+      const form = new FormData();
+      form.append("file", uploadFile);
+      const res = await fetch("/api/scans/upload", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) {
+        setUploadError(data.error || "Package scan failed to start");
+        return;
+      }
+      uploadPoll.setJob(data as ScanJobPublic);
+      uploadPoll.watch((data as ScanJobPublic).id);
+    } catch {
+      setUploadError("Could not reach the scan API");
+    } finally {
+      setUploadBusy(false);
+    }
+  }
 
   async function importReport(file: File | null) {
     if (!file) return;
@@ -98,38 +187,99 @@ export default function ScanPage() {
       {tab === "marketplace" ? (
         <section className="hostedScanPanel">
           <div>
-            <p className="eyebrow">Hosted scan</p>
+            <p className="eyebrow">Hosted scan · static only</p>
             <h2>Marketplace ID scan</h2>
-            <p>API-backed marketplace scans will produce the same scanner bundle contract. This UI is ready for the endpoint once the scanner marketplace command is promoted.</p>
+            <p>Downloads the published VSIX from the VS Marketplace and runs the full quarantine-extraction static scan against it. Hosted scans never execute extension code.</p>
           </div>
-          <input placeholder="ms-python.python or marketplace URL" />
-          <select defaultValue="standard">
-            <option value="quick">quick</option>
-            <option value="standard">standard</option>
-            <option value="deep">deep</option>
-          </select>
-          <button type="button" disabled>Endpoint pending</button>
+          <div className="hostedScanRow">
+            <input
+              placeholder="ms-python.python, a marketplace URL, or vscode:extension/..."
+              value={marketplaceId}
+              onChange={(event) => setMarketplaceId(event.target.value)}
+              onKeyDown={(event) => event.key === "Enter" && void startMarketplaceScan()}
+              disabled={marketplaceBusy}
+            />
+            <button type="button" onClick={() => void startMarketplaceScan()} disabled={marketplaceBusy}>
+              {marketplaceBusy ? "Starting…" : "Scan extension"}
+            </button>
+          </div>
+          {marketplaceError ? <div className="errorBand">{marketplaceError}</div> : null}
+          <HostedJobResult job={marketplacePoll.job} />
         </section>
       ) : null}
 
       {tab === "package" ? (
         <section className="hostedScanPanel">
           <div>
-            <p className="eyebrow">Hosted scan</p>
+            <p className="eyebrow">Hosted scan · static only</p>
             <h2>VSIX / ZIP package scan</h2>
-            <p>Package upload scans should call ide-scanner server-side and return a report bundle. Until that API is wired, import scanner-generated bundles directly.</p>
+            <p>Uploads run through the same quarantine-extraction static scan as the CLI. Files are deleted from the server as soon as the scan finishes.</p>
           </div>
-          <input type="file" accept=".vsix,.zip,application/zip" disabled />
-          <select defaultValue="standard" disabled>
-            <option value="quick">quick</option>
-            <option value="standard">standard</option>
-            <option value="deep">deep</option>
-          </select>
-          <button type="button" disabled>Endpoint pending</button>
+          <div className="hostedScanRow">
+            <label className="dropZone">
+              <input
+                type="file"
+                accept=".vsix,.zip,application/zip"
+                onChange={(event) => setUploadFile(event.target.files?.[0] || null)}
+                disabled={uploadBusy}
+              />
+              <strong>{uploadFile ? uploadFile.name : "Choose a .vsix or .zip package"}</strong>
+              <span>Max 50MB. Deleted after scanning.</span>
+            </label>
+            <button type="button" onClick={() => void startUploadScan()} disabled={uploadBusy || !uploadFile}>
+              {uploadBusy ? "Uploading…" : "Scan package"}
+            </button>
+          </div>
+          {uploadError ? <div className="errorBand">{uploadError}</div> : null}
+          <HostedJobResult job={uploadPoll.job} />
         </section>
       ) : null}
     </main>
   );
+}
+
+function HostedJobResult({ job }: { job: ScanJobPublic | null }) {
+  if (!job) return null;
+  if (job.status === "queued" || job.status === "running") {
+    return <div className="infoBand">Scanning… this can take a moment for large packages.</div>;
+  }
+  if (job.status === "failed") {
+    return <div className="errorBand">{job.error || "Scan failed"}</div>;
+  }
+  const extensions = job.summary?.top_risk_extensions || [];
+  const target = extensions[0];
+  if (!target) {
+    return <div className="infoBand">Scan complete, but no extension data was returned.</div>;
+  }
+  return (
+    <article className="commandPanel hostedResult">
+      <h2>
+        {target.name || target.extension_id} <VerdictTag verdict={target.verdict} />
+      </h2>
+      <p>{target.publisher} · v{target.version} · {target.source}</p>
+      {target.scan_incomplete ? <div className="infoBand">{target.skipped_reason || "Scan incomplete"}</div> : null}
+      <p>{target.verdict_reason}</p>
+      <div className="hostedResultScores">
+        <span>Malware score <strong>{target.malware_score}</strong></span>
+        <span>Risk score <strong>{target.risk_score}</strong></span>
+        <span>Severity <strong>{target.severity}</strong></span>
+        <span>Findings <strong>{target.finding_count}</strong></span>
+      </div>
+      {target.top_findings?.length ? (
+        <ul className="hostedResultFindings">
+          {target.top_findings.slice(0, 5).map((finding) => (
+            <li key={finding.finding_id}>
+              <strong>{finding.rule_id}</strong> · {finding.severity} — {finding.evidence_summary}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </article>
+  );
+}
+
+function VerdictTag({ verdict }: { verdict: ExtensionSummary["verdict"] }) {
+  return <span className={`tag ${verdict}`}>{verdict}</span>;
 }
 
 function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
