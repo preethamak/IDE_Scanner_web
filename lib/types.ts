@@ -1,4 +1,5 @@
 export type Verdict = "clean" | "review" | "suspicious" | "malicious";
+export type VerdictState = "safe" | "safe_with_notes" | "needs_review" | "suspicious" | "confirmed_malicious";
 
 export type InventoryExtension = {
   type: string;
@@ -53,6 +54,7 @@ export type ExtensionSummary = {
   risk_score: number;
   context_score?: number;
   grade?: string;
+  verdict_state?: VerdictState;
   verdict_label?: string;
   dependency_count?: number;
   activation_summary?: string;
