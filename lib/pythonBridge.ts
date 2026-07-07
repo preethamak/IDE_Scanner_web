@@ -6,7 +6,7 @@ const appRoot = process.cwd();
 const scannerRoot = process.env.IDE_SCANNER_ROOT || path.resolve(appRoot, "../ide-scanner");
 const scannerSrc = path.join(scannerRoot, "src");
 
-export async function runPythonBridge<T>(command: "inventory" | "scan" | "benchmark" | "sandbox", payload?: unknown): Promise<T> {
+export async function runPythonBridge<T>(command: "inventory" | "scan" | "benchmark" | "sandbox" | "search" | "rules", payload?: unknown): Promise<T> {
   return new Promise((resolve, reject) => {
     const child = spawn(pythonCommand(), ["-m", "ide_scanner.web_bridge", command], {
       cwd: scannerRoot,

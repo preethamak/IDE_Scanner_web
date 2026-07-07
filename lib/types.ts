@@ -161,6 +161,21 @@ export type RuleMetadata = {
   benchmark_tags?: string[];
 };
 
+export type MarketplaceSearchResult = {
+  extension_id: string;
+  display_name: string;
+  publisher: string;
+  publisher_display_name: string;
+  publisher_verified: boolean;
+  short_description: string;
+  version: string;
+  last_updated: string;
+  install_count: number;
+  rating_average: number;
+  rating_count: number;
+  icon_url: string;
+};
+
 export type ImportedReportBundle = {
   id: string;
   name: string;
