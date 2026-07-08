@@ -15,12 +15,12 @@ export default function RootLayout({
 }>) {
   const navItems = [
     { href: "/", label: "Home", meta: "Start" },
-    { href: "/scan", label: "Scan", meta: "Import" },
-    { href: "/metrics", label: "Metrics", meta: "Rules" },
+    { href: "/scan", label: "Scan", meta: "Search" },
+    { href: "/metrics", label: "Rules", meta: "Reference" },
+    { href: "/scoring", label: "Scoring", meta: "Grades" },
     { href: "/benchmark", label: "Benchmark", meta: "Truth" },
     { href: "/history", label: "Reports", meta: "History" },
     { href: "/diff", label: "Diff", meta: "Changes" },
-    { href: "/scoring", label: "Scoring", meta: "Grades" },
     { href: "/settings", label: "Wiring", meta: "Deploy" }
   ];
 
@@ -35,9 +35,9 @@ export default function RootLayout({
             </Link>
             <SiteNav items={navItems} />
             <div className="railStatus">
-              <span>Report viewer</span>
-              <strong>Scanner output only</strong>
-              <p>Risk scores, grades, verdicts, and findings come from ide-scanner bundles.</p>
+              <span>Live scan</span>
+              <strong>Search &rarr; Scan &rarr; Report</strong>
+              <p>Search the marketplace, scan an extension, and read the full evidence trail behind its score.</p>
             </div>
           </aside>
           <div className="mainPane">
@@ -46,7 +46,7 @@ export default function RootLayout({
                 <span>IDE Scanner</span>
                 <strong>Extension security console</strong>
               </div>
-              <Link className="navCta" href="/scan">Import</Link>
+              <Link className="navCta" href="/scan">Scan an extension</Link>
             </header>
             {children}
           </div>
