@@ -3,9 +3,24 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { parseReportBundle, saveImportedReport } from "@/lib/reportBundle";
-import type { ExtensionSummary, ImportedReportBundle, ScanJobPublic } from "@/lib/types";
+import type { ExtensionSummary, ImportedReportBundle, MarketplaceSearchResult, ScanJobPublic } from "@/lib/types";
 
 type Tab = "marketplace" | "package" | "report" | "local";
+type MarketplaceSearchResponse = { results?: MarketplaceSearchResult[]; error?: string };
+
+function initialMarketplaceQuery() {
+  if (typeof window === "undefined") return "";
+  return new URLSearchParams(window.location.search).get("q")?.trim() || "";
+}
+
+async function fetchMarketplaceResults(query: string): Promise<MarketplaceSearchResponse> {
+  const res = await fetch(`/api/marketplace/search?q=${encodeURIComponent(query)}`, { cache: "no-store" });
+  const data = await res.json() as MarketplaceSearchResponse;
+  if (!res.ok) {
+    return { error: data.error || "Marketplace search failed", results: [] };
+  }
+  return { results: data.results || [] };
+}
 
 function useJobPoll() {
   const [job, setJob] = useState<ScanJobPublic | null>(null);
@@ -33,12 +48,17 @@ function useJobPoll() {
 
 export default function ScanPage() {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("report");
+  const [initialSearchTerm] = useState(initialMarketplaceQuery);
+  const [tab, setTab] = useState<Tab>(() => initialSearchTerm ? "marketplace" : "report");
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [imported, setImported] = useState<ImportedReportBundle | null>(null);
 
-  const [marketplaceId, setMarketplaceId] = useState("");
+  const [marketplaceId, setMarketplaceId] = useState(initialSearchTerm);
+  const [marketplaceQuery, setMarketplaceQuery] = useState(initialSearchTerm);
+  const [marketplaceResults, setMarketplaceResults] = useState<MarketplaceSearchResult[]>([]);
+  const [marketplaceSearchBusy, setMarketplaceSearchBusy] = useState(Boolean(initialSearchTerm));
+  const [marketplaceSearchError, setMarketplaceSearchError] = useState("");
   const [marketplaceBusy, setMarketplaceBusy] = useState(false);
   const [marketplaceError, setMarketplaceError] = useState("");
   const marketplacePoll = useJobPoll();
@@ -48,12 +68,57 @@ export default function ScanPage() {
   const [uploadError, setUploadError] = useState("");
   const uploadPoll = useJobPoll();
 
-  async function startMarketplaceScan() {
-    const id = marketplaceId.trim();
+  useEffect(() => {
+    if (!initialSearchTerm) return;
+    let cancelled = false;
+    fetchMarketplaceResults(initialSearchTerm)
+      .then((data) => {
+        if (cancelled) return;
+        setMarketplaceResults(data.results || []);
+        if (data.error) setMarketplaceSearchError(data.error);
+      })
+      .catch(() => {
+        if (!cancelled) setMarketplaceSearchError("Could not reach marketplace search");
+      })
+      .finally(() => {
+        if (!cancelled) setMarketplaceSearchBusy(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [initialSearchTerm]);
+
+  async function searchMarketplace() {
+    const query = marketplaceQuery.trim();
+    if (!query) {
+      setMarketplaceSearchError("Enter an extension name, publisher id, or marketplace URL");
+      setMarketplaceResults([]);
+      return;
+    }
+    setMarketplaceSearchError("");
+    setMarketplaceSearchBusy(true);
+    try {
+      const data = await fetchMarketplaceResults(query);
+      setMarketplaceResults(data.results || []);
+      if (data.error) {
+        setMarketplaceSearchError(data.error);
+      } else if (!data.results?.length) {
+        setMarketplaceSearchError("No marketplace results matched that query");
+      }
+    } catch {
+      setMarketplaceSearchError("Could not reach marketplace search");
+    } finally {
+      setMarketplaceSearchBusy(false);
+    }
+  }
+
+  async function startMarketplaceScan(nextId?: string) {
+    const id = (nextId || marketplaceId).trim();
     if (!id) {
       setMarketplaceError("Enter a marketplace id, item URL, or vscode: URI");
       return;
     }
+    if (nextId) setMarketplaceId(id);
     setMarketplaceError("");
     setMarketplaceBusy(true);
     marketplacePoll.setJob(null);
@@ -187,10 +252,24 @@ export default function ScanPage() {
       {tab === "marketplace" ? (
         <section className="hostedScanPanel">
           <div>
-            <p className="eyebrow">Hosted scan · static only</p>
-            <h2>Marketplace ID scan</h2>
-            <p>Downloads the published VSIX from the VS Marketplace and runs the full quarantine-extraction static scan against it. Hosted scans never execute extension code.</p>
+            <p className="eyebrow">Marketplace scan</p>
+            <h2>Search, select, and scan a published extension</h2>
+            <p>Search results come from VS Marketplace metadata. The scan itself downloads the published VSIX and runs the scanner-owned static analysis path.</p>
           </div>
+          <form className="marketplaceSearchBox" onSubmit={(event) => {
+            event.preventDefault();
+            void searchMarketplace();
+          }}>
+            <input
+              placeholder="Search by name, publisher.extension, or marketplace URL"
+              value={marketplaceQuery}
+              onChange={(event) => setMarketplaceQuery(event.target.value)}
+              disabled={marketplaceSearchBusy}
+            />
+            <button type="submit" disabled={marketplaceSearchBusy}>
+              {marketplaceSearchBusy ? "Searching..." : "Search"}
+            </button>
+          </form>
           <div className="hostedScanRow">
             <input
               placeholder="ms-python.python, a marketplace URL, or vscode:extension/..."
@@ -203,6 +282,21 @@ export default function ScanPage() {
               {marketplaceBusy ? "Starting…" : "Scan extension"}
             </button>
           </div>
+          {marketplaceSearchError ? <div className="errorBand">{marketplaceSearchError}</div> : null}
+          {marketplaceResults.length ? (
+            <div className="marketplaceResults" aria-label="Marketplace search results">
+              {marketplaceResults.map((result) => (
+                <MarketplaceResultCard
+                  key={result.extension_id}
+                  result={result}
+                  selected={marketplaceId === result.extension_id}
+                  busy={marketplaceBusy}
+                  onSelect={() => setMarketplaceId(result.extension_id)}
+                  onScan={() => void startMarketplaceScan(result.extension_id)}
+                />
+              ))}
+            </div>
+          ) : null}
           {marketplaceError ? <div className="errorBand">{marketplaceError}</div> : null}
           <HostedJobResult job={marketplacePoll.job} />
         </section>
@@ -280,6 +374,55 @@ function HostedJobResult({ job }: { job: ScanJobPublic | null }) {
 
 function VerdictTag({ verdict }: { verdict: ExtensionSummary["verdict"] }) {
   return <span className={`tag ${verdict}`}>{verdict}</span>;
+}
+
+function MarketplaceResultCard({
+  result,
+  selected,
+  busy,
+  onSelect,
+  onScan
+}: {
+  result: MarketplaceSearchResult;
+  selected: boolean;
+  busy: boolean;
+  onSelect: () => void;
+  onScan: () => void;
+}) {
+  return (
+    <article className={`marketplaceResult ${selected ? "selected" : ""}`}>
+      <div className="marketplaceIdentity">
+        <span
+          className={result.icon_url ? "marketplaceIcon hasImage" : "marketplaceIcon"}
+          style={result.icon_url ? { backgroundImage: `url(${result.icon_url})` } : undefined}
+          aria-hidden="true"
+        >
+          {result.icon_url ? "" : result.publisher.slice(0, 2).toUpperCase()}
+        </span>
+        <div>
+          <strong>{result.display_name || result.extension_id}</strong>
+          <code>{result.extension_id}</code>
+          <p>{result.short_description || "No marketplace description provided."}</p>
+        </div>
+      </div>
+      <div className="marketplaceMeta">
+        <span>{result.publisher_verified ? "Verified publisher" : "Publisher unverified"}</span>
+        <span>{formatCompact(result.install_count)} installs</span>
+        <span>{result.rating_average ? `${result.rating_average.toFixed(1)} rating` : "No rating"}</span>
+        <span>v{result.version}</span>
+      </div>
+      <div className="marketplaceActions">
+        <button type="button" onClick={onSelect}>Use ID</button>
+        <button type="button" className="primary" onClick={onScan} disabled={busy}>
+          {busy ? "Starting..." : "Scan"}
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function formatCompact(value: number) {
+  return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value || 0);
 }
 
 function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
