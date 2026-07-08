@@ -46,13 +46,14 @@ export async function POST(request: Request) {
     online: true,
     sandbox: false,
     allow_execute: false,
+    include_posture: false,
     previous_report: payload.compare_previous === false ? null : latestCompleteReport()
   });
 
   return NextResponse.json(publicJob(job), { status: 202 });
 }
 
-async function runScan(jobId: string, payload: { marketplace_ids: string[]; extension_paths: string[]; online: boolean; sandbox: boolean; allow_execute: boolean; previous_report: unknown | null }) {
+async function runScan(jobId: string, payload: { marketplace_ids: string[]; extension_paths: string[]; online: boolean; sandbox: boolean; allow_execute: boolean; include_posture: boolean; previous_report: unknown | null }) {
   updateJob(jobId, { status: "running" });
   try {
     const result = await runPythonBridge<BridgeScanResult>("scan", payload);

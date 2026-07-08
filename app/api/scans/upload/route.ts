@@ -54,6 +54,7 @@ export async function POST(request: Request) {
     online: true,
     sandbox: false,
     allow_execute: false,
+    include_posture: false,
     previous_report: latestCompleteReport()
   });
 
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
 async function runScan(
   jobId: string,
   savedPath: string,
-  payload: { extension_paths: string[]; marketplace_ids: string[]; online: boolean; sandbox: boolean; allow_execute: boolean; previous_report: unknown | null }
+  payload: { extension_paths: string[]; marketplace_ids: string[]; online: boolean; sandbox: boolean; allow_execute: boolean; include_posture: boolean; previous_report: unknown | null }
 ) {
   updateJob(jobId, { status: "running" });
   try {
