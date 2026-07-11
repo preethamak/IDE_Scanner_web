@@ -16,9 +16,9 @@ export function buildTriageBuckets(extensions: ExtensionSummary[]): TriageBucket
       extensions: extensions.filter((item) => item.verdict === "malicious" || item.malware_score >= 90)
     },
     {
-      id: "sandbox",
-      label: "Sandbox next",
-      description: "Suspicious or high-risk extensions that need runtime observation.",
+      id: "investigate",
+      label: "Investigate next",
+      description: "Suspicious or high-risk extensions that need source review or an independent controlled-analysis provider.",
       extensions: extensions.filter((item) => item.verdict === "suspicious" || item.risk_score >= 80 || item.malware_score >= 60)
     },
     {

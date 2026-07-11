@@ -47,7 +47,7 @@ export default function HomePage() {
       </section>
 
       <section className="proofBand" aria-label="Product coverage">
-        <div><strong>4</strong><span>explicit decisions</span></div><div><strong>7</strong><span>evidence classes</span></div><div><strong>3</strong><span>analysis engines</span></div><div><strong>0</strong><span>package code executed</span></div>
+        <div><strong>4</strong><span>explicit decisions</span></div><div><strong>8</strong><span>evidence classes</span></div><div><strong>5</strong><span>analysis sources</span></div><div><strong>0</strong><span>package code executed</span></div>
       </section>
 
       <section className="productSection capabilitiesSection">

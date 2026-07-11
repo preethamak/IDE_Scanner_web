@@ -195,7 +195,7 @@ export default function ScanPage() {
             Installed extension scans run in `ide-scanner`. This web app renders report bundles and handles hosted scans for uploaded packages or marketplace IDs.
           </p>
         </div>
-        <div className="health ok"><span />Scanner-owned scoring</div>
+        <div className="health ok"><span />Scanner-owned decisions</div>
       </section>
 
       <section className="scanTabs" role="tablist" aria-label="Scan options">
@@ -348,12 +348,13 @@ function HostedJobResult({ job }: { job: ScanJobPublic | null }) {
   return (
     <article className="commandPanel hostedResult">
       <h2>
-        {target.name || target.extension_id} <VerdictTag verdict={target.verdict} />
+        {target.name || target.extension_id} <DecisionTag decision={target.decision || (target.scan_incomplete ? "incomplete" : "review")} />
       </h2>
       <p>{target.publisher} · v{target.version} · {target.source}</p>
       {target.scan_incomplete ? <div className="infoBand">{target.skipped_reason || "Scan incomplete"}</div> : null}
-      <p>{target.verdict_reason}</p>
+      <p>{target.decision_reason || target.verdict_reason}</p>
       <div className="hostedResultScores">
+        <span>Coverage <strong>{target.coverage_percent ?? (target.scan_incomplete ? "partial" : "complete")}</strong></span>
         <span>Malware score <strong>{target.malware_score}</strong></span>
         <span>Risk score <strong>{target.risk_score}</strong></span>
         <span>Severity <strong>{target.severity}</strong></span>
@@ -372,8 +373,8 @@ function HostedJobResult({ job }: { job: ScanJobPublic | null }) {
   );
 }
 
-function VerdictTag({ verdict }: { verdict: ExtensionSummary["verdict"] }) {
-  return <span className={`tag ${verdict}`}>{verdict}</span>;
+function DecisionTag({ decision }: { decision: NonNullable<ExtensionSummary["decision"]> }) {
+  return <span className={`decisionTag ${decision}`}>{decision}</span>;
 }
 
 function MarketplaceResultCard({

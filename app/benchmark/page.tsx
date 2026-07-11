@@ -15,6 +15,7 @@ export default function BenchmarkPage() {
     () => benchmarks.find((item) => item.id === selectedId) || benchmarks[0] || null,
     [benchmarks, selectedId],
   );
+  const quality = selected ? benchmarkQuality(selected.benchmark_summary) : null;
 
   async function runBenchmark() {
     setStatus("running");
@@ -89,13 +90,24 @@ export default function BenchmarkPage() {
             </div>
           </section>
 
-          <section className="statGrid">
+          <section className="statGrid benchmarkStats">
             <Stat label="Precision" value={`${Math.round(selected.benchmark_summary.precision * 100)}%`} />
             <Stat label="Recall" value={`${Math.round(selected.benchmark_summary.recall * 100)}%`} />
-            <Stat label="Evaluated" value={`${selected.benchmark_summary.evaluated_extensions}/${selected.benchmark_summary.total_extensions}`} />
+            <Stat label="F1" value={`${Math.round((quality?.f1 || 0) * 100)}%`} />
+            <Stat label="Specificity" value={`${Math.round((quality?.specificity || 0) * 100)}%`} />
+            <Stat label="Dataset coverage" value={`${Math.round((quality?.coverage || 0) * 100)}%`} />
             <Stat label="Not scanned" value={selected.benchmark_summary.not_scanned} />
             <Stat label="True positives" value={selected.benchmark_summary.true_positives} />
+            <Stat label="False positives" value={selected.benchmark_summary.false_positives} />
             <Stat label="False negatives" value={selected.benchmark_summary.false_negatives} />
+          </section>
+
+          <section className="benchmarkDefinitions">
+            <article><strong>Precision</strong><p>Of items flagged positive, the share that ground truth labels positive. High precision means less analyst noise.</p></article>
+            <article><strong>Recall</strong><p>Of ground-truth positives, the share detected. High recall means fewer missed threats.</p></article>
+            <article><strong>F1</strong><p>Harmonic mean of precision and recall. Useful for comparison only when datasets and coverage are identical.</p></article>
+            <article><strong>Specificity</strong><p>Of ground-truth negatives, the share correctly left negative. This exposes false-positive pressure.</p></article>
+            <article><strong>Dataset coverage</strong><p>Share of dataset artifacts actually evaluated. Unscanned items are not silently counted as correct negatives.</p></article>
           </section>
 
           <section className="historyList benchmarkList">
@@ -168,4 +180,14 @@ function Stat({ label, value }: { label: string; value: string | number }) {
       <strong>{value}</strong>
     </div>
   );
+}
+
+function benchmarkQuality(summary: BenchmarkBundle["benchmark_summary"]) {
+  const f1Denominator = summary.precision + summary.recall;
+  const negativeTotal = summary.true_negatives + summary.false_positives;
+  return {
+    f1: f1Denominator ? (2 * summary.precision * summary.recall) / f1Denominator : 0,
+    specificity: negativeTotal ? summary.true_negatives / negativeTotal : 0,
+    coverage: summary.total_extensions ? summary.evaluated_extensions / summary.total_extensions : 0
+  };
 }
