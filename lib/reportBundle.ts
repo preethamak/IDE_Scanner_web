@@ -76,6 +76,48 @@ export function saveImportedReport(bundle: ImportedReportBundle): void {
   localStorage.setItem(STORE_KEY, JSON.stringify(reports.slice(0, 20)));
 }
 
+export function saveHostedScanReport(payload: unknown): ImportedReportBundle | null {
+  if (!payload || typeof payload !== "object" || !("report" in payload)) return null;
+  const report = payload.report as { metadata?: Record<string, unknown>; summary?: { top_risk_extensions?: Array<Record<string, unknown>>; finding_counts?: { by_rule?: Record<string, number>; by_category?: Record<string, number>; by_severity?: Record<string, number> } }; extensions?: Array<Record<string, unknown>> };
+  const scanId = String(report.metadata?.scan_id || crypto.randomUUID());
+  const rows = report.summary?.top_risk_extensions || [];
+  const details: Record<string, ExtensionDetail> = {};
+  const leaderboard = rows.map((row, index) => {
+    const detailRef = `extensions/${String(row.extension_id || `extension-${index}`)}.json`;
+    const detail = report.extensions?.[index] || row;
+    details[detailRef] = {
+      ...detail,
+      description: String(detail.description || "Hosted static analysis result."),
+      repository: String(detail.repository || ""),
+      verdict_reason: String(detail.verdict_reason || detail.decision_reason || ""),
+      grade: String(detail.grade || "N/A"),
+      score_details: (detail.score_details || { basis: "hosted-static" }) as ExtensionDetail["score_details"],
+      score_explanation: Array.isArray(detail.score_explanation) ? detail.score_explanation : [],
+      recommendations: Array.isArray(detail.recommendations) ? detail.recommendations : [],
+      evidence: (detail.evidence || {}) as ExtensionDetail["evidence"],
+      dependencies: (detail.dependencies || {}) as Record<string, string>,
+      artifact_inventory: (detail.artifact_inventory || {}) as Record<string, unknown>,
+      capabilities: (detail.capabilities || {}) as Record<string, unknown>,
+    } as ExtensionDetail;
+    return { ...row, detail_ref: detailRef, top_findings: Array.isArray(row.top_findings) ? row.top_findings.map((item) => typeof item === "string" ? item : String((item as { rule_id?: string }).rule_id || "finding")) : [] } as ImportedReportBundle["leaderboard"]["extensions"][number];
+  });
+  const decisions = { allow: 0, review: 0, block: 0, incomplete: 0 };
+  for (const row of rows) {
+    const decision = String(row.decision || "review") as keyof typeof decisions;
+    if (decision in decisions) decisions[decision] += 1;
+  }
+  const bundle: ImportedReportBundle = {
+    id: scanId,
+    name: `hosted-${scanId.slice(0, 8)}`,
+    importedAt: Date.now(),
+    metadata: { schema_version: "hosted-1", scan_id: scanId, created_at: new Date().toISOString(), scanner_version: String(report.metadata?.scanner_version || "hosted-static-1"), ruleset_version: String(report.metadata?.ruleset_version || "hosted"), profile: "hosted-static", source: String(report.metadata?.source || "hosted"), total_extensions: rows.length, completed_extensions: rows.length, incomplete_extensions: 0 },
+    summary: { summary: { total_extensions: rows.length, clean: rows.filter((row) => row.verdict === "clean").length, review: rows.filter((row) => row.verdict === "review").length, suspicious: rows.filter((row) => row.verdict === "suspicious").length, malicious: rows.filter((row) => row.verdict === "malicious").length, max_risk_score: Math.max(0, ...rows.map((row) => Number(row.risk_score || 0))), max_malware_score: Math.max(0, ...rows.map((row) => Number(row.malware_score || 0))), posture_status: "not-run", decision_counts: decisions }, top_risk_extensions: leaderboard, finding_counts: report.summary?.finding_counts?.by_rule || {}, severity_counts: report.summary?.finding_counts?.by_severity || {}, category_counts: report.summary?.finding_counts?.by_category || {} },
+    leaderboard: { extensions: leaderboard }, posture: {}, rules: { ruleset_version: String(report.metadata?.ruleset_version || "hosted"), rules: [] }, details
+  };
+  saveImportedReport(bundle);
+  return bundle;
+}
+
 export function listImportedReports(): ImportedReportBundle[] {
   if (typeof localStorage === "undefined") return [];
   try {

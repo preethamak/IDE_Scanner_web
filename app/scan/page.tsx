@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { parseReportBundle, saveImportedReport } from "@/lib/reportBundle";
+import { parseReportBundle, saveHostedScanReport, saveImportedReport } from "@/lib/reportBundle";
 import type { ExtensionSummary, ImportedReportBundle, MarketplaceSearchResult, ScanJobPublic } from "@/lib/types";
 
 type Tab = "marketplace" | "package" | "report" | "local";
@@ -134,7 +134,8 @@ export default function ScanPage() {
         return;
       }
       marketplacePoll.setJob(data as ScanJobPublic);
-      marketplacePoll.watch((data as ScanJobPublic).id);
+      if ((data as ScanJobPublic).status === "complete") saveHostedScanReport(data);
+      if ((data as ScanJobPublic).status !== "complete") marketplacePoll.watch((data as ScanJobPublic).id);
     } catch {
       setMarketplaceError("Could not reach the scan API");
     } finally {
@@ -160,7 +161,8 @@ export default function ScanPage() {
         return;
       }
       uploadPoll.setJob(data as ScanJobPublic);
-      uploadPoll.watch((data as ScanJobPublic).id);
+      if ((data as ScanJobPublic).status === "complete") saveHostedScanReport(data);
+      if ((data as ScanJobPublic).status !== "complete") uploadPoll.watch((data as ScanJobPublic).id);
     } catch {
       setUploadError("Could not reach the scan API");
     } finally {
@@ -190,9 +192,9 @@ export default function ScanPage() {
       <section className="pageHero scannerHero">
         <div className="heroText">
           <p className="eyebrow">Scan</p>
-          <h1>Import scanner output or start a package scan</h1>
+          <h1>Analyze an extension artifact</h1>
           <p className="heroCopy">
-            Installed extension scans run in `ide-scanner`. This web app renders report bundles and handles hosted scans for uploaded packages or marketplace IDs.
+            Run a hosted static Marketplace analysis, inspect a VSIX, or import a full deep-scan report. Each mode states exactly what it can and cannot analyze.
           </p>
         </div>
         <div className="health ok"><span />Scanner-owned decisions</div>
@@ -254,7 +256,7 @@ export default function ScanPage() {
           <div>
             <p className="eyebrow">Marketplace scan</p>
             <h2>Search, select, and scan a published extension</h2>
-            <p>Search results come from VS Marketplace metadata. The scan itself downloads the published VSIX and runs the scanner-owned static analysis path.</p>
+            <p>Search VS Marketplace, download the exact published VSIX, and run the serverless hosted static ruleset. Package code is never executed.</p>
           </div>
           <form className="marketplaceSearchBox" onSubmit={(event) => {
             event.preventDefault();
@@ -298,6 +300,7 @@ export default function ScanPage() {
             </div>
           ) : null}
           {marketplaceError ? <div className="errorBand">{marketplaceError}</div> : null}
+          <div className="coverageNotice"><strong>Hosted coverage</strong><span>Manifest, executable text, archive limits, artifact SHA-256, and deterministic behavior rules.</span><span>Semgrep, YARA, dependency intelligence, native binaries, and client posture require the deep local scanner.</span></div>
           <HostedJobResult job={marketplacePoll.job} />
         </section>
       ) : null}
@@ -307,7 +310,7 @@ export default function ScanPage() {
           <div>
             <p className="eyebrow">Hosted scan · static only</p>
             <h2>VSIX / ZIP package scan</h2>
-            <p>Uploads run through the same quarantine-extraction static scan as the CLI. Files are deleted from the server as soon as the scan finishes.</p>
+            <p>Uploads run through the serverless hosted static ruleset with archive limits and artifact hashing. Package code is never executed or stored after the request.</p>
           </div>
           <div className="hostedScanRow">
             <label className="dropZone">
@@ -360,6 +363,7 @@ function HostedJobResult({ job }: { job: ScanJobPublic | null }) {
         <span>Severity <strong>{target.severity}</strong></span>
         <span>Findings <strong>{target.finding_count}</strong></span>
       </div>
+      <p className="savedReportNote">Saved to Reports in this browser.</p>
       {target.top_findings?.length ? (
         <ul className="hostedResultFindings">
           {target.top_findings.slice(0, 5).map((finding) => (

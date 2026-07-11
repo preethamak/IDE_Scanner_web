@@ -61,13 +61,14 @@ export default function BenchmarkPage() {
             <input type="file" accept=".zip,application/zip" onChange={(event) => void importBenchmark(event.target.files?.[0] || null)} />
             Import benchmark.zip
           </label>
-          <button className="primary" type="button" onClick={() => void runBenchmark()} disabled={status === "running"}>
-            {status === "running" ? "Running" : "Run fixtures"}
+          <button className="primary localOnlyAction" type="button" onClick={() => void runBenchmark()} disabled={status === "running"} title="Requires the Python scanner on the same host">
+            {status === "running" ? "Running locally" : "Run local fixtures"}
           </button>
         </div>
       </section>
 
       {error ? <div className="errorBand">{error}</div> : null}
+      <div className="coverageNotice benchmarkNotice"><strong>Benchmark contract</strong><span>Imported bundles work entirely in the browser and remain available in this browser.</span><span>Running fixtures requires the Python scanner; the public hosted site does not claim that capability.</span></div>
 
       {selected ? (
         <>
