@@ -2379,3 +2379,89 @@ code { color: #356000; }
   .productFooter > div { flex-wrap: wrap; }
   .shell, .homeShell { width: min(100vw - 28px, 1200px); }
 }
+
+/* ------------------------------------------------------ reference product */
+.referencePage, .methodologyPage { padding-top: 52px; }
+.referenceHero { align-items: flex-end; padding-bottom: 34px; margin-bottom: 24px; }
+.referenceHero h1 { max-width: 900px; font-size: clamp(36px, 5vw, 68px); line-height: 1; }
+.referenceHero .heroCopy { max-width: 760px; margin-top: 16px; font-size: 15px; }
+.referenceStats { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--ink); border-radius: 7px; background: var(--ink); color: #fff; }
+.referenceStats div { min-height: 104px; border-right: 1px solid #ffffff29; padding: 20px; }
+.referenceStats div:last-child { border-right: 0; }
+.referenceStats strong { display: block; color: var(--accent); font-size: 32px; }
+.referenceStats span { color: #abb5af; font-size: 12px; }
+.metricDomainGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 70px 0; border: 1px solid var(--ink); background: var(--ink); }
+.metricDomainGrid article { min-height: 330px; background: var(--surface); padding: 24px; }
+.metricDomainGrid article > span { color: #63850d; font-family: ui-monospace, monospace; font-size: 11px; }
+.metricDomainGrid h2 { margin: 32px 0 5px; font-size: 21px; }
+.metricDomainGrid article > strong { color: var(--ink-2); font-size: 13px; }
+.metricDomainGrid p { color: var(--muted); font-size: 13px; }
+.metricDomainGrid .metricWhy { border-top: 1px solid var(--line); padding-top: 12px; }
+.metricDomainGrid article > div { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 17px; }
+.metricDomainGrid code { border: 1px solid var(--line); border-radius: 4px; background: var(--surface-2); padding: 4px 6px; color: var(--ink-2); font-size: 10px; }
+.evidenceSection { display: grid; grid-template-columns: .62fr 1.38fr; gap: 70px; margin: 90px 0; }
+.evidenceSection .sectionIntro h2 { font-size: 34px; line-height: 1.05; }
+.evidenceGrid { display: grid; grid-template-columns: repeat(2, 1fr); border-top: 1px solid var(--ink); }
+.evidenceGrid article { border-bottom: 1px solid var(--line); padding: 20px 18px 20px 0; }
+.evidenceGrid article:nth-child(even) { padding-left: 18px; }
+.evidenceGrid strong { text-transform: uppercase; font-family: ui-monospace, monospace; font-size: 11px; }
+.evidenceGrid p { margin: 8px 0 0; color: var(--muted); font-size: 12px; }
+.ruleCatalogSection { margin: 90px 0 50px; }
+.catalogHeader { display: grid; grid-template-columns: 1fr auto; gap: 30px; align-items: end; border-bottom: 1px solid var(--ink); padding-bottom: 22px; }
+.catalogHeader h2 { margin: 8px 0; font-size: 34px; }
+.catalogHeader p { max-width: 720px; margin-bottom: 0; color: var(--muted); }
+.catalogFilters { display: grid; grid-template-columns: 220px 170px; gap: 7px; }
+.catalogFilters input, .catalogFilters select { height: 40px; border: 1px solid var(--line); border-radius: 5px; background: #fff; color: var(--ink); padding: 0 11px; }
+.ruleTableHead, .ruleTable article { display: grid; grid-template-columns: minmax(340px, 1fr) 120px 90px 150px; gap: 16px; align-items: center; }
+.ruleTableHead { min-height: 38px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.ruleTable article { min-height: 108px; border-bottom: 1px solid var(--line); }
+.ruleTable article > div { padding: 15px 0; }
+.ruleTable article code { display: block; color: #507000; font-size: 10px; }
+.ruleTable article strong { display: block; margin-top: 5px; font-size: 14px; }
+.ruleTable article p { margin: 4px 0; color: var(--muted); font-size: 12px; }
+.ruleTable article small { color: var(--soft); font-size: 10px; text-transform: uppercase; }
+.ruleTable article > span:last-child { color: var(--muted); font-size: 12px; }
+.evidencePill { justify-self: start; border: 1px solid var(--line); border-radius: 4px; background: var(--surface-2); padding: 5px 7px; font-family: ui-monospace, monospace; font-size: 10px; }
+.severityText { font-family: ui-monospace, monospace; font-size: 10px; font-weight: 700; }
+.severityCRITICAL, .severityHIGH { color: var(--red); }
+.severityMEDIUM { color: var(--amber); }
+.severityLOW, .severityINFO { color: var(--muted); }
+
+.decisionFormula { display: grid; grid-template-columns: repeat(9, auto); justify-content: space-between; align-items: center; min-height: 100px; border: 1px solid var(--ink); border-radius: 7px; background: var(--ink); color: #fff; padding: 20px 28px; }
+.decisionFormula span { color: #c1cac4; }
+.decisionFormula b { color: #637069; font-weight: 400; }
+.decisionFormula strong { color: var(--accent); font-size: 20px; }
+.decisionDocs { margin: 76px 0; }
+.decisionDocs .sectionIntro h2 { font-size: 34px; }
+.decisionDocs article { display: grid; grid-template-columns: 130px 1fr 1fr; gap: 28px; align-items: center; min-height: 96px; border-top: 1px solid var(--line); }
+.decisionDocs article:last-child { border-bottom: 1px solid var(--line); }
+.decisionDocs article p { margin: 0; color: var(--ink-2); }
+.decisionDocs article > span:last-child { color: var(--muted); font-size: 12px; }
+.methodologyGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; border: 1px solid var(--ink); background: var(--ink); }
+.methodologyGrid article { min-height: 260px; background: var(--surface); padding: 25px; }
+.methodologyGrid h2 { margin: 32px 0 14px; font-size: 25px; }
+.methodologyGrid p:last-child { color: var(--muted); }
+.policySection { display: grid; grid-template-columns: .65fr 1.35fr; gap: 70px; margin: 90px 0 40px; }
+.policySection > div:first-child h2 { max-width: 380px; margin-top: 10px; font-size: 36px; line-height: 1.05; }
+.policySection > div:last-child { border-top: 1px solid var(--ink); }
+.policySection article { border-bottom: 1px solid var(--line); padding: 19px 0; }
+.policySection article p { margin: 5px 0 0; color: var(--muted); }
+
+@media (max-width: 900px) {
+  .metricDomainGrid { grid-template-columns: repeat(2, 1fr); }
+  .evidenceSection, .policySection { grid-template-columns: 1fr; gap: 30px; }
+  .catalogHeader { grid-template-columns: 1fr; }
+  .ruleTable { overflow-x: auto; }
+  .ruleTableHead, .ruleTable article { min-width: 780px; }
+  .methodologyGrid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .referencePage, .methodologyPage { padding-top: 30px; }
+  .referenceStats, .metricDomainGrid, .evidenceGrid { grid-template-columns: 1fr; }
+  .referenceStats div { min-height: 76px; border-right: 0; border-bottom: 1px solid #ffffff29; }
+  .metricDomainGrid article { min-height: 0; }
+  .catalogFilters { grid-template-columns: 1fr; }
+  .decisionFormula { grid-template-columns: 1fr; gap: 8px; text-align: center; }
+  .decisionFormula b { transform: rotate(90deg); }
+  .decisionDocs article { grid-template-columns: 1fr; gap: 8px; padding: 18px 0; }
+}

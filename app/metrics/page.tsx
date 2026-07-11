@@ -1,69 +1,29 @@
-import Link from "next/link";
-import { metricCatalog, ruleFamilies } from "@/lib/metrics";
+"use client";
 
-const evidenceClasses = [
-  ["weak", "Single static indicators such as dynamic code loading or network access. Useful context, not a verdict by itself."],
-  ["capability", "Declared IDE powers such as terminal tools, debugger hooks, startup activation, or language model tools."],
-  ["dependency", "Runtime dependency issues, vulnerable packages, unpinned specs, or mutable install sources."],
-  ["provenance", "Marketplace, repository, package integrity, and release posture evidence."],
-  ["correlated", "Multiple static signals connected into a stronger chain, such as secret read plus outbound transfer."],
-  ["observed", "Runtime sandbox observations that confirm attempted execution, writes, exfiltration, or persistence."],
-  ["confirmed", "Known-bad hash, trusted threat feed, or authoritative malware marketplace removal evidence."]
-];
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { evidenceClasses, metricCatalog, ruleCatalog } from "@/lib/metrics";
 
 export default function MetricsPage() {
-  return (
-    <main className="shell">
-      <section className="pageHero">
-        <div>
-          <p className="eyebrow">Reference</p>
-          <h1>Scanner metrics</h1>
-          <p className="heroCopy">There are {metricCatalog.length} scanner domains, but they expand into {ruleFamilies.length} rule families. One powerful API is not enough for a malware verdict; correlated or confirmed behavior carries more weight.</p>
-        </div>
-        <Link className="heroAction" href="/">Run a scan</Link>
-      </section>
+  const [query, setQuery] = useState("");
+  const [engine, setEngine] = useState("all");
+  const engines = ["all", ...Array.from(new Set(ruleCatalog.map((item) => item.engine)))];
+  const filtered = useMemo(() => ruleCatalog.filter((item) => {
+    const text = `${item.id} ${item.title} ${item.category} ${item.description}`.toLowerCase();
+    return (!query || text.includes(query.toLowerCase())) && (engine === "all" || item.engine === engine);
+  }), [query, engine]);
 
-      <section className="pageGrid">
-        <div className="referenceStack">
-          {metricCatalog.map((metric, index) => (
-            <details className="metricDetail" key={metric.id} open={index === 0}>
-              <summary>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <strong>{metric.label}</strong>
-                <em>{metric.short}</em>
-              </summary>
-              <div>
-                <p>{metric.detail}</p>
-                <p>{metric.why}</p>
-              </div>
-            </details>
-          ))}
-        </div>
+  return <main className="shell referencePage">
+    <section className="pageHero referenceHero"><div><p className="eyebrow">Detection reference · ruleset 2026.07.11</p><h1>Every metric. Every rule. No hidden judgment.</h1><p className="heroCopy">The product reports {metricCatalog.length} security domains, {ruleCatalog.length} registered detection rules, eight evidence classes, client-posture controls, and explicit analysis coverage.</p></div><Link className="heroAction" href="/scan">Run a scan</Link></section>
 
-        <aside className="referenceAside">
-          <p className="eyebrow">Evidence classes</p>
-          <h2>How findings are weighted</h2>
-          {evidenceClasses.map(([label, text]) => (
-            <div className="evidenceRow" key={label}>
-              <strong>{label}</strong>
-              <span>{text}</span>
-            </div>
-          ))}
-        </aside>
-      </section>
+    <section className="referenceStats"><div><strong>{ruleCatalog.length}</strong><span>registered rules</span></div><div><strong>{metricCatalog.length}</strong><span>metric domains</span></div><div><strong>8</strong><span>evidence classes</span></div><div><strong>4</strong><span>security decisions</span></div></section>
 
-      <section className="ruleMatrix">
-        <div className="sectionIntro">
-          <p className="eyebrow">Coverage</p>
-          <h2>{ruleFamilies.length} rule families</h2>
-          <p>These are the named evidence families surfaced in reports. Some are contextual, some affect review risk, and some can drive suspicious or malicious verdicts.</p>
-        </div>
-        <div className="ruleGrid">
-          {ruleFamilies.map((rule) => (
-            <span key={rule}>{rule}</span>
-          ))}
-        </div>
-      </section>
-    </main>
-  );
+    <section className="metricDomainGrid">{metricCatalog.map((metric, index) => <article key={metric.id}><span>{String(index + 1).padStart(2, "0")}</span><h2>{metric.label}</h2><strong>{metric.short}</strong><p>{metric.detail}</p><p className="metricWhy">Why it matters: {metric.why}</p><div>{metric.outputs.map((output) => <code key={output}>{output}</code>)}</div></article>)}</section>
+
+    <section className="evidenceSection"><div className="sectionIntro"><p className="eyebrow">Evidence taxonomy</p><h2>Strength describes evidence, not certainty.</h2><p>Evidence class controls how a finding can affect policy. Severity describes potential impact. Neither is a calibrated probability that an extension is malicious.</p></div><div className="evidenceGrid">{evidenceClasses.map(([label, text]) => <article key={label}><strong>{label}</strong><p>{text}</p></article>)}</div></section>
+
+    <section className="ruleCatalogSection"><div className="catalogHeader"><div><p className="eyebrow">Authoritative registry</p><h2>Detection rule catalog</h2><p>{filtered.length} of {ruleCatalog.length} rules shown. Findings retain the rule id, file, line, evidence class, severity, and engine output where available.</p></div><div className="catalogFilters"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Filter rules" aria-label="Filter rules"/><select value={engine} onChange={(event) => setEngine(event.target.value)} aria-label="Filter by engine">{engines.map((item) => <option key={item} value={item}>{item}</option>)}</select></div></div>
+      <div className="ruleTable"><div className="ruleTableHead"><span>Rule</span><span>Evidence</span><span>Severity</span><span>Engine</span></div>{filtered.map((item) => <article key={item.id}><div><code>{item.id}</code><strong>{item.title}</strong><p>{item.description}</p><small>{item.category}</small></div><span className={`evidencePill ${item.evidence}`}>{item.evidence}</span><span className={`severityText severity${item.severity}`}>{item.severity}</span><span>{item.engine}</span></article>)}</div>
+    </section>
+  </main>;
 }

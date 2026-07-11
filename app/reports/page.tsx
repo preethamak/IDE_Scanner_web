@@ -3,7 +3,7 @@ import Link from "next/link";
 const bundleSections = [
   ["metadata.json", "Scan identity, schema version, scanner version, ruleset version, source, profile, and completion counts."],
   ["summary.json", "Small dashboard-first totals, top risk extensions, finding counts, severity counts, and category counts."],
-  ["leaderboard.json", "Compact table rows with scanner-owned verdict, severity, risk score, malware score, grade, top findings, and detail refs."],
+  ["leaderboard.json", "Compact table rows with scanner-owned decision, completion state, verdict, diagnostic scores, top findings, and detail refs."],
   ["extensions/*.json", "Lazy-loaded extension detail files with score explanations, findings, evidence refs, manifest, dependencies, artifacts, and recommendations."],
   ["rules.json", "Scanner rule metadata for explanations, rule pages, false-positive notes, and benchmark tags."],
   ["posture.json", "IDE/client posture summary and detailed posture metrics from scanner output."],
@@ -16,7 +16,7 @@ export default function ReportsPage() {
         <div>
           <p className="eyebrow">Reports</p>
           <h1>Scanner bundle contract</h1>
-          <p className="heroCopy">The website renders report bundles. It does not create findings, verdicts, risk scores, malware scores, or grades.</p>
+          <p className="heroCopy">The website renders report bundles. It does not create findings, security decisions, coverage, verdicts, diagnostic scores, or grades.</p>
         </div>
         <Link className="heroAction" href="/scan">Import report</Link>
       </section>
