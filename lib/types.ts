@@ -1,5 +1,6 @@
 export type Verdict = "clean" | "review" | "suspicious" | "malicious";
 export type VerdictState = "safe" | "safe_with_notes" | "needs_review" | "suspicious" | "confirmed_malicious";
+export type Decision = "allow" | "review" | "block" | "incomplete";
 
 export type InventoryExtension = {
   type: string;
@@ -63,6 +64,11 @@ export type ExtensionSummary = {
   from_cache?: boolean;
   scan_incomplete?: boolean;
   skipped_reason?: string;
+  decision?: Decision;
+  decision_reason?: string;
+  artifact_sha256?: string;
+  coverage_percent?: number;
+  baseline_changed?: boolean;
   score_details?: {
     basis?: string;
     confidence?: string;
@@ -115,6 +121,49 @@ export type ExtensionDetail = Omit<ExtensionSummary, "top_findings"> & {
   dependencies: Record<string, string>;
   artifact_inventory: Record<string, unknown>;
   capabilities: Record<string, unknown>;
+  artifact_identity?: {
+    extension_id?: string;
+    version?: string;
+    sha256?: string;
+    source?: string;
+    signature?: Record<string, unknown>;
+  };
+  analysis_coverage?: {
+    status?: "complete" | "incomplete" | "pending";
+    coverage_percent?: number;
+    discovered_files?: number;
+    declared_entrypoints?: string[];
+    resolved_entrypoints?: string[];
+    missing_entrypoints?: string[];
+    executable_candidates?: string[];
+    analyzed_executable_files?: string[];
+    read_failures?: string[];
+    oversized_files?: string[];
+    limitations?: string[];
+    providers?: Record<string, {
+      status?: string;
+      finding_count?: number;
+      error_count?: number;
+      ruleset_hash?: string;
+      required?: boolean;
+    }>;
+  };
+  baseline_diff?: {
+    baseline_changed?: boolean;
+    artifact_changed?: boolean;
+    analysis_changed?: boolean;
+    previous_version?: string;
+    current_version?: string;
+    changes?: string[];
+    added_findings?: string[];
+    removed_findings?: string[];
+    added_capabilities?: string[];
+    removed_capabilities?: string[];
+    added_dependencies?: string[];
+    removed_dependencies?: string[];
+    added_risky_artifacts?: string[];
+    removed_risky_artifacts?: string[];
+  };
 };
 
 export type ReportMetadata = {
@@ -141,12 +190,15 @@ export type ScannerBundleSummary = {
     max_malware_score: number;
     max_context_score?: number;
     posture_status: string;
+    decision_counts?: Record<Decision, number>;
+    incomplete?: number;
   };
   top_risk_extensions: BundleExtensionSummary[];
   finding_counts: Record<string, number>;
   severity_counts: Record<string, number>;
   category_counts: Record<string, number>;
   evidence_class_counts?: Record<string, number>;
+  version_deltas?: Array<Record<string, unknown>>;
 };
 
 export type RuleMetadata = {

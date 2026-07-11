@@ -42,6 +42,8 @@ docker build -f ide-scanner-web/Dockerfile -t ide-scanner-web .
 docker run --rm -p 8765:8765 ide-scanner-web
 ```
 
+The production container includes Semgrep and YARA. Report dashboards prioritize `BLOCK`, `INCOMPLETE`, `REVIEW`, and `ALLOW` decisions, then show exact artifact hashes, executable-entrypoint coverage, provider status, and version-to-version capability changes.
+
 For full static package scanning, run the scanner on the user machine and upload the report to this website:
 
 ```bash

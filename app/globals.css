@@ -891,6 +891,59 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-bottom: 12px;
 }
+.actionQueue {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.decisionCard {
+  position: relative;
+  min-height: 108px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  padding: 15px 16px 14px 19px;
+}
+.decisionCard::before,
+.decisionPanel::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--soft);
+}
+.decisionCard > span { display: block; color: var(--ink-2); font-size: 12px; font-weight: 650; }
+.decisionCard > strong { display: block; margin: 7px 0 8px; font-size: 30px; font-variant-numeric: tabular-nums; line-height: 1; }
+.decisionCard > small { color: var(--muted); font-size: 11px; }
+.decisionCard.block::before, .decisionPanel.block::before { background: var(--red); }
+.decisionCard.incomplete::before, .decisionPanel.incomplete::before { background: var(--orange); }
+.decisionCard.review::before, .decisionPanel.review::before { background: var(--amber); }
+.decisionCard.allow::before, .decisionPanel.allow::before { background: var(--green); }
+.decisionTag {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 4px 7px;
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+.decisionTag.block { border-color: rgba(255, 107, 129, .28); background: var(--red-soft); color: var(--red); }
+.decisionTag.incomplete { border-color: rgba(255, 157, 92, .28); background: var(--orange-soft); color: var(--orange); }
+.decisionTag.review { border-color: rgba(255, 200, 87, .28); background: var(--amber-soft); color: var(--amber); }
+.decisionTag.allow { border-color: rgba(62, 230, 168, .24); background: var(--green-soft); color: var(--green); }
+.reportContextLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  border-block: 1px solid var(--line-2);
+  padding: 9px 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
 .meterTrack {
   width: 100%;
   height: 8px;
@@ -921,7 +974,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .leaderboardHead,
 .leaderboardRow {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) 132px 90px 70px 82px 76px 70px minmax(160px, .75fr) 90px;
+  grid-template-columns: minmax(260px, 1fr) 104px 78px 86px 132px minmax(180px, .8fr) 78px;
   gap: 10px;
   align-items: center;
   background: var(--surface);
@@ -954,6 +1007,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .leaderboardRow small { display: block; }
 .leaderboardRow small { color: var(--muted); font-size: 12px; }
 .leaderboardRow b { font-variant-numeric: tabular-nums; }
+.leaderboardRow > span small { margin-top: 5px; }
 .findingTags {
   display: flex;
   flex-wrap: wrap;
@@ -987,6 +1041,52 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   font-size: 11px;
   text-transform: uppercase;
 }
+.decisionPanel { position: relative; overflow: hidden; padding-left: 20px; }
+.decisionPanel h2 { text-transform: uppercase; }
+.hashValue {
+  display: block;
+  max-width: 100%;
+  color: var(--ink-2);
+  font-size: 11px;
+  word-break: break-all;
+}
+.coverageFacts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0 12px;
+}
+.coverageFacts p {
+  min-width: 0;
+  border-left: 2px solid var(--line);
+  margin: 0;
+  padding-left: 9px;
+}
+.providerStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+.providerStrip span {
+  display: inline-flex;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 5px 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.providerStrip strong { color: var(--ink-2); }
+.changeSet {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  border-top: 1px solid var(--line-2);
+  padding: 11px 0;
+}
+.changeSet:first-of-type { border-top: 0; }
 .compactJson {
   max-height: 320px;
   overflow: auto;
@@ -2019,7 +2119,7 @@ input::placeholder { color: var(--soft); }
   .topBar, .commandBar { top: 0; }
 }
 @media (max-width: 980px) {
-  .pageHero, .collectorPanel, .workbench, .dashboardGrid, .overviewGrid, .storyGrid, .reportBrief, .clientRiskPanel, .reportGrid, .pageGrid, .twoColumnDocs, .apiFlow, .triageBoard, .extensionDetailGrid, .deploymentBanner, .capabilityGrid, .systemMap, .modeGrid, .productionPlan, .pipeline, .agentCommand, .landingHero, .homeStrip, .homeCards, .agentHero { display: block; }
+  .pageHero, .collectorPanel, .workbench, .dashboardGrid, .overviewGrid, .storyGrid, .reportBrief, .clientRiskPanel, .reportGrid, .pageGrid, .twoColumnDocs, .apiFlow, .triageBoard, .extensionDetailGrid, .deploymentBanner, .capabilityGrid, .systemMap, .modeGrid, .productionPlan, .pipeline, .agentCommand, .landingHero, .homeStrip, .homeCards, .agentHero, .actionQueue, .coverageFacts { display: block; }
   .scanFlow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .statGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .consoleHero h1 { font-size: 28px; }
@@ -2029,7 +2129,7 @@ input::placeholder { color: var(--soft); }
   .pipeline span { min-height: 0; margin-top: 8px; }
   .deploymentBanner a { margin-top: 14px; width: fit-content; }
   .collectorPanel > *, .workbench > *, .overviewGrid > *, .storyGrid article, .clientRiskPanel > *, .commandPanel, .triageColumn, .detail, .referenceAside, .ruleMatrix, .apiFlow, .twoColumnDocs, .modeCard, .systemMap article, .agentCommand > *, .heroConsole, .agentHero > * { margin-top: 12px; }
-  .statGrid > *, .dashboardGrid > *, .triageBoard > *, .extensionDetailGrid > *, .capabilityGrid > *, .homeCards > *, .homeStrip > * { margin-top: 12px; }
+  .statGrid > *, .dashboardGrid > *, .triageBoard > *, .extensionDetailGrid > *, .capabilityGrid > *, .homeCards > *, .homeStrip > *, .actionQueue > *, .coverageFacts > * { margin-top: 12px; }
   .commandBar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .commands { grid-column: 1 / -1; justify-content: flex-start; }
   .extensionList { max-height: 340px; }
@@ -2044,6 +2144,7 @@ input::placeholder { color: var(--soft); }
   .marketplaceActions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .leaderboardTable { overflow-x: auto; }
   .leaderboardHead, .leaderboardRow { min-width: 980px; }
+  .changeSet { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
   .topBar, .panelHead, .reportTitle, .sectionHeader { display: block; }
