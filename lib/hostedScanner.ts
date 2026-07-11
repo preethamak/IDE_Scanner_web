@@ -73,7 +73,9 @@ function scanHostedBytes(bytes: Uint8Array, metadata: { extensionId: string; pub
   const correlated = findings.some((item) => item.rule_id === "download-and-execute");
   const review = findings.some((item) => ["MEDIUM", "HIGH", "CRITICAL"].includes(item.severity));
   const decision = correlated ? "review" : review ? "review" : "allow";
-  const riskScore = Math.min(100, findings.reduce((total, item) => total + item.score, 0));
+  const strongestByRule = new Map<string, number>();
+  for (const finding of findings) strongestByRule.set(finding.rule_id, Math.max(strongestByRule.get(finding.rule_id) || 0, finding.score));
+  const riskScore = Math.min(100, [...strongestByRule.values()].reduce((total, score) => total + score, 0));
   const artifactHash = createHash("sha256").update(bytes).digest("hex");
   const extension: ExtensionSummary = {
     extension_id: extensionId, name: String(manifest.displayName || name), publisher, version,
@@ -84,7 +86,14 @@ function scanHostedBytes(bytes: Uint8Array, metadata: { extensionId: string; pub
     summary: { total_extensions: 1, max_malware_score: extension.malware_score, max_risk_score: extension.risk_score, by_verdict: { [extension.verdict]: 1 }, by_severity: { [extension.severity]: 1 } },
     human_summary: [extension.decision_reason || extension.verdict_reason || "Hosted static analysis completed."],
     top_risk_extensions: [extension], action_counts: { clean: review ? 0 : 1, review: review ? 1 : 0, suspicious: 0, malicious: 0 },
-    finding_counts: { by_rule: Object.fromEntries(findings.map((item) => [item.rule_id, 1])), by_category: {}, by_severity: Object.fromEntries(findings.map((item) => [item.severity, 1])) }
+    finding_counts: { by_rule: countBy(findings, "rule_id"), by_category: countBy(findings, "category"), by_severity: countBy(findings, "severity") }
   };
   return { scanId, summary, report: { metadata: { scan_id: scanId, scanner_version: "hosted-static-1", ruleset_version: "hosted-2026.07.11", source: metadata.source, completion_state: "complete" }, summary, extensions: [{ ...extension, findings, manifest, artifact_identity: { extension_id: extensionId, version, sha256: artifactHash, source: metadata.source }, analysis_coverage: { status: "complete", coverage_percent: 100, discovered_files: names.length, analyzed_executable_files: analyzed, providers: { hosted_static: "complete", semgrep: "not_run", yara: "not_run", dependency_intelligence: "not_run" } } }] } };
+}
+
+function countBy(items: HostedFinding[], field: "rule_id" | "category" | "severity"): Record<string, number> {
+  return items.reduce<Record<string, number>>((counts, item) => {
+    counts[item[field]] = (counts[item[field]] || 0) + 1;
+    return counts;
+  }, {});
 }
