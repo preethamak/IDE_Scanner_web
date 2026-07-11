@@ -4,6 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+const decisions = [
+  { decision: "BLOCK", extension: "unknown.ai-helper", reason: "Known-bad artifact hash", coverage: "Complete", tone: "block" },
+  { decision: "REVIEW", extension: "acme.remote-tools", reason: "Workspace input reaches shell", coverage: "12/12 entrypoints", tone: "review" },
+  { decision: "INCOMPLETE", extension: "team.private-pack", reason: "Native binary not inspected", coverage: "Partial", tone: "incomplete" },
+  { decision: "ALLOW", extension: "trusted.theme-kit", reason: "No blocking evidence", coverage: "Complete", tone: "allow" }
+];
+
 export default function HomePage() {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -15,98 +22,54 @@ export default function HomePage() {
   }
 
   return (
-    <main className="homeShell">
-      <section className="landingHero">
-        <div className="landingCopy">
-          <p className="eyebrow">Extension security, verified before install</p>
-          <h1>Know what a VS Code extension actually does before you trust it.</h1>
-          <p>
-            Search any published extension, scan it in seconds, and get an evidence-backed
-            verdict &mdash; not a black-box score. Every finding traces back to the exact
-            rule, file, and line that produced it.
-          </p>
-          <form className="landingSearch" onSubmit={handleSearch}>
-            <input
-              type="text"
-              placeholder='Search the marketplace, for example "gitlens" or publisher.extension-name'
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              aria-label="Search VS Code extensions"
-            />
-            <button className="primaryAction" type="submit">Search &amp; scan</button>
-          </form>
-          <div className="landingActions">
-            <Link className="secondaryAction" href="/scoring">How scoring works</Link>
-            <Link className="secondaryAction" href="/metrics">Browse all rules</Link>
-          </div>
+    <main className="productHome">
+      <section className="productHero">
+        <div className="heroSignal"><span>LOCAL-FIRST</span><span>STATIC BY DEFAULT</span><span>EXPLAINABLE</span></div>
+        <div className="heroHeading">
+          <p className="eyebrow">IDE extension security control plane</p>
+          <h1>Decide what belongs inside your developer environment.</h1>
+          <p>Inspect extension behavior, supply-chain provenance, agent permissions, credentials, and client posture before trust becomes access.</p>
         </div>
+        <form className="productSearch" onSubmit={handleSearch}>
+          <span aria-hidden="true">⌕</span>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search an extension or enter publisher.extension" aria-label="Search VS Code extensions" />
+          <button className="primaryAction" type="submit">Analyze <span aria-hidden="true">&rarr;</span></button>
+        </form>
 
-        <aside className="heroConsole" aria-label="What a scan reports">
-          <div className="consoleHeader">
-            <span>Sample verdict</span>
-            <strong>suspicious &middot; grade D</strong>
-          </div>
-          <div className="consoleGrade">
-            <strong>78</strong>
-            <p>Malware score 78/100. Dynamic call target resolved via computed member access that folds to &ldquo;eval&rdquo; &mdash; a string-concatenation evasion caught by AST analysis, not plain-text regex.</p>
-          </div>
-          <div className="consoleScores">
-            <MiniStat label="Risk score" value={83} />
-            <MiniStat label="Findings" value={6} />
-            <MiniStat label="Evidence class" value="capability" />
-          </div>
-        </aside>
-      </section>
-
-      <section className="homeStrip">
-        <span>Live marketplace search</span>
-        <span>AST-based evasion detection</span>
-        <span>Evidence-graded verdicts</span>
-        <span>Full rule reference</span>
-        <span>Static-only, sandboxed extraction</span>
-      </section>
-
-      <section className="homeCards">
-        <article>
-          <IconTile label="1" />
-          <h2>Search</h2>
-          <p>Type an extension name or publisher.id and pick it from live VS Marketplace results &mdash; install counts, ratings, and verified-publisher status included.</p>
-        </article>
-        <article>
-          <IconTile label="2" />
-          <h2>Scan</h2>
-          <p>The package is downloaded server-side into a quarantined extraction and statically analyzed: manifest posture, dependency graph, regex rules, and an AST walk for obfuscated JS. No code from the package is ever executed.</p>
-        </article>
-        <article>
-          <IconTile label="3" />
-          <h2>Read the evidence</h2>
-          <p>Every verdict links back to the findings that produced it &mdash; rule id, evidence class, file and line &mdash; so you can judge the reasoning yourself instead of trusting a single number.</p>
-        </article>
-      </section>
-
-      <section className="agentHero">
-        <div>
-          <p className="eyebrow">Why static, not sandboxed execution</p>
-          <h2>Hosted scans never run the extension</h2>
-          <p>
-            Extensions pulled from the marketplace or uploaded by a visitor are attacker-reachable
-            by construction. This service only ever runs the static analysis path &mdash; manifest
-            inspection, regex rules, dependency posture, and the AST walker &mdash; against a
-            quarantined copy. Dynamic sandbox execution stays reserved for the local CLI, run by
-            hand against extensions already installed on your own machine.
-          </p>
+        <div className="decisionSurface" aria-label="Example security decision queue">
+          <div className="surfaceHeader"><div><span className="liveDot" /> Decision queue</div><span>Evidence policy · default</span></div>
+          <div className="decisionHead"><span>Decision</span><span>Extension</span><span>Primary reason</span><span>Analysis coverage</span></div>
+          {decisions.map((item) => <div className="decisionRow" key={item.extension}>
+            <span><b className={`decisionBadge ${item.tone}`}>{item.decision}</b></span>
+            <strong>{item.extension}</strong><span>{item.reason}</span><span>{item.coverage}</span>
+          </div>)}
         </div>
-        <pre>{`ide-scanner scan --installed --profile smart --output report.zip
-ide-scanner scan --path ./my-extension --sandbox --allow-execute`}</pre>
       </section>
+
+      <section className="proofBand" aria-label="Product coverage">
+        <div><strong>4</strong><span>explicit decisions</span></div><div><strong>7</strong><span>evidence classes</span></div><div><strong>3</strong><span>analysis engines</span></div><div><strong>0</strong><span>package code executed</span></div>
+      </section>
+
+      <section className="productSection capabilitiesSection">
+        <div className="sectionLead"><p className="eyebrow">One review surface</p><h2>More than a malware score.</h2><p>A security-first review separates confirmed intelligence from risky capability and incomplete analysis. Each signal retains its evidence, confidence, and remediation.</p><Link className="inlineLink" href="/metrics">Explore metrics and rules <span>&rarr;</span></Link></div>
+        <div className="capabilityList">
+          <Capability index="01" title="Behavior chains" copy="Trace workspace, webview, credential, and decoded inputs into execution or network sinks with Semgrep and native analyzers." />
+          <Capability index="02" title="Artifact intelligence" copy="Hash the exact package and every file, match known-bad intelligence, and flag native or packed payloads for independent inspection." />
+          <Capability index="03" title="Agent and client posture" copy="Review MCP servers, language-model tools, auto-approval, Workspace Trust, automatic tasks, and risky trust overrides." />
+          <Capability index="04" title="Release changes" copy="Compare versions, decisions, findings, capabilities, and artifact hashes so a trusted update cannot quietly expand access." />
+        </div>
+      </section>
+
+      <section className="methodBand">
+        <div><p className="eyebrow">Explainable by construction</p><h2>Rules make findings. Policy makes decisions.</h2></div>
+        <div className="methodSteps"><Method n="01" title="Acquire" copy="Fetch or accept an exact VSIX artifact."/><Method n="02" title="Inspect" copy="Parse manifests, source, dependencies, binaries, and client settings."/><Method n="03" title="Correlate" copy="Combine sources and sinks into stronger evidence chains."/><Method n="04" title="Decide" copy="Apply transparent block, review, allow, and incomplete policy."/></div>
+        <div className="methodActions"><Link className="primaryAction" href="/scoring">Read the methodology</Link><Link className="secondaryAction" href="/benchmark">See benchmark results</Link></div>
+      </section>
+
+      <section className="productCta"><div><p className="eyebrow">Inspect before install</p><h2>Start with the artifact, end with a defensible decision.</h2></div><Link className="primaryAction" href="/scan">Scan an extension <span>&rarr;</span></Link></section>
     </main>
   );
 }
 
-function MiniStat({ label, value }: { label: string; value: number | string }) {
-  return <div><span>{label}</span><strong>{value}</strong></div>;
-}
-
-function IconTile({ label }: { label: string }) {
-  return <span className="productIcon">{label}</span>;
-}
+function Capability({ index, title, copy }: { index: string; title: string; copy: string }) { return <article><span>{index}</span><div><h3>{title}</h3><p>{copy}</p></div></article>; }
+function Method({ n, title, copy }: { n: string; title: string; copy: string }) { return <article><span>{n}</span><strong>{title}</strong><p>{copy}</p></article>; }
