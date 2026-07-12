@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { listImportedBenchmarks, parseBenchmarkBundle, saveImportedBenchmark } from "@/lib/reportBundle";
 import type { BenchmarkBundle, BenchmarkResult } from "@/lib/types";
 
 export default function BenchmarkPage() {
   const [result, setResult] = useState<BenchmarkResult | null>(null);
-  const [benchmarks, setBenchmarks] = useState<BenchmarkBundle[]>(() => listImportedBenchmarks());
+  const [benchmarks, setBenchmarks] = useState<BenchmarkBundle[]>([]);
   const [selectedId, setSelectedId] = useState("");
   const [status, setStatus] = useState<"idle" | "running" | "importing" | "error">("idle");
   const [error, setError] = useState("");
@@ -15,6 +15,7 @@ export default function BenchmarkPage() {
     () => benchmarks.find((item) => item.id === selectedId) || benchmarks[0] || null,
     [benchmarks, selectedId],
   );
+  useEffect(() => { queueMicrotask(() => setBenchmarks(listImportedBenchmarks())); }, []);
   const quality = selected ? benchmarkQuality(selected.benchmark_summary) : null;
 
   async function runBenchmark() {
