@@ -2,74 +2,61 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ArrowRight, Binary, Box, Braces, Check, GitCompareArrows, Search, ShieldAlert, Waves } from "lucide-react";
 import { useState } from "react";
 
-const decisions = [
-  { decision: "BLOCK", extension: "unknown.ai-helper", reason: "Known-bad artifact hash", coverage: "Complete", tone: "block" },
-  { decision: "REVIEW", extension: "acme.remote-tools", reason: "Workspace input reaches shell", coverage: "12/12 entrypoints", tone: "review" },
-  { decision: "INCOMPLETE", extension: "team.private-pack", reason: "Native binary not inspected", coverage: "Partial", tone: "incomplete" },
-  { decision: "ALLOW", extension: "trusted.theme-kit", reason: "No blocking evidence", coverage: "Complete", tone: "allow" }
+const signals = [
+  { icon: Braces, label: "Code behavior", value: "AST + dataflow", detail: "Dynamic execution, process, network, filesystem, and source-to-sink chains." },
+  { icon: Box, label: "Supply chain", value: "Artifact exact", detail: "Dependencies, lifecycle scripts, packed content, native binaries, and file hashes." },
+  { icon: Binary, label: "Agent surface", value: "IDE aware", detail: "MCP servers, model tools, command surfaces, secret storage, and approval boundaries." },
+  { icon: GitCompareArrows, label: "Release change", value: "Version specific", detail: "New capabilities, findings, entrypoints, dependencies, and artifact changes." },
+];
+
+const exampleRows = [
+  ["REVIEW", "JuanBlanco.solidity", "0.0.187", "Credential and filesystem surfaces", "review"],
+  ["ALLOW", "esbenp.prettier-vscode", "latest", "No review evidence", "allow"],
+  ["INCOMPLETE", "private.native-tools", "2.4.1", "Native artifact not inspected", "incomplete"],
 ];
 
 export default function HomePage() {
   const router = useRouter();
   const [query, setQuery] = useState("");
+  function submit(event: React.FormEvent) { event.preventDefault(); router.push(query.trim() ? `/catalog?q=${encodeURIComponent(query.trim())}` : "/catalog"); }
 
-  function handleSearch(event: React.FormEvent) {
-    event.preventDefault();
-    const trimmed = query.trim();
-    router.push(trimmed ? `/scan?q=${encodeURIComponent(trimmed)}` : "/scan");
-  }
+  return <main>
+    <section className="homeHero">
+      <div className="heroGridMark" aria-hidden="true" />
+      <div className="heroCopyBlock">
+        <div className="statusLine"><span className="statusDot" /> Public extension intelligence</div>
+        <h1>Know the extension.<br/><em>Trust the evidence.</em></h1>
+        <p>Analyze exact IDE extension artifacts before installation. See behavior, provenance, dependencies, agent capabilities, and version changes behind every decision.</p>
+        <form className="heroSearch" onSubmit={submit}><Search size={20} aria-hidden="true"/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search an extension or publisher.extension" aria-label="Search extension catalog"/><button type="submit">Search catalog <ArrowRight size={17}/></button></form>
+        <div className="heroLinks"><Link href="/scan">Upload a VSIX</Link><Link href="/scoring">How decisions work</Link><Link href="/metrics">Explore 40 rules</Link></div>
+      </div>
+      <div className="heroProductWindow">
+        <div className="windowBar"><div><span/><span/><span/></div><strong>Extension intelligence</strong><span>Exact artifacts</span></div>
+        <div className="windowToolbar"><div><Waves size={16}/><span>Recent analysis</span></div><small>DEEP + HOSTED</small></div>
+        <div className="signalTable"><div className="signalHead"><span>Decision</span><span>Extension</span><span>Version</span><span>Primary evidence</span></div>{exampleRows.map(([decision, extension, version, reason, tone]) => <div className="signalRow" key={extension}><span><b className={`decision ${tone}`}>{decision}</b></span><strong>{extension}</strong><code>{version}</code><span>{reason}</span></div>)}</div>
+        <div className="windowFoot"><span><Check size={14}/> Artifact hashes recorded</span><span><Check size={14}/> Coverage is explicit</span><span><Check size={14}/> Package code not executed</span></div>
+      </div>
+    </section>
 
-  return (
-    <main className="productHome">
-      <section className="productHero">
-        <div className="heroSignal"><span>LOCAL-FIRST</span><span>STATIC BY DEFAULT</span><span>EXPLAINABLE</span></div>
-        <div className="heroHeading">
-          <p className="eyebrow">IDE extension security control plane</p>
-          <h1>Decide what belongs inside your developer environment.</h1>
-          <p>Inspect extension behavior, supply-chain provenance, agent permissions, credentials, and client posture before trust becomes access.</p>
-        </div>
-        <form className="productSearch" onSubmit={handleSearch}>
-          <span aria-hidden="true">⌕</span>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search an extension or enter publisher.extension" aria-label="Search VS Code extensions" />
-          <button className="primaryAction" type="submit">Analyze <span aria-hidden="true">&rarr;</span></button>
-        </form>
+    <section className="trustRibbon"><span>DETERMINISTIC RULES</span><span>EXACT SHA-256</span><span>SEMGREP + YARA READY</span><span>VERSION-AWARE</span><span>NO OPAQUE AI VERDICTS</span></section>
 
-        <div className="decisionSurface" aria-label="Example security decision queue">
-          <div className="surfaceHeader"><div><span className="liveDot" /> Decision queue</div><span>Evidence policy · default</span></div>
-          <div className="decisionHead"><span>Decision</span><span>Extension</span><span>Primary reason</span><span>Analysis coverage</span></div>
-          {decisions.map((item) => <div className="decisionRow" key={item.extension}>
-            <span><b className={`decisionBadge ${item.tone}`}>{item.decision}</b></span>
-            <strong>{item.extension}</strong><span>{item.reason}</span><span>{item.coverage}</span>
-          </div>)}
-        </div>
-      </section>
+    <section className="section sectionSplit">
+      <div className="sectionTitle"><span className="kicker">Security model</span><h2>One extension.<br/>Four angles of trust.</h2><p>Risk is not a popularity score. IDE Scanner separates what an artifact can do, where it came from, what changed, and how completely it was analyzed.</p><Link className="textLink" href="/metrics">View the intelligence model <ArrowRight size={16}/></Link></div>
+      <div className="signalList">{signals.map(({ icon: Icon, label, value, detail }, index) => <article key={label}><span className="signalIndex">0{index + 1}</span><Icon size={21}/><div><small>{label}</small><h3>{value}</h3><p>{detail}</p></div></article>)}</div>
+    </section>
 
-      <section className="proofBand" aria-label="Product coverage">
-        <div><strong>4</strong><span>explicit decisions</span></div><div><strong>8</strong><span>evidence classes</span></div><div><strong>5</strong><span>analysis sources</span></div><div><strong>0</strong><span>package code executed</span></div>
-      </section>
+    <section className="darkSection">
+      <div className="darkSectionHead"><div><span className="kicker kickerLight">Decision, not decoration</span><h2>A result you can defend.</h2></div><p>Every decision preserves the exact artifact, ruleset, evidence strength, provider coverage, and remediation. Missing analysis produces <strong>INCOMPLETE</strong>, never a quiet pass.</p></div>
+      <div className="decisionGrid"><Decision name="BLOCK" tone="block" number="01" copy="Authoritative malicious intelligence or policy-rejected abuse evidence."/><Decision name="REVIEW" tone="review" number="02" copy="Sensitive capability or correlated behavior requires human context."/><Decision name="INCOMPLETE" tone="incomplete" number="03" copy="Required entrypoints, providers, or artifacts were not fully analyzed."/><Decision name="ALLOW" tone="allow" number="04" copy="Required analysis completed without crossing review or block policy."/></div>
+    </section>
 
-      <section className="productSection capabilitiesSection">
-        <div className="sectionLead"><p className="eyebrow">One review surface</p><h2>More than a malware score.</h2><p>A security-first review separates confirmed intelligence from risky capability and incomplete analysis. Each signal retains its evidence, confidence, and remediation.</p><Link className="inlineLink" href="/metrics">Explore metrics and rules <span>&rarr;</span></Link></div>
-        <div className="capabilityList">
-          <Capability index="01" title="Behavior chains" copy="Trace workspace, webview, credential, and decoded inputs into execution or network sinks with Semgrep and native analyzers." />
-          <Capability index="02" title="Artifact intelligence" copy="Hash the exact package and every file, match known-bad intelligence, and flag native or packed payloads for independent inspection." />
-          <Capability index="03" title="Agent and client posture" copy="Review MCP servers, language-model tools, auto-approval, Workspace Trust, automatic tasks, and risky trust overrides." />
-          <Capability index="04" title="Release changes" copy="Compare versions, decisions, findings, capabilities, and artifact hashes so a trusted update cannot quietly expand access." />
-        </div>
-      </section>
+    <section className="section workflowSection"><div className="sectionTitle"><span className="kicker">From search to evidence</span><h2>Inspect before access becomes trust.</h2></div><div className="workflow"><article><span>01</span><Search/><h3>Find</h3><p>Resolve the exact Marketplace extension and published version.</p></article><article><span>02</span><ShieldAlert/><h3>Analyze</h3><p>Inspect manifest, source, dependencies, artifacts, and behavior chains.</p></article><article><span>03</span><GitCompareArrows/><h3>Compare</h3><p>Measure new capabilities and findings against the previous release.</p></article><article><span>04</span><Check/><h3>Decide</h3><p>Apply an explainable security decision with explicit coverage.</p></article></div></section>
 
-      <section className="methodBand">
-        <div><p className="eyebrow">Explainable by construction</p><h2>Rules make findings. Policy makes decisions.</h2></div>
-        <div className="methodSteps"><Method n="01" title="Acquire" copy="Fetch or accept an exact VSIX artifact."/><Method n="02" title="Inspect" copy="Parse manifests, source, dependencies, binaries, and client settings."/><Method n="03" title="Correlate" copy="Combine sources and sinks into stronger evidence chains."/><Method n="04" title="Decide" copy="Apply transparent block, review, allow, and incomplete policy."/></div>
-        <div className="methodActions"><Link className="primaryAction" href="/scoring">Read the methodology</Link><Link className="secondaryAction" href="/benchmark">See benchmark results</Link></div>
-      </section>
-
-      <section className="productCta"><div><p className="eyebrow">Inspect before install</p><h2>Start with the artifact, end with a defensible decision.</h2></div><Link className="primaryAction" href="/scan">Scan an extension <span>&rarr;</span></Link></section>
-    </main>
-  );
+    <section className="homeCta"><div><span className="kicker">Start with an exact artifact</span><h2>Search the extension catalog.</h2><p>No account. No local script. No package execution.</p></div><Link className="button buttonLight" href="/catalog">Explore extensions <ArrowRight size={17}/></Link></section>
+  </main>;
 }
 
-function Capability({ index, title, copy }: { index: string; title: string; copy: string }) { return <article><span>{index}</span><div><h3>{title}</h3><p>{copy}</p></div></article>; }
-function Method({ n, title, copy }: { n: string; title: string; copy: string }) { return <article><span>{n}</span><strong>{title}</strong><p>{copy}</p></article>; }
+function Decision({ name, tone, number, copy }: { name: string; tone: string; number: string; copy: string }) { return <article><span>{number}</span><b className={`decision ${tone}`}>{name}</b><p>{copy}</p></article>; }
