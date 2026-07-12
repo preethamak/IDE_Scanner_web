@@ -1,114 +1,37 @@
 # IDE Scanner Web
 
-Next.js website for scanning and reviewing VS Code-compatible extension reports.
+Public extension intelligence, scanning, reports, rules, metrics, and benchmark UI for the IDE Scanner Python engine.
 
-This project was bootstrapped with the official `create-next-app` template and uses:
+## Run the complete product locally
 
-- Next.js App Router
-- TypeScript / TSX
-- Next API routes
-- The Python scanner engine from `../ide-scanner`
-
-## Production Model
-
-The hosted production scan path is a local collector bridge. A hosted website cannot silently enumerate a visitor's extension folders from the browser. The user runs a small local command on macOS, Windows, or Linux; that command starts a local HTTP bridge on `127.0.0.1:17865`. The website then connects to that bridge, reads installed VS Code, Cursor, and Windsurf extension metadata, and generates the dashboard in the browser.
-
-The lightweight collectors are served from:
-
-- `/collect-ide-extensions.py` for macOS/Linux and Windows systems with Python.
-- `/collect-ide-extensions.ps1` for Windows PowerShell without Python.
-
-They do not require `ide_scanner` or this repository to be installed on the user's machine.
-
-Primary hosted flow:
+Start the scanner service from the sibling `ide-scanner` repository:
 
 ```bash
-curl -fsSL https://ide-scanner-web.vercel.app/collect-ide-extensions.py -o /tmp/ide-scanner-collector.py
-python3 /tmp/ide-scanner-collector.py --serve
+PYTHONPATH=src .venv/bin/python -m ide_scanner.service --host 127.0.0.1 --port 8787
 ```
 
-Then open the website and click **Connect local collector** followed by **Generate report**.
-
-One-shot upload remains available for networks or browsers that block localhost bridge access:
+Start the website:
 
 ```bash
-python3 /tmp/ide-scanner-collector.py --server https://ide-scanner-web.vercel.app
+IDE_SCANNER_API_URL=http://127.0.0.1:8787 npm run dev
 ```
 
-For deployments where you also want the server-local scan buttons to work, build the included container from the workspace root, not from this subdirectory. It ships Python and the scanner source with the Next.js app:
+Open `http://127.0.0.1:8765`.
+
+When `IDE_SCANNER_API_URL` is configured, Marketplace requests become durable Python scan jobs and reports use the canonical scanner bundle. Without it, the public Vercel-compatible path runs a deliberately narrower preliminary analyzer and labels the missing providers in coverage.
+
+Optional shared authorization:
 
 ```bash
-docker build -f ide-scanner-web/Dockerfile -t ide-scanner-web .
-docker run --rm -p 8765:8765 ide-scanner-web
+IDE_SCANNER_API_TOKEN=replace-with-a-random-token
 ```
 
-The production container includes Semgrep and YARA. Report dashboards prioritize `BLOCK`, `INCOMPLETE`, `REVIEW`, and `ALLOW` decisions, then show exact artifact hashes, executable-entrypoint coverage, provider status, and version-to-version capability changes.
+Set the same token on the website and scanner service.
 
-For full static package scanning, run the scanner on the user machine and upload the report to this website:
+## Verification
 
 ```bash
-IDE_SCANNER_AGENT_TOKEN=<shared-token> \
-PYTHONPATH=src python -m ide_scanner agent \
-  --server https://your-ide-scanner-web.example \
-  --all
+npm run lint
+npx tsc --noEmit
+npm run build
 ```
-
-On the web deployment, set the same token:
-
-```bash
-IDE_SCANNER_AGENT_TOKEN=<shared-token>
-```
-
-Uploaded reports are accepted at `POST /api/agent/reports` and collector reports are accepted at `POST /api/collector/reports`.
-
-## Run
-
-```bash
-npm install
-npm run dev
-```
-
-Open:
-
-```text
-http://127.0.0.1:8765
-```
-
-## LAN Testing
-
-To access the website from another computer on the same network:
-
-```bash
-npm run dev:lan
-```
-
-Then open the host machine's LAN IP on port `8765`.
-
-## Scanner Location
-
-By default the app expects the scanner repo next to this folder:
-
-```text
-../ide-scanner
-```
-
-Override it with:
-
-```bash
-IDE_SCANNER_ROOT=/path/to/ide-scanner npm run dev
-```
-
-If Python is not available as `python3` on macOS/Linux or `python` on Windows:
-
-```bash
-IDE_SCANNER_PYTHON=/path/to/python npm run dev
-```
-
-## API
-
-- `GET /api/inventory`
-- `POST /api/scans`
-- `POST /api/agent/reports`
-- `POST /api/collector/reports`
-- `GET /api/scans/:id`
-- `GET /api/scans/:id/report`
