@@ -54,6 +54,26 @@ export async function resolveMarketplaceExtension(extensionId: string): Promise<
   return exact;
 }
 
+export async function listMarketplaceVersions(extensionId: string): Promise<Array<{ extension_id: string; version: string; registry: "vs-marketplace" | "openvsx"; published_at: string; download_url: string; is_latest: boolean; scan_state: "not_scanned" }>> {
+  const normalized = normalizeMarketplaceId(extensionId);
+  const [publisher, name] = normalized.split(".", 2);
+  const marketplace = await fetch(GALLERY_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json;api-version=7.2-preview.1" },
+    body: JSON.stringify({ filters: [{ criteria: [{ filterType: 7, value: normalized }], pageNumber: 1, pageSize: 1 }], flags: 402 }),
+    cache: "no-store",
+  }).then(async (response) => response.ok ? response.json() as Promise<{ results?: Array<{ extensions?: GalleryExtension[] }> }> : null).catch(() => null);
+  const raw = marketplace?.results?.[0]?.extensions?.[0];
+  const versions = (raw?.versions || []).filter((item) => item.version).map((item, index) => ({ extension_id: normalized, version: String(item.version), registry: "vs-marketplace" as const, published_at: String(item.lastUpdated || ""), download_url: `https://marketplace.visualstudio.com/_apis/public/gallery/publishers/${encodeURIComponent(publisher)}/vsextensions/${encodeURIComponent(name)}/${encodeURIComponent(String(item.version))}/vspackage`, is_latest: index === 0, scan_state: "not_scanned" as const }));
+  if (versions.length) return versions;
+
+  const openvsx = await fetch(`https://open-vsx.org/api/${encodeURIComponent(publisher)}/${encodeURIComponent(name)}`, { cache: "no-store" }).then(async (response) => response.ok ? response.json() as Promise<OpenVsxExtension & { allVersions?: Record<string, string> }> : null).catch(() => null);
+  if (!openvsx) return [];
+  const all = Object.keys(openvsx.allVersions || {});
+  const versionValues = all.length ? all : openvsx.version ? [openvsx.version] : [];
+  return versionValues.map((version, index) => ({ extension_id: normalized, version, registry: "openvsx" as const, published_at: version === openvsx.version ? String(openvsx.timestamp || "") : "", download_url: version === openvsx.version ? String(openvsx.files?.download || "") : `https://open-vsx.org/api/${encodeURIComponent(publisher)}/${encodeURIComponent(name)}/${encodeURIComponent(version)}/file/${encodeURIComponent(publisher)}.${encodeURIComponent(name)}-${encodeURIComponent(version)}.vsix`, is_latest: index === 0 || version === openvsx.version, scan_state: "not_scanned" as const }));
+}
+
 export function marketplaceVsixUrl(item: MarketplaceSearchResult): string {
   if (item.download_url) return item.download_url;
   const [, name] = item.extension_id.split(".", 2);

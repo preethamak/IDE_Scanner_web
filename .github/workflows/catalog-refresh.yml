@@ -1,0 +1,35 @@
+name: Refresh extension catalog
+
+on:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      scan_batch_limit:
+        description: Maximum new Deep Scans to dispatch
+        required: false
+        default: "100"
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node scripts/refresh-catalog.mjs
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GITHUB_ACTIONS_TOKEN: ${{ secrets.SCANNER_WORKFLOW_TOKEN }}
+          GITHUB_REPO_OWNER: preethamak
+          GITHUB_SCANNER_REPO: IDE_Scanner
+          NEXT_PUBLIC_SITE_URL: https://ide-scanner-web.vercel.app
+          SCAN_BATCH_LIMIT: ${{ inputs.scan_batch_limit || '100' }}

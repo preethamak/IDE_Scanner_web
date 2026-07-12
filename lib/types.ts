@@ -119,7 +119,9 @@ export type ExtensionDetail = Omit<ExtensionSummary, "top_findings"> & {
   }>;
   manifest: Record<string, unknown>;
   dependencies: Record<string, string>;
+  dependency_inventory?: Array<{ name: string; version: string; relationship: "direct" | "transitive"; ecosystem: string; advisories?: unknown[] }>;
   artifact_inventory: Record<string, unknown>;
+  security_dimensions?: Record<string, { score: number; status: "strong" | "attention" | "weak" | "unknown"; basis: string; deductions: Array<Record<string, unknown>> }>;
   capabilities: Record<string, unknown>;
   artifact_identity?: {
     extension_id?: string;
