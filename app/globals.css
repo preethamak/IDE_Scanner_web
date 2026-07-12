@@ -1086,6 +1086,22 @@ code, pre { font-family: var(--mono); }
 .heroAction, .primary, .primaryAction, .secondaryAction { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; border: 1px solid var(--ink); border-radius: 5px; background: var(--ink); color: white; padding: 0 14px; font-weight: 680; }
 .secondaryAction { background: white; color: var(--ink); }
 
+.intelligenceScores { scroll-margin-top: 110px; padding: 64px 0; border-bottom: 1px solid var(--ink); }
+.intelligenceScores > header { display: grid; grid-template-columns: 180px minmax(260px, 1fr) minmax(260px, .8fr); gap: 28px; align-items: start; }
+.intelligenceScores > header > span { color: var(--acid-dark); font-family: var(--mono); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.intelligenceScores > header h2 { margin: 0; font-size: 31px; }
+.intelligenceScores > header p, .scoreLimit { margin: 0; color: var(--muted); font-size: 13px; }
+.diagnosticScores { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; margin-top: 32px; border: 1px solid var(--line); background: var(--line); }
+.diagnosticScore { display: flex; gap: 18px; align-items: center; min-height: 150px; padding: 20px; background: white; }
+.scoreDial { --score: 0; flex: 0 0 86px; width: 86px; aspect-ratio: 1; display: grid; place-content: center; border-radius: 50%; background: radial-gradient(circle at center,white 61%,transparent 63%),conic-gradient(var(--acid-dark) calc(var(--score)*1%),#e6e8e3 0); text-align: center; }
+.scoreDial strong { font-family: var(--mono); font-size: 25px; line-height: 1; }.scoreDial span { color: var(--faint); font-size: 8px; }
+.diagnosticScore.danger .scoreDial { background: radial-gradient(circle at center,white 61%,transparent 63%),conic-gradient(#c53030 calc(var(--score)*1%),#e6e8e3 0); }.diagnosticScore.warning .scoreDial { background: radial-gradient(circle at center,white 61%,transparent 63%),conic-gradient(#c17b00 calc(var(--score)*1%),#e6e8e3 0); }
+.diagnosticScore h3 { margin: 0 0 7px; font-size: 14px; }.diagnosticScore p { margin: 0; color: var(--muted); font-size: 11px; }
+.healthScores { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; margin-top: 1px; background: var(--line); }.healthScores article { min-height: 126px; padding: 18px; background: var(--wash); }.healthScores article > div:first-child { display:flex;justify-content:space-between;gap:15px; }.healthScores span { font-size: 11px;font-weight:700; }.healthScores strong { font-family:var(--mono); }.healthScores p { color:var(--muted);font-size:10px; }.healthTrack,.distributionBar { height:5px;margin-top:18px;background:#dfe2dc;overflow:hidden; }.healthTrack i,.distributionBar i { display:block;height:100%;background:var(--acid-dark);transition:width .5s ease; }.scoreLimit { margin-top: 16px; }
+.intelligenceLayout { display:grid;grid-template-columns:190px minmax(0,1fr);gap:44px;align-items:start; }.intelligenceNav { position:sticky;top:100px;display:grid;border-top:1px solid var(--ink); }.intelligenceNav strong { padding:14px 0;font-size:11px; }.intelligenceNav a { border-top:1px solid var(--line);padding:10px 0;color:var(--muted);font-size:11px; }.intelligenceNav a:hover { color:var(--ink); }.intelligenceContent { min-width:0; }
+.reportAnalytics { display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin:24px 0;background:var(--line);border:1px solid var(--line); }.reportAnalytics article { padding:20px;background:white; }.reportAnalytics span { font-size:10px;font-weight:800;text-transform:uppercase; }.reportAnalytics h2 { margin:18px 0 4px;font-family:var(--mono);font-size:34px; }.reportAnalytics p { min-height:34px;margin:0;color:var(--muted);font-size:10px; }.distributionBar.danger i { background:#c53030; }.distributionBar.confidence i { background:#16726a; }
+@media (prefers-reduced-motion:reduce){.healthTrack i,.distributionBar i{transition:none}}
+
 @media (max-width: 1000px) {
   .headerInner { grid-template-columns: auto 1fr auto; }
   .sectionSplit, .darkSectionHead { grid-template-columns: 1fr; gap: 50px; }
@@ -1105,6 +1121,7 @@ code, pre { font-family: var(--mono); }
   .statGrid, .benchmarkDefinitions { grid-template-columns: repeat(2, 1fr); }.benchmarkRow { grid-template-columns: 1fr; }
   .extensionDetailGrid, .systemMap, .modeGrid, .productionPlan, .agentCommand, .twoColumnDocs { grid-template-columns: 1fr; }.commandPanel.span2 { grid-column: auto; }.systemMap > b { transform: rotate(90deg); justify-self: start; }.pipeline { grid-template-columns: 1fr; }
   .dashboardOutcome, .interpretationLead { grid-template-columns: 1fr; }.interpretationColumns { grid-template-columns: 1fr; }
+  .intelligenceLayout { grid-template-columns:1fr; }.intelligenceNav { position:static;display:flex;overflow-x:auto;gap:18px;border-bottom:1px solid var(--line); }.intelligenceNav strong{display:none}.intelligenceNav a{white-space:nowrap;border:0}.intelligenceScores>header{grid-template-columns:1fr}.diagnosticScores{grid-template-columns:1fr}.healthScores{grid-template-columns:repeat(2,1fr)}
   .studyHero, .studyInterpretation, .recurringSection { grid-template-columns: 1fr; gap: 40px; }.methodNote { grid-template-columns: 1fr; }
 }
 
@@ -1153,6 +1170,7 @@ code, pre { font-family: var(--mono); }
   .decisionDocs article { grid-template-columns: 1fr; gap: 8px; padding: 16px 0; }
   .coverageNotice, .reportControls, .statGrid, .benchmarkDefinitions, .coverageFacts { grid-template-columns: 1fr; }
   .actionQueue, .dashboardOutcome > div:last-child, .interpretationMeta { grid-template-columns: 1fr; }
+  .healthScores,.reportAnalytics{grid-template-columns:1fr}
   .studyHero h1 { font-size: 43px; }.studyNumbers { grid-template-columns: repeat(2, 1fr); }.studyTable { overflow-x: auto; }.studyTableHead, .studyTable article { min-width: 760px; }.studyInterpretation > div:last-child { grid-template-columns: 1fr; }.recurringList article { grid-template-columns: 30px 130px 1fr 35px; }.studyCta { display: block; }.studyCta .button { margin-top: 22px; }
   .resultHeader, .pageHero { display: block; }
   .resultHeader .textLink, .pageHero .heroAction { margin-top: 18px; }

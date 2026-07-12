@@ -1,42 +1,22 @@
 import { createHash } from "node:crypto";
-import { getExtensionProduct, seedExtensionFromRegistry } from "@/lib/productData";
-import { serviceDb } from "@/lib/supabase";
+import { resolveMarketplaceExtension } from "@/lib/marketplace";
+import { publicDb } from "@/lib/supabase";
 
 export async function queueDeepScan(extensionId: string, requestedVersion: string | undefined, request: Request): Promise<Record<string, unknown>> {
-  const db = serviceDb();
-  let product = await getExtensionProduct(extensionId);
-  if (!product) {
-    await seedExtensionFromRegistry(extensionId);
-    product = await getExtensionProduct(extensionId);
-  }
-  if (!product) throw new Error(`Extension ${extensionId} could not be resolved.`);
-  const version = requestedVersion || String(product.versions.find((item) => item.is_latest)?.version || product.versions[0]?.version || product.extension.latest_version || "");
+  const db = publicDb(); if (!db) throw new Error("Deep Scan is temporarily unavailable.");
+  const item = await resolveMarketplaceExtension(extensionId);
+  const version = requestedVersion || item.version;
   if (!version) throw new Error("No published version is available for this extension.");
 
-  const active = await db.from("scan_jobs").select("id,status,created_at").eq("extension_id", extensionId).eq("version", version).eq("profile", "deep").in("status", ["queued", "running"]).maybeSingle();
-  if (active.data) return { ...active.data, extension_id: extensionId, version, profile: "deep", deduplicated: true };
-
   const requesterHash = hashRequester(request);
-  const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-  const [{ count: requesterCount }, { count: activeCount }] = await Promise.all([
-    db.from("scan_jobs").select("id", { count: "exact", head: true }).eq("requester_hash", requesterHash).gte("created_at", since),
-    db.from("scan_jobs").select("id", { count: "exact", head: true }).in("status", ["queued", "running"]),
-  ]);
-  if ((requesterCount || 0) >= 3) throw new Error("Anonymous Deep Scan limit reached. Try again after one hour.");
-  if ((activeCount || 0) >= 10) throw new Error("The free Deep Scan queue is full. Try again shortly.");
-
-  const { data: job, error } = await db.from("scan_jobs").insert({ extension_id: extensionId, version, profile: "deep", requester_hash: requesterHash }).select("*").single();
+  const { data: job, error } = await db.rpc("queue_deep_scan", { p_extension_id:item.extension_id,p_name:item.extension_id.split(".").slice(1).join("."),p_display_name:item.display_name,p_publisher:item.publisher,p_description:item.short_description,p_registry:item.registry||"vs-marketplace",p_version:version,p_requester_hash:requesterHash,p_icon_url:item.icon_url,p_publisher_verified:item.publisher_verified,p_installs:item.install_count,p_rating:item.rating_average });
   if (error) throw error;
-  await db.from("extension_versions").update({ scan_state: "queued" }).eq("extension_id", extensionId).eq("version", version);
   try {
     const dispatch = await dispatchWorkflow(String(job.id), extensionId, version);
-    if (dispatch.runId) await db.from("scan_jobs").update({ github_run_id: dispatch.runId }).eq("id", job.id);
     return { ...job, github_run_id: dispatch.runId, extension_id: extensionId, version, profile: "deep" };
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : "Workflow dispatch failed.";
-    await db.from("scan_jobs").update({ status: "failed", error: message, completed_at: new Date().toISOString() }).eq("id", job.id);
-    await db.from("extension_versions").update({ scan_state: "failed" }).eq("extension_id", extensionId).eq("version", version);
-    throw cause;
+    throw new Error(message);
   }
 }
 

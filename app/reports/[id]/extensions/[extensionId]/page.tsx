@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getImportedReport } from "@/lib/reportBundle";
 import type { Decision, ExtensionDetail, ImportedReportBundle } from "@/lib/types";
+import IntelligenceScores from "@/app/IntelligenceScores";
 
 export default function ReportExtensionDetailPage({ params }: { params: Promise<{ id: string; extensionId: string }> }) {
   const [report, setReport] = useState<ImportedReportBundle | null>(null);
@@ -48,7 +49,7 @@ export default function ReportExtensionDetailPage({ params }: { params: Promise<
   const artifactHash = String(identity.sha256 || detail.artifact_sha256 || detail.artifact_inventory?.vsix_hash || detail.artifact_inventory?.package_hash || "");
 
   return (
-    <main className="shell">
+    <main className="shell reportIntelligence">
       <section className="pageHero compactHero">
         <div>
           <p className="eyebrow">{decision} decision</p>
@@ -58,7 +59,9 @@ export default function ReportExtensionDetailPage({ params }: { params: Promise<
         <Link className="heroAction" href={`/reports/${ids.id}`}>Back to dashboard</Link>
       </section>
 
-      <section className="reportInterpretation">
+      <div className="intelligenceLayout"><aside className="intelligenceNav"><strong>Extension intelligence</strong>{[["overview","Overview"],["scores","Security scores"],["alerts","Alerts"],["capabilities","Capabilities"],["dependencies","Dependencies"],["coverage","Analyzer coverage"],["provenance","Provenance"],["evidence","Raw evidence"]].map(([id,label])=><a key={id} href={`#${id}`}>{label}</a>)}</aside><div className="intelligenceContent">
+
+      <section id="overview" className="reportInterpretation">
         <div className="interpretationLead">
           <p className="eyebrow">Bottom line</p>
           <h2>{interpretation.headline}</h2>
@@ -71,6 +74,8 @@ export default function ReportExtensionDetailPage({ params }: { params: Promise<
           <article><h3>Verify before installing</h3>{interpretation.verifications.map((item) => <p key={item}>{item}</p>)}</article>
         </div>
       </section>
+
+      <IntelligenceScores risk={detail.risk_score} malware={detail.malware_score} coverage={coverage.coverage_percent ?? detail.coverage_percent} dimensions={detail.security_dimensions || {}}/>
 
       <section className="extensionDetailGrid">
         <article className={`commandPanel decisionPanel ${decision}`}>
@@ -99,7 +104,7 @@ export default function ReportExtensionDetailPage({ params }: { params: Promise<
           <p>{detail.severity} severity · risk {detail.risk_score} · malware {detail.malware_score}</p>
         </article>
 
-        <article className="commandPanel span2">
+        <article id="coverage" className="commandPanel span2">
           <h2>Decision basis</h2>
           <ul className="plainList">
             {(detail.score_explanation || []).map((item) => <li key={item}>{item}</li>)}
@@ -146,21 +151,21 @@ export default function ReportExtensionDetailPage({ params }: { params: Promise<
           {!detail.recommendations?.length ? <p>No recommendations were emitted for this extension.</p> : null}
         </article>
 
-        <article className="commandPanel span2 evidencePanel">
+        <article id="alerts" className="commandPanel span2 evidencePanel">
           <h2>Findings that affect the decision</h2>
           <p className="sectionExplanation">These findings represent sensitive capability or connected behavior that should change the install decision. They are not automatically proof of malware.</p>
           {actionable.map((finding) => <FindingRow key={finding.finding_id} finding={finding} detail={detail} />)}
           {!actionable.length ? <p>No actionable findings were emitted for this extension.</p> : null}
         </article>
 
-        <article className="commandPanel span2 evidencePanel">
+        <article id="capabilities" className="commandPanel span2 evidencePanel">
           <h2>Context, not accusations</h2>
           <p className="sectionExplanation">These observations describe ordinary package behavior or trust context. They do not independently justify blocking an extension.</p>
           {contextual.map((finding) => <FindingRow key={finding.finding_id} finding={finding} detail={detail} />)}
           {!contextual.length ? <p>No contextual notes were emitted for this extension.</p> : null}
         </article>
 
-        <article className="commandPanel">
+        <article id="provenance" className="commandPanel">
           <h2>Manifest</h2>
           <Fact label="Publisher" value={detail.publisher} />
           <Fact label="Version" value={detail.version} />
@@ -168,17 +173,18 @@ export default function ReportExtensionDetailPage({ params }: { params: Promise<
           <Fact label="Repository" value={detail.repository || "not reported"} />
         </article>
 
-        <article className="commandPanel">
+        <article id="dependencies" className="commandPanel">
           <h2>Dependencies</h2>
           {Object.entries(detail.dependencies || {}).slice(0, 20).map(([name, version]) => <p key={name}>{name}@{version}</p>)}
           {!Object.keys(detail.dependencies || {}).length ? <p>No runtime dependencies were reported.</p> : null}
         </article>
 
-        <article className="commandPanel span2">
+        <article id="evidence" className="commandPanel span2">
           <h2>Artifacts</h2>
           <pre className="jsonPreview compactJson">{JSON.stringify(detail.artifact_inventory || {}, null, 2)}</pre>
         </article>
       </section>
+      </div></div>
     </main>
   );
 }

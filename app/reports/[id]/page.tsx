@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getImportedReport } from "@/lib/reportBundle";
 import type { BundleExtensionSummary, Decision, ImportedReportBundle, Verdict } from "@/lib/types";
 
@@ -9,6 +10,7 @@ const decisionRank: Record<string, number> = { block: 4, incomplete: 3, review: 
 const severityRank: Record<string, number> = { CRITICAL: 5, HIGH: 4, MEDIUM: 3, LOW: 2, INFO: 1 };
 
 export default function ReportDashboardPage({ params }: { params: Promise<{ id: string }> }) {
+  const router = useRouter();
   const [report, setReport] = useState<ImportedReportBundle | null>(null);
   const [reportId, setReportId] = useState("");
   const [decision, setDecision] = useState("");
@@ -18,9 +20,10 @@ export default function ReportDashboardPage({ params }: { params: Promise<{ id: 
   useEffect(() => {
     void params.then(({ id }) => {
       setReportId(id);
-      setReport(getImportedReport(id));
+      const imported = getImportedReport(id); setReport(imported);
+      if (imported?.leaderboard.extensions.length === 1) router.replace(`/reports/${encodeURIComponent(id)}/extensions/${encodeURIComponent(imported.leaderboard.extensions[0].extension_id)}`);
     });
-  }, [params]);
+  }, [params, router]);
 
   const rows = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -86,6 +89,8 @@ export default function ReportDashboardPage({ params }: { params: Promise<{ id: 
         <DecisionCard decision="review" value={decisionCounts.review || 0} label="Review required" detail="Behavior or baseline change" />
         <DecisionCard decision="allow" value={decisionCounts.allow || 0} label="Allow" detail="Complete with no action required" />
       </section>
+
+      <section className="reportAnalytics"><article><span>Risk distribution</span><h2>{rows.filter(item=>item.risk_score>=60).length}</h2><p>artifacts with risk priority 60 or higher</p><div className="distributionBar"><i style={{width:`${percentage(rows.filter(item=>item.risk_score>=60).length,rows.length)}%`}}/></div></article><article><span>Malware evidence</span><h2>{rows.filter(item=>item.malware_score>0).length}</h2><p>artifacts with non-zero malicious evidence</p><div className="distributionBar danger"><i style={{width:`${percentage(rows.filter(item=>item.malware_score>0).length,rows.length)}%`}}/></div></article><article><span>Analyzer completion</span><h2>{Math.round(rows.reduce((sum,item)=>sum+Number(item.coverage_percent??0),0)/Math.max(1,rows.length))}%</h2><p>average required analysis coverage</p><div className="distributionBar confidence"><i style={{width:`${Math.round(rows.reduce((sum,item)=>sum+Number(item.coverage_percent??0),0)/Math.max(1,rows.length))}%`}}/></div></article></section>
 
       <div className="reportContextLine">
         <span>{summary.total_extensions} exact extension artifacts</span>
@@ -190,3 +195,4 @@ function reportOutcome(counts: Record<Decision, number>, total: number, incomple
   if (counts.review) return { headline: `${counts.review} of ${total} artifact${total === 1 ? "" : "s"} needs human review.`, detail: "No confirmed malware decision was produced. Review the cited capabilities and verify they match the extension's documented purpose." };
   return { headline: `All ${total} artifact${total === 1 ? "" : "s"} passed the active review policy.`, detail: "Approval remains specific to these exact hashes, versions, ruleset, and recorded analysis coverage." };
 }
+function percentage(value:number,total:number){return total?Math.round(value/total*100):0;}
