@@ -16,6 +16,7 @@ export async function queueDeepScan(extensionId: string, requestedVersion: strin
     return { ...job, github_run_id: dispatch.runId, extension_id: extensionId, version, profile: "deep" };
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : "Workflow dispatch failed.";
+    await db.rpc("fail_scan_dispatch", { p_job_id: job.id, p_requester_hash: requesterHash, p_error: message });
     throw new Error(message);
   }
 }
