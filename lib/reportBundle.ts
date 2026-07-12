@@ -78,13 +78,13 @@ export function saveImportedReport(bundle: ImportedReportBundle): void {
 
 export function saveHostedScanReport(payload: unknown): ImportedReportBundle | null {
   if (!payload || typeof payload !== "object" || !("report" in payload)) return null;
-  const report = payload.report as { metadata?: Record<string, unknown>; summary?: { top_risk_extensions?: Array<Record<string, unknown>>; finding_counts?: { by_rule?: Record<string, number>; by_category?: Record<string, number>; by_severity?: Record<string, number> } }; extensions?: Array<Record<string, unknown>> };
+  const report = payload.report as { metadata?: Record<string, unknown>; summary?: { top_risk_extensions?: Array<Record<string, unknown>>; finding_counts?: { by_rule?: Record<string, number>; by_category?: Record<string, number>; by_severity?: Record<string, number> } }; leaderboard?: { extensions?: Array<Record<string, unknown>> }; extensions?: Array<Record<string, unknown>> | Record<string, Record<string, unknown>>; rules?: { ruleset_version?: string; rules?: RuleMetadata[] } };
   const scanId = String(report.metadata?.scan_id || crypto.randomUUID());
-  const rows = report.summary?.top_risk_extensions || [];
+  const rows = report.leaderboard?.extensions || report.summary?.top_risk_extensions || [];
   const details: Record<string, ExtensionDetail> = {};
   const leaderboard = rows.map((row, index) => {
     const detailRef = `extensions/${String(row.extension_id || `extension-${index}`)}.json`;
-    const detail = report.extensions?.[index] || row;
+    const detail = Array.isArray(report.extensions) ? report.extensions[index] || row : report.extensions?.[String(row.detail_ref || detailRef)] || row;
     details[detailRef] = {
       ...detail,
       description: String(detail.description || "Hosted static analysis result."),
@@ -112,7 +112,7 @@ export function saveHostedScanReport(payload: unknown): ImportedReportBundle | n
     importedAt: Date.now(),
     metadata: { schema_version: "hosted-1", scan_id: scanId, created_at: new Date().toISOString(), scanner_version: String(report.metadata?.scanner_version || "hosted-static-1"), ruleset_version: String(report.metadata?.ruleset_version || "hosted"), profile: "hosted-static", source: String(report.metadata?.source || "hosted"), total_extensions: rows.length, completed_extensions: rows.length, incomplete_extensions: 0 },
     summary: { summary: { total_extensions: rows.length, clean: rows.filter((row) => row.verdict === "clean").length, review: rows.filter((row) => row.verdict === "review").length, suspicious: rows.filter((row) => row.verdict === "suspicious").length, malicious: rows.filter((row) => row.verdict === "malicious").length, max_risk_score: Math.max(0, ...rows.map((row) => Number(row.risk_score || 0))), max_malware_score: Math.max(0, ...rows.map((row) => Number(row.malware_score || 0))), posture_status: "not-run", decision_counts: decisions }, top_risk_extensions: leaderboard, finding_counts: report.summary?.finding_counts?.by_rule || {}, severity_counts: report.summary?.finding_counts?.by_severity || {}, category_counts: report.summary?.finding_counts?.by_category || {} },
-    leaderboard: { extensions: leaderboard }, posture: {}, rules: { ruleset_version: String(report.metadata?.ruleset_version || "hosted"), rules: [] }, details
+    leaderboard: { extensions: leaderboard }, posture: {}, rules: { ruleset_version: String(report.rules?.ruleset_version || report.metadata?.ruleset_version || "hosted"), rules: report.rules?.rules || [] }, details
   };
   saveImportedReport(bundle);
   return bundle;
