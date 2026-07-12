@@ -364,15 +364,58 @@ code, pre { font-family: var(--mono); }
 .createRow { display: flex; align-items: center; gap: 7px; }
 .createRow input { height: 36px; border: 1px solid var(--line); background: white; padding: 0 10px; }
 .workspaceRows { margin-top: 22px; border-top: 1px solid var(--line); }
-.workspaceRows article { display: grid; grid-template-columns: 24px 1fr 130px 20px; align-items: center; gap: 12px; min-height: 62px; border-bottom: 1px solid var(--line); }
+.workspaceRows article, .workspaceTeamRow { display: grid; grid-template-columns: 24px 1fr 130px 20px; align-items: center; gap: 12px; min-height: 62px; border-bottom: 1px solid var(--line); }
 .workspaceRows article:not(:has(> svg:first-child)) { grid-template-columns: 1fr 130px 20px; }
 .workspaceRows article span { color: var(--muted); font-size: 12px; text-transform: capitalize; }
+.workspaceTeamRow span { color: var(--muted); font-size: 12px; text-transform: capitalize; }
+.teamPage { width: min(1280px, calc(100% - 48px)); margin: 0 auto; padding: 45px 0 110px; }
+.backLink { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; }
+.backLink svg { width: 15px; }
+.teamHead { display: flex; align-items: end; justify-content: space-between; gap: 40px; border-bottom: 1px solid var(--ink); padding: 45px 0 34px; }
+.teamHead span { color: var(--acid-dark); font-family: var(--mono); font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.teamHead h1 { margin: 9px 0 7px; font-family: var(--sans); font-size: 44px; font-weight: 720; }
+.teamHead p { margin: 0; }
+.teamStats { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--line); }
+.teamStats div { border-right: 1px solid var(--line); padding: 22px 0; }
+.teamStats div + div { padding-left: 22px; }
+.teamStats strong, .teamStats span { display: block; }
+.teamStats strong { font-family: var(--mono); font-size: 25px; }
+.teamStats span { margin-top: 4px; color: var(--muted); font-size: 11px; }
+.teamColumns { display: grid; grid-template-columns: 1fr 1.2fr 260px; gap: 50px; padding-top: 48px; }
+.teamColumns h2 { border-bottom: 1px solid var(--ink); padding-bottom: 12px; font-family: var(--sans); font-size: 18px; }
+.teamColumns > div > a, .teamColumns > div > article, .teamColumns aside > div { display: flex; align-items: center; gap: 10px; min-height: 54px; border-bottom: 1px solid var(--line); font-size: 11px; }
+.teamColumns > div > a { justify-content: space-between; }
+.teamColumns article > div { flex: 1; }
+.teamColumns article strong, .teamColumns article span { display: block; }
+.teamColumns article span { margin-top: 3px; color: var(--muted); text-transform: capitalize; }
+.teamColumns aside > div span { flex: 1; }
+.teamColumns aside b { color: var(--muted); font-size: 9px; text-transform: uppercase; }
 .dimensionReference { padding: 70px 0; border-bottom: 1px solid var(--ink); }
 .dimensionReference > div:last-child { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: 30px; border: 1px solid var(--line); background: var(--line); }
 .dimensionReference article { min-height: 150px; background: white; padding: 18px; }
 .dimensionReference article strong { font-size: 14px; }
 .dimensionReference article p { margin: 10px 0 18px; font-size: 11px; }
 .dimensionReference article span { color: var(--faint); font-family: var(--mono); font-size: 9px; }
+.architectureBands { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; border: 1px solid var(--ink); background: var(--ink); }
+.architectureBands article { min-height: 330px; background: white; padding: 22px; }
+.architectureBands article > span { color: var(--acid-dark); font-family: var(--mono); font-size: 11px; text-transform: uppercase; }
+.architectureBands h2 { margin: 34px 0 12px; font-family: var(--sans); font-size: 23px; }
+.architectureBands p { font-size: 13px; }
+.architectureBands article > div { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 25px; }
+.architectureBands article > div code { border: 1px solid var(--line); background: var(--wash); padding: 4px 6px; font-size: 10px; }
+.architectureRules { display: grid; grid-template-columns: .75fr 1.25fr; gap: 80px; padding: 70px 0; border-bottom: 1px solid var(--ink); }
+.architectureRules h2 { margin-top: 10px; font-size: 32px; }
+.architectureRules > div:last-child { border-top: 1px solid var(--ink); }
+.architectureRules article { border-bottom: 1px solid var(--line); padding: 17px 0; }
+.architectureRules article p { margin: 5px 0 0; font-size: 12px; }
+.architectureDetail { display: grid; grid-template-columns: minmax(170px, .8fr) 1.2fr; gap: 18px; border-bottom: 1px solid var(--line); padding: 13px 0; }
+.architectureDetail code { overflow-wrap: anywhere; color: var(--acid-dark); font-size: 11px; }
+.architectureDetail p { margin: 0; font-size: 12px; }
+
+/* Readability floor for imported/legacy operational reports. */
+.leaderboardHead, .ruleTableHead, .studyTableHead { font-size: 10px; }
+.leaderboardRow, .evidenceRow > small, .providerStrip span, .findingTags span { font-size: 11px; }
+.evidenceRow > span, .evidenceRow p, .commandPanel p, .sectionExplanation { font-size: 13px; }
 
 @media (max-width: 700px) {
   .accountPage, .workspacePage { width: min(100% - 28px, 1180px); padding-top: 40px; }
@@ -381,6 +424,9 @@ code, pre { font-family: var(--mono); }
   .accountChoices { grid-template-columns: 1fr; }
   .workspaceSectionHead { display: grid; align-items: start; }
   .dimensionReference > div:last-child { grid-template-columns: 1fr; }
+  .teamPage { width: min(100% - 28px, 1280px); }
+  .teamColumns { grid-template-columns: 1fr; }
+  .architectureBands, .architectureRules { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 900px) {

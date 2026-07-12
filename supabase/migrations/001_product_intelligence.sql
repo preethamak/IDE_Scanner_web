@@ -196,6 +196,17 @@ create table public.finding_comments (
   foreign key (team_id, scan_id, finding_id) references public.finding_triage(team_id, scan_id, finding_id) on delete cascade
 );
 
+create or replace function public.handle_new_user() returns trigger
+language plpgsql security definer set search_path = public
+as $$
+begin
+  insert into public.profiles(id, display_name) values(new.id, coalesce(new.raw_user_meta_data->>'display_name', ''));
+  insert into public.watchlists(owner_id, name) values(new.id, 'My extensions');
+  return new;
+end;
+$$;
+create trigger on_auth_user_created after insert on auth.users for each row execute procedure public.handle_new_user();
+
 create or replace function public.is_team_member(target_team uuid) returns boolean
 language sql stable security definer set search_path = public
 as $$ select exists(select 1 from public.team_members where team_id = target_team and user_id = auth.uid()) $$;

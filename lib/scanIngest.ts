@@ -36,7 +36,7 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
     artifact_inventory: object(detail.artifact_inventory),
     capabilities: object(detail.capabilities),
     baseline_diff: object(detail.baseline_diff),
-    canonical_report: bundle,
+    canonical_report: compactBundle(bundle),
     scanned_at: String(metadata.created_at || new Date().toISOString()),
   };
   const { data: scan, error } = await db.from("scans").upsert(scanRow, { onConflict: "extension_id,version,artifact_sha256,ruleset_version" }).select("id").single();
@@ -48,12 +48,19 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
   const inventory = object(detail.artifact_inventory);
   const files = array(inventory.files).map((raw) => { const item = object(raw); return { scan_id: scanId, path: String(item.path || ""), sha256: String(item.sha256 || ""), size_bytes: Number(item.size_bytes || 0), kind: String(item.kind || "file"), target: item.target ? String(item.target) : null }; }).filter((item) => item.path && item.sha256);
   const dependencies = array(detail.dependency_inventory).map((raw) => { const item = object(raw); return { scan_id: scanId, name: String(item.name || ""), version: String(item.version || "unknown"), ecosystem: String(item.ecosystem || "npm"), relationship: String(item.relationship || "transitive"), advisories: array(item.advisories) }; }).filter((item) => item.name);
-  if (findings.length) { const result = await db.from("findings").insert(findings); if (result.error) throw result.error; }
-  if (files.length) { const result = await db.from("artifact_files").insert(files); if (result.error) throw result.error; }
-  if (dependencies.length) { const result = await db.from("dependencies").insert(dependencies); if (result.error) throw result.error; }
+  await insertChunks("findings", findings);
+  await insertChunks("artifact_files", files);
+  await insertChunks("dependencies", dependencies);
   await db.from("extension_versions").update({ artifact_sha256: artifactSha, latest_scan_id: scanId, scan_state: scanRow.decision === "incomplete" ? "incomplete" : "complete" }).eq("extension_id", extensionId).eq("version", version);
   await db.from("scan_jobs").update({ status: scanRow.decision === "incomplete" ? "incomplete" : "complete", ruleset_version: scanRow.ruleset_version, completed_at: new Date().toISOString() }).eq("id", jobId);
   return scanId;
+
+  async function insertChunks(table: string, rows: Array<Record<string, unknown>>) {
+    for (let index = 0; index < rows.length; index += 500) {
+      const result = await db.from(table).insert(rows.slice(index, index + 500));
+      if (result.error) throw result.error;
+    }
+  }
 }
 
 function firstExtension(value: Bundle["extensions"]): Record<string, unknown> | null {
@@ -63,3 +70,14 @@ function firstExtension(value: Bundle["extensions"]): Record<string, unknown> | 
 }
 function object(value: unknown): Record<string, unknown> { return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; }
 function array(value: unknown): unknown[] { return Array.isArray(value) ? value : []; }
+
+function compactBundle(bundle: Bundle): Bundle {
+  const extensions = bundle.extensions;
+  if (Array.isArray(extensions)) return { ...bundle, extensions: extensions.map(compactDetail) };
+  if (extensions && typeof extensions === "object") return { ...bundle, extensions: Object.fromEntries(Object.entries(extensions).map(([key, detail]) => [key, compactDetail(detail)])) };
+  return bundle;
+}
+function compactDetail(detail: Record<string, unknown>): Record<string, unknown> {
+  const inventory = object(detail.artifact_inventory);
+  return { ...detail, artifact_inventory: { ...inventory, files: undefined } };
+}
