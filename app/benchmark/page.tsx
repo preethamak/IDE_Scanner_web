@@ -1,195 +1,33 @@
-"use client";
+import Link from "next/link";
+import { ArrowRight, BarChart3, CalendarDays, Database, ShieldCheck } from "lucide-react";
 
-import { useEffect, useMemo, useState } from "react";
-import { listImportedBenchmarks, parseBenchmarkBundle, saveImportedBenchmark } from "@/lib/reportBundle";
-import type { BenchmarkBundle, BenchmarkResult } from "@/lib/types";
+const extensions = [
+  ["mathematic.vscode-pdf", "0.1.11", "59", "Workflow permissions and destructive file patterns"],
+  ["selfagency.opilot", "1.8.2", "59", "Agent tooling, startup activation, and workflow posture"],
+  ["ms-toolsai.jupyter", "2025.9.1", "58", "Lifecycle scripts and powerful IDE contributions"],
+  ["ms-python.python", "2026.4.0", "58", "Sensitive activation and agent-facing capabilities"],
+  ["ms-vscode-remote.remote-containers", "0.463.0", "54", "Lifecycle scripts and mutable dependency sources"],
+  ["xyc.vscode-mdx-preview", "0.3.3", "53", "Process execution, network access, and lifecycle scripts"],
+];
+
+const recurring = [
+  ["Dynamic code loading", 115], ["Sensitive activation", 114], ["Missing packaged security policy", 101], ["Process execution", 69], ["Obfuscation indicators", 68], ["Startup activation", 42], ["Filesystem access", 39], ["Lifecycle scripts", 35]
+];
 
 export default function BenchmarkPage() {
-  const [result, setResult] = useState<BenchmarkResult | null>(null);
-  const [benchmarks, setBenchmarks] = useState<BenchmarkBundle[]>([]);
-  const [selectedId, setSelectedId] = useState("");
-  const [status, setStatus] = useState<"idle" | "running" | "importing" | "error">("idle");
-  const [error, setError] = useState("");
+  return <main className="studyPage pageWrap">
+    <section className="studyHero"><div><span className="kicker">Ecosystem scan · historical cohort 01</span><h1>What we found across 148 extension artifacts.</h1><p>This is an observational ecosystem scan: IDE Scanner analyzed a defined public extension cohort and classified the behavior it found. It demonstrates scanner output at scale; it is not a labeled accuracy benchmark.</p></div><div className="studyStamp"><CalendarDays size={19}/><span>Scanned</span><strong>03 July 2026</strong><span>Ruleset</span><strong>Pre-2.1 historical run</strong></div></section>
 
-  const selected = useMemo(
-    () => benchmarks.find((item) => item.id === selectedId) || benchmarks[0] || null,
-    [benchmarks, selectedId],
-  );
-  useEffect(() => { queueMicrotask(() => setBenchmarks(listImportedBenchmarks())); }, []);
-  const quality = selected ? benchmarkQuality(selected.benchmark_summary) : null;
+    <section className="studyNumbers"><article><strong>148</strong><span>artifact versions analyzed</span></article><article><strong>85</strong><span>required capability review</span></article><article><strong>63</strong><span>had contextual evidence only</span></article><article><strong>0</strong><span>confirmed malware decisions</span></article></section>
 
-  async function runBenchmark() {
-    setStatus("running");
-    setError("");
-    const response = await fetch("/api/benchmark", { cache: "no-store" });
-    const data = await response.json() as BenchmarkResult & { error?: string };
-    if (!response.ok) {
-      setError(data.error || "Benchmark failed");
-      setStatus("error");
-      return;
-    }
-    setResult(data);
-    setStatus("idle");
-  }
+    <section className="studyInterpretation"><div><span className="kicker">The result in plain language</span><h2>Powerful does not mean malicious.</h2></div><div><p>More than half the cohort exposed capabilities that deserved review: install scripts, process execution, broad activation, dynamic loading, or agent-facing contributions. The run found <strong>no confirmed malicious intelligence</strong>.</p><p>That does not mean 85 extensions were unsafe. It means their access should be understood before approval. This is exactly why IDE Scanner separates <strong>capability review</strong> from a malware decision.</p></div></section>
 
-  async function importBenchmark(file: File | null) {
-    if (!file) return;
-    setStatus("importing");
-    setError("");
-    try {
-      const bundle = await parseBenchmarkBundle(file);
-      saveImportedBenchmark(bundle);
-      const imported = listImportedBenchmarks();
-      setBenchmarks(imported);
-      setSelectedId(bundle.id);
-      setStatus("idle");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not import benchmark bundle");
-      setStatus("error");
-    }
-  }
+    <section className="studySection"><div className="resultHeader"><div><span className="kicker">Highest review pressure</span><h2>Artifacts requiring the most context</h2></div><span>Risk index is prioritization, not probability</span></div><div className="studyTable"><div className="studyTableHead"><span>Extension artifact</span><span>Risk</span><span>Why it surfaced</span><span>Classification</span></div>{extensions.map(([id, version, risk, reason]) => <article key={`${id}-${version}`}><div><strong>{id}</strong><code>@{version}</code></div><b>{risk}</b><p>{reason}</p><span className="decision review">REVIEW</span></article>)}</div></section>
 
-  return (
-    <main className="shell">
-      <section className="pageHero">
-        <div>
-          <p className="eyebrow">Ground truth</p>
-          <h1>Benchmarks</h1>
-          <p className="heroCopy">Import scanner-generated `benchmark.zip` files or run the bundled fixture benchmark through the local bridge.</p>
-        </div>
-        <div className="heroActions">
-          <label className="secondaryAction fileAction">
-            <input type="file" accept=".zip,application/zip" onChange={(event) => void importBenchmark(event.target.files?.[0] || null)} />
-            Import benchmark.zip
-          </label>
-          <button className="primary localOnlyAction" type="button" onClick={() => void runBenchmark()} disabled={status === "running"} title="Requires the Python scanner on the same host">
-            {status === "running" ? "Running locally" : "Run local fixtures"}
-          </button>
-        </div>
-      </section>
+    <section className="studySection recurringSection"><div className="sectionTitle"><span className="kicker">Recurring signals</span><h2>Capabilities seen across the cohort.</h2><p>Counts are finding occurrences, not unique malicious extensions. Generated code and repeated file-level matches can contribute more than once.</p></div><div className="recurringList">{recurring.map(([label, count], index) => <article key={String(label)}><span>0{index + 1}</span><strong>{label}</strong><div><i style={{ width: `${Math.round(Number(count) / 1.15)}%` }}/></div><b>{count}</b></article>)}</div></section>
 
-      {error ? <div className="errorBand">{error}</div> : null}
-      <div className="coverageNotice benchmarkNotice"><strong>Benchmark contract</strong><span>Imported bundles work entirely in the browser and remain available in this browser.</span><span>Running fixtures requires the Python scanner; the public hosted site does not claim that capability.</span></div>
+    <section className="methodNote"><div><Database/><h3>Dataset boundary</h3><p>148 artifact versions collected for scanner evaluation across language, preview, container, AI, data, and developer-tool categories. It is not a statistically representative sample of the entire Marketplace.</p></div><div><BarChart3/><h3>What this proves</h3><p>The scanner can classify real extension capability at cohort scale and preserve evidence. It does not prove detection accuracy without labeled ground truth.</p></div><div><ShieldCheck/><h3>Formal validation</h3><p>Precision, recall, F1, specificity, and rule coverage belong to labeled malicious/benign benchmark datasets and are maintained separately from ecosystem observations.</p></div></section>
 
-      {selected ? (
-        <>
-          <section className="reportControls">
-            <label>
-              Benchmark
-              <select value={selected.id} onChange={(event) => setSelectedId(event.target.value)}>
-                {benchmarks.map((item) => (
-                  <option value={item.id} key={item.id}>{item.metadata.dataset_id} - {item.metadata.benchmark_id}</option>
-                ))}
-              </select>
-            </label>
-            <div>
-              <span className="mutedLabel">Scanner</span>
-              <strong>{selected.metadata.scanner_version || "--"}</strong>
-            </div>
-            <div>
-              <span className="mutedLabel">Ruleset</span>
-              <strong>{selected.metadata.ruleset_version || "--"}</strong>
-            </div>
-          </section>
-
-          <section className="statGrid benchmarkStats">
-            <Stat label="Precision" value={`${Math.round(selected.benchmark_summary.precision * 100)}%`} />
-            <Stat label="Recall" value={`${Math.round(selected.benchmark_summary.recall * 100)}%`} />
-            <Stat label="F1" value={`${Math.round((quality?.f1 || 0) * 100)}%`} />
-            <Stat label="Specificity" value={`${Math.round((quality?.specificity || 0) * 100)}%`} />
-            <Stat label="Dataset coverage" value={`${Math.round((quality?.coverage || 0) * 100)}%`} />
-            <Stat label="Not scanned" value={selected.benchmark_summary.not_scanned} />
-            <Stat label="True positives" value={selected.benchmark_summary.true_positives} />
-            <Stat label="False positives" value={selected.benchmark_summary.false_positives} />
-            <Stat label="False negatives" value={selected.benchmark_summary.false_negatives} />
-          </section>
-
-          <section className="benchmarkDefinitions">
-            <article><strong>Precision</strong><p>Of items flagged positive, the share that ground truth labels positive. High precision means less analyst noise.</p></article>
-            <article><strong>Recall</strong><p>Of ground-truth positives, the share detected. High recall means fewer missed threats.</p></article>
-            <article><strong>F1</strong><p>Harmonic mean of precision and recall. Useful for comparison only when datasets and coverage are identical.</p></article>
-            <article><strong>Specificity</strong><p>Of ground-truth negatives, the share correctly left negative. This exposes false-positive pressure.</p></article>
-            <article><strong>Dataset coverage</strong><p>Share of dataset artifacts actually evaluated. Unscanned items are not silently counted as correct negatives.</p></article>
-          </section>
-
-          <section className="historyList benchmarkList">
-            {selected.leaderboard.extensions.slice(0, 80).map((row) => (
-              <article className="benchmarkRow" key={row.extension_id}>
-                <div>
-                  <span className={`tag ${row.outcome === "true_positive" || row.outcome === "true_negative" ? "clean" : row.outcome === "not_scanned" ? "review" : "malicious"}`}>{row.outcome.replaceAll("_", " ")}</span>
-                  <strong>{row.extension_id}</strong>
-                  <p>{row.exposure_types.length ? row.exposure_types.join(", ") : row.label}</p>
-                </div>
-                <div className="benchmarkVerdicts">
-                  <span>Expected <b>{row.expected_findings.length ? row.expected_findings.length : "--"}</b></span>
-                  <span>Matched <b>{row.matched_findings.length}</b></span>
-                  <span>Risk <b>{row.risk_score ?? "--"}</b></span>
-                  <span>Severity <b>{row.severity}</b></span>
-                </div>
-                <code>{row.matched_findings.length ? row.matched_findings.join(", ") : row.ide_scanner_findings.slice(0, 4).join(", ") || "no scanner findings"}</code>
-              </article>
-            ))}
-          </section>
-
-          <section className="historyList benchmarkList">
-            {selected.rule_coverage.rules.map((rule) => (
-              <article className="benchmarkRow compactBenchmarkRow" key={rule.rule_id}>
-                <div>
-                  <strong>{rule.rule_id}</strong>
-                  <p>{rule.detections}/{rule.expected} expected detections</p>
-                </div>
-                <div className="benchmarkVerdicts">
-                  <span>Precision <b>{Math.round(rule.precision * 100)}%</b></span>
-                  <span>Recall <b>{Math.round(rule.recall * 100)}%</b></span>
-                </div>
-                <code>{rule.false_positives} false positives</code>
-              </article>
-            ))}
-          </section>
-        </>
-      ) : null}
-
-      {!selected ? <p className="emptyCopy">Import `benchmark.zip` to view dataset metrics, rule coverage, and extension-level matches.</p> : null}
-
-      {result ? (
-        <section className="historyList benchmarkList">
-          {result.rows.map((row) => (
-            <article className="benchmarkRow" key={row.extension_id}>
-              <div>
-                <span className={`tag ${row.ok ? "clean" : "malicious"}`}>{row.ok ? "pass" : "miss"}</span>
-                <strong>{row.extension_id}</strong>
-                <p>{row.reason}</p>
-              </div>
-              <div className="benchmarkVerdicts">
-                <span>Expected <b>{row.expected_verdict}</b></span>
-                <span>Actual <b>{row.actual_verdict}</b></span>
-                <span>Risk <b>{row.risk_score ?? "--"}</b></span>
-                <span>Malware <b>{row.malware_score ?? "--"}</b></span>
-              </div>
-              <code>{row.top_findings.length ? row.top_findings.join(", ") : "no findings"}</code>
-            </article>
-          ))}
-        </section>
-      ) : null}
-    </main>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="stat">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
-function benchmarkQuality(summary: BenchmarkBundle["benchmark_summary"]) {
-  const f1Denominator = summary.precision + summary.recall;
-  const negativeTotal = summary.true_negatives + summary.false_positives;
-  return {
-    f1: f1Denominator ? (2 * summary.precision * summary.recall) / f1Denominator : 0,
-    specificity: negativeTotal ? summary.true_negatives / negativeTotal : 0,
-    coverage: summary.total_extensions ? summary.evaluated_extensions / summary.total_extensions : 0
-  };
+    <section className="studyCta"><div><span className="kicker">Inspect the evidence model</span><h2>Understand every rule behind the study.</h2></div><Link className="button buttonDark" href="/metrics">Open intelligence reference <ArrowRight size={16}/></Link></section>
+  </main>;
 }

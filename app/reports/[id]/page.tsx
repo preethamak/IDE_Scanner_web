@@ -57,6 +57,7 @@ export default function ReportDashboardPage({ params }: { params: Promise<{ id: 
 
   const summary = report.summary.summary;
   const decisionCounts = summary.decision_counts || countDecisions(report.leaderboard.extensions);
+  const outcome = reportOutcome(decisionCounts, summary.total_extensions, report.metadata.incomplete_extensions);
 
   return (
     <main className="shell">
@@ -72,6 +73,11 @@ export default function ReportDashboardPage({ params }: { params: Promise<{ id: 
           <Link className="heroAction" href={`/reports/${reportId}/posture`}>Posture</Link>
           <Link className="heroAction" href="/scan">Import another</Link>
         </div>
+      </section>
+
+      <section className="dashboardOutcome">
+        <div><p className="eyebrow">Scan outcome</p><h2>{outcome.headline}</h2><p>{outcome.detail}</p></div>
+        <div><span>Confirmed block decisions<strong>{decisionCounts.block || 0}</strong></span><span>Human reviews required<strong>{decisionCounts.review || 0}</strong></span><span>Coverage failures<strong>{decisionCounts.incomplete || 0}</strong></span></div>
       </section>
 
       <section className="actionQueue" aria-label="Security action queue">
@@ -176,4 +182,11 @@ function countDecisions(items: BundleExtensionSummary[]): Record<Decision, numbe
   const counts: Record<Decision, number> = { block: 0, review: 0, incomplete: 0, allow: 0 };
   for (const item of items) counts[securityDecision(item)] += 1;
   return counts;
+}
+
+function reportOutcome(counts: Record<Decision, number>, total: number, incomplete: number) {
+  if (counts.block) return { headline: `${counts.block} artifact${counts.block === 1 ? "" : "s"} should be blocked.`, detail: "Authoritative malicious intelligence or policy-rejected evidence requires removal or rejection." };
+  if (counts.incomplete || incomplete) return { headline: `${counts.incomplete || incomplete} artifact${(counts.incomplete || incomplete) === 1 ? "" : "s"} cannot be approved yet.`, detail: "Analysis coverage is incomplete. Restore the missing entrypoint, provider, or artifact analysis before making a trust decision." };
+  if (counts.review) return { headline: `${counts.review} of ${total} artifact${total === 1 ? "" : "s"} needs human review.`, detail: "No confirmed malware decision was produced. Review the cited capabilities and verify they match the extension's documented purpose." };
+  return { headline: `All ${total} artifact${total === 1 ? "" : "s"} passed the active review policy.`, detail: "Approval remains specific to these exact hashes, versions, ruleset, and recorded analysis coverage." };
 }

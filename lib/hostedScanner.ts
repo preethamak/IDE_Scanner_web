@@ -30,7 +30,7 @@ export async function scanMarketplaceHosted(extensionId: string): Promise<{ scan
   if (declaredLength > MAX_DOWNLOAD) throw new Error("VSIX exceeds the 50MB hosted scan limit.");
   const bytes = new Uint8Array(await response.arrayBuffer());
   if (!bytes.length || bytes.length > MAX_DOWNLOAD) throw new Error("VSIX is empty or exceeds the 50MB hosted scan limit.");
-  return scanHostedBytes(bytes, { extensionId: metadata.extension_id, publisher: metadata.publisher, version: metadata.version, displayName: metadata.display_name, source: "marketplace" });
+  return scanHostedBytes(bytes, { extensionId: metadata.extension_id, publisher: metadata.publisher, version: metadata.version, displayName: metadata.display_name, source: metadata.registry === "openvsx" ? "openvsx" : "marketplace" });
 }
 
 export function scanUploadedHosted(bytes: Uint8Array, filename: string): { scanId: string; summary: ReportSummary; report: unknown } {
@@ -39,7 +39,7 @@ export function scanUploadedHosted(bytes: Uint8Array, filename: string): { scanI
   return scanHostedBytes(bytes, { extensionId: `upload.${fallback}`, publisher: "uploaded", version: "unresolved", displayName: fallback, source: "upload" });
 }
 
-function scanHostedBytes(bytes: Uint8Array, metadata: { extensionId: string; publisher: string; version: string; displayName: string; source: "marketplace" | "upload" }): { scanId: string; summary: ReportSummary; report: unknown } {
+function scanHostedBytes(bytes: Uint8Array, metadata: { extensionId: string; publisher: string; version: string; displayName: string; source: "marketplace" | "openvsx" | "upload" }): { scanId: string; summary: ReportSummary; report: unknown } {
   const files = unzipSync(bytes);
   const names = Object.keys(files);
   if (names.length > MAX_FILES) throw new Error(`VSIX contains ${names.length} files; hosted limit is ${MAX_FILES}.`);

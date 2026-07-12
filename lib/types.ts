@@ -226,6 +226,8 @@ export type MarketplaceSearchResult = {
   rating_average: number;
   rating_count: number;
   icon_url: string;
+  registry?: "vs-marketplace" | "openvsx";
+  download_url?: string;
 };
 
 export type ImportedReportBundle = {

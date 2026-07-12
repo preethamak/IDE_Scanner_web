@@ -13,6 +13,17 @@ type GalleryExtension = {
 };
 
 export async function searchMarketplace(query: string, limit = 20): Promise<MarketplaceSearchResult[]> {
+  const [marketplace, openvsx] = await Promise.allSettled([searchVsMarketplace(query, limit), searchOpenVsx(query, limit)]);
+  const combined = [...(marketplace.status === "fulfilled" ? marketplace.value : []), ...(openvsx.status === "fulfilled" ? openvsx.value : [])];
+  const unique = new Map<string, MarketplaceSearchResult>();
+  for (const item of combined) if (!unique.has(item.extension_id.toLowerCase())) unique.set(item.extension_id.toLowerCase(), item);
+  if (marketplace.status === "rejected" && openvsx.status === "rejected") {
+    throw new Error("Neither VS Marketplace nor Open VSX could be reached.");
+  }
+  return [...unique.values()].slice(0, limit);
+}
+
+async function searchVsMarketplace(query: string, limit: number): Promise<MarketplaceSearchResult[]> {
   const response = await fetch(GALLERY_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json;api-version=7.2-preview.1" },
@@ -24,15 +35,27 @@ export async function searchMarketplace(query: string, limit = 20): Promise<Mark
   return (data.results?.[0]?.extensions || []).map(normalizeExtension).filter((item): item is MarketplaceSearchResult => Boolean(item));
 }
 
+async function searchOpenVsx(query: string, limit: number): Promise<MarketplaceSearchResult[]> {
+  const response = await fetch(`https://open-vsx.org/api/-/search?query=${encodeURIComponent(query)}&size=${Math.min(limit, 25)}`, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Open VSX search returned ${response.status}`);
+  const data = await response.json() as { extensions?: OpenVsxExtension[] };
+  return (data.extensions || []).map(normalizeOpenVsx);
+}
+
 export async function resolveMarketplaceExtension(extensionId: string): Promise<MarketplaceSearchResult> {
   const normalized = normalizeMarketplaceId(extensionId);
   const results = await searchMarketplace(normalized, 25);
   const exact = results.find((item) => item.extension_id.toLowerCase() === normalized.toLowerCase());
-  if (!exact) throw new Error(`Extension ${normalized} was not found on VS Marketplace.`);
+  if (!exact) {
+    const openvsx = await resolveOpenVsxExtension(normalized);
+    if (openvsx) return openvsx;
+    throw new Error(`Extension ${normalized} was not found on VS Marketplace or Open VSX.`);
+  }
   return exact;
 }
 
 export function marketplaceVsixUrl(item: MarketplaceSearchResult): string {
+  if (item.download_url) return item.download_url;
   const [, name] = item.extension_id.split(".", 2);
   return `https://marketplace.visualstudio.com/_apis/public/gallery/publishers/${encodeURIComponent(item.publisher)}/vsextensions/${encodeURIComponent(name)}/${encodeURIComponent(item.version)}/vspackage`;
 }
@@ -69,6 +92,23 @@ function normalizeExtension(raw: GalleryExtension): MarketplaceSearchResult | nu
     install_count: Number(stats.install || 0),
     rating_average: Number(stats.averagerating || 0),
     rating_count: Number(stats.ratingcount || 0),
-    icon_url: icon?.source || ""
+    icon_url: icon?.source || "",
+    registry: "vs-marketplace"
   };
+}
+
+type OpenVsxExtension = { name?: string; namespace?: string; version?: string; displayName?: string; description?: string; verified?: boolean; downloadCount?: number; averageRating?: number; reviewCount?: number; timestamp?: string; files?: { download?: string; icon?: string } };
+
+function normalizeOpenVsx(raw: OpenVsxExtension): MarketplaceSearchResult {
+  const publisher = raw.namespace || "unknown";
+  const name = raw.name || "extension";
+  return { extension_id: `${publisher}.${name}`, display_name: raw.displayName || name, publisher, publisher_display_name: publisher, publisher_verified: Boolean(raw.verified), short_description: raw.description || "", version: raw.version || "", last_updated: raw.timestamp || "", install_count: Number(raw.downloadCount || 0), rating_average: Number(raw.averageRating || 0), rating_count: Number(raw.reviewCount || 0), icon_url: raw.files?.icon || "", registry: "openvsx", download_url: raw.files?.download || "" };
+}
+
+async function resolveOpenVsxExtension(extensionId: string): Promise<MarketplaceSearchResult | null> {
+  const [publisher, name] = extensionId.split(".", 2);
+  const response = await fetch(`https://open-vsx.org/api/${encodeURIComponent(publisher)}/${encodeURIComponent(name)}`, { cache: "no-store" });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`Open VSX lookup returned ${response.status}`);
+  return normalizeOpenVsx(await response.json() as OpenVsxExtension);
 }
