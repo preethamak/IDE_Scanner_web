@@ -4,6 +4,15 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { evidenceClasses, metricCatalog, ruleCatalog } from "@/lib/metrics";
 
+const dimensions = [
+  ["Behavior safety", "Process, network, filesystem, credential, webview and agent behavior deductions."],
+  ["Supply-chain integrity", "Lifecycle, mutable sources, registry intelligence and release provenance."],
+  ["Dependency health", "Resolved direct and transitive runtime packages plus known advisories."],
+  ["Artifact integrity", "Exact hashes, signatures, native payloads, packed content and evasion indicators."],
+  ["Publisher & project", "Verification, maintenance, repository and security-policy context."],
+  ["Analysis confidence", "Executable coverage and successful completion of required analyzers."],
+];
+
 export default function MetricsPage() {
   const [query, setQuery] = useState("");
   const [engine, setEngine] = useState("all");
@@ -16,7 +25,9 @@ export default function MetricsPage() {
   return <main className="shell referencePage">
     <section className="pageHero referenceHero"><div><p className="eyebrow">Detection reference · ruleset 2026.07.11</p><h1>Every metric. Every rule. No hidden judgment.</h1><p className="heroCopy">The product reports {metricCatalog.length} security domains, {ruleCatalog.length} registered detection rules, eight evidence classes, client-posture controls, and explicit analysis coverage.</p></div><Link className="heroAction" href="/scan">Run a scan</Link></section>
 
-    <section className="referenceStats"><div><strong>{ruleCatalog.length}</strong><span>registered rules</span></div><div><strong>{metricCatalog.length}</strong><span>metric domains</span></div><div><strong>8</strong><span>evidence classes</span></div><div><strong>4</strong><span>security decisions</span></div></section>
+    <section className="referenceStats"><div><strong>{ruleCatalog.length}</strong><span>registered rules</span></div><div><strong>{metricCatalog.length}</strong><span>metric domains</span></div><div><strong>6</strong><span>security dimensions</span></div><div><strong>4</strong><span>security decisions</span></div></section>
+
+    <section className="dimensionReference"><div className="sectionIntro"><p className="eyebrow">Version posture</p><h2>Dimensions explain where trust pressure comes from.</h2><p>Each score starts at 100 and records deterministic deductions. Higher is better. An incomplete scan makes analysis confidence unknown; no dimension is a probability that an extension is malicious.</p></div><div>{dimensions.map(([name, detail]) => <article key={name}><strong>{name}</strong><p>{detail}</p><span>0 weak · 70 attention · 90 strong</span></article>)}</div></section>
 
     <section className="metricDomainGrid">{metricCatalog.map((metric, index) => <article key={metric.id}><span>{String(index + 1).padStart(2, "0")}</span><h2>{metric.label}</h2><strong>{metric.short}</strong><p>{metric.detail}</p><p className="metricWhy">Why it matters: {metric.why}</p><div>{metric.outputs.map((output) => <code key={output}>{output}</code>)}</div></article>)}</section>
 

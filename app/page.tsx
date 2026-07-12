@@ -13,9 +13,9 @@ const signals = [
 ];
 
 const exampleRows = [
-  ["REVIEW", "JuanBlanco.solidity", "0.0.187", "Credential and filesystem surfaces", "review"],
-  ["ALLOW", "esbenp.prettier-vscode", "latest", "No review evidence", "allow"],
-  ["INCOMPLETE", "private.native-tools", "2.4.1", "Native artifact not inspected", "incomplete"],
+  ["REQUIRED", "Executable behavior", "AST + Semgrep", "Source-to-sink and sensitive capability evidence", "neutral"],
+  ["REQUIRED", "Artifact intelligence", "YARA + SHA-256", "Byte indicators, files, signatures and provenance", "neutral"],
+  ["REQUIRED", "Runtime supply chain", "OSV + lockfile", "Resolved dependencies and vulnerability intelligence", "neutral"],
 ];
 
 export default function HomePage() {
@@ -35,8 +35,8 @@ export default function HomePage() {
       </div>
       <div className="heroProductWindow">
         <div className="windowBar"><div><span/><span/><span/></div><strong>Extension intelligence</strong><span>Exact artifacts</span></div>
-        <div className="windowToolbar"><div><Waves size={16}/><span>Recent analysis</span></div><small>DEEP + HOSTED</small></div>
-        <div className="signalTable"><div className="signalHead"><span>Decision</span><span>Extension</span><span>Version</span><span>Primary evidence</span></div>{exampleRows.map(([decision, extension, version, reason, tone]) => <div className="signalRow" key={extension}><span><b className={`decision ${tone}`}>{decision}</b></span><strong>{extension}</strong><code>{version}</code><span>{reason}</span></div>)}</div>
+        <div className="windowToolbar"><div><Waves size={16}/><span>Deep Scan contract</span></div><small>SCHEMA 2.2</small></div>
+        <div className="signalTable"><div className="signalHead"><span>Status</span><span>Surface</span><span>Analyzer</span><span>Recorded output</span></div>{exampleRows.map(([decision, extension, version, reason, tone]) => <div className="signalRow" key={extension}><span><b className={`decision ${tone}`}>{decision}</b></span><strong>{extension}</strong><code>{version}</code><span>{reason}</span></div>)}</div>
         <div className="windowFoot"><span><Check size={14}/> Artifact hashes recorded</span><span><Check size={14}/> Coverage is explicit</span><span><Check size={14}/> Package code not executed</span></div>
       </div>
     </section>

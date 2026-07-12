@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Code2, ShieldCheck } from "lucide-react";
+import { Code2, ShieldCheck, UserRound } from "lucide-react";
 import SiteNav from "./SiteNav";
+import "@fontsource-variable/ibm-plex-sans";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/600.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -26,6 +29,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <SiteNav items={navigation} />
           <div className="headerCommands">
             <a className="iconButton" href="https://github.com/preethamak/IDE_Scanner" aria-label="IDE Scanner source code" title="Source code"><Code2 size={18} /></a>
+            <Link className="iconButton" href="/account" aria-label="Account and workspace" title="Account"><UserRound size={17}/></Link>
             <Link className="button buttonDark buttonSmall" href="/scan">Analyze extension</Link>
           </div>
         </div>
