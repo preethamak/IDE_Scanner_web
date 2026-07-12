@@ -247,6 +247,88 @@ code, pre { font-family: var(--mono); }
 .reportLinkBox p { margin: 5px 0 12px; font-size: 10px; }
 .reportLinkBox a { display: inline-flex; align-items: center; gap: 7px; font-size: 10px; font-weight: 750; }
 
+.reportsHero { display: flex; align-items: end; justify-content: space-between; gap: 40px; border-bottom: 1px solid var(--ink); padding-bottom: 40px; }
+.reportsHero h1 { max-width: 800px; margin: 13px 0 16px; font-size: 60px; line-height: 1; }
+.reportsHero p { max-width: 700px; margin-bottom: 0; }
+.reportInventory { margin-top: 55px; }
+.reportRows { border-top: 1px solid var(--ink); }
+.reportRows article { display: grid; grid-template-columns: 42px minmax(280px, 1.4fr) 120px 200px 36px 36px; gap: 16px; align-items: center; min-height: 105px; border-bottom: 1px solid var(--line); }
+.reportIcon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 5px; background: var(--ink); color: var(--acid); }
+.reportRows article > div:nth-child(2) strong, .reportRows article > div:nth-child(2) code, .reportRows article > div:nth-child(2) p { display: block; }
+.reportRows article > div:nth-child(2) code { margin-top: 3px; color: var(--acid-dark); font-size: 10px; }
+.reportRows article > div:nth-child(2) p { margin: 5px 0 0; font-size: 10px; }
+.reportNumbers { display: flex; gap: 20px; }
+.reportNumbers span { color: var(--faint); font-size: 9px; text-transform: uppercase; }
+.reportNumbers strong { display: block; margin-top: 4px; color: var(--ink); font-family: var(--display); font-size: 22px; font-weight: 500; }
+.deleteButton { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 4px; background: transparent; color: var(--faint); }
+.deleteButton:hover { border-color: var(--red); color: var(--red); }
+.emptyReports { display: grid; place-items: center; min-height: 310px; border: 1px solid var(--line); border-radius: 6px; background: white; padding: 50px; text-align: center; }
+.emptyReports svg { color: var(--acid-dark); }
+.emptyReports h3 { margin: 18px 0 5px; font-family: var(--display); font-size: 26px; font-weight: 500; }
+.emptyReports p { max-width: 480px; }
+.bundleContract { display: grid; grid-template-columns: .8fr 1.2fr; gap: 100px; margin-top: 100px; border-top: 1px solid var(--ink); padding-top: 80px; }
+.bundleFiles { border-top: 1px solid var(--ink); }
+.bundleFiles article { display: grid; grid-template-columns: 28px 1fr; gap: 12px; border-bottom: 1px solid var(--line); padding: 16px 0; }
+.bundleFiles svg { color: var(--acid-dark); }
+.bundleFiles code { font-size: 11px; font-weight: 700; }
+.bundleFiles p { margin: 4px 0 0; font-size: 11px; }
+
+.referencePage, .methodologyPage { max-width: 1320px; }
+.referenceHero h1 { max-width: 900px; font-size: 60px; line-height: 1; }
+.referenceStats { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--ink); border-radius: 6px; background: var(--ink); gap: 1px; overflow: hidden; }
+.referenceStats > div { min-height: 95px; background: white; padding: 18px; }
+.referenceStats strong { display: block; font-family: var(--display); font-size: 30px; font-weight: 500; }
+.referenceStats span { color: var(--muted); font-size: 10px; }
+.metricDomainGrid { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--ink); background: var(--ink); gap: 1px; margin: 70px 0; }
+.metricDomainGrid article { min-height: 330px; background: white; padding: 22px; }
+.metricDomainGrid article > span { color: var(--acid-dark); font-family: var(--mono); font-size: 9px; }
+.metricDomainGrid h2 { margin: 28px 0 5px; font-family: var(--display); font-size: 24px; font-weight: 500; }
+.metricDomainGrid article > strong { font-size: 11px; }
+.metricDomainGrid p { font-size: 11px; }
+.metricWhy { border-top: 1px solid var(--line); padding-top: 10px; }
+.metricDomainGrid article > div { display: flex; flex-wrap: wrap; gap: 4px; }
+.metricDomainGrid article > div code { border: 1px solid var(--line); border-radius: 3px; background: var(--wash); padding: 3px 5px; color: var(--ink-2); font-size: 8px; }
+.evidenceSection, .policySection { display: grid; grid-template-columns: .65fr 1.35fr; gap: 80px; margin: 85px 0; }
+.sectionIntro h2, .policySection h2 { margin: 10px 0 15px; font-family: var(--display); font-size: 36px; font-weight: 500; line-height: 1.05; }
+.evidenceGrid { display: grid; grid-template-columns: repeat(2, 1fr); border-top: 1px solid var(--ink); }
+.evidenceGrid article { border-bottom: 1px solid var(--line); padding: 17px 15px 17px 0; }
+.evidenceGrid strong { font-family: var(--mono); font-size: 9px; text-transform: uppercase; }
+.evidenceGrid p { margin: 7px 0 0; font-size: 10px; }
+.ruleCatalogSection { margin-top: 90px; }
+.catalogHeader { display: grid; grid-template-columns: 1fr auto; gap: 40px; align-items: end; border-bottom: 1px solid var(--ink); padding-bottom: 20px; }
+.catalogHeader h2 { margin: 8px 0; font-family: var(--display); font-size: 36px; font-weight: 500; }
+.catalogHeader p { max-width: 700px; margin: 0; font-size: 11px; }
+.catalogFilters { display: grid; grid-template-columns: 210px 160px; gap: 7px; }
+.catalogFilters input, .catalogFilters select { height: 39px; border: 1px solid var(--line); border-radius: 4px; background: white; color: var(--ink); padding: 0 10px; }
+.ruleTableHead, .ruleTable article { display: grid; grid-template-columns: minmax(350px, 1fr) 110px 90px 150px; gap: 16px; align-items: center; }
+.ruleTableHead { min-height: 36px; border-bottom: 1px solid var(--line); color: var(--faint); font-size: 8px; font-weight: 800; text-transform: uppercase; }
+.ruleTable article { min-height: 105px; border-bottom: 1px solid var(--line); }
+.ruleTable article > div { padding: 13px 0; }
+.ruleTable article code, .ruleTable article strong, .ruleTable article small { display: block; }
+.ruleTable article code { color: var(--acid-dark); font-size: 9px; }
+.ruleTable article strong { margin-top: 4px; font-size: 12px; }
+.ruleTable article p { margin: 4px 0; font-size: 10px; }
+.ruleTable article small { color: var(--faint); font-size: 8px; text-transform: uppercase; }
+.ruleTable article > span { color: var(--muted); font-size: 10px; }
+.evidencePill { justify-self: start; border: 1px solid var(--line); border-radius: 3px; background: var(--wash); padding: 4px 6px; font-family: var(--mono); font-size: 8px !important; }
+.severityText { font-family: var(--mono); font-size: 9px !important; font-weight: 800; }
+.severityCRITICAL, .severityHIGH { color: var(--red) !important; }
+.severityMEDIUM { color: var(--amber) !important; }
+.decisionFormula { display: grid; grid-template-columns: repeat(9, auto); justify-content: space-between; align-items: center; min-height: 92px; border-radius: 6px; background: var(--ink); color: white; padding: 20px 28px; }
+.decisionFormula span { color: #bdc6c0; }
+.decisionFormula b { color: #68756e; font-weight: 400; }
+.decisionFormula strong { color: var(--acid); }
+.decisionDocs { margin: 70px 0; }
+.decisionDocs article { display: grid; grid-template-columns: 130px 1fr 1fr; gap: 25px; align-items: center; min-height: 90px; border-top: 1px solid var(--line); }
+.decisionDocs article:last-child { border-bottom: 1px solid var(--line); }
+.decisionBadge { display: inline-flex; width: fit-content; border: 1px solid currentColor; border-radius: 3px; padding: 5px 7px; font-family: var(--mono); font-size: 9px; }
+.decisionBadge.block { color: var(--red); background: var(--red-bg); }.decisionBadge.review { color: var(--amber); background: var(--amber-bg); }.decisionBadge.incomplete { color: var(--violet); background: var(--violet-bg); }.decisionBadge.allow { color: var(--green); background: var(--green-bg); }
+.decisionDocs article p { margin: 0; font-size: 11px; }.decisionDocs article > span { color: var(--muted); font-size: 10px; }
+.methodologyGrid { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--ink); background: var(--ink); gap: 1px; }
+.methodologyGrid article { min-height: 240px; background: white; padding: 22px; }
+.methodologyGrid h2 { margin: 28px 0 10px; font-size: 26px; }.methodologyGrid p:last-child { font-size: 11px; }
+.policySection > div:last-child { border-top: 1px solid var(--ink); }.policySection article { border-bottom: 1px solid var(--line); padding: 16px 0; }.policySection article p { margin: 5px 0 0; font-size: 11px; }
+
 .siteFooter { display: grid; grid-template-columns: .9fr 1.1fr; gap: 80px; background: var(--ink); color: white; padding: 70px max(24px, calc((100vw - 1400px) / 2)) 25px; }
 .footerWordmark strong { color: white; }
 .footerWordmark > span { background: var(--acid); color: var(--ink); }
@@ -280,6 +362,9 @@ code, pre { font-family: var(--mono); }
   .scanInputPanel { border-right: 0; border-bottom: 1px solid var(--line); }
   .resultColumns > div:first-child { border-right: 0; border-bottom: 1px solid var(--line); }
   .uploadWorkspace { grid-template-columns: 1fr; }
+  .bundleContract, .evidenceSection, .policySection { grid-template-columns: 1fr; gap: 45px; }
+  .metricDomainGrid { grid-template-columns: repeat(2, 1fr); }
+  .ruleTable { overflow-x: auto; }.ruleTableHead, .ruleTable article { min-width: 760px; }
 }
 
 @media (max-width: 760px) {
@@ -318,6 +403,12 @@ code, pre { font-family: var(--mono); }
   .resultMast h2 { font-size: 27px; }
   .resultMetrics { grid-template-columns: repeat(2, 1fr); }
   .resultColumns > div { padding: 21px; }
+  .reportsHero { display: block; }.reportsHero h1, .referenceHero h1 { font-size: 43px; }.reportsHero .button { margin-top: 20px; }
+  .reportRows { overflow-x: auto; }.reportRows article { min-width: 850px; }
+  .referenceStats, .metricDomainGrid, .evidenceGrid, .methodologyGrid { grid-template-columns: 1fr; }
+  .catalogHeader { grid-template-columns: 1fr; }.catalogFilters { grid-template-columns: 1fr; }
+  .decisionFormula { grid-template-columns: 1fr; gap: 7px; text-align: center; }.decisionFormula b { transform: rotate(90deg); }
+  .decisionDocs article { grid-template-columns: 1fr; gap: 8px; padding: 16px 0; }
   .resultHeader, .pageHero { display: block; }
   .resultHeader .textLink, .pageHero .heroAction { margin-top: 18px; }
   .siteFooter { grid-template-columns: 1fr; gap: 45px; }
