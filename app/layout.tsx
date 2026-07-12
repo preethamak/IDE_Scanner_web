@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Code2, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowRight, Code2, ShieldCheck } from "lucide-react";
 import SiteNav from "./SiteNav";
 import "@fontsource-variable/ibm-plex-sans";
 import "@fontsource/ibm-plex-mono/400.css";
@@ -12,33 +12,25 @@ export const metadata: Metadata = {
   description: "Inspect IDE extension artifacts, behavior, provenance, and release changes before installation."
 };
 
-const navigation = [
-  { href: "/catalog", label: "Catalog" },
-  { href: "/scan", label: "Scanner" },
-  { href: "/metrics", label: "Intelligence" },
-  { href: "/benchmark", label: "Benchmarks" },
-  { href: "/reports", label: "Reports" },
-];
-
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en"><body>
     <div className="siteFrame">
       <header className="siteHeader">
         <div className="headerInner">
           <Link className="wordmark" href="/" aria-label="IDE Scanner home"><span><ShieldCheck size={17} strokeWidth={2.2} /></span><strong>IDE Scanner</strong></Link>
-          <SiteNav items={navigation} />
+          <SiteNav />
           <div className="headerCommands">
             <a className="iconButton" href="https://github.com/preethamak/IDE_Scanner" aria-label="IDE Scanner source code" title="Source code"><Code2 size={18} /></a>
-            <Link className="iconButton" href="/account" aria-label="Account and workspace" title="Account"><UserRound size={17}/></Link>
-            <Link className="button buttonDark buttonSmall" href="/scan">Analyze extension</Link>
+            <Link className="headerSignIn" href="/account">Sign in</Link>
+            <Link className="button buttonDark buttonSmall" href="/scan">Start scanning <ArrowRight size={15}/></Link>
           </div>
         </div>
       </header>
       <div className="pageContent">{children}</div>
       <footer className="siteFooter">
-        <div className="footerLead"><Link className="wordmark footerWordmark" href="/"><span><ShieldCheck size={17} /></span><strong>IDE Scanner</strong></Link><p>Evidence-first security intelligence for the extensions inside developer environments.</p></div>
-        <div className="footerLinks"><div><strong>Product</strong><Link href="/catalog">Catalog</Link><Link href="/scan">Scanner</Link><Link href="/reports">Reports</Link></div><div><strong>Intelligence</strong><Link href="/metrics">Metrics</Link><Link href="/scoring">Methodology</Link><Link href="/benchmark">Benchmarks</Link></div><div><strong>Trust</strong><Link href="/settings">Architecture</Link><a href="https://github.com/preethamak/IDE_Scanner">Source code</a></div></div>
-        <div className="footerBottom"><span>Ruleset 2026.07.11</span><span>Open methodology. Inspectable evidence.</span></div>
+        <div className="footerLead"><Link className="wordmark footerWordmark" href="/"><span><ShieldCheck size={17} /></span><strong>IDE Scanner</strong></Link><p>Security intelligence for every extension inside developer environments.</p><Link className="footerScan" href="/scan">Scan an extension <ArrowRight/></Link></div>
+        <div className="footerLinks"><div><strong>Product</strong><Link href="/catalog">Extension catalog</Link><Link href="/scan">Artifact scanner</Link><Link href="/compare">Compare versions</Link><Link href="/workspace">Monitoring</Link></div><div><strong>Intelligence</strong><Link href="/research">Security research</Link><Link href="/metrics">Rules and metrics</Link><Link href="/benchmark">Validation</Link><Link href="/scoring">Methodology</Link></div><div><strong>Trust</strong><Link href="/settings">Architecture</Link><a href="https://github.com/preethamak/IDE_Scanner">Open-source scanner</a><Link href="/security">Security policy</Link><Link href="/design-partners">Design partners</Link></div></div>
+        <div className="footerBottom"><span>Ruleset 2026.07.11 · Schema 2.2</span><span>Open methodology · Exact artifacts · No opaque verdicts</span></div>
       </footer>
     </div>
   </body></html>;

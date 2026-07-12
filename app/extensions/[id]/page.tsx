@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { BadgeCheck, Box, CalendarDays, ChevronRight, Download, GitBranch, ShieldCheck } from "lucide-react";
 import { getExtensionProduct } from "@/lib/productData";
 import DeepScanButton from "@/app/DeepScanButton";
+import WatchExtension from "@/app/WatchExtension";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
         <span className="packageIcon">{product.extension.icon_url ? <Image src={product.extension.icon_url} alt="" width={74} height={74} unoptimized/> : product.extension.publisher.slice(0, 2).toUpperCase()}</span>
         <div><div className="registryLine"><span>{product.extension.registry === "openvsx" ? "Open VSX" : "VS Marketplace"}</span><ChevronRight size={13}/><code>{product.extension.id}</code></div><h1>{product.extension.display_name}</h1><p>{product.extension.description}</p></div>
       </div>
-      <div className="packageActions"><DeepScanButton extensionId={product.extension.id} version={version}/><a className="button buttonQuiet" href={`vscode:extension/${product.extension.id}`}>Install <Download size={16}/></a></div>
+      <div className="packageActions"><DeepScanButton extensionId={product.extension.id} version={version}/><WatchExtension extensionId={product.extension.id}/><a className="button buttonQuiet" href={`vscode:extension/${product.extension.id}`}>Install <Download size={16}/></a></div>
     </section>
 
     <section className="packageFacts">
@@ -33,7 +34,7 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
       <div><span>Deep Scan</span><strong>{latest?.scan_state === "complete" ? "Complete" : "Available on request"}</strong></div>
     </section>
 
-    <nav className="packageTabs" aria-label="Extension intelligence"><a href="#overview">Overview</a><a href="#versions">Versions <b>{product.versions.length}</b></a><a href="#trust">Trust model</a><a href="#about">About</a></nav>
+    <nav className="packageTabs" aria-label="Extension intelligence"><a href="#overview">Overview</a><a href="#versions">Versions <b>{product.versions.length}</b></a>{scan ? <><Link href={`/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(version)}#alerts`}>Alerts</Link><Link href={`/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(version)}#capabilities`}>Capabilities</Link><Link href={`/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(version)}#dependencies`}>Dependencies</Link><Link href={`/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(version)}#files`}>Files</Link></> : null}<a href="#trust">Trust</a></nav>
 
     <div className="packageLayout">
       <div className="packageMain">

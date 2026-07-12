@@ -1,12 +1,23 @@
 "use client";
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Activity, BookOpen, Boxes, ChevronDown, FileSearch, GitCompareArrows, Radar, ScanSearch, ShieldCheck } from "lucide-react";
 
-export default function SiteNav({ items }: { items: Array<{ href: string; label: string }> }) {
+const productLinks = [
+  ["/catalog", "Extension catalog", "Search every supported registry", Boxes],
+  ["/scan", "Artifact scanner", "Analyze a published or private VSIX", ScanSearch],
+  ["/compare", "Version comparison", "See new access and behavior", GitCompareArrows],
+  ["/workspace", "Continuous monitoring", "Watch extensions your team uses", Radar],
+] as const;
+const resourceLinks = [["/metrics", "Rules and metrics"], ["/scoring", "Decision methodology"], ["/benchmark", "Validation and benchmarks"], ["/settings", "Trust architecture"]] as const;
+
+export default function SiteNav() {
   const pathname = usePathname();
-  return <nav className="primaryNav" aria-label="Primary navigation">{items.map((item) => {
-    const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-    return <Link key={item.href} href={item.href} className={active ? "active" : undefined} aria-current={active ? "page" : undefined}>{item.label}</Link>;
-  })}</nav>;
+  const active = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  return <nav className="primaryNav productNav" aria-label="Primary navigation">
+    <div className="navMenu"><button className={productLinks.some(([href]) => active(href)) ? "active" : ""}>Product <ChevronDown/></button><div className="navPopover"><div><span>IDE extension security</span>{productLinks.map(([href, label, detail, Icon]) => <Link href={href} key={href}><Icon/><div><strong>{label}</strong><small>{detail}</small></div></Link>)}</div><aside><ShieldCheck/><strong>Start with the extension, not a deployment.</strong><p>Public intelligence is available without an account.</p><Link href="/catalog">Explore the catalog</Link></aside></div></div>
+    <Link className={active("/catalog") ? "active" : ""} href="/catalog">Catalog</Link>
+    <Link className={active("/research") ? "active" : ""} href="/research">Research</Link>
+    <div className="navMenu resourcesMenu"><button className={resourceLinks.some(([href]) => active(href)) ? "active" : ""}>Resources <ChevronDown/></button><div className="navPopover resourcePopover"><div><span>Learn and verify</span>{resourceLinks.map(([href, label]) => <Link href={href} key={href}>{href === "/metrics" ? <FileSearch/> : href === "/benchmark" ? <Activity/> : <BookOpen/>}<strong>{label}</strong></Link>)}</div></div></div>
+  </nav>;
 }
