@@ -537,7 +537,7 @@ code, pre { font-family: var(--mono); }
 .oauthButton { width: 100%; display: grid; grid-template-columns: 24px 1fr 18px; align-items: center; gap: 10px; min-height: 52px; margin-top: 9px; border: 1px solid var(--ink); border-radius: 4px; background: white; padding: 0 14px; text-align: left; font-size: 13px; font-weight: 650; }
 .oauthButton.github { background: var(--ink); color: white; }
 .oauthButton > svg:last-child { width: 15px; }
-.oauthButton.google > b { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #4285f4; color: white; font-family: var(--sans); }
+.googleMark { display: grid; place-items: center; width: 22px; height: 22px; color: #4285f4; font-family: var(--sans); font-size: 19px; font-weight: 800; }
 .authDivider { position: relative; margin: 25px 0 18px; border-top: 1px solid var(--line); text-align: center; }
 .authDivider span { position: relative; top: -9px; background: white; padding: 0 9px; color: var(--faint); font-size: 9px; text-transform: uppercase; }
 .magicLink { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 8px; border: 1px solid var(--line); padding: 5px 5px 5px 11px; }
