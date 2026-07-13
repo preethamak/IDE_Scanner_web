@@ -27,8 +27,8 @@ jobs:
       - run: node scripts/refresh-catalog.mjs
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          GITHUB_ACTIONS_TOKEN: ${{ secrets.SCANNER_WORKFLOW_TOKEN }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          GITHUB_ACTIONS_TOKEN: ${{ secrets.GITHUB_ACTIONS_TOKEN }}
           GITHUB_REPO_OWNER: preethamak
           GITHUB_SCANNER_REPO: IDE_Scanner
           NEXT_PUBLIC_SITE_URL: https://ide-scanner-web.vercel.app

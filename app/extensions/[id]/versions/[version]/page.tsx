@@ -14,7 +14,7 @@ export default async function VersionPage({ params }: { params: Promise<{ id: st
   const findings = (product?.findings || []) as Array<Record<string, unknown>>;
   const files = (product?.files || []) as Array<Record<string, unknown>>;
   const dependencies = (product?.dependencies || []) as Array<Record<string, unknown>>;
-  if (!scan) return <main className="versionProductPage"><VersionCrumb id={id} name={extension.extension.display_name} version={version}/><section className="emptyVersion"><Box size={34}/><span>Exact release</span><h1>{extension.extension.display_name} <code>@{version}</code></h1><p>This version is published, but no completed Deep Scan exists. Registry metadata alone cannot establish behavior, dependency health or artifact integrity.</p><DeepScanButton extensionId={id} version={version}/></section></main>;
+  if (!scan) return <main className="versionProductPage"><VersionCrumb id={id} name={extension.extension.display_name} version={version}/><section className="emptyVersion"><Box size={34}/><span>Published exact release</span><h1>{extension.extension.display_name} <code>@{version}</code></h1><p>Deep analysis has not run for this artifact. Start a signed-in Deep Scan to add behavior, dependency, file, provenance and analyzer coverage intelligence.</p><DeepScanButton extensionId={id} version={version}/></section></main>;
   const dimensions = (scan.security_dimensions || {}) as Record<string, { score?: number; status?: string; deductions?: unknown[] }>;
   const capabilities = (scan.capabilities || {}) as Record<string, Record<string, unknown>>;
   const decision = String(scan.decision || "incomplete");

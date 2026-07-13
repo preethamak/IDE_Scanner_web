@@ -7,7 +7,7 @@ const productLinks = [
   ["/catalog", "Extension catalog", "Search every supported registry", Boxes],
   ["/scan", "Artifact scanner", "Analyze a published or private VSIX", ScanSearch],
   ["/compare", "Version comparison", "See new access and behavior", GitCompareArrows],
-  ["/workspace", "Continuous monitoring", "Watch extensions your team uses", Radar],
+  ["/workspace", "Personal monitoring", "Watch releases and scan history", Radar],
 ] as const;
 const resourceLinks = [["/metrics", "Rules and metrics"], ["/scoring", "Decision methodology"], ["/benchmark", "Validation and benchmarks"], ["/settings", "Trust architecture"]] as const;
 

@@ -1,5 +1,8 @@
 import { publicDb, serviceDb } from "@/lib/supabase";
 import { listMarketplaceVersions, resolveMarketplaceExtension, searchMarketplace } from "@/lib/marketplace";
+import { unstable_cache } from "next/cache";
+
+const cachedVersions=unstable_cache(async(id:string)=>listMarketplaceVersions(id),["registry-versions-v2"],{revalidate:21600,tags:["registry-versions"]});
 
 export type CatalogExtension = {
   id: string;
@@ -42,7 +45,7 @@ export async function getExtensionProduct(id: string): Promise<{ extension: Cata
     if (extension) {
       let versionRows = versions || [];
       if (versionRows.length <= 1) {
-        const registryVersions = await listMarketplaceVersions(id).catch(() => []);
+        const registryVersions = await cachedVersions(id).catch(() => []);
         const persisted = new Map(versionRows.map((item) => [String(item.version), item]));
         versionRows = registryVersions.map((item) => ({ ...item, ...(persisted.get(item.version) || {}) }));
         if (!versionRows.length) versionRows = versions || [];
@@ -58,7 +61,7 @@ export async function getExtensionProduct(id: string): Promise<{ extension: Cata
   }
   try {
     const item = await resolveMarketplaceExtension(id);
-    const versions = await listMarketplaceVersions(item.extension_id);
+    const versions = await cachedVersions(item.extension_id);
     return { extension: { id: item.extension_id, name: item.extension_id.split(".").slice(1).join("."), display_name: item.display_name, publisher: item.publisher, description: item.short_description, registry: item.registry || "vs-marketplace", publisher_verified: item.publisher_verified, installs: item.install_count, rating: item.rating_average, icon_url: item.icon_url, repository_url: "", last_published_at: item.last_updated || null, catalog_rank: null, latest_version: item.version, latest_scan: null }, versions: versions.length ? versions : [{ extension_id: item.extension_id, version: item.version, registry: item.registry, published_at: item.last_updated, is_latest: true, scan_state: "not_scanned" }], scan: null };
   } catch {
     return null;

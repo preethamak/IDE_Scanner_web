@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Code2, ShieldCheck } from "lucide-react";
 import SiteNav from "./SiteNav";
+import HeaderAccount from "./HeaderAccount";
 import "@fontsource-variable/ibm-plex-sans";
 import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/600.css";
@@ -21,7 +22,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <SiteNav />
           <div className="headerCommands">
             <a className="iconButton" href="https://github.com/preethamak/IDE_Scanner" aria-label="IDE Scanner source code" title="Source code"><Code2 size={18} /></a>
-            <Link className="headerSignIn" href="/account">Sign in</Link>
+            <HeaderAccount />
             <Link className="button buttonDark buttonSmall" href="/scan">Start scanning <ArrowRight size={15}/></Link>
           </div>
         </div>

@@ -1,8 +1,9 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://kmdujtabqaxgoeltbxpq.supabase.co";
 const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_SFVIp0jbZBldUWVKHdwXBQ_ZQEvM_gS";
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 export function hasSupabase(): boolean {
   return Boolean(url && publishableKey);
@@ -24,5 +25,7 @@ export function userDb(accessToken: string): SupabaseClient {
 
 export function browserDb(): SupabaseClient | null {
   if (typeof window === "undefined" || !hasSupabase()) return null;
-  return createClient(url, publishableKey);
+  return createBrowserClient(url, publishableKey);
 }
+
+export const supabaseConfig = { url, publishableKey };
