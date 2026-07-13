@@ -58,7 +58,14 @@ for (const extension of cohort) {
 let queued = 0;
 for (const extension of cohort) {
   const versions = await versionsFor(extension).catch(() => [extension]);
-  const rows = versions.map((item, index) => ({ extension_id: extension.id, version: item.version, registry: extension.registry, published_at: item.published_at, is_latest: Boolean(item.is_latest ?? index === 0) }));
+  const seenVersions = new Set();
+  const rows = versions
+    .map((item, index) => ({ extension_id: extension.id, version: item.version, registry: extension.registry, published_at: item.published_at, is_latest: Boolean(item.is_latest ?? index === 0) }))
+    .filter((item) => {
+      if (!item.version || seenVersions.has(item.version)) return false;
+      seenVersions.add(item.version);
+      return true;
+    });
   if (rows.length) { const result = await db.from("extension_versions").upsert(rows, { onConflict: "extension_id,version" }); if (result.error) throw result.error; }
   for (const item of rows.slice(0, 4)) {
     if (queued >= scanLimit) break;
