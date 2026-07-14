@@ -17,8 +17,8 @@ describe("Deep Scan health", () => {
     expect(await getDeepScanHealth()).toMatchObject({ available: true, status: "available" });
   });
 
-  it("is degraded when the heartbeat is stale", async () => {
+  it("continues accepting work when the heartbeat is stale", async () => {
     maybeSingle.mockResolvedValue({ data: { last_seen_at: new Date(Date.now() - 13 * 60_000).toISOString() }, error: null });
-    expect(await getDeepScanHealth()).toMatchObject({ available: false, status: "degraded" });
+    expect(await getDeepScanHealth()).toMatchObject({ available: true, status: "degraded" });
   });
 });
