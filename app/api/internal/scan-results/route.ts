@@ -19,7 +19,15 @@ export async function POST(request: Request) {
     const payload = JSON.parse(decoded) as { job_id?: string; bundle?: Record<string, unknown>; error?: string };
     if (!payload.job_id) return NextResponse.json({ error: "job_id is required." }, { status: 400 });
     if (payload.error) {
-      await serviceDb().from("scan_jobs").update({ status: "failed", error: payload.error.slice(0, 1000), completed_at: new Date().toISOString() }).eq("id", payload.job_id);
+      const db = serviceDb();
+      const job = await db.from("scan_jobs").select("extension_id,version").eq("id", payload.job_id).maybeSingle();
+      if (job.error || !job.data) return NextResponse.json({ error: "Scan job was not found." }, { status: 404 });
+      const failedAt = new Date().toISOString();
+      await Promise.all([
+        db.from("scan_jobs").update({ status: "failed", error: payload.error.slice(0, 1000), completed_at: failedAt, lease_expires_at: null }).eq("id", payload.job_id),
+        db.from("extension_versions").update({ scan_state: "failed" }).eq("extension_id", job.data.extension_id).eq("version", job.data.version),
+        db.from("scan_runner_status").upsert({ id: "github-actions", last_seen_at: failedAt, last_failure_at: failedAt, last_error: payload.error.slice(0, 500) }, { onConflict: "id" }),
+      ]);
       return NextResponse.json({ status: "failed" });
     }
     if (!payload.bundle) return NextResponse.json({ error: "bundle is required for a completed scan." }, { status: 400 });

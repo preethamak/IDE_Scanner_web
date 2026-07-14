@@ -8,7 +8,7 @@ on:
       scan_batch_limit:
         description: Maximum new Deep Scans to dispatch
         required: false
-        default: "100"
+        default: "0"
 
 permissions:
   contents: read
@@ -28,8 +28,4 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-          GITHUB_ACTIONS_TOKEN: ${{ secrets.SCANNER_DISPATCH_TOKEN }}
-          GITHUB_REPO_OWNER: preethamak
-          GITHUB_SCANNER_REPO: IDE_Scanner
-          NEXT_PUBLIC_SITE_URL: https://ide-scanner-web.vercel.app
-          SCAN_BATCH_LIMIT: ${{ inputs.scan_batch_limit || '100' }}
+          SCAN_BATCH_LIMIT: ${{ inputs.scan_batch_limit || '0' }}

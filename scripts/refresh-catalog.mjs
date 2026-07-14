@@ -40,11 +40,6 @@ async function versionsFor(extension) {
   return (payload.results?.[0]?.extensions?.[0]?.versions || []).map((version, index) => ({ ...extension, version: version.version, published_at: version.lastUpdated || null, is_latest: index === 0 }));
 }
 
-async function dispatch(jobId, extensionId, version) {
-  const response = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPO_OWNER || "preethamak"}/${process.env.GITHUB_SCANNER_REPO || "IDE_Scanner"}/actions/workflows/deep-scan.yml/dispatches`, { method: "POST", headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${process.env.GITHUB_ACTIONS_TOKEN}`, "Content-Type": "application/json", "X-GitHub-Api-Version": "2026-03-10" }, body: JSON.stringify({ ref: "main", inputs: { job_id: jobId, extension_id: extensionId, version, callback_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/internal/scan-results` } }) });
-  if (!response.ok) throw new Error(`Dispatch ${extensionId}@${version} returned ${response.status}`);
-}
-
 const marketplace = (await Promise.all([1, 2, 3].map(marketplacePage))).flat().map(normalizeMarketplace);
 const combined = [...marketplace, ...await openVsxTop()];
 const unique = new Map(); for (const item of combined.sort((a, b) => b.installs - a.installs)) if (!unique.has(item.id.toLowerCase())) unique.set(item.id.toLowerCase(), item);
@@ -74,7 +69,6 @@ for (const extension of cohort) {
     const job = await db.from("scan_jobs").insert({ extension_id: extension.id, version: item.version, profile: "deep", requester_hash: "catalog-refresh" }).select("id").single();
     if (job.error) continue;
     await db.from("extension_versions").update({ scan_state: "queued" }).eq("extension_id", extension.id).eq("version", item.version);
-    await dispatch(job.data.id, extension.id, item.version);
     queued += 1;
   }
 }
