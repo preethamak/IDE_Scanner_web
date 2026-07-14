@@ -129,6 +129,11 @@ code, pre { font-family: var(--mono); }
 .decision.block { background: var(--red-bg); color: var(--red); }
 .decision.incomplete { background: var(--violet-bg); color: var(--violet); }
 .decision.neutral { background: var(--wash); color: var(--ink-2); }
+.decision.info { background: var(--wash); color: var(--muted); }
+.decision.low { background: var(--green-bg); color: var(--green); }
+.decision.medium { background: var(--amber-bg); color: var(--amber); }
+.decision.high,.decision.critical { background: var(--red-bg); color: var(--red); }
+.severityBadge { border-radius: 999px; padding: 6px 10px; width: fit-content; font-size: 11px; letter-spacing: 0; }
 .windowFoot { min-height: 42px; padding: 0 18px; }
 .windowFoot span { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 10px; }
 .windowFoot svg { color: var(--green); }

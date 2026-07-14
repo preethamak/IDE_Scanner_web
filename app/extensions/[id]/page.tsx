@@ -15,7 +15,8 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
   const latest = product.versions.find((item) => item.is_latest) || product.versions[0];
   const version = String(latest?.version || product.extension.latest_version || "unknown");
   const scan = product.scan;
-  const decision = String(scan?.decision || "not assessed");
+  const severity = String(scan?.severity || "not assessed").toLowerCase();
+  const severityLabel = severity === "info" ? "INFORMATIONAL" : severity === "not assessed" ? "NOT ASSESSED" : severity.toUpperCase();
   return <main className="productPage">
     <section className="packageHeader">
       <div className="packageIdentity">
@@ -26,7 +27,7 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
     </section>
 
     <section className="packageFacts">
-      <div><span>Decision</span><strong className={`decision ${decision === "not assessed" ? "neutral" : decision}`}>{decision.toUpperCase()}</strong></div>
+      <div><span>Severity</span><strong className={`decision severityBadge ${severity === "not assessed" ? "neutral" : severity}`}>{severityLabel}</strong></div>
       <div><span>Latest version</span><strong>{version}</strong></div>
       <div><span>Publisher</span><strong>{product.extension.publisher}{product.extension.publisher_verified ? <BadgeCheck size={15}/> : null}</strong></div>
       <div><span>Installs</span><strong>{formatCount(product.extension.installs)}</strong></div>
@@ -38,7 +39,7 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
 
     <div className="packageLayout">
       <div className="packageMain">
-        <section id="overview" className="productSection"><div className="productSectionHead"><span>Current release</span><h2>{scan ? installHeadline(decision) : "Deep analysis has not run for this release."}</h2><p>{scan ? String(scan.decision_reason || "Review the recorded evidence before installation.") : "Publisher, adoption and release information remain available below. Behavior and artifact-level security fields will appear after the exact version completes Deep Scan."}</p></div>{scan ? <div className="overviewDecision"><ShieldCheck size={22}/><div><strong>Decision applies only to {product.extension.id}@{version}</strong><span>Artifact <code>{String(scan.artifact_sha256 || "hash unavailable").slice(0, 18)}</code> · ruleset {String(scan.ruleset_version || "unknown")}</span></div></div> : <div className="unassessedBand"><Box size={21}/><div><strong>Artifact analysis pending</strong><p>Select Deep Scan to inspect entrypoints, Semgrep paths, YARA indicators, dependencies and artifact integrity without executing extension code.</p></div></div>}</section>
+        <section id="overview" className="productSection"><div className="productSectionHead"><span>Current release</span><h2>{scan ? installHeadline(severity) : "Deep analysis has not run for this release."}</h2><p>{scan ? String(scan.decision_reason || "Review the recorded evidence before installation.") : "Publisher, adoption and release information remain available below. Behavior and artifact-level security fields will appear after the exact version completes Deep Scan."}</p></div>{scan ? <div className="overviewDecision"><ShieldCheck size={22}/><div><strong>Analysis applies only to {product.extension.id}@{version}</strong><span>Artifact <code>{String(scan.artifact_sha256 || "hash unavailable").slice(0, 18)}</code> · ruleset {String(scan.ruleset_version || "unknown")}</span></div></div> : <div className="unassessedBand"><Box size={21}/><div><strong>Artifact analysis pending</strong><p>Select Deep Scan to inspect entrypoints, Semgrep paths, YARA indicators, dependencies and artifact integrity without executing extension code.</p></div></div>}</section>
 
         <section id="versions" className="productSection"><div className="productSectionHead compact"><span>Release history</span><h2>Published versions</h2><p>Each decision belongs to an immutable version and artifact hash.</p></div><div className="versionTable"><div className="versionHead"><span>Version</span><span>Published</span><span>Analysis</span><span/></div>{product.versions.map((item) => <div className="versionRow" key={String(item.version)}><strong>{String(item.version)}</strong><span>{formatDate(item.published_at ? String(item.published_at) : null)}</span><span className={`scanState ${String(item.scan_state || "not_scanned")}`}>{String(item.scan_state || "not scanned").replaceAll("_", " ")}</span><Link href={`/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(String(item.version))}`}>Open <ChevronRight size={15}/></Link></div>)}</div></section>
 
@@ -49,6 +50,6 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
   </main>;
 }
 
-function installHeadline(decision: string): string { return decision === "allow" ? "No evidence crossed the active review policy." : decision === "block" ? "Do not install this exact artifact." : decision === "incomplete" ? "Do not approve until analysis coverage is restored." : "Review the highlighted behavior before installation."; }
+function installHeadline(severity: string): string { return severity === "critical" ? "Critical security evidence was identified." : severity === "high" ? "High-severity security evidence requires review." : severity === "medium" ? "Review the recorded medium-severity evidence." : severity === "low" || severity === "info" ? "No elevated-severity evidence was identified." : "Analysis has not assigned a severity yet."; }
 function formatCount(value: number): string { return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value); }
 function formatDate(value: string | null): string { if (!value) return "Unknown"; const date = new Date(value); return Number.isNaN(date.valueOf()) ? value : new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(date); }
