@@ -23,7 +23,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <div className="headerCommands">
             <a className="iconButton" href="https://github.com/preethamak/IDE_Scanner" aria-label="IDE Scanner source code" title="Source code"><Code2 size={18} /></a>
             <HeaderAccount />
-            <Link className="button buttonDark buttonSmall" href="/scan">Start scanning <ArrowRight size={15}/></Link>
+            <Link className="button buttonDark buttonSmall headerScan" href="/scan"><span>Start scanning</span><ArrowRight size={15}/></Link>
           </div>
         </div>
       </header>

@@ -1,6 +1,30 @@
 "use client";
 import Link from "next/link";
-import { useEffect,useMemo,useState } from "react";
-import { CircleUserRound } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CircleUserRound, LogOut, Radar } from "lucide-react";
+import type { User } from "@supabase/supabase-js";
 import { browserDb } from "@/lib/supabase";
-export default function HeaderAccount(){const db=useMemo(()=>browserDb(),[]);const[signedIn,setSignedIn]=useState(false);useEffect(()=>{void db?.auth.getUser().then(({data})=>setSignedIn(Boolean(data.user)));const listener=db?.auth.onAuthStateChange((_event,session)=>setSignedIn(Boolean(session)));return()=>listener?.data.subscription.unsubscribe()},[db]);return signedIn?<Link className="headerAccount" href="/workspace"><CircleUserRound/> Workspace</Link>:<Link className="headerSignIn" href="/account">Sign in</Link>}
+
+export default function HeaderAccount() {
+  const db = useMemo(() => browserDb(), []);
+  const [user, setUser] = useState<User | null | undefined>(undefined);
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    void db?.auth.getUser().then(({ data }) => setUser(data.user));
+    const listener = db?.auth.onAuthStateChange((_event, session) => setUser(session?.user || null));
+    const close = (event: MouseEvent) => { if (!root.current?.contains(event.target as Node)) setOpen(false); };
+    document.addEventListener("pointerdown", close);
+    return () => { listener?.data.subscription.unsubscribe(); document.removeEventListener("pointerdown", close); };
+  }, [db]);
+
+  async function signOut() { await db?.auth.signOut(); setOpen(false); window.location.assign("/"); }
+
+  return <div className="headerAccountSlot" ref={root}>
+    {user === undefined ? <span className="headerAccountLoading" aria-label="Checking account"/> : user ? <>
+      <button className="headerAccountButton" aria-label="Open account menu" aria-expanded={open} onClick={() => setOpen((value) => !value)}><CircleUserRound/></button>
+      {open ? <div className="headerAccountMenu"><span>Signed in</span><strong>{user.email || "IDE Scanner account"}</strong><Link href="/workspace" onClick={() => setOpen(false)}><Radar/> Workspace</Link><button onClick={() => void signOut()}><LogOut/> Sign out</button></div> : null}
+    </> : <Link className="headerSignIn" href="/account">Sign in</Link>}
+  </div>;
+}
