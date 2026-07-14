@@ -33,6 +33,7 @@ export async function POST(request: Request) {
     if (!payload.bundle) return NextResponse.json({ error: "bundle is required for a completed scan." }, { status: 400 });
     return NextResponse.json({ scan_id: await ingestScanBundle(payload.job_id, payload.bundle) });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Scan ingestion failed." }, { status: 422 });
+    const detail = error instanceof Error ? error.message : typeof error === "object" && error ? JSON.stringify(error) : "Scan ingestion failed.";
+    return NextResponse.json({ error: detail.slice(0, 2000) }, { status: 422 });
   }
 }
