@@ -39,7 +39,29 @@ export async function queueDeepScan(extensionId: string, requestedVersion: strin
     await db.from("extension_versions").update({ scan_state: "failed" }).eq("extension_id", extensionId).eq("version", version);
     throw job.error;
   }
-  return { ...job.data, profile: "deep", runner_poll_seconds: 300 };
+  try {
+    await dispatchDeepScan();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "The Deep Scan worker could not be started.";
+    await db.from("scan_jobs").update({ status: "failed", error: message, completed_at: new Date().toISOString() }).eq("id", job.data.id);
+    await db.from("extension_versions").update({ scan_state: "failed" }).eq("extension_id", extensionId).eq("version", version);
+    throw new Error(message);
+  }
+  return { ...job.data, profile: "deep", runner_poll_seconds: 0, dispatch: "started" };
+}
+
+async function dispatchDeepScan(): Promise<void> {
+  const token = process.env.GITHUB_ACTIONS_TOKEN;
+  const owner = process.env.GITHUB_REPO_OWNER || "preethamak";
+  const repository = process.env.GITHUB_SCANNER_REPO || "IDE_Scanner";
+  if (!token) throw new Error("Deep Scan dispatch is not configured.");
+  const response = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/actions/workflows/deep-scan.yml/dispatches`, {
+    method: "POST",
+    headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" },
+    body: JSON.stringify({ ref: "main" }),
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error(`Deep Scan dispatch failed (${response.status}).`);
 }
 
 function hashRequester(request: Request): string {

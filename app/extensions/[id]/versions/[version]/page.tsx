@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import IntelligenceScores from "@/app/IntelligenceScores";
 import { AlertTriangle, Box, ChevronRight, CircleCheck, FileCode2, GitCompareArrows, Network, Package, ShieldCheck, Terminal } from "lucide-react";
@@ -20,7 +21,7 @@ export default async function VersionPage({ params }: { params: Promise<{ id: st
   const decision = String(scan.decision || "incomplete");
   return <main className="versionProductPage">
     <VersionCrumb id={id} name={extension.extension.display_name} version={version}/>
-    <section className="versionMast"><div><span className="scanProfile">Deep Scan · exact artifact</span><h1>{extension.extension.display_name}</h1><code>{id}@{version}</code><p>{String(scan.decision_reason || "Review recorded evidence.")}</p></div><div className={`verdictPanel ${decision}`}><span>Install decision</span><strong>{decision}</strong><p>{decisionAction(decision)}</p></div></section>
+    <section className="versionMast"><div className="versionIdentity">{extension.extension.icon_url ? <Image className="versionIcon" src={extension.extension.icon_url} alt="" width={64} height={64} unoptimized/> : <span className="versionIconFallback">{extension.extension.publisher.slice(0, 2).toUpperCase()}</span>}<div><span className="scanProfile">Deep Scan · exact artifact</span><h1>{extension.extension.display_name}</h1><code>{id}@{version}</code><p>{String(scan.decision_reason || "Review recorded evidence.")}</p></div></div><div className={`verdictPanel ${decision}`}><span>Install decision</span><strong>{decision}</strong><p>{decisionAction(decision)}</p></div></section>
     <nav className="packageTabs versionTabs"><a href="#overview">Overview</a><a href="#alerts">Alerts <b>{findings.length}</b></a><a href="#capabilities">Capabilities <b>{Object.keys(capabilities).length}</b></a><a href="#dependencies">Dependencies <b>{dependencies.length}</b></a><a href="#files">Files <b>{files.length}</b></a><a href="#changes">Changes</a><a href="#evidence">Scan evidence</a></nav>
     <section id="overview" className="versionOverview"><div className="bottomLine"><span>Bottom line</span><h2>{decisionHeadline(decision)}</h2><p>{plainLanguage(findings, capabilities)}</p><div><strong>Risk priority {Number(scan.risk_score || 0)}</strong><strong>Malware evidence {Number(scan.malware_score || 0)}</strong><strong>Coverage {Number(scan.coverage_percent || 0)}%</strong></div></div><div className="artifactSeal"><ShieldCheck/><span>Artifact SHA-256</span><code>{String(scan.artifact_sha256 || "unavailable")}</code><small>Scanned {formatDate(String(scan.scanned_at || ""))}</small></div></section>
     <IntelligenceScores risk={Number(scan.risk_score)} malware={Number(scan.malware_score)} coverage={Number(scan.coverage_percent)} dimensions={dimensions}/>

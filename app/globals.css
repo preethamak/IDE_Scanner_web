@@ -1208,3 +1208,5 @@ code, pre { font-family: var(--mono); }
   .headerScan span { display: none; }
   .headerAccountMenu { position: fixed; top: 64px; right: 14px; width: min(280px, calc(100vw - 28px)); }
 }
+
+.versionIdentity{display:flex;align-items:flex-start;gap:18px}.versionIcon,.versionIconFallback{width:64px;height:64px;border:1px solid var(--line);border-radius:8px;object-fit:cover;flex:0 0 64px}.versionIconFallback{display:grid;place-items:center;background:var(--wash);font:800 15px var(--mono);color:var(--acid-dark)}

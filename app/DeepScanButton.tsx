@@ -21,7 +21,7 @@ export default function DeepScanButton({ extensionId, version }: { extensionId: 
       if (!active) return;
       setHealth(runner.available ? "available" : "unavailable");
       if (job && ["queued", "running"].includes(job.status)) {
-        setJobId(String(job.id)); setState(job.status); setMessage(job.status === "queued" ? "Queued for the next analysis runner." : "Analyzers are inspecting the exact artifact.");
+        setJobId(String(job.id)); setState(job.status); setMessage(job.status === "queued" ? "Starting the isolated analysis runner…" : "Analyzers are inspecting the exact artifact.");
       } else if (job?.status === "failed") {
         setState("error"); setMessage(job.error || "The previous Deep Scan failed. Retry when the runner is available.");
       }
@@ -50,7 +50,7 @@ export default function DeepScanButton({ extensionId, version }: { extensionId: 
     if (response.status === 401) { router.push(`/account?next=${encodeURIComponent(window.location.pathname)}`); return; }
     if (!response.ok) { setState("error"); setMessage(body.error || "Deep Scan is temporarily unavailable."); return; }
     if (body.status === "complete") { setState("complete"); setMessage("A completed Deep Scan already exists for this version."); router.refresh(); return; }
-    setJobId(String(body.id || "")); setState(body.status === "running" ? "running" : "queued"); setMessage("Queued. The free analysis runner checks for work every five minutes.");
+    setJobId(String(body.id || "")); setState(body.status === "running" ? "running" : "queued"); setMessage("Runner started. Preparing the exact published artifact for analysis.");
   }
 
   const unavailable = health === "unavailable";
