@@ -52,9 +52,13 @@ export async function getExtensionProduct(id: string): Promise<{ extension: Cata
       }
       const latest = versionRows.find((item) => item.is_latest) || versionRows[0];
       let scan: Record<string, unknown> | null = null;
-      if (latest?.latest_scan_id) {
-        const result = await db.from("scans").select("*").eq("id", latest.latest_scan_id).maybeSingle();
-        scan = result.data as Record<string, unknown> | null;
+      const scanIds = versionRows.map((item) => String(item.latest_scan_id || "")).filter(Boolean);
+      if (scanIds.length) {
+        const result = await db.from("scans").select("*").in("id", scanIds);
+        const scans = (result.data || []) as Array<Record<string, unknown>>;
+        const scansById = new Map(scans.map((item) => [String(item.id), item]));
+        versionRows = versionRows.map((item) => ({ ...item, severity: scansById.get(String(item.latest_scan_id || ""))?.severity || null }));
+        scan = scansById.get(String(latest?.latest_scan_id || "")) || null;
       }
       return { extension: normalizeCatalogRow(extension as Record<string, unknown>), versions: versionRows, scan };
     }
