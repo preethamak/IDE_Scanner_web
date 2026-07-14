@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Analytics } from "@vercel/analytics/next";
 import { ArrowRight, Code2, ShieldCheck } from "lucide-react";
 import SiteNav from "./SiteNav";
 import HeaderAccount from "./HeaderAccount";
@@ -34,5 +35,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <div className="footerBottom"><span>Ruleset 2026.07.11 · Schema 2.2</span><span>Open methodology · Exact artifacts · No opaque verdicts</span></div>
       </footer>
     </div>
+    <Analytics />
   </body></html>;
 }
