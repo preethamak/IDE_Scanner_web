@@ -13,6 +13,11 @@ type GalleryExtension = {
 };
 
 export async function searchMarketplace(query: string, limit = 20): Promise<MarketplaceSearchResult[]> {
+  const exactId = tryNormalizeMarketplaceId(query);
+  if (exactId) {
+    const exact = await resolveExactExtension(exactId);
+    if (exact) return [exact];
+  }
   const [marketplace, openvsx] = await Promise.allSettled([searchVsMarketplace(query, limit), searchOpenVsx(query, limit)]);
   const combined = [...(marketplace.status === "fulfilled" ? marketplace.value : []), ...(openvsx.status === "fulfilled" ? openvsx.value : [])];
   const unique = new Map<string, MarketplaceSearchResult>();
@@ -20,7 +25,7 @@ export async function searchMarketplace(query: string, limit = 20): Promise<Mark
   if (marketplace.status === "rejected" && openvsx.status === "rejected") {
     throw new Error("Neither VS Marketplace nor Open VSX could be reached.");
   }
-  return [...unique.values()].slice(0, limit);
+  return [...unique.values()].sort((left, right) => relevance(right, query) - relevance(left, query)).slice(0, limit);
 }
 
 async function searchVsMarketplace(query: string, limit: number): Promise<MarketplaceSearchResult[]> {
@@ -44,6 +49,8 @@ async function searchOpenVsx(query: string, limit: number): Promise<MarketplaceS
 
 export async function resolveMarketplaceExtension(extensionId: string): Promise<MarketplaceSearchResult> {
   const normalized = normalizeMarketplaceId(extensionId);
+  const direct = await resolveExactExtension(normalized);
+  if (direct) return direct;
   const results = await searchMarketplace(normalized, 25);
   const exact = results.find((item) => item.extension_id.toLowerCase() === normalized.toLowerCase());
   if (!exact) {
@@ -52,6 +59,25 @@ export async function resolveMarketplaceExtension(extensionId: string): Promise<
     throw new Error(`Extension ${normalized} was not found on VS Marketplace or Open VSX.`);
   }
   return exact;
+}
+
+async function resolveExactExtension(extensionId: string): Promise<MarketplaceSearchResult | null> {
+  const [marketplace, openvsx] = await Promise.allSettled([resolveVsMarketplaceExtension(extensionId), resolveOpenVsxExtension(extensionId)]);
+  if (marketplace.status === "fulfilled" && marketplace.value) return marketplace.value;
+  if (openvsx.status === "fulfilled" && openvsx.value) return openvsx.value;
+  return null;
+}
+
+async function resolveVsMarketplaceExtension(extensionId: string): Promise<MarketplaceSearchResult | null> {
+  const response = await fetch(GALLERY_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json;api-version=7.2-preview.1" },
+    body: JSON.stringify({ filters: [{ criteria: [{ filterType: 7, value: extensionId }], pageNumber: 1, pageSize: 1 }], flags: 914 }),
+    cache: "no-store"
+  });
+  if (!response.ok) throw new Error(`VS Marketplace lookup returned ${response.status}`);
+  const data = await response.json() as { results?: Array<{ extensions?: GalleryExtension[] }> };
+  return normalizeExtension(data.results?.[0]?.extensions?.[0] || {});
 }
 
 export async function listMarketplaceVersions(extensionId: string): Promise<Array<{ extension_id: string; version: string; registry: "vs-marketplace" | "openvsx"; published_at: string; download_url: string; is_latest: boolean; scan_state: "not_scanned" }>> {
@@ -91,6 +117,27 @@ export function normalizeMarketplaceId(value: string): string {
   } catch { /* It is already an extension id. */ }
   if (!/^[\w-]+\.[\w.-]+$/.test(raw)) throw new Error("Use publisher.extension, a Marketplace URL, or vscode:extension/ URI.");
   return raw;
+}
+
+function tryNormalizeMarketplaceId(value: string): string | null {
+  try { return normalizeMarketplaceId(value); } catch { return null; }
+}
+
+function relevance(item: MarketplaceSearchResult, query: string): number {
+  const needle = query.trim().toLowerCase();
+  const terms = needle.split(/\s+/).filter(Boolean);
+  const id = item.extension_id.toLowerCase();
+  const name = item.display_name.toLowerCase();
+  const description = item.short_description.toLowerCase();
+  let score = 0;
+  if (id === needle || name === needle) score += 1000;
+  if (id.startsWith(needle) || name.startsWith(needle)) score += 300;
+  for (const term of terms) {
+    if (name.includes(term)) score += 80;
+    if (id.includes(term)) score += 55;
+    if (description.includes(term)) score += 10;
+  }
+  return score + Math.min(item.install_count / 100000, 10);
 }
 
 function normalizeExtension(raw: GalleryExtension): MarketplaceSearchResult | null {

@@ -211,13 +211,13 @@ code, pre { font-family: var(--mono); }
 .errorMessage { margin-top: 20px; border-color: #e4aeb2; background: var(--red-bg); color: #7b1e25; }
 
 .scannerPage { max-width: 1320px; }
-.scannerIntro { display: grid; grid-template-columns: 1.3fr .7fr; gap: 80px; align-items: end; border-bottom: 1px solid var(--ink); padding-bottom: 42px; }
-.scannerIntro h1 { max-width: 800px; margin: 13px 0 17px; font-size: 62px; line-height: 1; }
-.scannerIntro p { max-width: 720px; font-size: 16px; }
+.scannerIntro { display: grid; grid-template-columns: 1.25fr .75fr; gap: 58px; align-items: end; border-bottom: 1px solid var(--ink); padding: 46px 0 30px; }
+.scannerIntro h1 { max-width: 720px; margin: 11px 0 13px; font-size: 50px; line-height: 1.04; }
+.scannerIntro p { max-width: 660px; margin-bottom: 0; font-size: 15px; }
 .scannerAssurance { display: grid; gap: 10px; border-left: 1px solid var(--line); padding-left: 25px; }
 .scannerAssurance span { display: flex; align-items: center; gap: 9px; color: var(--ink-2); font-size: 11px; font-weight: 650; }
 .scannerAssurance svg { color: var(--green); }
-.modeTabs { display: flex; gap: 0; margin: 28px 0 18px; border: 1px solid var(--ink); border-radius: 5px; overflow: hidden; width: fit-content; }
+.modeTabs { display: flex; gap: 0; margin: 22px 0 14px; border: 1px solid var(--ink); border-radius: 5px; overflow: hidden; width: fit-content; }
 .modeTabs button { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; border: 0; border-right: 1px solid var(--line); background: white; color: var(--ink-2); padding: 0 17px; font-size: 12px; font-weight: 650; }
 .modeTabs button:last-child { border-right: 0; }
 .modeTabs button.active { background: var(--ink); color: white; }
@@ -874,7 +874,7 @@ code, pre { font-family: var(--mono); }
   .catalogDiscovery > aside { grid-template-columns: 1fr; }
 }
 .scanWorkspace { display: grid; grid-template-columns: 1.15fr .85fr; border: 1px solid var(--ink); border-radius: 7px; background: white; overflow: hidden; }
-.scanInputPanel, .scanActionPanel { position: relative; min-height: 520px; padding: 28px; }
+.scanInputPanel, .scanActionPanel { position: relative; min-height: 468px; padding: 28px; }
 .scanInputPanel { border-right: 1px solid var(--line); }
 .panelNumber { position: absolute; top: 29px; right: 28px; color: var(--faint); font-family: var(--mono); font-size: 10px; }
 .scanWorkspace h2, .uploadWorkspace h2 { margin: 8px 0 8px; font-family: var(--display); font-size: 32px; font-weight: 500; }
@@ -882,16 +882,23 @@ code, pre { font-family: var(--mono); }
 .scanInputPanel form { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 8px; margin: 24px 0 16px; border: 1px solid var(--ink); border-radius: 5px; padding: 6px 6px 6px 13px; }
 .scanInputPanel input { min-width: 0; height: 39px; border: 0; outline: 0; }
 .scanInputPanel .button { min-height: 39px; }
-.scanSearchResults { max-height: 330px; overflow-y: auto; border-top: 1px solid var(--line); }
-.scanSearchResults > button { width: 100%; display: grid; grid-template-columns: 34px 1fr auto 20px; gap: 11px; align-items: center; border: 0; border-bottom: 1px solid var(--line); background: white; color: var(--ink); padding: 12px 7px; text-align: left; }
+.scanSearchResults { max-height: 294px; overflow-y: auto; border-top: 1px solid var(--line); }
+.scanSearchResults > button { width: 100%; display: grid; grid-template-columns: 38px 1fr auto 20px; gap: 11px; align-items: center; border: 0; border-bottom: 1px solid var(--line); background: white; color: var(--ink); padding: 12px 7px; text-align: left; }
 .scanSearchResults > button:hover, .scanSearchResults > button.selected { background: #f0f3ea; }
 .scanSearchResults > button.selected { box-shadow: inset 3px 0 0 var(--acid-dark); }
-.scanSearchResults > button > span { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 4px; background: var(--wash); color: var(--acid-dark); font-family: var(--mono); font-size: 9px; font-weight: 800; }
+.marketplaceIcon, .resultIconFallback { position: relative; display: grid; place-items: center; width: 36px; height: 36px; overflow: hidden; border-radius: 5px; background: var(--wash); color: var(--acid-dark); font-family: var(--mono); font-size: 9px; font-weight: 800; }
+.marketplaceIcon img { position: absolute; inset: 0; width: 100%; height: 100%; background: white; object-fit: cover; }
 .scanSearchResults strong, .scanSearchResults code { display: block; }
 .scanSearchResults strong { font-size: 12px; }
 .scanSearchResults code { margin-top: 2px; color: var(--muted); font-size: 9px; }
 .scanSearchResults small { color: var(--faint); font-size: 9px; }
+.searchEmpty { margin-top: 18px; border: 1px dashed var(--line); border-radius: 5px; color: var(--muted); padding: 17px; font-size: 11px; }
 .scanActionPanel { display: flex; flex-direction: column; }
+.selectedExtension { display: flex; align-items: center; gap: 12px; margin-top: 11px; }
+.selectedExtension .marketplaceIcon { width: 48px; height: 48px; font-size: 10px; }
+.selectedExtension h2 { margin: 0; font-size: 25px; }
+.selectedExtension code { color: var(--acid-dark); font-size: 10px; }
+.selectedExtension p { margin-top: 4px; color: var(--muted); font-size: 10px; }
 .scanNow { width: 100%; margin: 30px 0 20px; }
 .scanActionPanel .deepScanAction { width: 100%; justify-items: stretch; margin: 30px 0 20px; }
 .scanActionPanel .deepScanAction .button { width: 100%; }
