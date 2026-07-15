@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { searchMarketplace } from "@/lib/marketplace";
+import { buildDiscoveryResponse } from "@/lib/discovery";
 import { unstable_cache } from "next/cache";
 
 export const runtime = "nodejs";
@@ -8,11 +9,11 @@ const cachedSearch=unstable_cache(async(query:string)=>searchMarketplace(query),
 
 export async function GET(request: Request) {
   const query = new URL(request.url).searchParams.get("q")?.trim() || "";
-  if (!query) return NextResponse.json({ results: [] });
+  if (!query) return NextResponse.json(buildDiscoveryResponse("", []));
   try {
     const results=await Promise.race([cachedSearch(query),new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error("Extension registries are responding slowly. Try the exact publisher.extension identifier.")),8000))]);
-    return NextResponse.json({ results, source:"registry-cache" });
-  } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Marketplace search failed", results: [] }, { status: 502 });
+    return NextResponse.json(buildDiscoveryResponse(query, results, "registry-cache"));
+  } catch {
+    return NextResponse.json({ error: "Registry search is temporarily unavailable. Retry with an exact publisher.extension identifier; this does not mean the extension was not found.", code: "registry_unavailable", results: [] }, { status: 502 });
   }
 }

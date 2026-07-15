@@ -232,6 +232,31 @@ export type MarketplaceSearchResult = {
   download_url?: string;
 };
 
+export type DiscoveryMatchReason = "exact_identity" | "exact_name" | "matching" | "related";
+
+/**
+ * Additive discovery contract. `results` remains available on the marketplace
+ * endpoint for older clients; new clients use these explicit groups so a fuzzy
+ * match can never become an implicit scan target.
+ */
+export type DiscoveryResult = MarketplaceSearchResult & {
+  normalized_identity: string;
+  source: "registry" | "cache";
+  match_reason: DiscoveryMatchReason;
+  icon_state: "published" | "fallback";
+};
+
+export type DiscoveryResponse = {
+  query: string;
+  normalized_query?: string;
+  exact_match: DiscoveryResult | null;
+  matching_extensions: DiscoveryResult[];
+  related_extensions: DiscoveryResult[];
+  results: MarketplaceSearchResult[];
+  source: "registry" | "registry-cache";
+  cached?: boolean;
+};
+
 export type ImportedReportBundle = {
   id: string;
   name: string;

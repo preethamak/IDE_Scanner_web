@@ -14,11 +14,11 @@ export async function queueDeepScan(extensionId: string, requestedVersion: strin
 
   const active = await db.from("scan_jobs").select("*").eq("extension_id", extensionId).eq("version", version).eq("profile", "deep").in("status", ["queued", "running"]).maybeSingle();
   if (active.error) throw active.error;
-  if (active.data) return { ...active.data, deduplicated: true };
+  if (active.data) return withReportUrl({ ...active.data, deduplicated: true });
 
   const complete = await db.from("scans").select("id").eq("extension_id", extensionId).eq("version", version).order("scanned_at", { ascending: false }).limit(1).maybeSingle();
   if (complete.error) throw complete.error;
-  if (complete.data) return { status: "complete", scan_id: complete.data.id, reused: true, extension_id: extensionId, version };
+  if (complete.data) return withReportUrl({ status: "complete", scan_id: complete.data.id, reused: true, extension_id: extensionId, version });
 
   const since = new Date(Date.now() - 86_400_000).toISOString();
   const recent = await db.from("scan_jobs").select("id", { count: "exact", head: true }).eq("requested_by", requestedBy).gte("created_at", since);
@@ -47,7 +47,14 @@ export async function queueDeepScan(extensionId: string, requestedVersion: strin
     await db.from("extension_versions").update({ scan_state: "failed" }).eq("extension_id", extensionId).eq("version", version);
     throw new Error(message);
   }
-  return { ...job.data, profile: "deep", runner_poll_seconds: 0, dispatch: "started" };
+  return withReportUrl({ ...job.data, profile: "deep", runner_poll_seconds: 0, dispatch: "started" });
+}
+
+export function withReportUrl<T extends Record<string, unknown>>(result: T): T & { report_url?: string } {
+  const extensionId = typeof result.extension_id === "string" ? result.extension_id : "";
+  const version = typeof result.version === "string" ? result.version : "";
+  const complete = ["complete", "incomplete"].includes(String(result.status));
+  return complete && extensionId && version ? { ...result, report_url: `/extensions/${encodeURIComponent(extensionId)}/versions/${encodeURIComponent(version)}` } : result;
 }
 
 async function dispatchDeepScan(): Promise<void> {

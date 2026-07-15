@@ -5,6 +5,6 @@ import { ArrowRight, Search } from "lucide-react";
 
 export default function HomeSearch({ compact = false }: { compact?: boolean }) {
   const router = useRouter(); const [query, setQuery] = useState("");
-  function submit(event: React.FormEvent) { event.preventDefault(); const value = query.trim(); router.push(value && /^[\w-]+\.[\w.-]+$/.test(value) ? `/extensions/${encodeURIComponent(value)}` : value ? `/catalog?q=${encodeURIComponent(value)}` : "/catalog"); }
-  return <form className={`productSearch ${compact ? "compact" : ""}`} onSubmit={submit}><Search/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search extension name or publisher.extension" aria-label="Search extension intelligence"/><button>Inspect extension <ArrowRight/></button></form>;
+  function submit(event: React.FormEvent) { event.preventDefault(); const value = query.trim(); router.push(value ? `/catalog?q=${encodeURIComponent(value)}` : "/catalog"); }
+  return <form className={`productSearch ${compact ? "compact" : ""}`} onSubmit={submit}><Search/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search extension name or publisher.extension" aria-label="Search extension intelligence"/><button>Explore results <ArrowRight/></button></form>;
 }

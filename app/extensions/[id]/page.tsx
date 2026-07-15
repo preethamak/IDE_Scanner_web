@@ -1,10 +1,10 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { BadgeCheck, Box, CalendarDays, ChevronRight, Download, GitBranch, ShieldCheck } from "lucide-react";
 import { getExtensionProduct } from "@/lib/productData";
 import DeepScanButton from "@/app/DeepScanButton";
 import WatchExtension from "@/app/WatchExtension";
+import ExtensionIcon from "@/app/ExtensionIcon";
 
 export const dynamic = "force-dynamic";
 
@@ -20,10 +20,10 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
   return <main className="productPage">
     <section className="packageHeader">
       <div className="packageIdentity">
-        <span className="packageIcon">{product.extension.icon_url ? <Image src={product.extension.icon_url} alt="" width={74} height={74} unoptimized/> : product.extension.publisher.slice(0, 2).toUpperCase()}</span>
+        <ExtensionIcon iconUrl={product.extension.icon_url} publisher={product.extension.publisher} name={product.extension.display_name} size="lg"/>
         <div><div className="registryLine"><span>{product.extension.registry === "openvsx" ? "Open VSX" : "VS Marketplace"}</span><ChevronRight size={13}/><code>{product.extension.id}</code></div><h1>{product.extension.display_name}</h1><p>{product.extension.description}</p></div>
       </div>
-      <div className="packageActions"><DeepScanButton extensionId={product.extension.id} version={version}/><WatchExtension extensionId={product.extension.id}/><a className="button buttonQuiet" href={`vscode:extension/${product.extension.id}`}>Install <Download size={16}/></a></div>
+      <div className="packageActions">{scan ? <Link className="button buttonDark" href={`/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(version)}`}>Open Deep Scan report</Link> : <DeepScanButton extensionId={product.extension.id} version={version}/>}<WatchExtension extensionId={product.extension.id}/><a className="button buttonQuiet" href={`vscode:extension/${product.extension.id}`}>Install <Download size={16}/></a></div>
     </section>
 
     <section className="packageFacts">

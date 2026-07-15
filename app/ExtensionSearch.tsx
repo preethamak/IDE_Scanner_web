@@ -1,0 +1,54 @@
+"use client";
+
+import Link from "next/link";
+import { ArrowRight, Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import ExtensionIcon from "@/app/ExtensionIcon";
+import type { DiscoveryResponse, DiscoveryResult } from "@/lib/types";
+
+type Props = {
+  initialQuery?: string;
+  onSelect?: (item: DiscoveryResult) => void;
+  submitLabel?: string;
+  compact?: boolean;
+};
+
+export default function ExtensionSearch({ initialQuery = "", onSelect, submitLabel = "Search", compact = false }: Props) {
+  const [query, setQuery] = useState(initialQuery);
+  const [data, setData] = useState<DiscoveryResponse | null>(null);
+  const [loading, setLoading] = useState(Boolean(initialQuery));
+  const [error, setError] = useState("");
+
+  async function search(value = query) {
+    const clean = value.trim(); if (!clean) return;
+    setLoading(true); setError("");
+    try {
+      const response = await fetch(`/api/marketplace/search?q=${encodeURIComponent(clean)}`, { cache: "no-store" });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || "Registry search is unavailable.");
+      setData(body as DiscoveryResponse);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Registry search is unavailable."); }
+    finally { setLoading(false); }
+  }
+  useEffect(() => { if (!initialQuery) return; const timer = window.setTimeout(() => { void search(initialQuery); }, 0); return () => window.clearTimeout(timer); // initial route query is an external navigation input
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery]);
+  const open = (item: DiscoveryResult) => onSelect ? <button type="button" onClick={() => onSelect(item)}>Choose release <ArrowRight size={15}/></button> : <Link href={`/extensions/${encodeURIComponent(item.extension_id)}`}>Open profile <ArrowRight size={15}/></Link>;
+  return <div className={`extensionSearch ${compact ? "compact" : ""}`}>
+    <form onSubmit={(event) => { event.preventDefault(); void search(); }}>
+      <Search size={18}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name, publisher.extension, Marketplace URL, or VS Code URI" aria-label="Find an extension"/>
+      <button className="button buttonDark" disabled={loading}>{loading ? "Searching…" : submitLabel}</button>
+    </form>
+    {error ? <p className="discoveryError">{error}</p> : null}
+    {data ? <div className="discoveryResults" aria-live="polite">
+      {data.exact_match ? <ResultGroup label="Exact identity match" items={[data.exact_match]} action={open}/> : <p className="exactMiss">No exact match for <code>{data.query}</code>. Related extensions are shown below; choose a release explicitly.</p>}
+      {data.matching_extensions.length ? <ResultGroup label="Matching extensions" items={data.matching_extensions} action={open}/> : null}
+      {data.related_extensions.length ? <ResultGroup label="Related extensions" items={data.related_extensions} action={open}/> : null}
+      {!data.exact_match && !data.matching_extensions.length && !data.related_extensions.length ? <p className="exactMiss">No registry results were returned. This is distinct from a provider failure.</p> : null}
+    </div> : null}
+  </div>;
+}
+
+function ResultGroup({ label, items, action }: { label: string; items: DiscoveryResult[]; action: (item: DiscoveryResult) => React.ReactNode }) {
+  return <section className="discoveryGroup"><span>{label}</span>{items.slice(0, 8).map((item) => <article key={`${item.registry}-${item.extension_id}`}><ExtensionIcon iconUrl={item.icon_url} publisher={item.publisher} name={item.display_name}/><div><strong>{item.display_name}</strong><code>{item.extension_id} · {item.version}</code><small>{item.registry === "openvsx" ? "Open VSX" : "VS Marketplace"} · {item.match_reason.replaceAll("_", " ")}</small></div>{action(item)}</article>)}</section>;
+}

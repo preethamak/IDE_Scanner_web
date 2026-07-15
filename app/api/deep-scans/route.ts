@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { normalizeMarketplaceId } from "@/lib/marketplace";
 import { serverDb } from "@/lib/supabaseServer";
-import { queueDeepScan } from "@/lib/deepScan";
+import { queueDeepScan, withReportUrl } from "@/lib/deepScan";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     if (version) query = query.eq("version", version);
     const result = await query.maybeSingle();
     if (result.error) throw result.error;
-    return result.data ? NextResponse.json(result.data) : new NextResponse(null, { status: 204 });
+    return result.data ? NextResponse.json(withReportUrl(result.data)) : new NextResponse(null, { status: 204 });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Scan lookup failed." }, { status: 400 });
   }
