@@ -13,8 +13,13 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
   const version = String(detail.version || identity.version || "");
   const artifactSha = String(identity.sha256 || detail.artifact_sha256 || "");
   if (!extensionId || !version || !artifactSha) throw new Error("Bundle is missing immutable artifact identity.");
-  const queuedJob = await db.from("scan_jobs").select("extension_id,version,scan_purpose").eq("id", jobId).maybeSingle();
-  if (queuedJob.error || !queuedJob.data) throw new Error("Scan job was not found.");
+  // Keep the scan callback compatible with the currently deployed database
+  // while operational-intelligence migration 011 rolls out. A worker result
+  // must never be rejected simply because an optional metrics column has not
+  // been deployed yet.
+  const queuedJob = await db.from("scan_jobs").select("extension_id,version").eq("id", jobId).maybeSingle();
+  if (queuedJob.error) throw new Error(`Scan job lookup failed: ${queuedJob.error.message}`);
+  if (!queuedJob.data) throw new Error("Scan job was not found.");
   if (queuedJob.data.extension_id !== extensionId || queuedJob.data.version !== version) throw new Error("Scanner result does not match the claimed artifact.");
 
   const scanRow = {
@@ -40,7 +45,6 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
     capabilities: object(detail.capabilities),
     baseline_diff: object(detail.baseline_diff),
     canonical_report: compactBundle(bundle),
-    scan_purpose: queuedJob.data.scan_purpose || "public_intelligence",
     scanned_at: String(metadata.created_at || new Date().toISOString()),
   };
   const { data: scan, error } = await db.from("scans").upsert(scanRow, { onConflict: "extension_id,version,artifact_sha256,ruleset_version" }).select("id").single();
@@ -55,7 +59,7 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
   await insertChunks("findings", findings);
   await insertChunks("artifact_files", files);
   await insertChunks("dependencies", dependencies);
-  await db.from("extension_versions").update({ artifact_sha256: artifactSha, latest_scan_id: scanId, scan_state: scanRow.decision === "incomplete" ? "incomplete" : "complete", last_seen_at: new Date().toISOString() }).eq("extension_id", extensionId).eq("version", version);
+  await db.from("extension_versions").update({ artifact_sha256: artifactSha, latest_scan_id: scanId, scan_state: scanRow.decision === "incomplete" ? "incomplete" : "complete" }).eq("extension_id", extensionId).eq("version", version);
   const completedAt = new Date().toISOString();
   await Promise.all([
     db.from("scan_jobs").update({ status: scanRow.decision === "incomplete" ? "incomplete" : "complete", ruleset_version: scanRow.ruleset_version, completed_at: completedAt, lease_expires_at: null }).eq("id", jobId),
