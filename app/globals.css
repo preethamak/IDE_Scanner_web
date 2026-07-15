@@ -209,6 +209,7 @@ code, pre { font-family: var(--mono); }
 .featuredGrid article > a { display: inline-flex; align-items: center; gap: 8px; margin-top: 18px; font-size: 12px; font-weight: 700; }
 .message { border: 1px solid var(--line); border-radius: 5px; padding: 13px 15px; }
 .errorMessage { margin-top: 20px; border-color: #e4aeb2; background: var(--red-bg); color: #7b1e25; }
+.publicMetricNote { max-width: 1320px; margin: -12px auto 0; padding: 0 24px; color: var(--faint); font: 600 11px/1.5 var(--mono); }
 
 .scannerPage { max-width: 1320px; }
 .scannerIntro { display: grid; grid-template-columns: 1.25fr .75fr; gap: 58px; align-items: end; border-bottom: 1px solid var(--ink); padding: 46px 0 30px; }

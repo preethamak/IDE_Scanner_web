@@ -4,6 +4,7 @@ import { unstable_cache } from "next/cache";
 import { ArrowRight, BadgeCheck, Binary, Box, Braces, Check, FileCode2, GitCompareArrows, LockKeyhole, Radar, ShieldAlert, ShieldCheck, Terminal } from "lucide-react";
 import HomeSearch from "@/app/HomeSearch";
 import { resolveMarketplaceExtension } from "@/lib/marketplace";
+import { getPublicMetrics } from "@/lib/publicMetrics";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ const research = [
 ] as const;
 
 export default async function HomePage() {
-  const extensions = await getFeaturedExtensions();
+  const [extensions, intelligence] = await Promise.all([getFeaturedExtensions(), getPublicMetrics()]);
   return <main className="productHome">
     <div className="announcement"><span>Private beta</span><strong>Public extension intelligence is available without an account. Monitoring requires sign-in.</strong><Link href="/research/reading-a-decision">How to read a result <ArrowRight/></Link></div>
     <section className="productHero">
@@ -30,7 +31,8 @@ export default async function HomePage() {
       </div>
     </section>
 
-    <section className="proofStrip"><div><strong>Exact release</strong><span>identity precedes a result</span></div><div><strong>Evidence first</strong><span>capability is not a malware claim</span></div><div><strong>Visible scope</strong><span>unknown dimensions stay unassessed</span></div><div><strong>Private beta</strong><span>coverage and limitations stay explicit</span></div></section>
+    <section className="proofStrip" aria-label="Live public intelligence metrics"><div><strong>{formatMetric(intelligence.indexed_extensions)}</strong><span>extensions indexed</span></div><div><strong>{formatMetric(intelligence.exact_releases_analyzed)}</strong><span>exact releases analyzed</span></div><div><strong>{formatMetric(intelligence.analyzer_complete_reports)}</strong><span>complete reports</span></div><div><strong>{formatMetric(intelligence.known_bad_artifacts)}</strong><span>exact known-bad matches</span></div></section>
+    <p className="publicMetricNote">Marketplace + Open VSX · last refresh {formatRefresh(intelligence.freshness)} · benchmark efficacy rates are shown only when the frozen holdout is complete.</p>
 
     <section className="homeBand popularBand"><div className="homeBandHead"><div><span>Explore</span><h2>Start from the extension you need to understand.</h2><p>Registry identity and adoption give context. Exact artifact analysis provides the evidence.</p></div><Link href="/catalog">Explore all extensions <ArrowRight/></Link></div><div className="popularExtensions">{extensions.map((item) => <Link key={item.extension_id} href={`/extensions/${encodeURIComponent(item.extension_id)}`}><span className="popularIcon">{item.icon_url ? <Image src={item.icon_url} width={46} height={46} alt="" unoptimized/> : item.publisher.slice(0, 2).toUpperCase()}</span><div><small>{item.extension_id}</small><strong>{item.display_name}{item.publisher_verified ? <BadgeCheck/> : null}</strong><p>{item.short_description}</p></div><aside><span>{formatCount(item.install_count)} installs</span><code>{item.version}</code><ArrowRight/></aside></Link>)}</div></section>
 
@@ -47,3 +49,5 @@ export default async function HomePage() {
 }
 
 function formatCount(value: number) { return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value || 0); }
+function formatMetric(value: number | null) { return value === null ? "—" : new Intl.NumberFormat("en").format(value); }
+function formatRefresh(freshness: Record<string, string | null>) { const value = freshness["vs-marketplace"] || freshness.openvsx; return value ? new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "not recorded"; }

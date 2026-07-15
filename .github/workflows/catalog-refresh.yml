@@ -2,13 +2,13 @@ name: Refresh extension catalog
 
 on:
   schedule:
-    - cron: "17 3 * * 1"
+    - cron: "17 */6 * * *"
   workflow_dispatch:
     inputs:
       scan_batch_limit:
         description: Maximum new Deep Scans to dispatch
         required: false
-        default: "0"
+        default: "100"
 
 permissions:
   contents: read
@@ -28,4 +28,4 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-          SCAN_BATCH_LIMIT: ${{ inputs.scan_batch_limit || '0' }}
+          SCAN_BATCH_LIMIT: ${{ inputs.scan_batch_limit || '100' }}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { evidenceClasses, metricCatalog, ruleCatalog } from "@/lib/metrics";
+import { evidenceClasses, metricCatalog, ruleCatalog, RULESET_VERSION } from "@/lib/metrics";
 
 const dimensions = [
   ["Behavior safety", "Process, network, filesystem, credential, webview and agent behavior deductions."],
@@ -23,7 +23,7 @@ export default function MetricsPage() {
   }), [query, engine]);
 
   return <main className="shell referencePage">
-    <section className="pageHero referenceHero"><div><p className="eyebrow">Detection reference · ruleset 2026.07.11</p><h1>Every metric. Every rule. No hidden judgment.</h1><p className="heroCopy">The product reports {metricCatalog.length} security domains, {ruleCatalog.length} registered detection rules, eight evidence classes, client-posture controls, and explicit analysis coverage.</p></div><Link className="heroAction" href="/scan">Run a scan</Link></section>
+    <section className="pageHero referenceHero"><div><p className="eyebrow">Detection reference · ruleset {RULESET_VERSION}</p><h1>Every metric. Every rule. No hidden judgment.</h1><p className="heroCopy">The product reports {metricCatalog.length} security domains, {ruleCatalog.length} registered detection rules, eight evidence classes, client-posture controls, and explicit analysis coverage.</p></div><Link className="heroAction" href="/scan">Run a scan</Link></section>
 
     <section className="referenceStats"><div><strong>{ruleCatalog.length}</strong><span>registered rules</span></div><div><strong>{metricCatalog.length}</strong><span>metric domains</span></div><div><strong>6</strong><span>security dimensions</span></div><div><strong>4</strong><span>security decisions</span></div></section>
 

@@ -1,5 +1,6 @@
 export type MetricDomain = { id: string; label: string; short: string; detail: string; why: string; outputs: string[] };
 export type RuleReference = { id: string; title: string; category: string; evidence: string; severity: string; engine: string; description: string };
+export const RULESET_VERSION = "2026.07.15";
 
 export const metricCatalog: MetricDomain[] = [
   { id: "confirmed-intelligence", label: "Confirmed intelligence", short: "Known-bad artifacts and malicious dependencies.", detail: "Exact package and file SHA-256 matches, configured threat intelligence, and dependencies identified as malicious.", why: "This is authoritative evidence and can directly drive a BLOCK decision when the intelligence source and artifact identity are valid.", outputs: ["artifact SHA-256", "feed source", "matched dependency"] },

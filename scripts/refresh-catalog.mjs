@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 const gallery = "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery?api-version=7.2-preview.1";
 const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 const scanLimit = Number(process.env.SCAN_BATCH_LIMIT || 100);
+const refreshStartedAt = new Date().toISOString();
 
 async function queryGallery(body) {
   const response = await fetch(gallery, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json;api-version=7.2-preview.1" }, body: JSON.stringify(body) });
@@ -40,10 +41,17 @@ async function versionsFor(extension) {
   return (payload.results?.[0]?.extensions?.[0]?.versions || []).map((version, index) => ({ ...extension, version: version.version, published_at: version.lastUpdated || null, is_latest: index === 0 }));
 }
 
-const marketplace = (await Promise.all([1, 2, 3].map(marketplacePage))).flat().map(normalizeMarketplace);
-const combined = [...marketplace, ...await openVsxTop()];
+const [marketplacePages, openVsx] = await Promise.all([Promise.all([1, 2, 3].map(marketplacePage)), openVsxTop()]);
+const marketplace = marketplacePages.flat().map(normalizeMarketplace);
+const combined = [...marketplace, ...openVsx];
 const unique = new Map(); for (const item of combined.sort((a, b) => b.installs - a.installs)) if (!unique.has(item.id.toLowerCase())) unique.set(item.id.toLowerCase(), item);
 const cohort = [...unique.values()].slice(0, 250).map((item, index) => ({ ...item, catalog_rank: index + 1 }));
+
+const refreshRows = ["vs-marketplace", "openvsx"].map((registry) => ({ registry, status: "running", started_at: refreshStartedAt }));
+await db.from("registry_refreshes").insert(refreshRows);
+const refreshIds = new Map();
+const createdRefreshes = await db.from("registry_refreshes").select("id,registry").eq("started_at", refreshStartedAt);
+for (const row of createdRefreshes.data || []) refreshIds.set(row.registry, row.id);
 
 for (const extension of cohort) {
   const { error } = await db.from("extensions").upsert({ id: extension.id, name: extension.name, display_name: extension.display_name, publisher: extension.publisher, description: extension.description, registry: extension.registry, publisher_verified: extension.publisher_verified, installs: extension.installs, rating: extension.rating, icon_url: extension.icon_url, last_published_at: extension.last_published_at, catalog_rank: extension.catalog_rank, updated_at: new Date().toISOString() }, { onConflict: "id" });
@@ -51,11 +59,12 @@ for (const extension of cohort) {
 }
 
 let queued = 0;
+const queuedByRegistry = { "vs-marketplace": 0, openvsx: 0 };
 for (const extension of cohort) {
   const versions = await versionsFor(extension).catch(() => [extension]);
   const seenVersions = new Set();
   const rows = versions
-    .map((item, index) => ({ extension_id: extension.id, version: item.version, registry: extension.registry, published_at: item.published_at, is_latest: Boolean(item.is_latest ?? index === 0) }))
+    .map((item, index) => ({ extension_id: extension.id, version: item.version, registry: extension.registry, published_at: item.published_at, is_latest: Boolean(item.is_latest ?? index === 0), discovered_at: refreshStartedAt, last_seen_at: refreshStartedAt }))
     .filter((item) => {
       if (!item.version || seenVersions.has(item.version)) return false;
       seenVersions.add(item.version);
@@ -66,11 +75,20 @@ for (const extension of cohort) {
     if (queued >= scanLimit) break;
     const existing = await db.from("extension_versions").select("scan_state").eq("extension_id", extension.id).eq("version", item.version).single();
     if (["complete", "queued", "running"].includes(existing.data?.scan_state)) continue;
-    const job = await db.from("scan_jobs").insert({ extension_id: extension.id, version: item.version, profile: "deep", requester_hash: "catalog-refresh" }).select("id").single();
+    const job = await db.from("scan_jobs").insert({ extension_id: extension.id, version: item.version, profile: "deep", requester_hash: "catalog-refresh", scan_purpose: "public_intelligence" }).select("id").single();
     if (job.error) continue;
     await db.from("extension_versions").update({ scan_state: "queued" }).eq("extension_id", extension.id).eq("version", item.version);
     queued += 1;
+    queuedByRegistry[extension.registry] += 1;
   }
+}
+
+const releasesByRegistry = { "vs-marketplace": 0, openvsx: 0 };
+for (const item of cohort) releasesByRegistry[item.registry] += 1;
+for (const registry of ["vs-marketplace", "openvsx"]) {
+  const id = refreshIds.get(registry);
+  if (!id) continue;
+  await db.from("registry_refreshes").update({ status: "complete", completed_at: new Date().toISOString(), extensions_seen: cohort.filter((item) => item.registry === registry).length, releases_seen: releasesByRegistry[registry], releases_queued: queuedByRegistry[registry] }).eq("id", id);
 }
 
 console.log(JSON.stringify({ extensions: cohort.length, deep_scans_queued: queued }));
