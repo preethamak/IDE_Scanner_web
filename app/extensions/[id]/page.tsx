@@ -33,6 +33,8 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
       <div><span>Installs</span><strong>{formatCount(product.extension.installs)}</strong></div>
       <div><span>Last release</span><strong>{formatDate(product.extension.last_published_at)}</strong></div>
       <div><span>Deep Scan</span><strong>{latest?.scan_state === "complete" ? "Complete" : "Available on request"}</strong></div>
+      <div><span>Analysis coverage</span><strong>{scan ? `${Number(scan.coverage_percent ?? 0)}%` : "Not assessed"}</strong></div>
+      <div><span>Last analyzed</span><strong>{scan ? formatDate(String(scan.scanned_at || "")) : "Not assessed"}</strong></div>
     </section>
 
     <nav className="packageTabs" aria-label="Extension intelligence"><a href="#overview">Overview</a><a href="#versions">Versions <b>{product.versions.length}</b></a>{scan ? <><Link href={`/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(version)}#alerts`}>Alerts</Link><Link href={`/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(version)}#capabilities`}>Capabilities</Link><Link href={`/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(version)}#dependencies`}>Dependencies</Link><Link href={`/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(version)}#files`}>Files</Link></> : null}<a href="#trust">Trust</a></nav>

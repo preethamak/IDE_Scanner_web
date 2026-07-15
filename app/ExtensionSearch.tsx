@@ -41,7 +41,7 @@ export default function ExtensionSearch({ initialQuery = "", onSelect, submitLab
     </form>
     {error ? <p className="discoveryError">{error}</p> : null}
     {data ? <div className="discoveryResults" aria-live="polite">
-      {data.exact_match ? <ResultGroup label="Exact identity match" items={[data.exact_match]} action={open}/> : <p className="exactMiss">No exact match for <code>{data.query}</code>. Related extensions are shown below; choose a release explicitly.</p>}
+      {data.exact_match ? <ResultGroup label={data.exact_match.match_reason === "exact_identity" ? "Exact identity match" : "Exact extension name"} items={[data.exact_match]} action={open}/> : <p className="exactMiss">No exact match for <code>{data.query}</code>. Related extensions are shown below; choose a release explicitly.</p>}
       {data.matching_extensions.length ? <ResultGroup label="Matching extensions" items={data.matching_extensions} action={open}/> : null}
       {data.related_extensions.length ? <ResultGroup label="Related extensions" items={data.related_extensions} action={open}/> : null}
       {!data.exact_match && !data.matching_extensions.length && !data.related_extensions.length ? <p className="exactMiss">No registry results were returned. This is distinct from a provider failure.</p> : null}
