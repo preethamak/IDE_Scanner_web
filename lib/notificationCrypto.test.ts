@@ -21,7 +21,9 @@ describe("notification target encryption", () => {
   it("rejects a modified ciphertext", () => {
     process.env.MONITORING_ENCRYPTION_KEY = "test-key-that-is-never-used-in-production";
     const encrypted = encryptTarget("https://hooks.slack.com/services/T000/B000/secret");
-    expect(() => decryptTarget(`${encrypted.slice(0, -1)}x`)).toThrow();
+    const parts = encrypted.split(".");
+    parts[2] = `${parts[2][0] === "A" ? "B" : "A"}${parts[2].slice(1)}`;
+    expect(() => decryptTarget(parts.join("."))).toThrow();
   });
 
   it("requires both delivery secrets before advertising outbound delivery", () => {

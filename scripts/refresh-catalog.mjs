@@ -4,6 +4,7 @@ const gallery = "https://marketplace.visualstudio.com/_apis/public/gallery/exten
 const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 const scanLimit = Number(process.env.SCAN_BATCH_LIMIT || 100);
 const refreshStartedAt = new Date().toISOString();
+const chunks = (items, size = 60) => Array.from({ length: Math.ceil(items.length / size) }, (_, index) => items.slice(index * size, (index + 1) * size));
 
 async function queryGallery(body) {
   const response = await fetch(gallery, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json;api-version=7.2-preview.1" }, body: JSON.stringify(body) });
@@ -73,11 +74,10 @@ for (const extension of cohort) {
   // Remember which releases existed before this refresh. A watch alert is only
   // useful for a newly observed release; repeating it every six hours would
   // train people to ignore the monitor.
-  const existingVersions = rows.length
-    ? await db.from("extension_versions").select("version").eq("extension_id", extension.id).in("version", rows.map((item) => item.version))
-    : { data: [], error: null };
-  if (existingVersions.error) throw existingVersions.error;
-  const known = new Set((existingVersions.data || []).map((item) => item.version));
+  const existingVersionBatches = await Promise.all(chunks(rows.map((item) => item.version)).map((versions) => db.from("extension_versions").select("version").eq("extension_id", extension.id).in("version", versions)));
+  const existingVersionError = existingVersionBatches.find((result) => result.error)?.error;
+  if (existingVersionError) throw existingVersionError;
+  const known = new Set(existingVersionBatches.flatMap((result) => result.data || []).map((item) => item.version));
   const newlyObserved = rows.filter((item) => !known.has(item.version) && item.is_latest);
   if (rows.length) { const result = await db.from("extension_versions").upsert(rows, { onConflict: "extension_id,version" }); if (result.error) throw result.error; }
   for (const release of newlyObserved) await notifyWatchersOfRelease(extension.id, release.version);

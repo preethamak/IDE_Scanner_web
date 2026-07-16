@@ -20,11 +20,13 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   if (!left?.latest_scan_id || !right?.latest_scan_id) return NextResponse.json({ comparable: false, missing: [!left?.latest_scan_id ? from : null, !right?.latest_scan_id ? to : null].filter(Boolean), reason: "Both exact versions must complete Deep Scan before a comparison can be generated." });
   const [leftData, rightData] = await Promise.all([load(String(left.latest_scan_id)), load(String(right.latest_scan_id))]);
   if (!leftData.scan || !rightData.scan) return NextResponse.json({ comparable: false, missing: [!leftData.scan ? from : null, !rightData.scan ? to : null].filter(Boolean), reason: "Normalized scan evidence is missing for one or both versions." });
-  return NextResponse.json({ comparable: true, extension_id: extensionId, from: summarize(from, leftData), to: summarize(to, rightData), changes: compare(leftData, rightData) });
+  const sameScannerBuild = leftData.scan.scanner_build === rightData.scan.scanner_build;
+  const sameRuleset = leftData.scan.ruleset_version === rightData.scan.ruleset_version;
+  return NextResponse.json({ comparable: true, extension_id: extensionId, attribution: { artifact_changes: true, evidence_changes: sameScannerBuild && sameRuleset, same_scanner_build: sameScannerBuild, same_ruleset: sameRuleset, note: sameScannerBuild && sameRuleset ? "Both versions were analyzed by the same scanner build and ruleset." : "File and dependency deltas are exact. Finding and capability deltas may also reflect scanner or ruleset changes, so they are not attributed to the release." }, from: summarize(from, leftData), to: summarize(to, rightData), changes: compare(leftData, rightData) });
 
   async function load(scanId: string) {
     const [scan, findings, files, dependencies] = await Promise.all([
-      db!.from("scans").select("id,decision,decision_reason,severity,coverage_percent,capabilities,artifact_sha256,scanned_at").eq("id", scanId).maybeSingle(),
+      db!.from("scans").select("id,decision,decision_reason,severity,coverage_percent,capabilities,artifact_sha256,scanned_at,scanner_build,ruleset_version,schema_version").eq("id", scanId).maybeSingle(),
       db!.from("findings").select("rule_id,severity,summary,actionability,evidence_class,file_refs").eq("scan_id", scanId),
       db!.from("artifact_files").select("path,sha256,size_bytes,kind").eq("scan_id", scanId).limit(5000),
       db!.from("dependencies").select("name,version,relationship,advisories").eq("scan_id", scanId).limit(5000),
@@ -33,7 +35,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   }
 }
 
-function summarize(version: string, data: ReturnTypeData) { return { version, decision: data.scan?.decision, severity: data.scan?.severity, coverage_percent: data.scan?.coverage_percent, artifact_sha256: data.scan?.artifact_sha256, scanned_at: data.scan?.scanned_at, findings: uniqueRules(data.findings).size, files: data.files.length, dependencies: data.dependencies.length, capabilities: Object.keys((data.scan?.capabilities || {}) as Row).length }; }
+function summarize(version: string, data: ReturnTypeData) { return { version, decision: data.scan?.decision, severity: data.scan?.severity, coverage_percent: data.scan?.coverage_percent, artifact_sha256: data.scan?.artifact_sha256, scanned_at: data.scan?.scanned_at, scanner_build: data.scan?.scanner_build, ruleset_version: data.scan?.ruleset_version, findings: uniqueRules(data.findings).size, files: data.files.length, dependencies: data.dependencies.length, capabilities: Object.keys((data.scan?.capabilities || {}) as Row).length }; }
 type ReturnTypeData = { scan: Row | null; findings: Row[]; files: Row[]; dependencies: Row[] };
 function uniqueRules(items: Row[]) { return new Map(items.map((item) => [String(item.rule_id), item])); }
 function compare(left: ReturnTypeData, right: ReturnTypeData) {
