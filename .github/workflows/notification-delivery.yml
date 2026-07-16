@@ -1,0 +1,28 @@
+name: Deliver monitoring notifications
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notification-delivery
+  cancel-in-progress: false
+
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Dispatch pending alerts
+        env:
+          NOTIFICATION_CRON_SECRET: ${{ secrets.NOTIFICATION_CRON_SECRET }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --retry 2 --retry-all-errors \
+            --request POST \
+            --header "Authorization: Bearer ${NOTIFICATION_CRON_SECRET}" \
+            https://ide-scanner.vercel.app/api/cron/notifications
