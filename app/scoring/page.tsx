@@ -6,14 +6,23 @@ const decisions = [
   ["INCOMPLETE", "Required providers, declared entrypoints, archives, or artifacts could not be analyzed sufficiently.", "Restore coverage or independently inspect unsupported content. Never interpret this as clean."],
   ["ALLOW", "Required analysis completed and no evidence crossed the active block or review policy.", "Approval applies to this exact artifact hash and policy version, not every future release."]
 ];
+const severities = [
+  ["CRITICAL", "Corroborated evidence with urgent potential impact. Treat as an immediate security decision; a block still requires the scanner policy and evidence class to support it."],
+  ["HIGH", "Prioritize for human review. High severity is not, on its own, a public vulnerability claim."],
+  ["MEDIUM", "Meaningful behavior or exposure that needs purpose and implementation context."],
+  ["LOW", "Limited impact or weakly correlated behavior retained for review context."],
+  ["INFORMATIONAL", "Observed context that does not independently drive an operational action."]
+];
 
 export default function ScoringPage() {
   return <main className="shell methodologyPage">
-    <section className="pageHero referenceHero"><div><p className="eyebrow">Decision methodology</p><h1>A decision is policy over evidence and coverage.</h1><p className="heroCopy">IDE Scanner does not ask a language model whether code “looks malicious.” Deterministic analyzers create findings, analysis coverage limits what can be concluded, and a versioned policy creates the final decision.</p></div><Link className="heroAction" href="/metrics">Inspect the rules</Link></section>
+    <section className="pageHero referenceHero"><div><p className="eyebrow">Severity guide</p><h1>Severity classifies evidence. Policy chooses the action.</h1><p className="heroCopy">Reports lead with CRITICAL through INFORMATIONAL so a reviewer can triage consistently. Deterministic analyzers create findings; coverage limits what can be concluded; versioned policy produces the secondary operational action.</p></div><Link className="heroAction" href="/metrics">Inspect the rules</Link></section>
+
+    <section className="decisionDocs"><div className="sectionIntro"><p className="eyebrow">Primary classification</p><h2>Five severity levels with precise meaning</h2></div>{severities.map(([label, meaning]) => <article key={label}><strong className={`decisionBadge severity-${label.toLowerCase()}`}>{label}</strong><p>{meaning}</p><span>Read the exact evidence, affected locations, and coverage before acting.</span></article>)}</section>
 
     <section className="decisionFormula"><span>Artifact</span><b>+</b><span>Evidence</span><b>+</b><span>Coverage</span><b>+</b><span>Policy</span><b>=</b><strong>Decision</strong></section>
 
-    <section className="decisionDocs"><div className="sectionIntro"><p className="eyebrow">Primary output</p><h2>Four decisions with operational meaning</h2></div>{decisions.map(([label, meaning, action]) => <article key={label}><strong className={`decisionBadge ${label.toLowerCase()}`}>{label}</strong><p>{meaning}</p><span>{action}</span></article>)}</section>
+    <section className="decisionDocs"><div className="sectionIntro"><p className="eyebrow">Secondary operational action</p><h2>Four decisions with operational meaning</h2></div>{decisions.map(([label, meaning, action]) => <article key={label}><strong className={`decisionBadge ${label.toLowerCase()}`}>{label}</strong><p>{meaning}</p><span>{action}</span></article>)}</section>
 
     <section className="methodologyGrid"><article><p className="eyebrow">Diagnostic index</p><h2>Risk score · 0-100</h2><p>Prioritizes sensitive capability, supply-chain exposure, provenance, weak indicators, and correlated abuse potential. It is for review ordering, not a probability.</p></article><article><p className="eyebrow">Diagnostic index</p><h2>Malware score · 0-100</h2><p>Summarizes confirmed and strongly correlated malicious evidence. It is not statistically calibrated and should always be read with evidence class.</p></article><article><p className="eyebrow">Compatibility field</p><h2>Grade · A-F</h2><p>A legacy human-readable rollup retained in report bundles. It is secondary to decision, completion state, and exact evidence.</p></article></section>
 

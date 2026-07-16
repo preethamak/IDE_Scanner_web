@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { Activity, BookOpen, ChevronDown, FileSearch } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-const resourceLinks = [["/metrics", "Rules and metrics"], ["/scoring", "Decision methodology"], ["/benchmark", "Validation and benchmarks"], ["/settings", "Trust architecture"]] as const;
+const resourceLinks = [["/metrics", "Detection catalog"], ["/scoring", "Severity guide"], ["/benchmark", "Validation evidence"], ["/settings", "Analysis boundaries"]] as const;
 
 export default function SiteNav() {
   const pathname = usePathname();
