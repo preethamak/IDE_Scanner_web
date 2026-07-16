@@ -44,7 +44,6 @@ export default async function HomePage() {
 
     <section className="homeBand researchBand"><div className="homeBandHead"><div><span>Security research</span><h2>Explain the signal, not just the alert.</h2></div><Link href="/research">View all research <ArrowRight/></Link></div><div className="researchCards">{research.map(([title, detail, category, href], index) => <Link href={href} key={title}><span>0{index + 1} · {category}</span><h3>{title}</h3><p>{detail}</p><ArrowRight/></Link>)}</div></section>
 
-    <section className="closingProductCta"><div><span>Public by default</span><h2>Know what enters the developer environment.</h2><p>No account required. No package execution. Every conclusion tied to an exact version and artifact.</p></div><HomeSearch compact/></section>
   </main>;
 }
 
