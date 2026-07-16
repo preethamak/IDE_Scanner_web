@@ -6,7 +6,7 @@ import Link from "next/link";
 
 type ScanState = "idle" | "loading" | "queued" | "running" | "complete" | "error";
 
-export default function DeepScanButton({ extensionId, version }: { extensionId: string; version: string }) {
+export default function DeepScanButton({ extensionId, version, showReportLink = true }: { extensionId: string; version: string; showReportLink?: boolean }) {
   const router = useRouter();
   const [state, setState] = useState<ScanState>("idle");
   const [health, setHealth] = useState<"checking" | "available" | "unavailable">("checking");
@@ -22,7 +22,7 @@ export default function DeepScanButton({ extensionId, version }: { extensionId: 
     ]).then(([runner, job]) => {
       if (!active) return;
       setHealth(runner.available ? "available" : "unavailable");
-      if (job?.report_url) { setReportUrl(String(job.report_url)); setState("complete"); setMessage("Completed Deep Scan is available for this exact release."); }
+      if (job?.report_url) { setReportUrl(String(job.report_url)); setState("complete"); setMessage(showReportLink ? "Completed Deep Scan is available for this exact release." : ""); }
       else if (job && ["queued", "running"].includes(job.status)) {
         setJobId(String(job.id)); setState(job.status); setMessage(job.status === "queued" ? "Starting the isolated analysis runner…" : "Analyzers are inspecting the exact artifact.");
       } else if (job?.status === "failed") {
@@ -30,7 +30,7 @@ export default function DeepScanButton({ extensionId, version }: { extensionId: 
       }
     }).catch(() => { if (active) setHealth("unavailable"); });
     return () => { active = false; };
-  }, [extensionId, version]);
+  }, [extensionId, version, showReportLink]);
 
   useEffect(() => {
     if (!jobId || !["queued", "running"].includes(state)) return;
@@ -61,7 +61,7 @@ export default function DeepScanButton({ extensionId, version }: { extensionId: 
     <button className="button buttonDark" onClick={queue} disabled={health !== "available" || ["loading", "queued", "running"].includes(state)}>
       {health === "checking" ? <><LoaderCircle className="spin" size={16}/> Checking runner</> : unavailable ? "Deep Scan paused" : state === "loading" ? <><LoaderCircle className="spin" size={16}/> Queueing</> : state === "queued" ? "Queued" : state === "running" ? <><LoaderCircle className="spin" size={16}/> Analyzing</> : state === "complete" ? <>Re-scan current build <ScanSearch size={16}/></> : <>Deep Scan <ScanSearch size={16}/></>}
     </button>
-    {reportUrl ? <Link className="deepScanReportLink" href={reportUrl}>Open Deep Scan report</Link> : null}
-    {unavailable ? <span className="actionError">The analysis runner is offline. No scan job was created.</span> : message ? <span className={state === "error" ? "actionError" : "actionNotice"}>{message}</span> : null}
+    {showReportLink && reportUrl ? <Link className="deepScanReportLink" href={reportUrl}>Open Deep Scan report</Link> : null}
+    {unavailable ? <span className="actionError" role="status">The analysis runner is offline. No scan job was created.</span> : message ? <span className={state === "error" ? "actionError" : "actionNotice"} role="status">{message}</span> : null}
   </div>;
 }

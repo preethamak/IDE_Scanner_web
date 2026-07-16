@@ -57,7 +57,15 @@ export async function getExtensionProduct(id: string): Promise<{ extension: Cata
         const result = await db.from("scans").select("*").in("id", scanIds);
         const scans = (result.data || []) as Array<Record<string, unknown>>;
         const scansById = new Map(scans.map((item) => [String(item.id), item]));
-        versionRows = versionRows.map((item) => ({ ...item, severity: scansById.get(String(item.latest_scan_id || ""))?.severity || null }));
+        versionRows = versionRows.map((item) => {
+          const versionScan = scansById.get(String(item.latest_scan_id || ""));
+          return {
+            ...item,
+            decision: versionScan?.decision || null,
+            coverage_percent: versionScan?.coverage_percent ?? null,
+            scanned_at: versionScan?.scanned_at || null,
+          };
+        });
         scan = scansById.get(String(latest?.latest_scan_id || "")) || null;
       }
       return { extension: normalizeCatalogRow(extension as Record<string, unknown>), versions: versionRows, scan };
