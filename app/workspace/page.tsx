@@ -1,16 +1,57 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+
 import Link from "next/link";
-import { ArrowRight, Bell, Clock3, Plus, ScanSearch, ShieldCheck } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ArrowRight, BellRing, CheckCheck, Clock3, Radar, ShieldAlert, ShieldCheck } from "lucide-react";
 import { browserDb } from "@/lib/supabase";
 
-type Watchlist={id:string;name:string;watchlist_items?:Array<{extension_id:string;created_at:string;extensions?:{display_name?:string;icon_url?:string}}>};
-type Job={id:string;extension_id:string;version:string;status:string;created_at:string;completed_at?:string|null;error?:string|null};
-export default function WorkspacePage(){const db=useMemo(()=>browserDb(),[]);const[lists,setLists]=useState<Watchlist[]>([]);const[jobs,setJobs]=useState<Job[]>([]);const[name,setName]=useState("");const[state,setState]=useState<"loading"|"ready"|"signed-out"|"error">("loading");const[message,setMessage]=useState("");
-useEffect(()=>{void load()},[]);// eslint-disable-line react-hooks/exhaustive-deps
-async function load(){if(!db){setMessage("Monitor is temporarily unavailable. Public extension intelligence remains available.");return setState("error")}const{data:{user}}=await db.auth.getUser();if(!user)return setState("signed-out");const[watch,history]=await Promise.all([db.from("watchlists").select("*,watchlist_items(extension_id,created_at,extensions(display_name,icon_url))").order("created_at"),db.from("scan_jobs").select("id,extension_id,version,status,created_at,completed_at,error").order("created_at",{ascending:false}).limit(20)]);if(watch.error||history.error){setMessage("Monitor could not be loaded. Please refresh or try again shortly.");return setState("error")}setLists(watch.data||[]);setJobs(history.data||[]);setState("ready")}
-async function createList(){if(!db||!name.trim())return;const{data:{user}}=await db.auth.getUser();if(!user)return;const result=await db.from("watchlists").insert({owner_id:user.id,name:name.trim().slice(0,80)});if(result.error)setMessage("The watchlist could not be created. Try again shortly.");else{setName("");await load()}}
-if(state==="signed-out")return <main className="workspacePage"><section className="workspaceSignedOut"><ShieldCheck/><span>Monitor · personal workspace</span><h1>Keep release changes and decisions together.</h1><p>Public intelligence remains open. Sign in only to save watchlists, own scans, and return to new releases.</p><Link className="button buttonDark" href="/account?next=/workspace">Sign in to Monitor <ArrowRight/></Link></section></main>;
-if(state==="error")return <main className="workspacePage"><section className="workspaceSignedOut"><ShieldCheck/><span>Monitor</span><h1>We could not open your workspace.</h1><p>{message}</p><Link className="button buttonDark" href="/catalog">Explore public intelligence <ArrowRight/></Link></section></main>;
-return <main className="workspacePage"><section className="workspaceHead"><div><span>Monitor · personal workspace</span><h1>Your extension security activity.</h1><p>Return to scans, watch exact extensions, and see which releases need another look.</p></div><div className="workspaceActions"><Link className="button buttonDark" href="/scan"><ScanSearch/> Analyze extension</Link><Link className="button buttonQuiet" href="/catalog">Explore</Link></div></section>{state==="loading"?<div className="workspaceMessage">Loading Monitor…</div>:null}{message?<div className="workspaceMessage">{message}</div>:null}<section className="workspaceSummary"><article><ScanSearch/><span>Recent scans</span><strong>{jobs.length}</strong><p>{jobs.filter(x=>["queued","running"].includes(x.status)).length} currently processing</p></article><article><Bell/><span>Watched extensions</span><strong>{lists.reduce((n,l)=>n+(l.watchlist_items?.length||0),0)}</strong><p>Across {lists.length} personal watchlist{lists.length===1?"":"s"}</p></article><article><Clock3/><span>Needs attention</span><strong>{jobs.filter(x=>["failed","incomplete"].includes(x.status)).length}</strong><p>Failed or incomplete analysis</p></article></section><section className="workspaceSection"><div className="workspaceSectionHead"><div><span>Scan activity</span><h2>Recent Deep Scans</h2></div></div><div className="personalScanRows">{jobs.map(job=><article key={job.id}><Status value={job.status}/><div><strong>{job.extension_id}</strong><code>@{job.version}</code></div><span>{formatDate(job.created_at)}</span><Link href={`/extensions/${encodeURIComponent(job.extension_id)}/versions/${encodeURIComponent(job.version)}`}>Open dossier <ArrowRight/></Link></article>)}{state==="ready"&&!jobs.length?<Empty title="No Deep Scans yet" detail="Choose any published extension and exact version to start your history." href="/catalog"/>:null}</div></section><section className="workspaceSection"><div className="workspaceSectionHead"><div><span>Monitoring</span><h2>Personal watchlists</h2></div><div className="createRow"><input value={name} onChange={e=>setName(e.target.value)} placeholder="New watchlist" aria-label="New watchlist name"/><button className="iconButton" onClick={()=>void createList()} title="Create watchlist" aria-label="Create watchlist"><Plus/></button></div></div><div className="watchlistBlocks">{lists.map(list=><article key={list.id}><header><div><strong>{list.name}</strong><span>{list.watchlist_items?.length||0} extensions</span></div><Bell/></header>{list.watchlist_items?.slice(0,6).map(item=><Link key={item.extension_id} href={`/extensions/${encodeURIComponent(item.extension_id)}`}><span>{item.extensions?.display_name||item.extension_id}</span><code>{item.extension_id}</code><ArrowRight/></Link>)}{!list.watchlist_items?.length?<p>Add an extension from its intelligence page.</p>:null}</article>)}</div></section></main>}
-function Status({value}:{value:string}){return <span className={`scanJobStatus ${value}`}>{value}</span>}function formatDate(v:string){return new Intl.DateTimeFormat("en",{dateStyle:"medium"}).format(new Date(v))}function Empty({title,detail,href}:{title:string;detail:string;href:string}){return <div className="workspaceEmpty"><ShieldCheck/><strong>{title}</strong><p>{detail}</p><Link href={href}>Get started <ArrowRight/></Link></div>}
+type Alert = { id: string; extension_id: string; version: string; scan_id?: string | null; kind: string; severity?: string | null; state: string; title: string; summary: string; created_at: string };
+type Job = { id: string; extension_id: string; version: string; status: string; created_at: string };
+
+export default function DashboardPage() {
+  const db = useMemo(() => browserDb(), []);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [state, setState] = useState<"loading" | "ready" | "signed-out" | "error">("loading");
+
+  const load = useCallback(async () => {
+    if (!db) return setState("error");
+    const { data: { user } } = await db.auth.getUser();
+    if (!user) return setState("signed-out");
+    const [alertResult, jobResult] = await Promise.all([
+      db.from("monitoring_alerts").select("id,extension_id,version,scan_id,kind,severity,state,title,summary,created_at").in("state", ["unread", "read", "acknowledged"]).order("created_at", { ascending: false }).limit(30),
+      db.from("scan_jobs").select("id,extension_id,version,status,created_at").order("created_at", { ascending: false }).limit(8),
+    ]);
+    if (alertResult.error || jobResult.error) return setState("error");
+    setAlerts(alertResult.data || []); setJobs(jobResult.data || []); setState("ready");
+  }, [db]);
+  useEffect(() => { void load(); }, [load]);
+
+  async function resolve(id: string, state: "read" | "acknowledged" | "dismissed") {
+    if (!db) return;
+    const now = new Date().toISOString();
+    const result = await db.from("monitoring_alerts").update({ state, read_at: state === "read" ? now : undefined, resolved_at: state === "acknowledged" || state === "dismissed" ? now : undefined }).eq("id", id);
+    if (!result.error) await load();
+  }
+
+  if (state === "signed-out") return <Gate />;
+  if (state === "error") return <main className="workspacePage"><section className="workspaceSignedOut"><ShieldAlert/><span>Personal dashboard</span><h1>Your dashboard is temporarily unavailable.</h1><p>Public reports remain available. Please refresh, or return to Explore while the workspace reconnects.</p><Link className="button buttonDark" href="/catalog">Explore public intelligence <ArrowRight/></Link></section></main>;
+
+  const unread = alerts.filter((item) => item.state === "unread");
+  const urgent = alerts.filter((item) => item.state === "unread" && ["CRITICAL", "HIGH"].includes(item.severity || ""));
+  return <main className="workspacePage dashboardPage">
+    <section className="workspaceHead dashboardHead"><div><span>Dashboard · personal triage</span><h1>What needs your attention now.</h1><p>New watched releases, completed evidence, and incomplete scans in one short, actionable queue.</p></div><div className="workspaceActions"><Link className="button buttonDark" href="/monitor"><Radar/> Manage monitoring</Link><Link className="button buttonQuiet" href="/scan">Analyze extension</Link></div></section>
+    {state === "loading" ? <div className="workspaceMessage">Loading your security queue…</div> : null}
+    <section className="dashboardSummary" aria-label="Dashboard summary"><article><BellRing/><div><span>Unread</span><strong>{unread.length}</strong></div><p>Events awaiting a decision</p></article><article><ShieldAlert/><div><span>High priority</span><strong>{urgent.length}</strong></div><p>Severity-led review, not vulnerability claims</p></article><article><Clock3/><div><span>Processing</span><strong>{jobs.filter((job) => ["queued", "running"].includes(job.status)).length}</strong></div><p>Deep Scans currently in flight</p></article></section>
+    <section className="workspaceSection attentionQueue"><div className="workspaceSectionHead"><div><span>Attention queue</span><h2>Evidence that changed</h2></div>{unread.length ? <button className="textAction" onClick={() => Promise.all(unread.map((item) => resolve(item.id, "read"))).then(() => undefined)}><CheckCheck/> Mark all read</button> : null}</div>
+      <div className="alertRows">{alerts.map((alert) => <article key={alert.id} className={`monitorAlert ${alert.state} severity-${String(alert.severity || "INFORMATIONAL").toLowerCase()}`}><div className="alertSeverity">{alert.severity || "INFORMATIONAL"}</div><div><span>{labelFor(alert.kind)}</span><h3>{alert.title}</h3><p>{alert.summary}</p><small>{formatDate(alert.created_at)} · {alert.extension_id}@{alert.version}</small></div><div className="alertActions"><Link href={`/extensions/${encodeURIComponent(alert.extension_id)}/versions/${encodeURIComponent(alert.version)}`}>Open evidence <ArrowRight/></Link>{alert.state !== "acknowledged" ? <button onClick={() => void resolve(alert.id, "acknowledged")}>Acknowledge</button> : <span>ACKNOWLEDGED</span>}</div></article>)}{state === "ready" && !alerts.length ? <Empty title="Nothing needs attention" detail="Watch an extension to receive a release event, then a follow-up scan result with its exact evidence." href="/catalog"/> : null}</div>
+    </section>
+    <section className="workspaceSection"><div className="workspaceSectionHead"><div><span>Recent analysis</span><h2>Deep Scan activity</h2></div><Link className="textAction" href="/monitor">Open monitoring <ArrowRight/></Link></div><div className="personalScanRows">{jobs.map((job) => <article key={job.id}><Status value={job.status}/><div><strong>{job.extension_id}</strong><code>@{job.version}</code></div><span>{formatDate(job.created_at)}</span><Link href={`/extensions/${encodeURIComponent(job.extension_id)}/versions/${encodeURIComponent(job.version)}`}>Open report <ArrowRight/></Link></article>)}</div></section>
+  </main>;
+}
+
+function Gate() { return <main className="workspacePage"><section className="workspaceSignedOut"><ShieldCheck/><span>Dashboard · personal triage</span><h1>Turn extension changes into an evidence queue.</h1><p>Explore and inspect public artifacts without an account. Sign in only to watch releases, receive private alerts, and keep your decisions together.</p><Link className="button buttonDark" href="/account?next=/workspace">Create free workspace <ArrowRight/></Link><Link className="textAction" href="/catalog">Explore public intelligence <ArrowRight/></Link></section></main>; }
+function Status({ value }: { value: string }) { return <span className={`scanJobStatus ${value}`}>{value}</span>; }
+function Empty({ title, detail, href }: { title: string; detail: string; href: string }) { return <div className="workspaceEmpty"><ShieldCheck/><strong>{title}</strong><p>{detail}</p><Link href={href}>Explore extensions <ArrowRight/></Link></div>; }
+function formatDate(value: string) { return new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(value)); }
+function labelFor(kind: string) { return ({ release_detected: "New release", review_required: "Review required", confirmed_threat: "Confirmed threat", coverage_incomplete: "Coverage incomplete", scan_completed: "Scan complete", scan_failed: "Scan failed" } as Record<string, string>)[kind] || "Monitoring update"; }

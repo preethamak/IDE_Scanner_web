@@ -70,7 +70,17 @@ for (const extension of cohort) {
       seenVersions.add(item.version);
       return true;
     });
+  // Remember which releases existed before this refresh. A watch alert is only
+  // useful for a newly observed release; repeating it every six hours would
+  // train people to ignore the monitor.
+  const existingVersions = rows.length
+    ? await db.from("extension_versions").select("version").eq("extension_id", extension.id).in("version", rows.map((item) => item.version))
+    : { data: [], error: null };
+  if (existingVersions.error) throw existingVersions.error;
+  const known = new Set((existingVersions.data || []).map((item) => item.version));
+  const newlyObserved = rows.filter((item) => !known.has(item.version) && item.is_latest);
   if (rows.length) { const result = await db.from("extension_versions").upsert(rows, { onConflict: "extension_id,version" }); if (result.error) throw result.error; }
+  for (const release of newlyObserved) await notifyWatchersOfRelease(extension.id, release.version);
   for (const item of rows.slice(0, 4)) {
     if (queued >= scanLimit) break;
     const existing = await db.from("extension_versions").select("scan_state").eq("extension_id", extension.id).eq("version", item.version).single();
@@ -80,6 +90,30 @@ for (const extension of cohort) {
     await db.from("extension_versions").update({ scan_state: "queued" }).eq("extension_id", extension.id).eq("version", item.version);
     queued += 1;
     queuedByRegistry[extension.registry] += 1;
+  }
+}
+
+async function notifyWatchersOfRelease(extensionId, version) {
+  const items = await db.from("watchlist_items").select("watchlist_id,watchlists(owner_id)").eq("extension_id", extensionId);
+  if (items.error) throw items.error;
+  const owners = [...new Set((items.data || []).map((item) => item.watchlists?.owner_id).filter(Boolean))];
+  if (!owners.length) return;
+  const preferences = await db.from("monitoring_preferences").select("owner_id,in_app_enabled,release_alerts").in("owner_id", owners);
+  if (preferences.error) throw preferences.error;
+  const enabled = new Set((preferences.data || []).filter((item) => item.in_app_enabled && item.release_alerts).map((item) => item.owner_id));
+  const alerts = owners.filter((ownerId) => enabled.has(ownerId)).map((ownerId) => ({
+    owner_id: ownerId,
+    extension_id: extensionId,
+    version,
+    kind: "release_detected",
+    title: `New release detected: ${extensionId}@${version}`,
+    summary: "A watched extension published a new exact artifact. Deep Scan has been queued; the alert will update when evidence is available.",
+    metadata: { scan_queued: true },
+    dedupe_key: `release:${extensionId}@${version}`,
+  }));
+  if (alerts.length) {
+    const result = await db.from("monitoring_alerts").upsert(alerts, { onConflict: "owner_id,dedupe_key", ignoreDuplicates: true });
+    if (result.error) throw result.error;
   }
 }
 

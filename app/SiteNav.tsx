@@ -15,7 +15,8 @@ export default function SiteNav() {
   return <nav className="primaryNav productNav" aria-label="Primary navigation" ref={root}>
     <Link className={active("/catalog") ? "active" : ""} href="/catalog">Explore</Link>
     <Link className={active("/scan") ? "active" : ""} href="/scan">Analyze</Link>
-    <Link className={active("/workspace") ? "active" : ""} href="/workspace">Monitor</Link>
+    <Link className={active("/workspace") ? "active" : ""} href="/workspace">Dashboard</Link>
+    <Link className={active("/monitor") ? "active" : ""} href="/monitor">Monitor</Link>
     <div className="navMenu resourcesMenu"><button className={resourceLinks.some(([href]) => active(href)) ? "active" : ""} aria-expanded={open === "resources"} aria-controls="research-menu" aria-haspopup="menu" onClick={() => setOpen(open === "resources" ? null : "resources")}>Research <ChevronDown/></button><div id="research-menu" role="menu" className={`navPopover resourcePopover ${open === "resources" ? "isOpen" : ""}`}><div><span>Learn and verify</span>{resourceLinks.map(([href, label]) => <Link role="menuitem" href={href} key={href} onClick={() => setOpen(null)}>{href === "/metrics" ? <FileSearch/> : href === "/benchmark" ? <Activity/> : <BookOpen/>}<strong>{label}</strong></Link>)}</div></div></div>
   </nav>;
 }
