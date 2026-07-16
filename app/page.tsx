@@ -4,6 +4,7 @@ import { unstable_cache } from "next/cache";
 import { ArrowRight, BadgeCheck, Binary, Box, Braces, Check, FileCode2, GitCompareArrows, LockKeyhole, Radar, ShieldAlert, ShieldCheck, Terminal } from "lucide-react";
 import HomeSearch from "@/app/HomeSearch";
 import { resolveMarketplaceExtension } from "@/lib/marketplace";
+import { getPublicSecurityFeed } from "@/lib/productData";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ const research = [
 ] as const;
 
 export default async function HomePage() {
-  const extensions = await getFeaturedExtensions();
+  const [extensions, feed] = await Promise.all([getFeaturedExtensions(), getPublicSecurityFeed()]);
   return <main className="productHome">
     <div className="announcement"><span>Private beta</span><strong>Public extension intelligence is available without an account. Monitoring requires sign-in.</strong><Link href="/research/reading-a-decision">How to read a result <ArrowRight/></Link></div>
     <section className="productHero">
@@ -32,6 +33,8 @@ export default async function HomePage() {
 
     <section className="proofStrip" aria-label="Public intelligence boundaries"><div><strong>EXACT</strong><span>artifact and version boundary</span></div><div><strong>SEVERITY</strong><span>first, evidence-led triage</span></div><div><strong>STATIC</strong><span>package code is not executed</span></div><div><strong>PUBLIC</strong><span>reports are free to inspect</span></div></section>
     <p className="publicMetricNote">Public discovery is free. Sign in only to save watchlists, receive private release alerts, and maintain your decision history.</p>
+
+    <section className="homeBand securityDesk"><div className="homeBandHead"><div><span>Public security desk</span><h2>Evidence that deserves attention.</h2><p>Completed public reports, ordered by severity. “Review” means context is needed; it is not a claim that an extension is vulnerable.</p></div><Link href="/catalog">Explore reports <ArrowRight/></Link></div><div className="publicFeed">{feed.map((item) => <Link key={`${item.extension_id}@${item.version}`} href={`/extensions/${encodeURIComponent(item.extension_id)}/versions/${encodeURIComponent(item.version)}`}><b className={`feedSeverity severity-${item.severity.toLowerCase()}`}>{item.severity === "INFO" ? "INFORMATIONAL" : item.severity}</b><div><span>{item.decision === "block" ? "Confirmed threat evidence" : item.decision === "incomplete" ? "Coverage incomplete" : "Review evidence"}</span><strong>{item.display_name} <code>@{item.version}</code></strong><p>{item.decision_reason}</p></div><small>{item.coverage_percent}% coverage <ArrowRight/></small></Link>)}{!feed.length ? <div className="feedEmpty"><ShieldCheck/><strong>No completed public review reports are available yet.</strong><p>We do not fill this space with speculative or placeholder alerts.</p></div> : null}</div></section>
 
     <section className="homeBand popularBand"><div className="homeBandHead"><div><span>Explore</span><h2>Start from the extension you need to understand.</h2><p>Registry identity and adoption give context. Exact artifact analysis provides the evidence.</p></div><Link href="/catalog">Explore all extensions <ArrowRight/></Link></div><div className="popularExtensions">{extensions.map((item) => <Link key={item.extension_id} href={`/extensions/${encodeURIComponent(item.extension_id)}`}><span className="popularIcon">{item.icon_url ? <Image src={item.icon_url} width={46} height={46} alt="" unoptimized/> : item.publisher.slice(0, 2).toUpperCase()}</span><div><small>{item.extension_id}</small><strong>{item.display_name}{item.publisher_verified ? <BadgeCheck/> : null}</strong><p>{item.short_description}</p></div><aside><span>{formatCount(item.install_count)} installs</span><code>{item.version}</code><ArrowRight/></aside></Link>)}</div></section>
 

@@ -22,6 +22,22 @@ export type CatalogExtension = {
   latest_scan?: Record<string, unknown> | null;
 };
 
+export type PublicSecurityFeedItem = { extension_id: string; version: string; display_name: string; severity: string; decision: string; scanned_at: string; coverage_percent: number; decision_reason: string };
+
+export async function getPublicSecurityFeed(limit = 6): Promise<PublicSecurityFeedItem[]> {
+  const db = publicDb();
+  if (!db) return [];
+  const { data: scans } = await db.from("scans").select("extension_id,version,severity,decision,scanned_at,coverage_percent,decision_reason").eq("scan_purpose", "public_intelligence").is("superseded_at", null).in("decision", ["review", "block", "incomplete"]).order("scanned_at", { ascending: false }).limit(80);
+  const rank = (severity: string) => ({ CRITICAL: 5, HIGH: 4, MEDIUM: 3, LOW: 2, INFO: 1 }[severity] || 0);
+  const latest = new Map<string, Record<string, unknown>>();
+  for (const scan of (scans || []) as Array<Record<string, unknown>>) { const key = `${scan.extension_id}@${scan.version}`; if (!latest.has(key)) latest.set(key, scan); }
+  const rows = [...latest.values()].sort((a, b) => rank(String(b.severity)) - rank(String(a.severity)) || String(b.scanned_at).localeCompare(String(a.scanned_at))).slice(0, limit);
+  const ids = [...new Set(rows.map((item) => String(item.extension_id)))];
+  const { data: extensions } = ids.length ? await db.from("extensions").select("id,display_name").in("id", ids) : { data: [] as Array<{ id: string; display_name: string }> };
+  const names = new Map((extensions || []).map((item) => [String(item.id), String(item.display_name)]));
+  return rows.map((item) => ({ extension_id: String(item.extension_id), version: String(item.version), display_name: names.get(String(item.extension_id)) || String(item.extension_id), severity: String(item.severity || "INFO"), decision: String(item.decision || "incomplete"), scanned_at: String(item.scanned_at), coverage_percent: Number(item.coverage_percent || 0), decision_reason: String(item.decision_reason || "Open the exact artifact evidence.") }));
+}
+
 export async function listCatalog(query = "", limit = 50): Promise<CatalogExtension[]> {
   const db = publicDb();
   if (db) {
