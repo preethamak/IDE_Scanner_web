@@ -17,12 +17,14 @@
     "@fontsource/ibm-plex-mono": "^5.2.7",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.110.2",
+    "@types/yauzl": "^2.10.0",
     "@vercel/analytics": "^2.0.1",
     "fflate": "^0.8.3",
     "lucide-react": "^1.24.0",
     "next": "16.2.10",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "yauzl": "^3.2.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
