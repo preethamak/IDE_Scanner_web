@@ -5,6 +5,16 @@ const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABA
 const scanLimit = Number(process.env.SCAN_BATCH_LIMIT || 100);
 const refreshStartedAt = new Date().toISOString();
 const chunks = (items, size = 60) => Array.from({ length: Math.ceil(items.length / size) }, (_, index) => items.slice(index * size, (index + 1) * size));
+let terminating = false;
+process.on("uncaughtException", async (error) => {
+  if (terminating) return;
+  terminating = true;
+  const message = error instanceof Error ? error.message : String(error);
+  try { await db.from("registry_refreshes").update({ status: "failed", completed_at: new Date().toISOString(), error: message.slice(0, 1000) }).eq("started_at", refreshStartedAt).eq("status", "running"); }
+  catch { /* The original failure remains authoritative. */ }
+  console.error(error);
+  process.exit(1);
+});
 
 async function queryGallery(body) {
   const response = await fetch(gallery, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json;api-version=7.2-preview.1" }, body: JSON.stringify(body) });

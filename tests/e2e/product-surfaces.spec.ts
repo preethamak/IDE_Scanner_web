@@ -1,10 +1,11 @@
 import { expect, test } from "@playwright/test";
 
 const surfaces = [
-  ["/", /Know what enters the developer environment/i],
+  ["/", /Know the extension/i],
   ["/catalog", /Find the extension/i],
   ["/scan", /Inspect an extension before installation/i],
-  ["/workspace", /Keep release changes and decisions together/i],
+  ["/workspace", /Turn extension changes into an evidence queue/i],
+  ["/monitor", /Watch the release/i],
   ["/account", /Keep watching after the first scan/i],
   ["/benchmark", /Regression evidence with its limits intact/i],
 ] as const;
@@ -20,7 +21,25 @@ for (const [path, heading] of surfaces) {
 
 test("Explore search is the primary public route", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("textbox", { name: "Search extension intelligence" }).fill("vyper guard");
-  await page.getByRole("button", { name: /Explore results/i }).click({ noWaitAfter: true });
+  await page.getByRole("textbox", { name: "Search extension intelligence" }).first().fill("vyper guard");
+  await page.getByRole("button", { name: /Explore results/i }).first().click({ noWaitAfter: true });
   await expect(page).toHaveURL(/\/catalog\?q=vyper%20guard/);
+});
+
+test("extension profile and report use one current outcome", async ({ page }) => {
+  await page.goto("/extensions/GitHub.copilot");
+  await expect(page.getByText("Security outcome", { exact: true })).toBeVisible();
+  await expect(page.getByText("REVIEW NEEDED", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Primary severity", { exact: true })).toHaveCount(0);
+  await page.goto("/extensions/GitHub.copilot/versions/1.388.0");
+  await expect(page.getByText("Review needed", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Operational action", { exact: true })).toHaveCount(0);
+});
+
+test("release comparison discloses and verifies its analysis baseline", async ({ page }) => {
+  await page.goto("/extensions/GitHub.copilot/versions/1.388.0#changes");
+  await expect(page.getByText("What changed in 1.388.0")).toBeVisible();
+  await expect(page.locator(".changeDashboard")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("Mixed analysis baseline")).toHaveCount(0);
+  await expect(page.getByText("Files", { exact: true }).last()).toBeVisible();
 });
