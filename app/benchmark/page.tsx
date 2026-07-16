@@ -1,9 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowUpRight, Database, FileCheck2, FlaskConical, ShieldCheck } from "lucide-react";
+import { Database, FileCheck2, FlaskConical, ShieldCheck } from "lucide-react";
 import { websiteBenchmark as benchmark } from "@/lib/websiteBenchmark";
-
-const source = (path: string) => `${benchmark.sourceBase}/${path}`;
 
 export default function BenchmarkPage() {
   return <main className="studyPage pageWrap">
@@ -19,7 +17,7 @@ export default function BenchmarkPage() {
 
     <section className="studySection recurringSection"><div className="sectionTitle"><span className="kicker">Scope boundary</span><h2>Claims this benchmark does not support.</h2><p>The corpus informed scanner improvements and contains no fresh malicious holdout. The retained malicious sample is a development regression, not a recall denominator.</p></div><div className="recurringList"><article><span>01</span><strong>No ecosystem-wide accuracy claim</strong><div><i style={{ width: "0%" }}/></div><b>Not claimed</b></article><article><span>02</span><strong>No malware recall or false-negative rate</strong><div><i style={{ width: "0%" }}/></div><b>Not claimed</b></article><article><span>03</span><strong>No claim that an allowed artifact is proven safe</strong><div><i style={{ width: "0%" }}/></div><b>Not claimed</b></article></div></section>
 
-    <section className="studyCta"><div><span className="kicker">Reproduce & inspect</span><h2>Read the inputs, results, corrections, and integrity hashes.</h2><p>The retained malicious development sample, <code>{benchmark.maliciousDevelopmentRegression.artifact}</code>, remained blocked with malware {benchmark.maliciousDevelopmentRegression.malwareScore} and risk {benchmark.maliciousDevelopmentRegression.riskScore}.</p></div><div className="heroActions"><a className="button buttonDark" href={source("reports/website-benchmark-2026-07-16.md")}>Read full report <ArrowUpRight size={16}/></a><a className="button buttonQuiet" href={source("benchmarks/website-corpus/v1/manifest.json")}>Artifact manifest <ArrowUpRight size={16}/></a><a className="button buttonQuiet" href={source("benchmarks/website-corpus/v1/results.json")}>Normalized results <ArrowUpRight size={16}/></a><Link className="button buttonQuiet" href="/scoring">Decision methodology</Link></div></section>
+    <section className="studyCta"><div><span className="kicker">Evidence boundary</span><h2>Understand the result before relying on it.</h2><p>The retained malicious development sample, <code>{benchmark.maliciousDevelopmentRegression.artifact}</code>, remained blocked in development regression. It is evidence that a known case did not regress—not a malware recall percentage.</p></div><div className="heroActions"><Link className="button buttonDark" href="/scoring">Read the severity guide</Link><Link className="button buttonQuiet" href="/settings">Analysis boundaries</Link></div></section>
   </main>;
 }
 

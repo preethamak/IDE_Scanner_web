@@ -40,5 +40,4 @@ export const websiteBenchmark = {
     firstPass: "e0040281192d0b9883b7ee95684816c0506d29ef08b11f3618017e47e76db73c",
     final: "391bb2fef6f85405d02a246e7f720daa117062937913e591bf7f9c8b6bb13979",
   },
-  sourceBase: "https://github.com/preethamak/IDE_Scanner/blob/main",
 } as const;
