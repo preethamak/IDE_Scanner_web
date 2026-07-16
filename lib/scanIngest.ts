@@ -7,12 +7,14 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
   const detail = firstExtension(bundle.extensions);
   if (!detail) throw new Error("Scanner bundle contains no extension detail.");
   const metadata = bundle.metadata || {};
+  const scannerBuild = String(metadata.scanner_build || "").trim();
   const identity = object(detail.artifact_identity);
   const coverage = object(detail.analysis_coverage);
   const extensionId = String(detail.extension_id || identity.extension_id || "");
   const version = String(detail.version || identity.version || "");
   const artifactSha = String(identity.sha256 || detail.artifact_sha256 || "");
   if (!extensionId || !version || !artifactSha) throw new Error("Bundle is missing immutable artifact identity.");
+  if (!scannerBuild || scannerBuild === "unknown") throw new Error("Bundle is missing immutable scanner build identity.");
   // Keep the scan callback compatible with the currently deployed database
   // while operational-intelligence migration 011 rolls out. A worker result
   // must never be rejected simply because an optional metrics column has not
@@ -30,6 +32,7 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
     profile: String(metadata.profile || "deep"),
     schema_version: String(metadata.schema_version || "2.2"),
     scanner_version: String(metadata.scanner_version || "unknown"),
+    scanner_build: scannerBuild,
     ruleset_version: String(metadata.ruleset_version || "unknown"),
     decision: String(detail.decision || "incomplete"),
     decision_reason: String(detail.decision_reason || detail.verdict_reason || "Review scan evidence."),
@@ -38,6 +41,7 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
     risk_score: Number(detail.risk_score || 0),
     malware_score: Number(detail.malware_score || 0),
     coverage_percent: Number(coverage.coverage_percent || 0),
+    analysis_coverage: coverage,
     provider_coverage: object(coverage.providers),
     security_dimensions: object(detail.security_dimensions),
     manifest: object(detail.manifest),
@@ -47,7 +51,7 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
     canonical_report: compactBundle(bundle),
     scanned_at: String(metadata.created_at || new Date().toISOString()),
   };
-  const { data: scan, error } = await db.from("scans").upsert(scanRow, { onConflict: "extension_id,version,artifact_sha256,ruleset_version" }).select("id").single();
+  const { data: scan, error } = await db.from("scans").upsert(scanRow, { onConflict: "extension_id,version,artifact_sha256,ruleset_version,scanner_build" }).select("id").single();
   if (error) throw error;
   const scanId = String(scan.id);
   await Promise.all([db.from("findings").delete().eq("scan_id", scanId), db.from("artifact_files").delete().eq("scan_id", scanId), db.from("dependencies").delete().eq("scan_id", scanId)]);

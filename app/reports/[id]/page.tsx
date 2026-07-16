@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getImportedReport } from "@/lib/reportBundle";
-import type { BundleExtensionSummary, Decision, ImportedReportBundle, Verdict } from "@/lib/types";
+import type { BundleExtensionSummary, Decision, ImportedReportBundle } from "@/lib/types";
 
 const decisionRank: Record<string, number> = { block: 4, incomplete: 3, review: 2, allow: 1 };
 const severityRank: Record<string, number> = { CRITICAL: 5, HIGH: 4, MEDIUM: 3, LOW: 2, INFO: 1 };
@@ -69,7 +69,7 @@ export default function ReportDashboardPage({ params }: { params: Promise<{ id: 
           <p className="eyebrow">Report dashboard</p>
           <h1>{report.metadata.scan_id}</h1>
           <p className="heroCopy">
-            Operational decisions from exact artifacts, executable coverage, behavior evidence, and baseline changes.
+            Decisions from exact artifacts, recorded coverage, and grouped behavior evidence.
           </p>
         </div>
         <div className="heroActions">
@@ -80,14 +80,14 @@ export default function ReportDashboardPage({ params }: { params: Promise<{ id: 
 
       <section className="dashboardOutcome">
         <div><p className="eyebrow">Scan outcome</p><h2>{outcome.headline}</h2><p>{outcome.detail}</p></div>
-        <div><span>Confirmed block decisions<strong>{decisionCounts.block || 0}</strong></span><span>Human reviews required<strong>{decisionCounts.review || 0}</strong></span><span>Coverage failures<strong>{decisionCounts.incomplete || 0}</strong></span></div>
+        <div><span>Block<strong>{decisionCounts.block || 0}</strong></span><span>Review<strong>{decisionCounts.review || 0}</strong></span><span>Incomplete<strong>{decisionCounts.incomplete || 0}</strong></span></div>
       </section>
 
       <section className="actionQueue" aria-label="Security action queue">
-        <DecisionCard decision="block" value={decisionCounts.block || 0} label="Block now" detail="Confirmed malicious intelligence" />
-        <DecisionCard decision="incomplete" value={decisionCounts.incomplete || 0} label="Analysis incomplete" detail="Do not approve without coverage" />
-        <DecisionCard decision="review" value={decisionCounts.review || 0} label="Review required" detail="Behavior or baseline change" />
-        <DecisionCard decision="allow" value={decisionCounts.allow || 0} label="Allow" detail="Complete with no action required" />
+        <DecisionCard decision="block" value={decisionCounts.block || 0} label="Block" detail="Confirmed malicious intelligence" />
+        <DecisionCard decision="incomplete" value={decisionCounts.incomplete || 0} label="Incomplete" detail="Do not approve without coverage" />
+        <DecisionCard decision="review" value={decisionCounts.review || 0} label="Review" detail="Evidence needs human context" />
+        <DecisionCard decision="allow" value={decisionCounts.allow || 0} label="Allow" detail="No review required" />
       </section>
 
       <section className="reportAnalytics"><article><span>Risk distribution</span><h2>{rows.filter(item=>item.risk_score>=60).length}</h2><p>artifacts with risk priority 60 or higher</p><div className="distributionBar"><i style={{width:`${percentage(rows.filter(item=>item.risk_score>=60).length,rows.length)}%`}}/></div></article><article><span>Malware evidence</span><h2>{rows.filter(item=>item.malware_score>0).length}</h2><p>artifacts with non-zero malicious evidence</p><div className="distributionBar danger"><i style={{width:`${percentage(rows.filter(item=>item.malware_score>0).length,rows.length)}%`}}/></div></article><article><span>Analyzer completion</span><h2>{Math.round(rows.reduce((sum,item)=>sum+Number(item.coverage_percent??0),0)/Math.max(1,rows.length))}%</h2><p>average required analysis coverage</p><div className="distributionBar confidence"><i style={{width:`${Math.round(rows.reduce((sum,item)=>sum+Number(item.coverage_percent??0),0)/Math.max(1,rows.length))}%`}}/></div></article></section>
@@ -120,7 +120,7 @@ export default function ReportDashboardPage({ params }: { params: Promise<{ id: 
           <span>Decision</span>
           <span>Coverage</span>
           <span>Baseline</span>
-          <span>Evidence</span>
+          <span>Severity</span>
           <span>Findings</span>
           <span />
         </div>
@@ -146,7 +146,7 @@ function ExtensionRow({ item, reportId, rank }: { item: BundleExtensionSummary; 
       <DecisionTag decision={securityDecision(item)} />
       <b>{item.coverage_percent ?? (item.scan_incomplete ? 0 : 100)}%</b>
       <span>{item.baseline_changed ? "Changed" : "No change"}</span>
-      <span><Tag tone={item.verdict}>{item.verdict_label || item.verdict}</Tag><small>{item.severity}</small></span>
+      <span><SeverityTag severity={item.severity} /><small>{item.verdict_label || item.verdict}</small></span>
       <span className="findingTags">{stringFindings(item.top_findings).slice(0, 3).map((finding) => <code key={finding}>{finding}</code>)}</span>
       <Link className="panelLink" href={`/reports/${reportId}/extensions/${encodeURIComponent(item.extension_id)}`}>Details</Link>
     </article>
@@ -167,8 +167,9 @@ function DecisionTag({ decision }: { decision: Decision }) {
   return <span className={`decisionTag ${decision}`}>{decision}</span>;
 }
 
-function Tag({ children, tone = "" }: { children: React.ReactNode; tone?: Verdict | string }) {
-  return <span className={`tag ${tone}`}>{children}</span>;
+function SeverityTag({ severity }: { severity: string }) {
+  const normalized = severityRank[severity] ? severity : "INFO";
+  return <span className={`severity severity-${normalized.toLowerCase()}`}>{normalized}</span>;
 }
 
 function stringFindings(findings: BundleExtensionSummary["top_findings"]): string[] {
@@ -192,7 +193,7 @@ function countDecisions(items: BundleExtensionSummary[]): Record<Decision, numbe
 function reportOutcome(counts: Record<Decision, number>, total: number, incomplete: number) {
   if (counts.block) return { headline: `${counts.block} artifact${counts.block === 1 ? "" : "s"} should be blocked.`, detail: "Authoritative malicious intelligence or policy-rejected evidence requires removal or rejection." };
   if (counts.incomplete || incomplete) return { headline: `${counts.incomplete || incomplete} artifact${(counts.incomplete || incomplete) === 1 ? "" : "s"} cannot be approved yet.`, detail: "Analysis coverage is incomplete. Restore the missing entrypoint, provider, or artifact analysis before making a trust decision." };
-  if (counts.review) return { headline: `${counts.review} of ${total} artifact${total === 1 ? "" : "s"} needs human review.`, detail: "No confirmed malware decision was produced. Review the cited capabilities and verify they match the extension's documented purpose." };
-  return { headline: `All ${total} artifact${total === 1 ? "" : "s"} passed the active review policy.`, detail: "Approval remains specific to these exact hashes, versions, ruleset, and recorded analysis coverage." };
+  if (counts.review) return { headline: `${counts.review} of ${total} artifact${total === 1 ? "" : "s"} needs human review.`, detail: "No confirmed malware decision was produced. Review the cited behavior groups against the extension’s documented purpose." };
+  return { headline: `All ${total} artifact${total === 1 ? "" : "s"} passed the active review policy.`, detail: "Approval remains specific to these exact hashes, scanner builds, rulesets, and recorded analysis coverage." };
 }
 function percentage(value:number,total:number){return total?Math.round(value/total*100):0;}

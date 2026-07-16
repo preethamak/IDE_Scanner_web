@@ -16,9 +16,14 @@ export async function queueDeepScan(extensionId: string, requestedVersion: strin
   if (active.error) throw active.error;
   if (active.data) return withReportUrl({ ...active.data, deduplicated: true });
 
-  const complete = await db.from("scans").select("id").eq("extension_id", extensionId).eq("version", version).order("scanned_at", { ascending: false }).limit(1).maybeSingle();
-  if (complete.error) throw complete.error;
-  if (complete.data) return withReportUrl({ status: "complete", scan_id: complete.data.id, reused: true, extension_id: extensionId, version });
+  // A version is not a sufficient cache key. Reusing an older scanner build
+  // would silently return a result produced before a precision or coverage fix.
+  const requiredBuild = await currentScannerBuild();
+  if (requiredBuild) {
+    const complete = await db.from("scans").select("id").eq("extension_id", extensionId).eq("version", version).eq("scanner_build", requiredBuild).order("scanned_at", { ascending: false }).limit(1).maybeSingle();
+    if (complete.error) throw complete.error;
+    if (complete.data) return withReportUrl({ status: "complete", scan_id: complete.data.id, reused: true, extension_id: extensionId, version });
+  }
 
   const since = new Date(Date.now() - 86_400_000).toISOString();
   const recent = await db.from("scan_jobs").select("id", { count: "exact", head: true }).eq("requested_by", requestedBy).gte("created_at", since);
@@ -69,6 +74,21 @@ async function dispatchDeepScan(): Promise<void> {
     cache: "no-store",
   });
   if (!response.ok) throw new Error(`Deep Scan dispatch failed (${response.status}).`);
+}
+
+async function currentScannerBuild(): Promise<string | null> {
+  const token = process.env.GITHUB_ACTIONS_TOKEN;
+  const owner = process.env.GITHUB_REPO_OWNER || "preethamak";
+  const repository = process.env.GITHUB_SCANNER_REPO || "IDE_Scanner";
+  if (!token) return null;
+  const response = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/commits/main`, {
+    headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, "X-GitHub-Api-Version": "2022-11-28" },
+    cache: "no-store",
+  });
+  if (!response.ok) return null;
+  const body = await response.json().catch(() => null) as { sha?: unknown } | null;
+  const sha = typeof body?.sha === "string" ? body.sha.trim() : "";
+  return /^[0-9a-f]{40}$/i.test(sha) ? sha : null;
 }
 
 function hashRequester(request: Request): string {

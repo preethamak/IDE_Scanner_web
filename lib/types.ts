@@ -179,6 +179,7 @@ export type ReportMetadata = {
   total_extensions: number;
   completed_extensions: number;
   incomplete_extensions: number;
+  scanner_build?: string;
 };
 
 export type ScannerBundleSummary = {
