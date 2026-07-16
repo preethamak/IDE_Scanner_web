@@ -16,6 +16,7 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
   const version = String(latest?.version || product.extension.latest_version || "unknown");
   const scan = product.scan;
   const decision = decisionState(scan?.decision);
+  const severity = severityLabel(scan?.severity);
   return <main className="productPage">
     <section className="packageHeader">
       <div className="packageIdentity">
@@ -26,7 +27,8 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
     </section>
 
     <section className="packageFacts">
-      <div><span>Install decision</span><strong className={`decision severityBadge ${decision}`}>{decisionLabel(decision)}</strong></div>
+      <div><span>Primary severity</span><strong className={`decision severityBadge severity-${severity.toLowerCase()}`}>{severity}</strong></div>
+      <div><span>Operational action</span><strong className={`decision severityBadge ${decision}`}>{decisionLabel(decision)}</strong></div>
       <div><span>Latest version</span><strong>{version}</strong></div>
       <div><span>Publisher</span><strong>{product.extension.publisher}{product.extension.publisher_verified ? <BadgeCheck size={15}/> : null}</strong></div>
       <div><span>Installs</span><strong>{formatCount(product.extension.installs)}</strong></div>
@@ -54,5 +56,6 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
 function decisionState(value: unknown): "allow" | "review" | "block" | "incomplete" | "not-assessed" { const decision = String(value || "").toLowerCase(); return ["allow", "review", "block", "incomplete"].includes(decision) ? decision as "allow" | "review" | "block" | "incomplete" : "not-assessed"; }
 function decisionLabel(value: ReturnType<typeof decisionState>): string { return value === "allow" ? "ALLOW" : value === "review" ? "REVIEW" : value === "block" ? "BLOCK" : value === "incomplete" ? "INCOMPLETE" : "NOT ANALYZED"; }
 function decisionHeadline(value: ReturnType<typeof decisionState>): string { return value === "allow" ? "No evidence currently requires review." : value === "review" ? "Review decision-relevant behavior before installation." : value === "block" ? "This exact artifact should not be installed." : value === "incomplete" ? "Analysis must complete before an approval decision." : "Analysis has not assigned an install decision yet."; }
+function severityLabel(value: unknown): string { const normalized = String(value || "INFO").toUpperCase(); return normalized === "INFO" ? "INFORMATIONAL" : ["CRITICAL", "HIGH", "MEDIUM", "LOW"].includes(normalized) ? normalized : "INFORMATIONAL"; }
 function formatCount(value: number): string { return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value); }
 function formatDate(value: string | null): string { if (!value) return "Unknown"; const date = new Date(value); return Number.isNaN(date.valueOf()) ? value : new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(date); }
