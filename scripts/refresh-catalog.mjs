@@ -35,10 +35,10 @@ async function versionsFor(extension) {
     const response = await fetch(`https://open-vsx.org/api/${encodeURIComponent(extension.publisher)}/${encodeURIComponent(extension.name)}`);
     if (!response.ok) return [extension];
     const raw = await response.json(); const values = Object.keys(raw.allVersions || {});
-    return (values.length ? values : [extension.version]).map((version, index) => ({ ...extension, version, published_at: version === raw.version ? raw.timestamp : null, is_latest: version === raw.version || index === 0 }));
+    return (values.length ? values : [extension.version]).map((version, index) => ({ ...extension, version, published_at: version === raw.version ? raw.timestamp : null, is_latest: version === raw.version || index === 0, download_url: version === raw.version ? String(raw.files?.download || "") : `https://open-vsx.org/api/${encodeURIComponent(extension.publisher)}/${encodeURIComponent(extension.name)}/${encodeURIComponent(version)}/file/${encodeURIComponent(extension.publisher)}.${encodeURIComponent(extension.name)}-${encodeURIComponent(version)}.vsix` }));
   }
   const payload = await queryGallery({ filters: [{ criteria: [{ filterType: 7, value: extension.id }], pageNumber: 1, pageSize: 1 }], flags: 402 });
-  return (payload.results?.[0]?.extensions?.[0]?.versions || []).map((version, index) => ({ ...extension, version: version.version, published_at: version.lastUpdated || null, is_latest: index === 0 }));
+  return (payload.results?.[0]?.extensions?.[0]?.versions || []).map((version, index) => ({ ...extension, version: version.version, published_at: version.lastUpdated || null, is_latest: index === 0, download_url: `https://marketplace.visualstudio.com/_apis/public/gallery/publishers/${encodeURIComponent(extension.publisher)}/vsextensions/${encodeURIComponent(extension.name)}/${encodeURIComponent(version.version)}/vspackage` }));
 }
 
 const [marketplacePages, openVsx] = await Promise.all([Promise.all([1, 2, 3].map(marketplacePage)), openVsxTop()]);
@@ -64,7 +64,7 @@ for (const extension of cohort) {
   const versions = await versionsFor(extension).catch(() => [extension]);
   const seenVersions = new Set();
   const rows = versions
-    .map((item, index) => ({ extension_id: extension.id, version: item.version, registry: extension.registry, published_at: item.published_at, is_latest: Boolean(item.is_latest ?? index === 0), discovered_at: refreshStartedAt, last_seen_at: refreshStartedAt }))
+    .map((item, index) => ({ extension_id: extension.id, version: item.version, registry: extension.registry, published_at: item.published_at, download_url: item.download_url || null, is_latest: Boolean(item.is_latest ?? index === 0), discovered_at: refreshStartedAt, last_seen_at: refreshStartedAt }))
     .filter((item) => {
       if (!item.version || seenVersions.has(item.version)) return false;
       seenVersions.add(item.version);

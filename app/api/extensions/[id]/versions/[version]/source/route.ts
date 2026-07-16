@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { gunzipSync } from "node:zlib";
 import yauzl from "yauzl";
 import { NextResponse } from "next/server";
 import { publicDb } from "@/lib/supabase";
@@ -23,15 +24,35 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   const inventory = (scan?.artifact_inventory || {}) as Record<string, unknown>;
   const expectedHash = String(inventory.vsix_hash || "").toLowerCase();
   if (!downloadUrl || !/^[a-f0-9]{64}$/.test(expectedHash)) return NextResponse.json({ error: "This report has no recorded VSIX hash for safe source preview." }, { status: 409 });
-  const response = await fetch(downloadUrl, { cache: "no-store", signal: AbortSignal.timeout(20_000) });
-  const length = Number(response.headers.get("content-length") || 0);
-  if (!response.ok || (length && length > MAX_ARCHIVE_BYTES)) return NextResponse.json({ error: "The published artifact is unavailable or exceeds the preview limit." }, { status: 502 });
-  const archive = Buffer.from(await response.arrayBuffer());
+  let archive: Buffer;
+  try {
+    archive = await downloadArtifact(downloadUrl);
+  } catch (error) {
+    const message = error instanceof Error && error.name === "AbortError" ? "The registry did not return the artifact within 45 seconds." : "The published artifact could not be retrieved for verification.";
+    return NextResponse.json({ error: message }, { status: 502 });
+  }
+  if (archive[0] === 0x1f && archive[1] === 0x8b) {
+    try { archive = gunzipSync(archive, { maxOutputLength: MAX_ARCHIVE_BYTES }); }
+    catch { return NextResponse.json({ error: "The registry returned an invalid compressed artifact." }, { status: 502 }); }
+  }
   if (archive.length > MAX_ARCHIVE_BYTES || createHash("sha256").update(archive).digest("hex") !== expectedHash) return NextResponse.json({ error: "The currently published VSIX does not match the hash recorded by this report." }, { status: 409 });
   try {
     const content = await readEntry(archive, path);
     return NextResponse.json({ path, content, verified_vsix_hash: expectedHash, truncated: Buffer.byteLength(content) >= MAX_PREVIEW_BYTES });
   } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Preview extraction failed." }, { status: 422 }); }
+}
+
+async function downloadArtifact(downloadUrl: string): Promise<Buffer> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 45_000);
+  try {
+    const response = await fetch(downloadUrl, { cache: "no-store", signal: controller.signal });
+    const length = Number(response.headers.get("content-length") || 0);
+    if (!response.ok || (length && length > MAX_ARCHIVE_BYTES)) throw new Error("Artifact unavailable or too large");
+    const archive = Buffer.from(await response.arrayBuffer());
+    if (archive.length > MAX_ARCHIVE_BYTES) throw new Error("Artifact too large");
+    return archive;
+  } finally { clearTimeout(timeout); }
 }
 
 function readEntry(archive: Buffer, requestedPath: string): Promise<string> {
