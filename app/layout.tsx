@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
-import { Code2, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import SiteNav from "./SiteNav";
 import HeaderAccount from "./HeaderAccount";
 import "@fontsource-variable/ibm-plex-sans";
@@ -21,16 +21,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <div className="headerInner">
           <Link className="wordmark" href="/" aria-label="IDE Scanner home"><span><ShieldCheck size={17} strokeWidth={2.2} /></span><strong>IDE Scanner</strong></Link>
           <SiteNav />
-          <div className="headerCommands">
-            <a className="iconButton" href="https://github.com/preethamak/IDE_Scanner" aria-label="IDE Scanner source code" title="Source code"><Code2 size={18} /></a>
-            <HeaderAccount />
-          </div>
+          <div className="headerCommands"><HeaderAccount /></div>
         </div>
       </header>
       <div className="pageContent">{children}</div>
       <footer className="siteFooter">
         <div className="footerLead"><Link className="wordmark footerWordmark" href="/"><span><ShieldCheck size={17} /></span><strong>IDE Scanner</strong></Link><p>Security intelligence for every extension inside developer environments.</p></div>
-        <div className="footerLinks"><div><strong>Product</strong><Link href="/catalog">Explore extensions</Link><Link href="/scan">Analyze an artifact</Link><Link href="/compare">Compare versions</Link><Link href="/workspace">Monitor releases</Link></div><div><strong>Intelligence</strong><Link href="/research">Security research</Link><Link href="/metrics">Rules and metrics</Link><Link href="/benchmark">Validation</Link><Link href="/scoring">Methodology</Link></div><div><strong>Trust</strong><Link href="/settings">Architecture</Link><a href="https://github.com/preethamak/IDE_Scanner">Open-source scanner</a><Link href="/security">Security policy</Link><Link href="/design-partners">Design partners</Link></div></div>
+        <div className="footerLinks"><div><strong>Product</strong><Link href="/catalog">Explore extensions</Link><Link href="/scan">Analyze an artifact</Link><Link href="/compare">Compare versions</Link><Link href="/workspace">Monitor releases</Link></div><div><strong>Intelligence</strong><Link href="/research">Security research</Link><Link href="/metrics">Detection catalog</Link><Link href="/benchmark">Validation</Link><Link href="/scoring">Severity guide</Link></div><div><strong>Trust</strong><Link href="/settings">Analysis boundaries</Link><Link href="/security">Security policy</Link><Link href="/design-partners">Design partners</Link></div></div>
         <div className="footerBottom"><span>Ruleset 2026.07.16 · Schema 2.2</span><span>Exact artifacts · Recorded scanner builds · No opaque verdicts</span></div>
       </footer>
     </div>
