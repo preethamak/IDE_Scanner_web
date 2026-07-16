@@ -15,8 +15,10 @@ type Mode = "marketplace" | "upload" | "report";
 export default function ScanPage() { return <Suspense fallback={<main className="scannerPage pageWrap"><div className="message">Loading Analyze…</div></main>}><Analyze /></Suspense>; }
 
 function Analyze() {
-  const initialQuery = useSearchParams().get("q") || "";
-  const [mode, setMode] = useState<Mode>("marketplace");
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get("q") || "";
+  const requestedMode = searchParams.get("mode");
+  const [mode, setMode] = useState<Mode>(requestedMode === "upload" || requestedMode === "report" ? requestedMode : "marketplace");
   const [selected, setSelected] = useState<DiscoveryResult | null>(null);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [error, setError] = useState("");
