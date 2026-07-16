@@ -2,7 +2,8 @@
 -- Preserve historical scans; never overwrite an earlier build's evidence.
 alter table public.scans
   add column if not exists scanner_build text not null default 'unknown',
-  add column if not exists analysis_coverage jsonb not null default '{}'::jsonb;
+  add column if not exists analysis_coverage jsonb not null default '{}'::jsonb,
+  add column if not exists superseded_at timestamptz;
 
 alter table public.scans
   drop constraint if exists scans_extension_id_version_artifact_sha256_ruleset_version_key;

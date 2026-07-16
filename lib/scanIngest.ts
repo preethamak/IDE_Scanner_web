@@ -63,8 +63,11 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
   await insertChunks("findings", findings);
   await insertChunks("artifact_files", files);
   await insertChunks("dependencies", dependencies);
-  await db.from("extension_versions").update({ artifact_sha256: artifactSha, latest_scan_id: scanId, scan_state: scanRow.decision === "incomplete" ? "incomplete" : "complete" }).eq("extension_id", extensionId).eq("version", version);
   const completedAt = new Date().toISOString();
+  const supersede = await db.from("scans").update({ superseded_at: completedAt }).eq("extension_id", extensionId).eq("version", version).neq("id", scanId).is("superseded_at", null);
+  if (supersede.error) throw supersede.error;
+  const versionUpdate = await db.from("extension_versions").update({ artifact_sha256: artifactSha, latest_scan_id: scanId, scan_state: scanRow.decision === "incomplete" ? "incomplete" : "complete" }).eq("extension_id", extensionId).eq("version", version);
+  if (versionUpdate.error) throw versionUpdate.error;
   await Promise.all([
     db.from("scan_jobs").update({ status: scanRow.decision === "incomplete" ? "incomplete" : "complete", ruleset_version: scanRow.ruleset_version, completed_at: completedAt, lease_expires_at: null }).eq("id", jobId),
     db.from("scan_runner_status").upsert({ id: "github-actions", last_seen_at: completedAt, last_success_at: completedAt, last_error: null }, { onConflict: "id" }),
