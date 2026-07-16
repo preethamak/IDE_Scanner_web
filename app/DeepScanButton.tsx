@@ -58,8 +58,8 @@ export default function DeepScanButton({ extensionId, version }: { extensionId: 
 
   const unavailable = health === "unavailable";
   return <div className="deepScanAction">
-    <button className="button buttonDark" onClick={queue} disabled={health !== "available" || ["loading", "queued", "running", "complete"].includes(state)}>
-      {health === "checking" ? <><LoaderCircle className="spin" size={16}/> Checking runner</> : unavailable ? "Deep Scan paused" : state === "loading" ? <><LoaderCircle className="spin" size={16}/> Queueing</> : state === "queued" ? "Queued" : state === "running" ? <><LoaderCircle className="spin" size={16}/> Analyzing</> : state === "complete" ? "Deep Scan complete" : <>Deep Scan <ScanSearch size={16}/></>}
+    <button className="button buttonDark" onClick={queue} disabled={health !== "available" || ["loading", "queued", "running"].includes(state)}>
+      {health === "checking" ? <><LoaderCircle className="spin" size={16}/> Checking runner</> : unavailable ? "Deep Scan paused" : state === "loading" ? <><LoaderCircle className="spin" size={16}/> Queueing</> : state === "queued" ? "Queued" : state === "running" ? <><LoaderCircle className="spin" size={16}/> Analyzing</> : state === "complete" ? <>Re-scan current build <ScanSearch size={16}/></> : <>Deep Scan <ScanSearch size={16}/></>}
     </button>
     {reportUrl ? <Link className="deepScanReportLink" href={reportUrl}>Open Deep Scan report</Link> : null}
     {unavailable ? <span className="actionError">The analysis runner is offline. No scan job was created.</span> : message ? <span className={state === "error" ? "actionError" : "actionNotice"}>{message}</span> : null}

@@ -23,7 +23,7 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
         <ExtensionIcon iconUrl={product.extension.icon_url} publisher={product.extension.publisher} name={product.extension.display_name} size="lg"/>
         <div><div className="registryLine"><span>{product.extension.registry === "openvsx" ? "Open VSX" : "VS Marketplace"}</span><ChevronRight size={13}/><code>{product.extension.id}</code></div><h1>{product.extension.display_name}</h1><p>{product.extension.description}</p></div>
       </div>
-      <div className="packageActions">{scan ? <Link className="button buttonDark" href={`/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(version)}`}>Open Deep Scan report</Link> : <DeepScanButton extensionId={product.extension.id} version={version}/>}<WatchExtension extensionId={product.extension.id}/><a className="button buttonQuiet" href={`vscode:extension/${product.extension.id}`}>Install <Download size={16}/></a></div>
+      <div className="packageActions">{scan ? <><Link className="button buttonDark" href={`/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(version)}`}>Open Deep Scan report</Link><DeepScanButton extensionId={product.extension.id} version={version}/></> : <DeepScanButton extensionId={product.extension.id} version={version}/>}<WatchExtension extensionId={product.extension.id}/><a className="button buttonQuiet" href={`vscode:extension/${product.extension.id}`}>Install <Download size={16}/></a></div>
     </section>
 
     <section className="packageFacts">

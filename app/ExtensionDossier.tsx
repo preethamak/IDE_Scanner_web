@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { AlertTriangle, BadgeCheck, Boxes, ChevronRight, CircleCheck, FileCode2, Fingerprint, FolderTree, GitCompareArrows, Network, Package, Radar, ShieldCheck, Terminal, UserRound, Waypoints } from "lucide-react";
+import DeepScanButton from "@/app/DeepScanButton";
 
 type RecordValue = Record<string, unknown>;
 type Section = "overview" | "alerts" | "capabilities" | "dependencies" | "files" | "versions" | "publisher" | "provenance" | "coverage" | "raw";
@@ -23,7 +24,7 @@ export default function ExtensionDossier({ id, version, extension, versions, sca
   return <main className="dossierPage">
     <header className="dossierMast">
       <div className="dossierIdentity"><ArtifactIcon url={String(extension.icon_url || "")} publisher={String(extension.publisher || "")}/><div><span>Exact artifact intelligence</span><h1>{String(extension.display_name || id)}</h1><code>{id}@{version}</code></div></div>
-      <div className={`dossierDecision ${decision}`}><span>Install recommendation</span><strong>{decisionLabel(decision)}</strong><p>{String(scan.decision_reason || decisionExplanation(decision))}</p></div>
+      <div className={`dossierDecision ${decision}`}><span>Install recommendation</span><strong>{decisionLabel(decision)}</strong><p>{String(scan.decision_reason || decisionExplanation(decision))}</p><DeepScanButton extensionId={id} version={version}/></div>
     </header>
     <div className="dossierMeta"><span>{String(extension.publisher || "Not reported")}</span><span>{String(extension.registry || "Registry not reported")}</span><span>Scanned {formatDate(String(scan.scanned_at || ""))}</span><span>Artifact <code>{String(scan.artifact_sha256 || "unavailable").slice(0, 16)}</code></span></div>
     <div className="dossierLayout">
