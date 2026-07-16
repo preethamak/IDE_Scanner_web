@@ -1,8 +1,8 @@
 /**
  * Frozen public facts for the website benchmark. These values are intentionally
  * checked into the web application rather than calculated in a serverless
- * request: the source artifacts and normalized result are versioned in the
- * scanner repository linked below.
+ * request. The public page carries the normalized artifact rows and integrity
+ * hashes directly so readers can inspect the evidence without a code-host link.
  */
 export const websiteBenchmark = {
   publishedAt: "2026-07-16",
