@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { serviceDb } from "@/lib/supabase";
 
 type Bundle = { metadata?: Record<string, unknown>; extensions?: Record<string, Record<string, unknown>> | Array<Record<string, unknown>> };
@@ -54,15 +55,23 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
   const { data: scan, error } = await db.from("scans").upsert(scanRow, { onConflict: "extension_id,version,artifact_sha256,ruleset_version,scanner_build" }).select("id").single();
   if (error) throw error;
   const scanId = String(scan.id);
-  await Promise.all([db.from("findings").delete().eq("scan_id", scanId), db.from("artifact_files").delete().eq("scan_id", scanId), db.from("dependencies").delete().eq("scan_id", scanId)]);
+  await Promise.all([db.from("findings").delete().eq("scan_id", scanId), db.from("artifact_files").delete().eq("scan_id", scanId), db.from("dependencies").delete().eq("scan_id", scanId), db.from("artifact_file_previews").delete().eq("scan_id", scanId)]);
 
   const findings = array(detail.findings).map((raw, index) => { const item = object(raw); const baseId = String(item.finding_id || item.rule_id || "finding"); return { id: `${baseId}-${index}`, scan_id: scanId, rule_id: String(item.rule_id || "unknown"), category: String(item.category || "unknown"), severity: String(item.severity || "INFO"), confidence: Number(item.confidence || 0), evidence_class: String(item.evidence_class || "weak"), actionability: String(item.actionability || "contextual"), summary: String(item.evidence_summary || "Scanner evidence"), recommendation: String(item.recommendation || ""), file_refs: array(item.file_refs), evidence: object(item.evidence) } });
   const inventory = object(detail.artifact_inventory);
   const files = array(inventory.files).map((raw) => { const item = object(raw); return { scan_id: scanId, path: String(item.path || ""), sha256: String(item.sha256 || ""), size_bytes: Number(item.size_bytes || 0), kind: String(item.kind || "file"), target: item.target ? String(item.target) : null }; }).filter((item) => item.path && item.sha256);
   const dependencies = array(detail.dependency_inventory).map((raw) => { const item = object(raw); return { scan_id: scanId, name: String(item.name || ""), version: String(item.version || "unknown"), ecosystem: String(item.ecosystem || "npm"), relationship: String(item.relationship || "transitive"), advisories: array(item.advisories) }; }).filter((item) => item.name);
+  const hashes = new Map(files.map((file) => [file.path, file.sha256.toLowerCase()]));
+  const previews = array(inventory.source_previews).map((raw) => {
+    const item = object(raw); const path = String(item.path || ""); const content = String(item.content || ""); const byteLength = Buffer.byteLength(content);
+    const recordedHash = String(item.content_sha256 || "").toLowerCase(); const contentHash = createHash("sha256").update(content).digest("hex");
+    if (!path || path.includes("\\") || path.split("/").some((part) => !part || part === "." || part === "..") || byteLength > 204800 || !hashes.has(path) || recordedHash !== contentHash) return null;
+    return { scan_id: scanId, path, content, content_sha256: contentHash, byte_length: byteLength, truncated: Boolean(item.truncated) };
+  }).filter((item): item is { scan_id: string; path: string; content: string; content_sha256: string; byte_length: number; truncated: boolean } => Boolean(item));
   await insertChunks("findings", findings);
   await insertChunks("artifact_files", files);
   await insertChunks("dependencies", dependencies);
+  await insertChunks("artifact_file_previews", previews);
   const completedAt = new Date().toISOString();
   const supersede = await db.from("scans").update({ superseded_at: completedAt }).eq("extension_id", extensionId).eq("version", version).neq("id", scanId).is("superseded_at", null);
   if (supersede.error) throw supersede.error;

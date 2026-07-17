@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 
 const productLinks = [
   ["/catalog", "Discover", "Search public extension intelligence", Boxes],
+  ["/public-scan", "Public Scan", "Browse exact public scan records", Radar],
   ["/scan", "Analyze", "Inspect an exact release or private VSIX", ScanSearch],
   ["/workspace", "Dashboard", "Triage release and evidence changes", LayoutDashboard],
   ["/monitor", "Monitor", "Watch releases and deliver alerts", BellRing],

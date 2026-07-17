@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 const surfaces = [
   ["/", /Know what your developers install/i],
   ["/catalog", /Find the extension/i],
+  ["/public-scan", /Public scans/i],
   ["/scan", /Inspect an extension before installation/i],
   ["/workspace", /Turn extension changes into an evidence queue/i],
   ["/monitor", /Watch the release/i],

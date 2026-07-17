@@ -23,6 +23,8 @@ export type CatalogExtension = {
 };
 
 export type PublicSecurityFeedItem = { extension_id: string; version: string; display_name: string; severity: string; decision: string; scanned_at: string; coverage_percent: number; decision_reason: string };
+export type PublicInventoryItem = PublicSecurityFeedItem & { publisher: string; description: string; icon_url: string; risk_score: number; malware_score: number; artifact_sha256: string };
+export type PublicInventory = { items: PublicInventoryItem[]; totals: { extensions: number; releases: number; complete: number; review: number; blocked: number; lastScannedAt: string | null } };
 
 export async function getPublicSecurityFeed(limit = 6): Promise<PublicSecurityFeedItem[]> {
   const db = publicDb();
@@ -36,6 +38,37 @@ export async function getPublicSecurityFeed(limit = 6): Promise<PublicSecurityFe
   const { data: extensions } = ids.length ? await db.from("extensions").select("id,display_name").in("id", ids) : { data: [] as Array<{ id: string; display_name: string }> };
   const names = new Map((extensions || []).map((item) => [String(item.id), String(item.display_name)]));
   return rows.map((item) => ({ extension_id: String(item.extension_id), version: String(item.version), display_name: names.get(String(item.extension_id)) || String(item.extension_id), severity: String(item.severity || "INFO"), decision: String(item.decision || "incomplete"), scanned_at: String(item.scanned_at), coverage_percent: Number(item.coverage_percent || 0), decision_reason: String(item.decision_reason || "Open the exact artifact evidence.") }));
+}
+
+/** Public operational scans only. Benchmark, development and private work never enter this catalog. */
+export async function getPublicInventory(limit = 240): Promise<PublicInventory> {
+  const empty: PublicInventory = { items: [], totals: { extensions: 0, releases: 0, complete: 0, review: 0, blocked: 0, lastScannedAt: null } };
+  const db = publicDb();
+  if (!db) return empty;
+  const { data, error } = await db.from("scans")
+    .select("extension_id,version,artifact_sha256,decision,severity,scanned_at,coverage_percent,decision_reason,risk_score,malware_score")
+    .eq("scan_purpose", "public_intelligence").is("superseded_at", null).order("scanned_at", { ascending: false }).limit(limit);
+  if (error || !data) return empty;
+  const ids = [...new Set((data as Array<Record<string, unknown>>).map((row) => String(row.extension_id)))];
+  const { data: extensions } = ids.length ? await db.from("extensions").select("id,display_name,publisher,description,icon_url").in("id", ids) : { data: [] as Array<Record<string, unknown>> };
+  const extensionById = new Map((extensions || []).map((row) => [String(row.id), row as Record<string, unknown>]));
+  const latest = new Map<string, PublicInventoryItem>();
+  const releases = new Set<string>();
+  for (const raw of data as Array<Record<string, unknown>>) {
+    const extension = extensionById.get(String(raw.extension_id)) || {};
+    const item: PublicInventoryItem = {
+      extension_id: String(raw.extension_id), version: String(raw.version), artifact_sha256: String(raw.artifact_sha256 || ""),
+      display_name: String(extension.display_name || raw.extension_id), publisher: String(extension.publisher || "Unknown publisher"),
+      description: String(extension.description || "Exact artifact analysis is available."), icon_url: String(extension.icon_url || ""),
+      severity: String(raw.severity || "INFO"), decision: String(raw.decision || "incomplete"), scanned_at: String(raw.scanned_at),
+      coverage_percent: Number(raw.coverage_percent || 0), decision_reason: String(raw.decision_reason || "Open the evidence."),
+      risk_score: Number(raw.risk_score || 0), malware_score: Number(raw.malware_score || 0),
+    };
+    releases.add(`${item.extension_id}@${item.version}@${item.artifact_sha256}`);
+    if (!latest.has(item.extension_id)) latest.set(item.extension_id, item);
+  }
+  const items = [...latest.values()];
+  return { items, totals: { extensions: items.length, releases: releases.size, complete: items.filter((item) => item.decision !== "incomplete").length, review: items.filter((item) => item.decision === "review").length, blocked: items.filter((item) => item.decision === "block").length, lastScannedAt: items[0]?.scanned_at || null } };
 }
 
 export async function listCatalog(query = "", limit = 50): Promise<CatalogExtension[]> {
