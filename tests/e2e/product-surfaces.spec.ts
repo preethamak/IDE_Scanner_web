@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const surfaces = [
-  ["/", /Know the extension/i],
+  ["/", /Know what your developers install/i],
   ["/catalog", /Find the extension/i],
   ["/scan", /Inspect an extension before installation/i],
   ["/workspace", /Turn extension changes into an evidence queue/i],
@@ -22,7 +22,7 @@ for (const [path, heading] of surfaces) {
 test("Explore search is the primary public route", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("textbox", { name: "Search extension intelligence" }).first().fill("vyper guard");
-  await page.getByRole("button", { name: /Explore results/i }).first().click({ noWaitAfter: true });
+  await page.getByRole("button", { name: /Check extension/i }).first().click({ noWaitAfter: true });
   await expect(page).toHaveURL(/\/catalog\?q=vyper%20guard/);
 });
 

@@ -1,34 +1,37 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
-import { ShieldCheck } from "lucide-react";
+import { ArrowUpRight, MessageSquare, ScanSearch } from "lucide-react";
+import { Instrument_Sans, JetBrains_Mono } from "next/font/google";
 import SiteNav from "./SiteNav";
 import HeaderAccount from "./HeaderAccount";
-import "@fontsource-variable/ibm-plex-sans";
-import "@fontsource/ibm-plex-mono/400.css";
-import "@fontsource/ibm-plex-mono/600.css";
+import BrandMark from "./BrandMark";
 import "./globals.css";
+import "./guardrails.css";
+
+const instrument = Instrument_Sans({ subsets: ["latin"], variable: "--font-sans" });
+const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: { default: "IDE Scanner — Extension intelligence", template: "%s · IDE Scanner" },
-  description: "Inspect IDE extension artifacts, behavior, provenance, and release changes before installation."
+  title: { default: "GUARDRAILS — Extension security intelligence", template: "%s · GUARDRAILS" },
+  description: "Inspect, approve, and continuously monitor the exact extensions entering developer environments."
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body>
+  return <html lang="en" className={`${instrument.variable} ${mono.variable}`}><body>
     <div className="siteFrame">
       <header className="siteHeader">
         <div className="headerInner">
-          <Link className="wordmark" href="/" aria-label="IDE Scanner home"><span><ShieldCheck size={17} strokeWidth={2.2} /></span><strong>IDE Scanner</strong></Link>
+          <Link className="wordmark" href="/" aria-label="GUARDRAILS home"><BrandMark/><strong>GUARDRAILS</strong></Link>
           <SiteNav />
-          <div className="headerCommands"><HeaderAccount /></div>
+          <div className="headerCommands"><Link className="headerAnalyze" href="/scan"><ScanSearch/> Analyze extension</Link><HeaderAccount /></div>
         </div>
       </header>
       <div className="pageContent">{children}</div>
       <footer className="siteFooter">
-        <div className="footerLead"><Link className="wordmark footerWordmark" href="/"><span><ShieldCheck size={17} /></span><strong>IDE Scanner</strong></Link><p>Security intelligence for every extension inside developer environments.</p></div>
-        <div className="footerLinks"><div><strong>Product</strong><Link href="/catalog">Explore extensions</Link><Link href="/scan">Analyze an artifact</Link><Link href="/compare">Compare versions</Link><Link href="/workspace">Dashboard</Link><Link href="/monitor">Monitor releases</Link></div><div><strong>Intelligence</strong><Link href="/research">Security research</Link><Link href="/metrics">Detection catalog</Link><Link href="/benchmark">Validation</Link><Link href="/scoring">Severity guide</Link></div><div><strong>Trust</strong><Link href="/settings">Analysis boundaries</Link><Link href="/security">Security policy</Link><Link href="/design-partners">Design partners</Link></div></div>
-        <div className="footerBottom"><span>Ruleset 2026.07.16 · Schema 2.2</span><span>Exact artifacts · Recorded scanner builds · No opaque verdicts</span></div>
+        <div className="footerMain"><div className="footerLead"><Link className="wordmark footerWordmark" href="/"><BrandMark/><strong>GUARDRAILS</strong></Link><h2>Extension security,<br/>kept in the loop.</h2><p>Exact-artifact intelligence for the developer tools your organization installs and trusts.</p><Link className="footerCta" href="/scan">Analyze an extension <ArrowUpRight/></Link></div>
+        <div className="footerLinks"><div><strong>Product</strong><Link href="/catalog">Discover</Link><Link href="/scan">Analyze</Link><Link href="/workspace">Dashboard</Link><Link href="/monitor">Monitor</Link></div><div><strong>Intelligence</strong><Link href="/research">Research</Link><Link href="/metrics">Detection catalog</Link><Link href="/benchmark">Validation</Link><Link href="/scoring">Severity guide</Link></div><div><strong>Company</strong><Link href="/settings">Trust center</Link><Link href="/security">Security</Link><Link href="/design-partners">Design partners</Link><a href="mailto:security@guardrails.dev"><MessageSquare/> Contact</a></div></div></div>
+        <div className="footerBottom"><span>© 2026 GUARDRAILS</span><span>Ruleset 2026.07.16 · Schema 2.2</span><span>Static analysis · Exact artifacts · Evidence first</span></div>
       </footer>
     </div>
     <Analytics />

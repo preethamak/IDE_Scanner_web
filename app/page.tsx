@@ -1,59 +1,71 @@
 import Image from "next/image";
 import Link from "next/link";
 import { unstable_cache } from "next/cache";
-import { Activity, ArrowRight, BellRing, Box, Braces, CheckCircle2, Eye, FileCode2, Fingerprint, GitCompareArrows, Orbit, Radar, Search, ShieldCheck, Sparkles, Terminal, Waypoints } from "lucide-react";
+import { Activity, ArrowRight, ArrowUpRight, Bell, Box, Check, CheckCircle2, ChevronRight, Code2, FileCode2, Fingerprint, GitCompareArrows, LockKeyhole, MessageSquare, PackageCheck, Radar, ScanSearch, ShieldCheck, TerminalSquare, Workflow } from "lucide-react";
 import HomeSearch from "@/app/HomeSearch";
+import BrandMark from "@/app/BrandMark";
 import { resolveMarketplaceExtension } from "@/lib/marketplace";
 import { getPublicSecurityFeed } from "@/lib/productData";
 import { getPublicMetrics } from "@/lib/publicMetrics";
 
 export const dynamic = "force-dynamic";
-
 const featuredIds = ["ms-python.python", "GitHub.copilot", "ms-vscode-remote.remote-containers", "tintinweb.vscode-vyper"];
-const getFeatured = unstable_cache(async () => { const values = await Promise.allSettled(featuredIds.map(resolveMarketplaceExtension)); return values.flatMap((value) => value.status === "fulfilled" ? [value.value] : []); }, ["home-featured-v3"], { revalidate: 21600 });
+const getFeatured = unstable_cache(async () => { const values = await Promise.allSettled(featuredIds.map(resolveMarketplaceExtension)); return values.flatMap((value) => value.status === "fulfilled" ? [value.value] : []); }, ["guardrails-home-featured"], { revalidate: 21600 });
 
 export default async function HomePage() {
   const [extensions, feed, metrics] = await Promise.all([getFeatured(), getPublicSecurityFeed(8), getPublicMetrics()]);
-  const reviewed = feed.filter((item) => item.decision === "review").length;
-  const incomplete = feed.filter((item) => item.decision === "incomplete").length;
-  return <main className="nextHome">
-    <section className="commandHero">
-      <div className="heroGlow heroGlowOne"/><div className="heroGlow heroGlowTwo"/>
-      <div className="commandHeroCopy">
-        <div className="betaLine"><span><i/> Live public intelligence</span><Link href="/benchmark">See how it is validated <ArrowRight/></Link></div>
-        <h1>Know the extension.<br/><em>Before it knows you.</em></h1>
-        <p>Inspect the exact code, capabilities, dependencies, and release changes entering developer machines—then keep watching after approval.</p>
+  const selected = feed[0];
+  return <main className="productHome">
+    <section className="productHero">
+      <div className="heroIntro">
+        <span className="systemLabel"><i/> EXTENSION INTELLIGENCE / LIVE</span>
+        <h1>Know what your developers install.</h1>
+        <p>GUARDRAILS inspects the exact extension artifact, explains its access, and follows every release after approval.</p>
         <HomeSearch/>
-        <div className="heroTrust"><span><ShieldCheck/> Static analysis</span><span><Fingerprint/> Exact artifact hash</span><span><Eye/> Public reports</span></div>
+        <div className="heroFinePrint"><span><Check/> Public reports are free</span><span><Check/> Static analysis only</span><span><Check/> Exact SHA-256 boundary</span></div>
       </div>
-      <div className="heroCockpit" aria-label="Live IDE Scanner product preview">
-        <div className="cockpitTop"><div><span className="liveDot"/> LIVE INTELLIGENCE</div><span>RULESET 2026.07.16</span></div>
-        <div className="cockpitIdentity"><div className="cockpitIcon">{extensions[1]?.icon_url ? <Image src={extensions[1].icon_url} alt="" width={48} height={48} unoptimized/> : <Braces/>}</div><div><small>GITHUB.COPILOT</small><strong>GitHub Copilot</strong><code>@1.388.0</code></div><span className="outcomePill review">REVIEW NEEDED</span></div>
-        <div className="cockpitMap"><div className="accessCore"><Radar/><span>EXTENSION</span></div><span className="orbitNode nodeCode"><Braces/><b>Source</b></span><span className="orbitNode nodeTerminal"><Terminal/><b>Process</b></span><span className="orbitNode nodeNetwork"><Waypoints/><b>Network</b></span><span className="orbitNode nodeFiles"><FileCode2/><b>Files</b></span></div>
-        <div className="cockpitEvidence"><article><span>Outcome</span><strong>Manual review</strong><i className="bar amber"/></article><article><span>Coverage</span><strong>100%</strong><i className="bar green"/></article><article><span>Exact files</span><strong>60</strong><i className="bar blue"/></article></div>
-        <div className="cockpitFinding"><span>MEDIUM</span><div><strong>Native artifacts need provenance review</strong><small>17 affected files · exact evidence available</small></div><ArrowRight/></div>
-        <Link className="cockpitAction" href="/extensions/GitHub.copilot/versions/1.388.0">Open the real report <ArrowRight/></Link>
+
+      <div className="productConsole" aria-label="GUARDRAILS public intelligence console">
+        <header className="consoleTopbar"><div><BrandMark compact/><strong>GUARDRAILS</strong><span>/ PUBLIC INTELLIGENCE</span></div><nav><span className="active">Overview</span><span>Evidence</span><span>Files</span><span>Release changes</span></nav><Link href={selected ? `/extensions/${encodeURIComponent(selected.extension_id)}/versions/${encodeURIComponent(selected.version)}` : "/catalog"}>Open full report <ArrowUpRight/></Link></header>
+        <div className="consoleBody">
+          <aside className="consoleRail"><span className="railHeading">RECENTLY ANALYZED</span>{feed.slice(0, 5).map((item, index) => <Link className={index === 0 ? "selected" : ""} href={`/extensions/${encodeURIComponent(item.extension_id)}/versions/${encodeURIComponent(item.version)}`} key={`${item.extension_id}@${item.version}`}><i className={`stateDot ${item.decision}`}/><div><strong>{item.display_name}</strong><code>@{item.version}</code></div><ChevronRight/></Link>)}</aside>
+          <section className="consoleMain">
+            <div className="artifactBar"><div className="artifactIcon"><Code2/></div><div><span>EXACT MARKETPLACE ARTIFACT</span><h2>{selected?.display_name || "GitHub Copilot"}</h2><code>{selected?.extension_id || "GitHub.copilot"}@{selected?.version || "1.388.0"}</code></div><span className={`consoleDecision ${selected?.decision || "review"}`}>{String(selected?.decision || "review").toUpperCase()}</span></div>
+            <div className="consoleSummary"><div><span>POLICY OUTCOME</span><strong>{selected?.decision_reason || "Decision-relevant behavior needs context before approval."}</strong></div><div className="coverageDial"><span>ANALYSIS COVERAGE</span><strong>{selected?.coverage_percent ?? 100}%</strong><i><b style={{ width: `${selected?.coverage_percent ?? 100}%` }}/></i></div></div>
+            <div className="consoleEvidence"><header><span>DECISION-RELEVANT EVIDENCE</span><span>GROUPED / NO DUPLICATE NOISE</span></header><article><span className="evidenceIcon"><TerminalSquare/></span><div><strong>Process and workspace access</strong><p>Review executable behavior against the extension’s documented purpose.</p></div><span className="evidenceTag">REVIEW</span></article><article><span className="evidenceIcon"><PackageCheck/></span><div><strong>Supply-chain components</strong><p>Dependencies, native payloads, and artifact provenance remain inspectable.</p></div><span className="evidenceTag neutral">CONTEXT</span></article><article><span className="evidenceIcon"><Fingerprint/></span><div><strong>Immutable artifact identity</strong><p>Every result is bound to one registry, version, hash, build, and ruleset.</p></div><CheckCircle2 className="evidenceCheck"/></article></div>
+          </section>
+          <aside className="consoleContext"><div><span>ARTIFACT IDENTITY</span><code>Exact SHA-256 recorded</code></div><div><span>SCANNER</span><strong>Static / deterministic</strong></div><div><span>PACKAGE EXECUTION</span><strong className="good">Never</strong></div><div><span>LAST ANALYZED</span><strong>Recorded per report</strong></div><Link href="/benchmark"><ShieldCheck/> Validation evidence <ArrowUpRight/></Link></aside>
+        </div>
       </div>
     </section>
 
-    <section className="extensionMarquee" aria-label="Supported extension intelligence"><span>Inspect any published extension</span><div>{extensions.map((item) => <Link href={`/extensions/${encodeURIComponent(item.extension_id)}`} key={item.extension_id}>{item.icon_url ? <Image src={item.icon_url} width={34} height={34} alt="" unoptimized/> : <Box/>}<strong>{item.display_name}</strong><small>{formatCount(item.install_count)} installs</small></Link>)}</div></section>
+    <section className="proofTicker"><span>PUBLIC DATASET</span><strong>{formatMetric(metrics.exact_releases_analyzed)} exact releases</strong><i/><strong>{formatMetric(metrics.analyzer_complete_reports)} complete reports</strong><i/><strong>{formatMetric(metrics.known_bad_artifacts)} known-bad matches</strong><div>{extensions.map((item) => <Link href={`/extensions/${encodeURIComponent(item.extension_id)}`} title={item.display_name} key={item.extension_id}>{item.icon_url ? <Image src={item.icon_url} width={27} height={27} alt={item.display_name} unoptimized/> : <Box/>}</Link>)}</div></section>
 
-    <section className="homeIntelligence">
-      <header><div><span className="sectionKicker"><Activity/> RECENT INTELLIGENCE</span><h2>What changed across the ecosystem.</h2><p>Real completed scans. No invented threat feed and no popularity-based safety claims.</p></div><Link href="/catalog">Explore all extensions <ArrowRight/></Link></header>
-      <div className="intelligenceLayout"><div className="intelligenceFeed">{feed.slice(0, 5).map((item) => <Link href={`/extensions/${encodeURIComponent(item.extension_id)}/versions/${encodeURIComponent(item.version)}`} key={`${item.extension_id}@${item.version}`}><span className={`signalDot ${item.decision}`}/><div><small>{item.decision === "incomplete" ? "ANALYSIS INCOMPLETE" : item.decision === "block" ? "DO NOT INSTALL" : "REVIEW NEEDED"}</small><strong>{item.display_name}</strong><code>{item.extension_id}@{item.version}</code></div><p>{item.decision_reason}</p><span className="coverageMini">{item.coverage_percent}%<i style={{ width: `${item.coverage_percent}%` }}/></span><ArrowRight/></Link>)}</div><aside className="ecosystemPanel"><div className="ecosystemOrb"><Orbit/><strong>{formatMetric(metrics.exact_releases_analyzed)}</strong><span>exact releases analyzed</span></div><div className="ecosystemStats"><article><strong>{reviewed}</strong><span>recent reviews</span></article><article><strong>{incomplete}</strong><span>incomplete</span></article><article><strong>{formatMetric(metrics.known_bad_artifacts)}</strong><span>known-bad matches</span></article><article><strong>{formatMetric(metrics.analyzer_complete_reports)}</strong><span>complete reports</span></article></div><Link href="/benchmark">Validation evidence <ArrowRight/></Link></aside></div>
+    <section className="productNarrative">
+      <header><span>ONE CONTINUOUS WORKFLOW</span><h2>The scan is only the beginning.</h2><p>Most tools stop at a report. GUARDRAILS keeps the artifact, evidence, release history, and response in one operational timeline.</p></header>
+      <div className="workflowConsole">
+        <aside><span>WORKFLOW</span><a className="active"><ScanSearch/> Before install <b>01</b></a><a><GitCompareArrows/> Release change <b>02</b></a><a><Bell/> Team alert <b>03</b></a><a><CheckCircle2/> Decision history <b>04</b></a></aside>
+        <div className="workflowStage"><header><span>BEFORE INSTALLATION</span><span>GitHub.copilot@1.388.0</span></header><div className="workflowQuestion"><small>GUARDRAILS / RECOMMENDATION</small><h3>Review before this artifact enters the environment.</h3><p>Process execution, credential-adjacent access, and native components require context. The evidence is complete enough to make a decision.</p><div><Link href="/extensions/GitHub.copilot/versions/1.388.0">Review evidence <ArrowRight/></Link><span><i/> 100% coverage</span></div></div><div className="workflowTrace"><span>ARTIFACT FLOW</span><div><b><PackageCheck/> Registry</b><i/><b><FileCode2/> Artifact</b><i/><b><ShieldCheck/> Policy</b><i/><b><CheckCircle2/> Decision</b></div></div></div>
+        <aside className="workflowFacts"><div><span>WHY IT MATTERS</span><strong>Capabilities are expected. Unexplained changes are not.</strong><p>GUARDRAILS separates power from proof so legitimate developer tools are not mislabeled as malware.</p></div><div><span>BOUNDARY</span><code>SHA-256<br/>ed18caf3…be19</code></div></aside>
+      </div>
     </section>
 
-    <section className="productModules"><header><span className="sectionKicker"><Sparkles/> ONE CONTINUOUS WORKFLOW</span><h2>From first look to every release after.</h2></header><div>
-      <article className="moduleCard moduleInspect"><div className="moduleIndex">01</div><div><span>BEFORE INSTALL</span><h3>Inspect the exact artifact.</h3><p>Move from publisher identity to the package that will actually run. Search files, open verified source, and follow evidence to its location.</p><Link href="/catalog">Explore intelligence <ArrowRight/></Link></div><div className="moduleVisual codeVisual"><header><i/><i/><i/><code>extension/dist/index.js</code></header><pre><b>214</b>  const child = spawn(binary, args);{`\n`}<b>215</b>  child.stdout.pipe(output);{`\n`}<mark><b>216</b>  return vscode.window.withProgress(...);</mark></pre><span><Search/> Evidence-linked source</span></div></article>
-      <article className="moduleCard moduleCompare"><div className="moduleIndex">02</div><div><span>ON EVERY CHANGE</span><h3>See the release delta.</h3><p>Compare two immutable scans across findings, capabilities, dependencies, and files. If evidence is missing, the product says so.</p><Link href="/extensions/GitHub.copilot/versions/1.388.0#changes">Open a comparison <ArrowRight/></Link></div><div className="moduleVisual diffVisual"><div><span>1.387</span><ArrowRight/><span>1.388</span></div><article className="added"><b>+</b><span>3 dependencies</span></article><article className="changed"><b>~</b><span>12 files changed</span></article><article className="neutral"><CheckCircle2/><span>No new capability family</span></article></div></article>
-      <article className="moduleCard moduleMonitor"><div className="moduleIndex">03</div><div><span>AFTER APPROVAL</span><h3>Return only when it matters.</h3><p>Watch extensions, detect new releases, queue analysis, and triage the evidence change from one private workspace.</p><Link href="/monitor">Start monitoring <ArrowRight/></Link></div><div className="moduleVisual monitorVisual"><header><BellRing/><div><strong>Release intelligence</strong><span>3 events this week</span></div></header><article><i className="signalDot review"/><div><strong>New release analyzed</strong><span>GitHub Copilot @1.388.0</span></div><small>NOW</small></article><article><i className="signalDot incomplete"/><div><strong>Coverage needs attention</strong><span>Required analyzer incomplete</span></div><small>2H</small></article></div></article>
-    </div></section>
+    <section className="monitorShowcase">
+      <header><div><span><i/> CONTINUOUS MONITORING</span><h2>Every new release becomes a reviewable event.</h2></div><Link href="/monitor">Configure Monitor <ArrowUpRight/></Link></header>
+      <div className="monitorConsole">
+        <aside><BrandMark/><strong>GUARDRAILS</strong><nav><span><Radar/> Overview</span><span className="active"><Bell/> Alerts <b>3</b></span><span><Workflow/> Monitors</span><span><GitCompareArrows/> Changes</span></nav><small>SECURITY WORKSPACE</small></aside>
+        <div className="monitorCanvas"><header><div><span>ALERT INBOX</span><strong>3 events need a decision</strong></div><button>All extensions <ChevronRight/></button></header><div className="monitorStats"><span><small>OPEN</small><strong>3</strong></span><span><small>NEW RELEASES</small><strong>2</strong></span><span><small>INCOMPLETE</small><strong>1</strong></span><span><small>RESOLVED / 30D</small><strong>18</strong></span></div><div className="monitorTable"><header><span>EVENT</span><span>EXTENSION</span><span>CHANGE</span><span>STATE</span><span/></header><article><i className="alertAmber"/><div><strong>Release analysis complete</strong><small>Evidence is ready for review</small></div><code>GitHub.copilot</code><span>9 files</span><b>NEW</b><ArrowUpRight/></article><article><i className="alertBlue"/><div><strong>Decision changed</strong><small>Coverage restored after re-scan</small></div><code>ms-python.python</code><span>Incomplete → Review</span><b>OPEN</b><ArrowUpRight/></article><article><i className="alertRed"/><div><strong>Analysis incomplete</strong><small>Required artifact coverage is missing</small></div><code>remote-containers</code><span>2 providers</span><b>OPEN</b><ArrowUpRight/></article></div></div>
+      </div>
+      <div className="deliveryStrip"><span>DELIVER THE SIGNAL</span><b><Bell/> In-product</b><b><MessageSquare/> Slack</b><b><Activity/> Severity threshold</b><b><Workflow/> Acknowledge / dismiss</b></div>
+    </section>
 
-    <section className="homeProof"><div><span className="sectionKicker">TRUSTED BY INSPECTION</span><h2>Every conclusion has a boundary.</h2><p>Exact hashes, recorded scanner builds, provider coverage, grouped evidence, and a benchmark that publishes what it cannot prove.</p><div><Link className="button buttonLight" href="/benchmark">Read validation evidence</Link><Link className="textLinkLight" href="/settings">Analysis boundaries <ArrowRight/></Link></div></div><aside><div><Fingerprint/><span>Artifact identity</span><strong>SHA-256 pinned</strong></div><div><Radar/><span>Scanner identity</span><strong>Build recorded</strong></div><div><ShieldCheck/><span>Coverage</span><strong>Provider visible</strong></div><div><GitCompareArrows/><span>Regression</span><strong>Limits published</strong></div></aside></section>
+    <section className="evidenceSectionHome">
+      <div className="evidenceCopy"><span>TRUST IS INSPECTABLE</span><h2>Evidence first.<br/>Claims second.</h2><p>Reports retain exact identity, analyzer coverage, grouped findings, affected files, and the ruleset that produced the result.</p><Link href="/benchmark">Read validation evidence <ArrowRight/></Link></div>
+      <div className="benchmarkPanel"><header><span>FROZEN DEVELOPMENT CORPUS</span><strong>30 exact VSIX artifacts</strong></header><div><article><span>UNTOUCHED PASS</span><strong>23/30</strong><i><b style={{width:"76.7%"}}/></i><small>artifacts completed</small></article><article><span>FINAL REGRESSION</span><strong>30/30</strong><i><b style={{width:"100%"}}/></i><small>artifacts completed</small></article><article><span>LEGITIMATE BLOCKS</span><strong>0</strong><i/><small>after documented fixes</small></article></div><footer><LockKeyhole/><p>Development-regression evidence. Not an ecosystem accuracy or malware-recall claim.</p></footer></div>
+    </section>
 
-    <section className="closingSearch"><Radar/><span>START WITH AN EXTENSION</span><h2>What are you about to install?</h2><p>Public reports are free. No account required.</p><HomeSearch/></section>
+    <section className="productClosing"><BrandMark/><span>GUARDRAILS / PUBLIC INTELLIGENCE</span><h2>Check the extension.<br/>Keep watching the release.</h2><HomeSearch/><div><Link href="/catalog">Explore public records</Link><Link href="/monitor">Set up monitoring</Link></div></section>
   </main>;
 }
 
-function formatCount(value: number) { return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value || 0); }
 function formatMetric(value: number | null) { return value == null ? "0" : new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value); }
