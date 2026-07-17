@@ -25,7 +25,7 @@ export default function DashboardPage() {
     if (alertResult.error || jobResult.error) return setState("error");
     setAlerts(alertResult.data || []); setJobs(jobResult.data || []); setState("ready");
   }, [db]);
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
 
   async function resolve(id: string, state: "read" | "acknowledged" | "dismissed") {
     if (!db) return;

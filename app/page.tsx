@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { unstable_cache } from "next/cache";
-import { Activity, ArrowRight, ArrowUpRight, Bell, Box, Braces, Check, CheckCircle2, ChevronRight, Code2, FileCode2, Fingerprint, GitCompareArrows, LockKeyhole, MessageSquare, Network, PackageCheck, Radar, ScanSearch, ShieldCheck, TerminalSquare, Workflow } from "lucide-react";
+import { Activity, ArrowRight, ArrowUpRight, Bell, Box, Check, CheckCircle2, ChevronRight, Code2, FileCode2, Fingerprint, GitCompareArrows, LockKeyhole, MessageSquare, Network, PackageCheck, Radar, ScanSearch, ShieldCheck, TerminalSquare, Workflow } from "lucide-react";
 import HomeSearch from "@/app/HomeSearch";
 import BrandMark from "@/app/BrandMark";
 import { resolveMarketplaceExtension } from "@/lib/marketplace";
@@ -18,17 +18,17 @@ export default async function HomePage() {
   return <main className="productHome">
     <section className="productHero">
       <div className="heroIntro">
-        <span className="systemLabel"><i/> EXTENSION INTELLIGENCE / LIVE</span>
+        <span className="systemLabel"><i/> EXTENSION INTELLIGENCE / EVIDENCE</span>
         <h1>Understand every extension<br/>before you trust it.</h1>
         <p>GUARDRAILS gives developers and security teams exact-artifact evidence, clear access context, and release-by-release follow-through.</p>
         <HomeSearch/>
         <div className="heroFinePrint"><span><Check/> Public reports are free</span><span><Check/> Static analysis only</span><span><Check/> Exact SHA-256 boundary</span></div>
-        <div className="heroIntelCard" aria-label="Live Vyper Guard artifact analysis">
-          <header><span><i/> LIVE INTELLIGENCE</span><code>RULESET 2026.07.16</code></header>
-          <div className="heroArtifact"><span className="vyperArtifactMark" aria-label="Vyper Guard">VY</span><div><small>PREETHAMAK.VYPER-GUARD-VSCODE</small><strong>Vyper Guard</strong><code>@0.0.2 · risk 57</code></div><b>REVIEW NEEDED</b></div>
-          <div className="heroCapabilityMap"><span className="mapCore"><Radar/><small>EXTENSION</small></span><span className="mapNode mapSource"><Braces/><small>Source</small></span><span className="mapNode mapProcess"><TerminalSquare/><small>Process</small></span><span className="mapNode mapFiles"><FileCode2/><small>Files</small></span><span className="mapNode mapNetwork"><Network/><small>Network</small></span><i className="mapOrbit mapOrbitOne"/><i className="mapOrbit mapOrbitTwo"/></div>
-          <div className="heroSignalRow"><article><span>OUTCOME</span><strong>Review needed</strong><i><b style={{width:"57%"}}/></i></article><article><span>COVERAGE</span><strong>100%</strong><i><b style={{width:"100%"}}/></i></article><article><span>EXACT FILES</span><strong>60</strong><i><b style={{width:"76%"}}/></i></article></div>
-          <Link href="/scan?q=PreethamAK.vyper-guard-vscode"><span>MEDIUM</span><div><strong>Shell-style process execution needs context</strong><small>3 recorded locations · exact artifact evidence</small></div><ArrowRight/></Link>
+        <div className="heroIntelCard vyperReportCard" aria-label="Vyper Guard 0.0.2 validation report">
+          <header><span><i/> VALIDATED REPORT</span><code>2026.07.15</code></header>
+          <div className="heroArtifact"><Image src="/extensions/vyper-guard.png" alt="Vyper Guard logo" width={44} height={44}/><div><small>PREETHAMAK.VYPER-GUARD-VSCODE</small><strong>Vyper Guard</strong><code>@0.0.2 · SHA-256 f4145dde…8a77</code></div><b>REVIEW</b></div>
+          <div className="vyperReportSummary"><p>No malware behavior was found in the exact Marketplace VSIX or controlled runtime test. Review remains required until the trust-boundary weaknesses are fixed.</p><div><article><span>SEVERITY</span><strong>MEDIUM</strong></article><article><span>MALWARE</span><strong>0</strong></article><article><span>RISK</span><strong>57</strong></article><article><span>COVERAGE</span><strong>100%</strong></article></div></div>
+          <div className="vyperFindingList"><article><TerminalSquare/><div><strong>Workspace executable can be replaced</strong><small>Confirmed in hostile configuration testing</small></div></article><article><FileCode2/><div><strong>Report output and SARIF paths need bounds</strong><small>Arbitrary output and diagnostic paths were accepted</small></div></article><article><Network/><div><strong>Real CLI run made 0 network attempts</strong><small>No canary reads or unexpected writes observed</small></div></article></div>
+          <Link href="/scan?q=PreethamAK.vyper-guard-vscode"><span>READ REPORT</span><div><strong>Evidence, limitations, and remediation</strong><small>Exact artifact · controlled runtime validation</small></div><ArrowRight/></Link>
         </div>
       </div>
 
@@ -52,7 +52,7 @@ export default async function HomePage() {
       <header><span>ONE CONTINUOUS WORKFLOW</span><h2>The scan is only the beginning.</h2><p>Most tools stop at a report. GUARDRAILS keeps the artifact, evidence, release history, and response in one operational timeline.</p></header>
       <div className="workflowConsole">
         <aside><span>WORKFLOW</span><a className="active"><ScanSearch/> Before install <b>01</b></a><a><GitCompareArrows/> Release change <b>02</b></a><a><Bell/> Team alert <b>03</b></a><a><CheckCircle2/> Decision history <b>04</b></a></aside>
-        <div className="workflowStage"><header><span>BEFORE INSTALLATION</span><span>Vyper Guard@0.0.2</span></header><div className="workflowQuestion"><small>GUARDRAILS / RECOMMENDATION</small><h3>Review before this artifact enters the environment.</h3><p>Workspace-controlled process execution requires context. The evidence is complete enough to make a decision.</p><div><Link href="/scan?q=PreethamAK.vyper-guard-vscode">Review evidence <ArrowRight/></Link><span><i/> 100% coverage</span></div></div><div className="workflowTrace"><span>ARTIFACT FLOW</span><div><b><PackageCheck/> Registry</b><i/><b><FileCode2/> Artifact</b><i/><b><ShieldCheck/> Policy</b><i/><b><CheckCircle2/> Decision</b></div></div></div>
+        <div className="workflowStage"><header><span>BEFORE INSTALLATION</span><span>Vyper Guard@0.0.2</span></header><div className="workflowQuestion"><small>GUARDRAILS / RECOMMENDATION</small><h3>Review before this artifact enters the environment.</h3><p>Controlled testing found no malware behavior, but workspace configuration can replace the executable and redirect report output.</p><div><Link href="/scan?q=PreethamAK.vyper-guard-vscode">Review evidence <ArrowRight/></Link><span><i/> 100% coverage</span></div></div><div className="workflowTrace"><span>ARTIFACT FLOW</span><div><b><PackageCheck/> Registry</b><i/><b><FileCode2/> Artifact</b><i/><b><ShieldCheck/> Policy</b><i/><b><CheckCircle2/> Decision</b></div></div></div>
         <aside className="workflowFacts"><div><span>WHY IT MATTERS</span><strong>Capabilities are expected. Unexplained changes are not.</strong><p>GUARDRAILS separates power from proof so legitimate developer tools are not mislabeled as malware.</p></div><div><span>BOUNDARY</span><code>SHA-256<br/>ed18caf3…be19</code></div></aside>
       </div>
     </section>
