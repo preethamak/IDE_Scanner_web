@@ -55,7 +55,7 @@ export async function getPublicInventory(limit = 240): Promise<PublicInventory> 
     display_name: displayNameForExtension(row.id),
     publisher: row.id.split(".")[0],
     description: `${row.classification.replaceAll("-", " ")} · final regression result`,
-    icon_url: row.id === "PreethamAK.vyper-guard-vscode" ? "/extensions/vyper-guard.png" : "",
+    icon_url: "",
     severity: row.final_severity,
     decision: row.final_decision,
     scanned_at: publishedAt,
