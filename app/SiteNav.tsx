@@ -2,25 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUpRight, BellRing, BookOpen, Boxes, ChevronDown, FileSearch, FlaskConical, LayoutDashboard, Menu, Radar, ScanSearch, X } from "lucide-react";
+import { ArrowUpRight, BellRing, BookOpen, Boxes, ChevronDown, FileSearch, FlaskConical, Menu, Radar, ScanSearch, ScrollText, ShieldCheck, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-const productLinks = [
-  ["/catalog", "Discover", "Search public extension intelligence", Boxes],
-  ["/public-scan", "Public Scan", "Browse exact public scan records", Radar],
-  ["/scan", "Analyze", "Inspect an exact release or private VSIX", ScanSearch],
-  ["/workspace", "Dashboard", "Triage release and evidence changes", LayoutDashboard],
-  ["/monitor", "Monitor", "Watch releases and deliver alerts", BellRing],
+const directLinks = [
+  ["/catalog", "Discover", Boxes],
+  ["/public-scan", "Public Scan", Radar],
+  ["/scan", "Analyze", ScanSearch],
+  ["/monitor", "Monitor", BellRing],
 ] as const;
-const intelligenceLinks = [
-  ["/research", "Research", "Field notes on extension security", BookOpen],
+const documentationLinks = [
+  ["/research", "Documentation", "How GUARDRAILS evaluates extensions", BookOpen],
   ["/metrics", "Detection catalog", "Inspect rules and evidence classes", FileSearch],
   ["/benchmark", "Validation", "Frozen artifacts and regression evidence", FlaskConical],
+  ["/scoring", "Verdicts & severity", "How severity and decisions are explained", ShieldCheck],
+  ["/settings", "Analysis boundaries", "What the scanner can and cannot assess", ScrollText],
 ] as const;
 
 export default function SiteNav() {
   const pathname = usePathname();
-  const [open, setOpen] = useState<"product" | "intelligence" | "mobile" | null>(null);
+  const [open, setOpen] = useState<"documentation" | "mobile" | null>(null);
   const root = useRef<HTMLElement>(null);
   const active = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   useEffect(() => {
@@ -29,15 +30,13 @@ export default function SiteNav() {
     document.addEventListener("pointerdown", close); document.addEventListener("keydown", escape);
     return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", escape); };
   }, []);
-  const link = ([href, label, detail, Icon]: (typeof productLinks)[number] | (typeof intelligenceLinks)[number]) => <Link role="menuitem" href={href} key={href} onClick={() => setOpen(null)}><Icon/><span><strong>{label}</strong><small>{detail}</small></span><ArrowUpRight/></Link>;
+  const menuLink = ([href, label, detail, Icon]: (typeof documentationLinks)[number]) => <Link role="menuitem" href={href} key={href} onClick={() => setOpen(null)}><Icon/><span><strong>{label}</strong><small>{detail}</small></span><ArrowUpRight/></Link>;
   return <nav className="primaryNav guardrailsNav" aria-label="Primary navigation" ref={root}>
     <button className="mobileNavToggle" aria-label={open === "mobile" ? "Close navigation" : "Open navigation"} onClick={() => setOpen(open === "mobile" ? null : "mobile")}>{open === "mobile" ? <X/> : <Menu/>}</button>
     <div className="desktopNav">
-      <div className="navMenu"><button className={productLinks.some(([href]) => active(href)) ? "active" : ""} aria-expanded={open === "product"} onClick={() => setOpen(open === "product" ? null : "product")}>Product <ChevronDown/></button><div role="menu" className={`navPopover guardrailPopover productPopover ${open === "product" ? "isOpen" : ""}`}><div>{productLinks.map(link)}</div><aside><Radar/><span>CONTINUOUS INTELLIGENCE</span><strong>Inspect once.<br/>Know when it changes.</strong><p>Watch an approved extension and GUARDRAILS follows every exact release.</p><Link href="/monitor" onClick={() => setOpen(null)}>Open Monitor <ArrowUpRight/></Link></aside></div></div>
-      <Link className={active("/catalog") ? "active" : ""} href="/catalog">Discover</Link>
-      <Link className={active("/monitor") ? "active" : ""} href="/monitor">Monitor</Link>
-      <div className="navMenu"><button className={intelligenceLinks.some(([href]) => active(href)) ? "active" : ""} aria-expanded={open === "intelligence"} onClick={() => setOpen(open === "intelligence" ? null : "intelligence")}>Intelligence <ChevronDown/></button><div role="menu" className={`navPopover guardrailPopover intelligencePopover ${open === "intelligence" ? "isOpen" : ""}`}><div>{intelligenceLinks.map(link)}</div></div></div>
+      {directLinks.map(([href, label]) => <Link className={active(href) ? "active" : ""} href={href} key={href}>{label}</Link>)}
+      <div className="navMenu"><button className={documentationLinks.some(([href]) => active(href)) ? "active" : ""} aria-expanded={open === "documentation"} onClick={() => setOpen(open === "documentation" ? null : "documentation")}>Documentation <ChevronDown/></button><div role="menu" className={`navPopover guardrailPopover documentationPopover ${open === "documentation" ? "isOpen" : ""}`}><div>{documentationLinks.map(menuLink)}</div></div></div>
     </div>
-    <div className={`mobileNavPanel ${open === "mobile" ? "isOpen" : ""}`}><span>Product</span>{productLinks.map(link)}<span>Intelligence</span>{intelligenceLinks.map(link)}</div>
+    <div className={`mobileNavPanel ${open === "mobile" ? "isOpen" : ""}`}><span>Explore</span>{directLinks.map(([href, label, Icon]) => <Link href={href} key={href} onClick={() => setOpen(null)}><Icon/><strong>{label}</strong></Link>)}<span>Documentation</span>{documentationLinks.map(menuLink)}</div>
   </nav>;
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
-import { ArrowUpRight, ScanSearch } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { Instrument_Sans, JetBrains_Mono, Marck_Script } from "next/font/google";
 import SiteNav from "./SiteNav";
 import HeaderAccount from "./HeaderAccount";
@@ -26,7 +26,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <div className="headerInner">
           <Link className="wordmark" href="/" aria-label="Guardrails home"><BrandMark/><strong>Guardrails</strong></Link>
           <SiteNav />
-          <div className="headerCommands"><Link className="headerAnalyze" href="/scan"><ScanSearch/> Analyze extension</Link><HeaderAccount /></div>
+          <div className="headerCommands"><HeaderAccount /></div>
         </div>
       </header>
       <div className="pageContent">{children}</div>

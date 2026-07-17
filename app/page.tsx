@@ -19,16 +19,16 @@ export default async function HomePage() {
     <section className="productHero">
       <div className="heroIntro">
         <span className="systemLabel"><i/> EXTENSION INTELLIGENCE / LIVE</span>
-        <h1>Know what your developers install.</h1>
-        <p>GUARDRAILS inspects the exact extension artifact, explains its access, and follows every release after approval.</p>
+        <h1>Understand every extension<br/>before you trust it.</h1>
+        <p>GUARDRAILS gives developers and security teams exact-artifact evidence, clear access context, and release-by-release follow-through.</p>
         <HomeSearch/>
         <div className="heroFinePrint"><span><Check/> Public reports are free</span><span><Check/> Static analysis only</span><span><Check/> Exact SHA-256 boundary</span></div>
         <div className="heroIntelCard" aria-label="Live Vyper Guard artifact analysis">
           <header><span><i/> LIVE INTELLIGENCE</span><code>RULESET 2026.07.16</code></header>
-          <div className="heroArtifact">{extensions[1]?.icon_url ? <Image src={extensions[1].icon_url} width={48} height={48} alt="Vyper Guard" unoptimized/> : <Code2/>}<div><small>PREETHAMAK.VYPER-GUARD-VSCODE</small><strong>Vyper Guard</strong><code>@0.0.2</code></div><b>REVIEW NEEDED</b></div>
+          <div className="heroArtifact"><span className="vyperArtifactMark" aria-label="Vyper Guard">VY</span><div><small>PREETHAMAK.VYPER-GUARD-VSCODE</small><strong>Vyper Guard</strong><code>@0.0.2 · risk 57</code></div><b>REVIEW NEEDED</b></div>
           <div className="heroCapabilityMap"><span className="mapCore"><Radar/><small>EXTENSION</small></span><span className="mapNode mapSource"><Braces/><small>Source</small></span><span className="mapNode mapProcess"><TerminalSquare/><small>Process</small></span><span className="mapNode mapFiles"><FileCode2/><small>Files</small></span><span className="mapNode mapNetwork"><Network/><small>Network</small></span><i className="mapOrbit mapOrbitOne"/><i className="mapOrbit mapOrbitTwo"/></div>
-          <div className="heroSignalRow"><article><span>OUTCOME</span><strong>Manual review</strong><i><b style={{width:"42%"}}/></i></article><article><span>COVERAGE</span><strong>100%</strong><i><b style={{width:"100%"}}/></i></article><article><span>EXACT FILES</span><strong>60</strong><i><b style={{width:"76%"}}/></i></article></div>
-          <Link href="/scan?q=PreethamAK.vyper-guard-vscode"><span>REVIEW</span><div><strong>Workspace-controlled CLI needs context</strong><small>Exact evidence available · 100% coverage</small></div><ArrowRight/></Link>
+          <div className="heroSignalRow"><article><span>OUTCOME</span><strong>Review needed</strong><i><b style={{width:"57%"}}/></i></article><article><span>COVERAGE</span><strong>100%</strong><i><b style={{width:"100%"}}/></i></article><article><span>EXACT FILES</span><strong>60</strong><i><b style={{width:"76%"}}/></i></article></div>
+          <Link href="/scan?q=PreethamAK.vyper-guard-vscode"><span>MEDIUM</span><div><strong>Shell-style process execution needs context</strong><small>3 recorded locations · exact artifact evidence</small></div><ArrowRight/></Link>
         </div>
       </div>
 
