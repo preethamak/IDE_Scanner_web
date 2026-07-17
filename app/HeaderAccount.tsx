@@ -24,7 +24,7 @@ export default function HeaderAccount() {
   async function signOut() { await db?.auth.signOut(); setOpen(false); window.location.assign("/"); }
 
   return <div className="headerAccountSlot" ref={root}>
-    {user === undefined ? <span className="headerAccountLoading" aria-label="Checking account"/> : user ? <>
+    {user === undefined ? <Link className="headerSignIn" href="/account">Sign in</Link> : user ? <>
       <button className="headerAccountButton" aria-label="Open account menu" aria-expanded={open} onClick={() => setOpen((value) => !value)}><CircleUserRound/></button>
       {open ? <div className="headerAccountMenu" role="menu"><span>Signed in to GUARDRAILS</span><strong>{user.email || "GUARDRAILS account"}</strong><Link role="menuitem" href="/workspace" onClick={() => setOpen(false)}><LayoutDashboard/> Dashboard</Link><Link role="menuitem" href="/monitor" onClick={() => setOpen(false)}><Radar/> Monitor releases</Link><Link role="menuitem" href="/workspace" onClick={() => setOpen(false)}><BellRing/> Alert inbox</Link><button role="menuitem" onClick={() => void signOut()}><LogOut/> Sign out</button></div> : null}
     </> : <Link className="headerSignIn" href="/account">Sign in</Link>}

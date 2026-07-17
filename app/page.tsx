@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { unstable_cache } from "next/cache";
-import { Activity, ArrowRight, ArrowUpRight, Bell, Box, Check, CheckCircle2, ChevronRight, Code2, FileCode2, Fingerprint, GitCompareArrows, LockKeyhole, MessageSquare, PackageCheck, Radar, ScanSearch, ShieldCheck, TerminalSquare, Workflow } from "lucide-react";
+import { Activity, ArrowRight, ArrowUpRight, Bell, Box, Braces, Check, CheckCircle2, ChevronRight, Code2, FileCode2, Fingerprint, GitCompareArrows, LockKeyhole, MessageSquare, Network, PackageCheck, Radar, ScanSearch, ShieldCheck, TerminalSquare, Workflow } from "lucide-react";
 import HomeSearch from "@/app/HomeSearch";
 import BrandMark from "@/app/BrandMark";
 import { resolveMarketplaceExtension } from "@/lib/marketplace";
@@ -23,6 +23,13 @@ export default async function HomePage() {
         <p>GUARDRAILS inspects the exact extension artifact, explains its access, and follows every release after approval.</p>
         <HomeSearch/>
         <div className="heroFinePrint"><span><Check/> Public reports are free</span><span><Check/> Static analysis only</span><span><Check/> Exact SHA-256 boundary</span></div>
+        <div className="heroIntelCard" aria-label="Live GitHub Copilot artifact analysis">
+          <header><span><i/> LIVE INTELLIGENCE</span><code>RULESET 2026.07.16</code></header>
+          <div className="heroArtifact">{extensions[1]?.icon_url ? <Image src={extensions[1].icon_url} width={48} height={48} alt="GitHub Copilot" unoptimized/> : <Code2/>}<div><small>GITHUB.COPILOT</small><strong>GitHub Copilot</strong><code>@1.388.0</code></div><b>REVIEW NEEDED</b></div>
+          <div className="heroCapabilityMap"><span className="mapCore"><Radar/><small>EXTENSION</small></span><span className="mapNode mapSource"><Braces/><small>Source</small></span><span className="mapNode mapProcess"><TerminalSquare/><small>Process</small></span><span className="mapNode mapFiles"><FileCode2/><small>Files</small></span><span className="mapNode mapNetwork"><Network/><small>Network</small></span><i className="mapOrbit mapOrbitOne"/><i className="mapOrbit mapOrbitTwo"/></div>
+          <div className="heroSignalRow"><article><span>OUTCOME</span><strong>Manual review</strong><i><b style={{width:"42%"}}/></i></article><article><span>COVERAGE</span><strong>100%</strong><i><b style={{width:"100%"}}/></i></article><article><span>EXACT FILES</span><strong>60</strong><i><b style={{width:"76%"}}/></i></article></div>
+          <Link href="/extensions/GitHub.copilot/versions/1.388.0"><span>MEDIUM</span><div><strong>Native artifacts need provenance review</strong><small>17 affected files · exact evidence available</small></div><ArrowRight/></Link>
+        </div>
       </div>
 
       <div className="productConsole" aria-label="GUARDRAILS public intelligence console">
