@@ -44,7 +44,7 @@ export async function queueDeepScan(extensionId: string, requestedVersion: strin
   if (artifact.error) throw artifact.error;
 
   const requesterHash = hashRequester(request);
-  const job = await db.from("scan_jobs").insert({ extension_id: extensionId, version, profile: "deep", requester_hash: requesterHash, requested_by: requestedBy, status: "queued" }).select("*").single();
+  const job = await db.from("scan_jobs").insert({ extension_id: extensionId, version, profile: "deep", requester_hash: requesterHash, requested_by: requestedBy, scan_purpose: "user_request", status: "queued" }).select("*").single();
   if (job.error) {
     const concurrent = await db.from("scan_jobs").select("*").eq("extension_id", extensionId).eq("version", version).eq("profile", "deep").in("status", ["queued", "running"]).maybeSingle();
     if (concurrent.data) return { ...concurrent.data, deduplicated: true };
