@@ -20,7 +20,7 @@ export default async function HomePage() {
       <div className="heroIntro">
         <span className="systemLabel"><i/> EXTENSION INTELLIGENCE / EVIDENCE</span>
         <h1>Understand every extension<br/>before you trust it.</h1>
-        <p>GUARDRAILS gives developers and security teams exact-artifact evidence, clear access context, and release-by-release follow-through.</p>
+        <p>GuardRails makes the extension result clear before it reaches your workspace.</p>
         <HomeSearch/>
         <div className="heroFinePrint"><span><Check/> Public reports are free</span><span><Check/> Static analysis only</span><span><Check/> Exact SHA-256 boundary</span></div>
         <div className="heroIntelCard vyperReportCard" aria-label="Vyper Guard 0.0.2 validation report">
@@ -32,8 +32,8 @@ export default async function HomePage() {
         </div>
       </div>
 
-      <div className="productConsole" aria-label="GUARDRAILS public intelligence console">
-        <header className="consoleTopbar"><div><BrandMark compact/><strong>GUARDRAILS</strong><span>/ PUBLIC INTELLIGENCE</span></div><nav><span className="active">Overview</span><span>Evidence</span><span>Files</span><span>Release changes</span></nav><Link href={selected ? `/extensions/${encodeURIComponent(selected.extension_id)}/versions/${encodeURIComponent(selected.version)}` : "/catalog"}>Open full report <ArrowUpRight/></Link></header>
+      <div className="productConsole" aria-label="GuardRails report preview">
+        <header className="consoleTopbar"><div><BrandMark compact/><strong>GuardRails</strong><span>/ REPORT PREVIEW</span></div><nav><span className="active">Overview</span><span>Evidence</span><span>Files</span><span>Release changes</span></nav><Link href={selected ? `/extensions/${encodeURIComponent(selected.extension_id)}/versions/${encodeURIComponent(selected.version)}` : "/catalog"}>Open full report <ArrowUpRight/></Link></header>
         <div className="consoleBody">
           <aside className="consoleRail"><span className="railHeading">RECENTLY ANALYZED</span>{feed.slice(0, 5).map((item, index) => <Link className={index === 0 ? "selected" : ""} href={`/extensions/${encodeURIComponent(item.extension_id)}/versions/${encodeURIComponent(item.version)}`} key={`${item.extension_id}@${item.version}`}><i className={`stateDot ${item.decision}`}/><div><strong>{item.display_name}</strong><code>@{item.version}</code></div><ChevronRight/></Link>)}</aside>
           <section className="consoleMain">
@@ -41,7 +41,7 @@ export default async function HomePage() {
             <div className="consoleSummary"><div><span>POLICY OUTCOME</span><strong>{selected?.decision_reason || "Decision-relevant behavior needs context before approval."}</strong></div><div className="coverageDial"><span>ANALYSIS COVERAGE</span><strong>{selected?.coverage_percent ?? 100}%</strong><i><b style={{ width: `${selected?.coverage_percent ?? 100}%` }}/></i></div></div>
             <div className="consoleEvidence"><header><span>DECISION-RELEVANT EVIDENCE</span><span>GROUPED / NO DUPLICATE NOISE</span></header><article><span className="evidenceIcon"><TerminalSquare/></span><div><strong>Process and workspace access</strong><p>Review executable behavior against the extension’s documented purpose.</p></div><span className="evidenceTag">REVIEW</span></article><article><span className="evidenceIcon"><PackageCheck/></span><div><strong>Supply-chain components</strong><p>Dependencies, native payloads, and artifact provenance remain inspectable.</p></div><span className="evidenceTag neutral">CONTEXT</span></article><article><span className="evidenceIcon"><Fingerprint/></span><div><strong>Immutable artifact identity</strong><p>Every result is bound to one registry, version, hash, build, and ruleset.</p></div><CheckCircle2 className="evidenceCheck"/></article></div>
           </section>
-          <aside className="consoleContext"><div><span>ARTIFACT IDENTITY</span><code>Exact SHA-256 recorded</code></div><div><span>SCANNER</span><strong>Static / deterministic</strong></div><div><span>PACKAGE EXECUTION</span><strong className="good">Never</strong></div><div><span>LAST ANALYZED</span><strong>Recorded per report</strong></div><Link href="/benchmark"><ShieldCheck/> Validation evidence <ArrowUpRight/></Link></aside>
+          <aside className="consoleContext"><div><span>ARTIFACT IDENTITY</span><code>Exact SHA-256 recorded</code></div><div><span>SCANNER</span><strong>Static / deterministic</strong></div><div><span>PACKAGE EXECUTION</span><strong className="good">Never</strong></div><Link href="/catalog"><ShieldCheck/> Browse extensions <ArrowUpRight/></Link></aside>
         </div>
       </div>
     </section>
@@ -71,7 +71,7 @@ export default async function HomePage() {
       <div className="benchmarkPanel"><header><span>FROZEN DEVELOPMENT CORPUS</span><strong>30 exact VSIX artifacts</strong></header><div><article><span>UNTOUCHED PASS</span><strong>23/30</strong><i><b style={{width:"76.7%"}}/></i><small>artifacts completed</small></article><article><span>FINAL REGRESSION</span><strong>30/30</strong><i><b style={{width:"100%"}}/></i><small>artifacts completed</small></article><article><span>LEGITIMATE BLOCKS</span><strong>0</strong><i/><small>after documented fixes</small></article></div><footer><LockKeyhole/><p>Development-regression evidence. Not an ecosystem accuracy or malware-recall claim.</p></footer></div>
     </section>
 
-    <section className="productClosing"><BrandMark/><span>GUARDRAILS / PUBLIC INTELLIGENCE</span><h2>Check the extension.<br/>Keep watching the release.</h2><HomeSearch/><div><Link href="/catalog">Explore public records</Link><Link href="/monitor">Set up monitoring</Link></div></section>
+    <section className="productClosing"><BrandMark/><span>GUARDRAILS</span><h2>Check the extension.<br/>Keep watching the release.</h2><HomeSearch/><div><Link href="/catalog">Explore extensions</Link><Link href="/monitor">Set up monitoring</Link></div></section>
   </main>;
 }
 

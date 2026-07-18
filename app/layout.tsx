@@ -7,7 +7,6 @@ import SiteNav from "./SiteNav";
 import HeaderAccount from "./HeaderAccount";
 import BrandMark from "./BrandMark";
 import "./globals.css";
-import "./guardrails.css";
 import "./visual-refresh.css";
 
 const instrument = Instrument_Sans({ subsets: ["latin"], variable: "--font-sans" });
@@ -15,7 +14,7 @@ const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 const brand = Marck_Script({ weight: "400", subsets: ["latin"], variable: "--font-brand" });
 
 export const metadata: Metadata = {
-  title: { default: "GUARDRAILS — Extension security intelligence", template: "%s · GUARDRAILS" },
+  title: { default: "GuardRails — Extension security intelligence", template: "%s · GuardRails" },
   description: "Inspect, approve, and continuously monitor the exact extensions entering developer environments."
 };
 
@@ -33,7 +32,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <footer className="siteFooter">
         <div className="footerMain"><div className="footerLead"><Link className="wordmark footerWordmark" href="/"><BrandMark/><strong>Guardrails</strong></Link><h2>Extension security,<br/>kept in the loop.</h2><p>Exact-artifact intelligence for the developer tools your organization installs and trusts.</p><Link className="footerCta" href="/scan">Analyze an extension <ArrowUpRight/></Link></div>
         <div className="footerLinks"><div><strong>Product</strong><Link href="/catalog">Discover</Link><Link href="/scan">Analyze</Link><Link href="/workspace">Dashboard</Link><Link href="/monitor">Monitor</Link></div><div><strong>Intelligence</strong><Link href="/research">Research</Link><Link href="/metrics">Detection catalog</Link><Link href="/benchmark">Validation</Link><Link href="/scoring">Severity guide</Link></div><div><strong>Trust</strong><Link href="/about">About the product</Link><Link href="/privacy">Data handling</Link><Link href="/settings">Analysis boundaries</Link><Link href="/security">Security</Link></div></div></div>
-        <div className="footerBottom"><span>© 2026 GUARDRAILS</span><span>Ruleset 2026.07.16 · Schema 2.2</span><span>Static analysis · Exact artifacts · Evidence first</span></div>
+        <div className="footerBottom"><span>© GuardRails</span><span>Exact artifacts · Evidence first</span></div>
       </footer>
     </div>
     <Analytics />

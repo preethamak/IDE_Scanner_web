@@ -33,7 +33,7 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
       <div><span>Last release</span><strong>{formatDate(product.extension.last_published_at)}</strong></div>
       <div><span>Deep Scan</span><strong>{latest?.scan_state === "complete" ? "Complete" : "Available on request"}</strong></div>
       <div><span>Analysis coverage</span><strong>{scan ? `${Number(scan.coverage_percent ?? 0)}%` : "Not assessed"}</strong></div>
-      <div><span>Last analyzed</span><strong>{scan ? formatDate(String(scan.scanned_at || "")) : "Not assessed"}</strong></div>
+      <div><span>Report status</span><strong>{scan ? "Available" : "Not assessed"}</strong></div>
     </section>
 
     <nav className="packageTabs" aria-label="Extension profile"><a href="#overview">Overview</a><a href="#versions">Versions <b>{product.versions.length}</b></a>{scan ? <Link href={`/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(version)}`}>Full report</Link> : null}<a href="#trust">Trust</a></nav>

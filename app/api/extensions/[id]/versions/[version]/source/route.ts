@@ -25,7 +25,8 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   const report = scan.canonical_report && typeof scan.canonical_report === "object" ? scan.canonical_report as Record<string, unknown> : {};
   const extensions = report.extensions;
   const details = Array.isArray(extensions) ? extensions : extensions && typeof extensions === "object" ? Object.values(extensions) : [];
-  const detail = details.find((value): value is Record<string, unknown> => Boolean(value) && typeof value === "object") || {};
+  const requestedId = decodeURIComponent(id);
+  const detail = details.find((value): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && (value.extension_id === requestedId || (value.artifact_identity && typeof value.artifact_identity === "object" && (value.artifact_identity as Record<string, unknown>).extension_id === requestedId))) || {};
   const inventory = detail.artifact_inventory && typeof detail.artifact_inventory === "object" ? detail.artifact_inventory as Record<string, unknown> : {};
   const snapshots = Array.isArray(inventory.source_previews) ? inventory.source_previews : [];
   const snapshot = snapshots.find((value): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && value.path === path);

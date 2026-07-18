@@ -154,13 +154,16 @@ export async function getVersionProduct(id: string, version: string): Promise<Re
   if (!versionRow) return null;
   const scanId = versionRow.latest_scan_id;
   if (!scanId) return { version: versionRow, scan: null, findings: [], files: [], dependencies: [] };
-  const [scan, findings, files, dependencies] = await Promise.all([
+  const [scan, findings, files, dependencies, previews] = await Promise.all([
     db.from("scans").select("*").eq("id", scanId).single(),
     db.from("findings").select("*").eq("scan_id", scanId).order("severity"),
     db.from("artifact_files").select("*").eq("scan_id", scanId).order("path").limit(5000),
     db.from("dependencies").select("*").eq("scan_id", scanId).order("relationship").order("name"),
+    db.from("artifact_file_previews").select("path,content_sha256,truncated").eq("scan_id", scanId),
   ]);
-  return { version: versionRow, scan: scan.data, findings: findings.data || [], files: files.data || [], dependencies: dependencies.data || [] };
+  const available = new Map((previews.data || []).map((item) => [String(item.path), item]));
+  const fileRows = (files.data || []).map((item) => ({ ...item, preview_available: available.has(String(item.path)), preview: available.get(String(item.path)) || null }));
+  return { version: versionRow, scan: scan.data, findings: findings.data || [], files: fileRows, dependencies: dependencies.data || [] };
 }
 
 export async function seedExtensionFromRegistry(id: string): Promise<CatalogExtension> {

@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Filter, Search, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, Filter, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { PublicInventory } from "@/lib/productData";
+import ExtensionIcon from "@/app/ExtensionIcon";
 
 const filters = ["all", "critical", "high", "medium", "low", "info"] as const;
 
@@ -15,12 +16,7 @@ export default function InventoryClient({ inventory }: { inventory: PublicInvent
   }), [filter, inventory.items, query]);
   return <>
     <div className="inventoryControls"><label><Search/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search scanned extensions" aria-label="Search scanned extensions"/></label><div role="group" aria-label="Filter public scans by severity">{filters.map((value) => <button type="button" className={filter === value ? "active" : ""} key={value} onClick={() => setFilter(value)}><Filter/>{value === "all" ? "All severities" : value}</button>)}</div></div>
-    <div className="inventoryList" aria-live="polite"><header><span>Extension</span><span>Severity</span><span>Coverage</span><span>Risk</span><span/></header>{rows.map((item) => <article key={item.extension_id}><span className="inventoryIcon">{item.icon_url ? <img src={item.icon_url} alt=""/> : <ShieldCheck/>}</span><div><strong>{item.display_name}</strong><code>{item.extension_id}@{item.version}</code><p>{item.publisher} · {item.description}</p></div><div className="inventoryRiskSignal"><SeverityMeter value={item.risk_score} severity={item.severity}/><b className={`inventorySeverity severity-${item.severity.toLowerCase()}`}>{item.severity === "INFO" ? "Informational" : item.severity}</b></div><strong>{item.coverage_percent}%</strong><strong>{item.risk_score}<small>/100 risk</small></strong><Link href={`/extensions/${encodeURIComponent(item.extension_id)}/versions/${encodeURIComponent(item.version)}`} aria-label={`Open ${item.display_name} report`}><ArrowUpRight/></Link></article>)}</div>
+    <div className="inventoryCards" aria-live="polite">{rows.map((item) => <Link className="inventoryCard" key={item.extension_id} href={`/extensions/${encodeURIComponent(item.extension_id)}/versions/${encodeURIComponent(item.version)}`} aria-label={`Open ${item.display_name} report`}><ExtensionIcon iconUrl={item.icon_url} publisher={item.publisher} name={item.display_name}/><b className={`inventorySeverity severity-${item.severity.toLowerCase()}`}>{item.severity === "INFO" ? "Informational" : item.severity}</b><div><strong>{item.display_name}</strong><code>{item.extension_id}@{item.version}</code><p>{item.description || item.publisher}</p></div><ArrowUpRight/></Link>)}</div>
     {!rows.length ? <div className="inventoryEmpty"><ShieldCheck/><h2>No public scan matches this view.</h2><p>Try another search or outcome filter.</p></div> : null}
   </>;
-}
-
-function SeverityMeter({ value, severity }: { value: number; severity: string }) {
-  const score = Math.max(0, Math.min(100, value)); const angle = -90 + score * 1.8;
-  return <span className={`severityMeter severity-${severity.toLowerCase()}`} aria-label={`${severity} severity, risk ${score} out of 100`}><i/><b style={{ transform: `rotate(${angle}deg)` }}/></span>;
 }
