@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Filter, Search } from "lucide-react";
+import { ArrowUpRight, Filter, Search, ShieldCheck } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { PublicInventory } from "@/lib/productData";
 import ExtensionIcon from "@/app/ExtensionIcon";
