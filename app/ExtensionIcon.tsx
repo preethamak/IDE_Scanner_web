@@ -6,7 +6,7 @@ type Props = {
   iconUrl?: string | null;
   publisher: string;
   name?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "logo";
 };
 
 export default function ExtensionIcon({ iconUrl, publisher, name = "", size = "md" }: Props) {
