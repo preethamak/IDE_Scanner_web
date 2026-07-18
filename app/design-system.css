@@ -179,3 +179,122 @@
 .overviewGauge { display: grid; justify-items: center; padding: var(--sp-4); border: 1px solid var(--line); border-radius: var(--radius-lg); background: linear-gradient(180deg, var(--surface-2), var(--surface)); box-shadow: var(--shadow-sm); }
 @media (max-width: 720px) { .overviewLede { grid-template-columns: 1fr; } }
 .ds-evidence-preview { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--sp-4); align-items: start; }
+
+/* ============================================================================
+   "Why this changed" — plain-language release timeline narrative.
+   ========================================================================== */
+.whyStory { margin-top: var(--sp-5); border: 1px solid var(--line); border-left: 3px solid var(--brand-strong); border-radius: var(--radius); background: linear-gradient(180deg, var(--surface-2), var(--surface)); padding: var(--sp-5); }
+.whyStoryEyebrow { display: inline-flex; align-items: center; gap: 7px; color: var(--brand-ink); font: 800 11px var(--mono); letter-spacing: .04em; }
+.whyStoryEyebrow svg { width: 14px; }
+.whyStory ul { display: grid; gap: var(--sp-3); margin: var(--sp-4) 0 0; padding: 0; list-style: none; }
+.whyLine { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: var(--sp-3); align-items: start; }
+.whyLineIcon { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 999px; }
+.whyLineIcon svg { width: 15px; }
+.whyLine.up .whyLineIcon { background: var(--block-bg); color: var(--block); }
+.whyLine.down .whyLineIcon { background: var(--allow-bg); color: var(--allow); }
+.whyLine.flat .whyLineIcon { background: var(--info-bg); color: var(--info); }
+.whyLine p { margin: 3px 0 0; color: var(--text); font-size: 15px; line-height: 1.5; }
+.whyStoryFoot { margin: var(--sp-4) 0 0; color: var(--muted); font-size: 12px; }
+.whyStoryQuiet { border-left-color: var(--allow-line); }
+.whyStoryQuiet > p { margin: var(--sp-3) 0 0; color: var(--muted); font-size: 15px; }
+
+/* ============================================================================
+   Inventory = Tier 1 overview. A distribution meter + per-card risk bar make it
+   read as a lighter layer that leads into the full Deep Scan report.
+   ========================================================================== */
+.inventoryDistribution { margin: var(--sp-5) 0 var(--sp-4); border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: var(--sp-4) var(--sp-5); box-shadow: var(--shadow-sm); }
+.inventoryDistributionLabel { display: inline-flex; align-items: center; gap: 7px; color: var(--brand-ink); font: 800 11px var(--mono); letter-spacing: .04em; }
+.inventoryDistributionLabel svg { width: 14px; }
+.inventoryDistributionBar { display: flex; overflow: hidden; height: 12px; margin: var(--sp-3) 0; border-radius: 999px; background: var(--surface-3); }
+.inventoryDistributionBar i { height: 100%; }
+.inventoryDistributionKey { display: flex; flex-wrap: wrap; gap: var(--sp-4); }
+.inventoryDistributionKey span { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+.inventoryDistributionKey b { color: var(--text); font-weight: 700; }
+.inventoryDistributionKey i { width: 10px; height: 10px; border-radius: 3px; }
+.dist-allow { background: var(--allow); }
+.dist-review { background: var(--review); }
+.dist-block { background: var(--block); }
+.dist-incomplete { background: var(--info); }
+.inventoryRiskMeter { display: block; overflow: hidden; height: 5px; margin-top: 10px; border-radius: 999px; background: var(--surface-3); }
+.inventoryRiskMeter i { display: block; height: 100%; border-radius: 999px; }
+.inventoryRiskMeter .risk-low { background: var(--allow); }
+.inventoryRiskMeter .risk-mid { background: var(--review); }
+.inventoryRiskMeter .risk-high { background: var(--block); }
+.inventoryCardGo { display: inline-flex; align-items: center; gap: 5px; align-self: end; color: var(--brand-ink); font: 800 10px var(--mono); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+.inventoryCardGo svg { width: 13px; transition: transform .16s ease; }
+.inventoryCard:hover .inventoryCardGo svg { transform: translate(2px, -2px); }
+.inventoryPage .inventoryCard { grid-template-columns: 48px minmax(0, 1fr) auto; }
+
+/* ============================================================================
+   LANDING PAGE ONLY (.productHome) — reskin, same palette.
+   The home markup predates the light theme: it still carries dark-theme text
+   colors (white input text on white, muddy grays) and heavy black shadows that
+   read as "side project". This layer loads last and is scoped to .productHome,
+   so it repairs those without touching any other page. Colors are unchanged —
+   only legibility, depth, motion, and a few non-card effects are added.
+   ========================================================================== */
+
+/* Hero: gradient-mesh field + lime glow behind the headline (not a flat block). */
+.productHome .productHero { position: relative; }
+.productHome .productHero::before {
+  content: ""; position: absolute; inset: -120px 0 auto; height: 620px; z-index: 0;
+  background:
+    radial-gradient(680px 360px at 50% -60px, rgba(201, 255, 69, .22), transparent 70%),
+    radial-gradient(520px 320px at 12% 120px, rgba(23, 79, 134, .07), transparent 70%),
+    radial-gradient(520px 320px at 88% 90px, rgba(201, 255, 69, .12), transparent 70%);
+  pointer-events: none;
+}
+.productHome .productHero > * { position: relative; z-index: 1; }
+.productHome .heroIntro h1 { letter-spacing: -.055em; }
+.productHome .heroIntro > p { color: var(--muted); }
+
+/* Search: the input text was white-on-white; make it legible and lighten shadow. */
+.productHome .productSearch { background: var(--surface); border-color: var(--line-strong); box-shadow: var(--shadow); }
+.productHome .productSearch input { color: var(--text); }
+.productHome .productSearch input::placeholder { color: var(--faint); }
+.productHome .heroFinePrint { color: var(--muted); }
+
+/* Console mock: softer light-theme shadow + subtle hover lift (depth, not a card grid). */
+.productHome .productConsole,
+.productHome .workflowConsole,
+.productHome .monitorConsole,
+.productHome .benchmarkPanel,
+.productHome .vyperReportCard {
+  box-shadow: var(--shadow-lg);
+  transition: transform .3s cubic-bezier(.2, .7, .2, 1), box-shadow .3s ease;
+}
+.productHome .productConsole:hover,
+.productHome .vyperReportCard:hover { transform: translateY(-4px); }
+
+/* Recently-analyzed state dots get a matching glow so status reads at a glance. */
+.productHome .stateDot { box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 14%, transparent); }
+.productHome .stateDot.allow { color: var(--allow); background: var(--allow); }
+.productHome .stateDot.review { color: var(--review); background: var(--review); }
+.productHome .stateDot.block { color: var(--block); background: var(--block); }
+.productHome .stateDot.incomplete { color: var(--info); background: var(--info); }
+
+/* Proof ticker → an actual moving marquee (non-card motion effect). */
+.productHome .proofTicker { position: relative; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.productHome .proofTicker > div { animation: ds-drift 34s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .productHome .proofTicker > div { animation: none; } }
+@keyframes ds-drift { from { transform: translateX(0); } to { transform: translateX(-12px); } }
+.productHome .proofTicker a { transition: transform .16s ease, border-color .16s ease; }
+.productHome .proofTicker a:hover { transform: translateY(-2px); border-color: var(--brand-strong); }
+
+/* Section kickers: lime is decoration only — use legible ink for the small labels. */
+.productHome .productNarrative > header > span,
+.productHome .monitorShowcase > header span,
+.productHome .evidenceCopy > span,
+.productHome .productClosing > span,
+.productHome .systemLabel { color: var(--brand-ink); }
+
+/* Meter fills get a soft lime gradient instead of a flat bar. */
+.productHome .coverageDial i b,
+.productHome .benchmarkPanel article > i b {
+  background: linear-gradient(90deg, var(--brand-strong), var(--brand));
+  border-radius: 999px;
+}
+
+/* Closing band: gentle top gradient so the page resolves instead of stopping dead. */
+.productHome .productClosing { background: linear-gradient(180deg, var(--surface-2), var(--surface)) !important; }
+.productHome .productClosing > div:last-child a { color: var(--brand-ink); }
