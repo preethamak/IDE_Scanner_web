@@ -14,7 +14,14 @@ export async function queueDeepScan(extensionId: string, requestedVersion: strin
 
   const active = await db.from("scan_jobs").select("*").eq("extension_id", extensionId).eq("version", version).eq("profile", "deep").in("status", ["queued", "running"]).maybeSingle();
   if (active.error) throw active.error;
-  if (active.data) return withReportUrl({ ...active.data, deduplicated: true });
+  if (active.data) {
+    // A prior dispatch can be lost or GitHub schedules can be delayed. Do not
+    // leave a deduplicated queued job stranded: a new request is a safe wake-up
+    // signal because workers claim jobs atomically and extra workflows exit on
+    // an empty queue.
+    if (active.data.status === "queued") await dispatchDeepScan();
+    return withReportUrl({ ...active.data, deduplicated: true });
+  }
 
   // A version is not a sufficient cache key. Reusing an older scanner build
   // would silently return a result produced before a precision or coverage fix.
