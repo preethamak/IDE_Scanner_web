@@ -1,11 +1,13 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { AlertTriangle, BadgeCheck, Boxes, ChevronRight, CircleCheck, FileCode2, FileText, Fingerprint, FolderTree, GitCompareArrows, Network, Package, Radar, ShieldCheck, Terminal, UserRound, Waypoints } from "lucide-react";
 import DeepScanButton from "@/app/DeepScanButton";
 import ExtensionIdentity from "@/app/ExtensionIdentity";
 import SeverityGauge from "@/app/SeverityGauge";
 import Markdown from "@/app/Markdown";
+import { benchmarkValidation } from "@/lib/benchmarkLookup";
 
 type RecordValue = Record<string, unknown>;
 type Section = "overview" | "readme" | "changes" | "alerts" | "capabilities" | "dependencies" | "files" | "versions" | "publisher" | "provenance" | "coverage" | "raw";
@@ -22,6 +24,7 @@ export default function ExtensionDossier({ id, version, extension, versions, sca
   const grouped = useMemo(() => groupFindings(findings), [findings]);
   const actionableGroups = grouped.filter((group) => group.actionability !== "contextual");
   const contextualGroups = grouped.filter((group) => group.actionability === "contextual");
+  const validation = benchmarkValidation(id, version, String(scan.artifact_sha256 || ""));
   const badgeCount = (section: Section) => section === "alerts" ? actionableGroups.length : section === "capabilities" ? Object.keys(capabilities).length : section === "dependencies" ? dependencies.length : section === "files" ? files.length : section === "versions" ? versions.length : 0;
   useEffect(() => {
     const selectHash = () => {
@@ -37,6 +40,7 @@ export default function ExtensionDossier({ id, version, extension, versions, sca
       <ExtensionIdentity size="lg" eyebrow="Exact artifact intelligence" id={id} version={version} name={String(extension.display_name || id)} iconUrl={String(extension.icon_url || "")} publisher={String(extension.publisher || "")} verified={Boolean(extension.publisher_verified)}/>
       <div className={`dossierDecision ${decision}`}><span>Security outcome</span><strong>{decisionLabel(decision)}</strong><p>{String(scan.decision_reason || decisionExplanation(decision))}</p><small>{Number(scan.coverage_percent || 0)}% analysis coverage · exact version only</small><DeepScanButton extensionId={id} version={version} showReportLink={false}/></div>
     </header>
+    {validation ? <Link className="dossierValidated" href="/benchmark"><span className="dossierValidatedMark"><BadgeCheck aria-hidden="true"/></span><div><span>Independently validated · frozen benchmark {validation.publishedAt}</span><strong>This exact artifact is in the GuardRails regression corpus.</strong><p>Hash-pinned as a {validation.classification.replaceAll("-", " ")} case. First pass routed <b>{validation.firstDecision}</b>; final regression settled <b>{validation.finalDecision}</b>. The SHA-256 on this report matches the frozen row.</p></div><ChevronRight aria-hidden="true"/></Link> : null}
     <div className="dossierMeta"><span>{String(extension.publisher || "Not reported")}</span><span>{String(extension.registry || "Registry not reported")}</span><span>Artifact <code>{String(scan.artifact_sha256 || "unavailable").slice(0, 16)}</code></span></div>
     <div className="dossierLayout">
       <aside className="dossierRail" aria-label="Extension intelligence sections"><strong>Extension intelligence</strong>{sections.map(({ id: section, label, icon: Icon }) => <a key={section} href={`#${section}`} className={active === section ? "active" : ""} aria-current={active === section ? "page" : undefined} title={label} onClick={() => setActive(section)}><Icon aria-hidden="true"/><span>{label}</span>{badgeCount(section) ? <b>{badgeCount(section)}</b> : null}</a>)}</aside>

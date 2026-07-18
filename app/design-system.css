@@ -173,6 +173,21 @@
 .ds-readme { margin-top: var(--sp-5); }
 
 /* ============================================================================
+   Independently-validated banner — shown when the exact artifact is in the
+   frozen benchmark corpus. Links the live report to the regression evidence.
+   ========================================================================== */
+.dossierValidated { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--sp-4); align-items: center; margin-top: var(--sp-4); padding: var(--sp-4) var(--sp-5); border: 1px solid var(--line); border-left: 3px solid var(--brand-strong); border-radius: var(--radius-lg); background: linear-gradient(120deg, color-mix(in srgb, var(--brand) 12%, var(--surface)), var(--surface)); box-shadow: var(--shadow-sm); text-decoration: none; color: inherit; transition: box-shadow .18s ease, transform .18s ease; }
+.dossierValidated:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+.dossierValidatedMark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: color-mix(in srgb, var(--brand) 20%, transparent); color: var(--brand-ink); }
+.dossierValidatedMark svg { width: 22px; }
+.dossierValidated > div span { display: block; color: var(--brand-ink); font: 800 11px var(--mono); letter-spacing: .04em; text-transform: uppercase; }
+.dossierValidated > div strong { display: block; margin-top: 3px; color: var(--text); font-size: 15px; }
+.dossierValidated > div p { margin: 4px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.dossierValidated > div p b { color: var(--text); font-weight: 700; text-transform: uppercase; font-size: 12px; }
+.dossierValidated > svg { width: 18px; color: var(--faint); }
+@media (max-width: 720px) { .dossierValidated { grid-template-columns: auto minmax(0, 1fr); } .dossierValidated > svg { display: none; } }
+
+/* ============================================================================
    Deep Scan overview — gauge leads, supporting stats beside it.
    ========================================================================== */
 .overviewLede { display: grid; grid-template-columns: minmax(220px, 260px) minmax(0, 1fr); gap: var(--sp-5); align-items: center; margin-top: var(--sp-5); }
