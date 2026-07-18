@@ -31,7 +31,7 @@ export default function ExtensionDossier({ id, version, extension, versions, sca
   }, []);
   return <main className="dossierPage">
     <header className="dossierMast">
-      <div className="dossierIdentity"><ArtifactIcon url={String(extension.icon_url || "")} publisher={String(extension.publisher || "")}/><div><span>Exact artifact intelligence</span><h1>{String(extension.display_name || id)}</h1><code>{id}@{version}</code></div></div>
+      <div className="dossierIdentity"><ArtifactIcon url={String(extension.icon_url || "")} publisher={String(extension.publisher || "")}/><div><span>Exact artifact intelligence</span><h1>{String(extension.display_name || id)}{extension.publisher_verified ? <BadgeCheck aria-label="Verified Marketplace publisher"/> : null}</h1><code>{id}@{version}</code></div></div>
       <div className={`dossierDecision ${decision}`}><span>Security outcome</span><strong>{decisionLabel(decision)}</strong><p>{String(scan.decision_reason || decisionExplanation(decision))}</p><small>{Number(scan.coverage_percent || 0)}% analysis coverage · exact version only</small><DeepScanButton extensionId={id} version={version} showReportLink={false}/></div>
     </header>
     <div className="dossierMeta"><span>{String(extension.publisher || "Not reported")}</span><span>{String(extension.registry || "Registry not reported")}</span><span>Artifact <code>{String(scan.artifact_sha256 || "unavailable").slice(0, 16)}</code></span></div>

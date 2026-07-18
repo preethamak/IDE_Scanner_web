@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Search } from "lucide-react";
+import { ArrowRight, BadgeCheck, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import ExtensionIcon from "@/app/ExtensionIcon";
 import type { DiscoveryResponse, DiscoveryResult } from "@/lib/types";
@@ -50,5 +50,5 @@ export default function ExtensionSearch({ initialQuery = "", onSelect, submitLab
 }
 
 function ResultGroup({ label, items, action }: { label: string; items: DiscoveryResult[]; action: (item: DiscoveryResult) => React.ReactNode }) {
-  return <section className="discoveryGroup"><span>{label}</span>{items.slice(0, 8).map((item) => <article key={`${item.registry}-${item.extension_id}`}><ExtensionIcon iconUrl={item.icon_url} publisher={item.publisher} name={item.display_name}/><div><strong>{item.display_name}</strong><code>{item.extension_id} · {item.version}</code><small>{item.registry === "openvsx" ? "Open VSX" : "VS Marketplace"} · {item.match_reason.replaceAll("_", " ")}</small></div>{action(item)}</article>)}</section>;
+  return <section className="discoveryGroup"><span>{label}</span>{items.slice(0, 8).map((item) => <article key={`${item.registry}-${item.extension_id}`}><ExtensionIcon iconUrl={item.icon_url} publisher={item.publisher} name={item.display_name}/><div><strong>{item.display_name}{item.publisher_verified ? <BadgeCheck aria-label="Verified Marketplace publisher"/> : null}</strong><code>{item.extension_id} · {item.version}</code><small>{item.registry === "openvsx" ? "Open VSX" : "VS Marketplace"} · {item.match_reason.replaceAll("_", " ")}</small></div>{action(item)}</article>)}</section>;
 }

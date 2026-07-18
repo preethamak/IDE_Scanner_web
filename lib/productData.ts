@@ -25,7 +25,7 @@ export type CatalogExtension = {
 };
 
 export type PublicSecurityFeedItem = { extension_id: string; version: string; display_name: string; severity: string; decision: string; scanned_at: string; coverage_percent: number; decision_reason: string };
-export type PublicInventoryItem = PublicSecurityFeedItem & { publisher: string; description: string; icon_url: string; risk_score: number; malware_score: number; artifact_sha256: string };
+export type PublicInventoryItem = PublicSecurityFeedItem & { publisher: string; publisher_verified: boolean; description: string; icon_url: string; risk_score: number; malware_score: number; artifact_sha256: string };
 export type PublicInventory = { items: PublicInventoryItem[]; totals: { extensions: number; releases: number; complete: number; review: number; blocked: number; lastScannedAt: string | null } };
 
 export async function getPublicSecurityFeed(limit = 6): Promise<PublicSecurityFeedItem[]> {
@@ -48,6 +48,10 @@ export async function getPublicInventory(limit = 240): Promise<PublicInventory> 
   // prevents a partially populated operational database from presenting stale
   // or different extension results to different visitors.
   const publishedAt = `${websiteBenchmark.publishedAt}T00:00:00.000Z`;
+  const db = publicDb();
+  const ids = benchmarkRows.slice(0, limit).map((row) => row.id);
+  const { data: stored } = db ? await db.from("extensions").select("id,icon_url,publisher_verified").in("id", ids) : { data: [] as Array<{ id: string; icon_url: string | null; publisher_verified: boolean | null }> };
+  const metadata = new Map((stored || []).map((item) => [String(item.id), item]));
   const items: PublicInventoryItem[] = benchmarkRows.slice(0, limit).map((row) => ({
     extension_id: row.id,
     version: row.version,
@@ -55,7 +59,8 @@ export async function getPublicInventory(limit = 240): Promise<PublicInventory> 
     display_name: displayNameForExtension(row.id),
     publisher: row.id.split(".")[0],
     description: `${row.classification.replaceAll("-", " ")} · final regression result`,
-    icon_url: "",
+    icon_url: String(metadata.get(row.id)?.icon_url || marketplaceIcon(row.id, row.version)),
+    publisher_verified: Boolean(metadata.get(row.id)?.publisher_verified || verifiedPublisher(row.id)),
     severity: row.final_severity,
     decision: row.final_decision,
     scanned_at: publishedAt,
@@ -65,6 +70,15 @@ export async function getPublicInventory(limit = 240): Promise<PublicInventory> 
     malware_score: row.malware,
   }));
   return { items, totals: { extensions: items.length, releases: items.length, complete: items.filter((item) => item.decision !== "incomplete").length, review: items.filter((item) => item.decision === "review").length, blocked: items.filter((item) => item.decision === "block").length, lastScannedAt: publishedAt } };
+}
+
+function marketplaceIcon(id: string, version: string) {
+  const [publisher, ...name] = id.split(".");
+  return `https://${encodeURIComponent(publisher)}.gallery.vsassets.io/_apis/public/gallery/publisher/${encodeURIComponent(publisher)}/extension/${encodeURIComponent(name.join("."))}/${encodeURIComponent(version)}/assetbyname/Microsoft.VisualStudio.Services.Icons.Default`;
+}
+
+function verifiedPublisher(id: string) {
+  return new Set(["GitHub", "ms-vscode", "ms-vscode-remote", "ms-azuretools", "ms-kubernetes-tools", "ms-python", "amazonwebservices", "aquasecurityofficial", "SonarSource", "redhat", "golang"]).has(id.split(".")[0]);
 }
 
 function displayNameForExtension(id: string): string {
