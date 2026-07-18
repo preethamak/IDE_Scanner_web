@@ -58,6 +58,19 @@ const combined = [...marketplace, ...openVsx];
 const unique = new Map(); for (const item of combined.sort((a, b) => b.installs - a.installs)) if (!unique.has(item.id.toLowerCase())) unique.set(item.id.toLowerCase(), item);
 const cohort = [...unique.values()].slice(0, 250).map((item, index) => ({ ...item, catalog_rank: index + 1 }));
 
+// Watched extensions outside the top cohort must still be refreshed. Otherwise a
+// user can watch a long-tail extension that is never version-detected, scanned, or
+// alerted — the watchlist would silently produce nothing.
+const cohortIds = new Set(cohort.map((item) => item.id.toLowerCase()));
+const watchedRows = await db.from("watchlist_items").select("extension_id");
+if (watchedRows.error) throw watchedRows.error;
+const watchedIds = [...new Set((watchedRows.data || []).map((item) => String(item.extension_id || "")).filter(Boolean))].filter((id) => !cohortIds.has(id.toLowerCase()));
+for (const batch of chunks(watchedIds, 200)) {
+  const result = await db.from("extensions").select("id,name,display_name,publisher,description,registry,publisher_verified,installs,rating,icon_url,last_published_at,catalog_rank").in("id", batch);
+  if (result.error) throw result.error;
+  for (const row of result.data || []) cohort.push({ ...row, registry: row.registry || "vs-marketplace", catalog_rank: row.catalog_rank ?? null });
+}
+
 const refreshRows = ["vs-marketplace", "openvsx"].map((registry) => ({ registry, status: "running", started_at: refreshStartedAt }));
 await db.from("registry_refreshes").insert(refreshRows);
 const refreshIds = new Map();
