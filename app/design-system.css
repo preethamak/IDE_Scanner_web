@@ -225,6 +225,12 @@
 .inventoryCard:hover .inventoryCardGo svg { transform: translate(2px, -2px); }
 .inventoryPage .inventoryCard { grid-template-columns: 48px minmax(0, 1fr) auto; }
 
+/* ExtensionIcon `logo` size — matches the legacy .extensionLogo (monitor/workspace
+   lists) so those can adopt the shared component and its onError→initials fallback. */
+.extensionIcon-logo { width: 40px; height: 40px; border-radius: 9px; font-size: 10px; }
+/* When .alertExtensionIcon just wraps a shared ExtensionIcon, drop its own chrome. */
+.monitorAlert .alertExtensionIcon { display: contents; border: 0; background: none; }
+
 /* ============================================================================
    LANDING PAGE ONLY (.productHome) — reskin, same palette.
    The home markup predates the light theme: it still carries dark-theme text
