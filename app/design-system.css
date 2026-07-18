@@ -1,0 +1,181 @@
+/* ============================================================================
+   GuardRails design system — SINGLE SOURCE OF TRUTH
+   ----------------------------------------------------------------------------
+   This file is loaded LAST. Because CSS custom properties resolve at use-time,
+   defining the canonical palette here propagates it everywhere without needing
+   to unwind the legacy `!important` layers in globals/guardrails/visual-refresh.
+
+   Rules of the road (do not reintroduce the old chaos):
+   - Change a color ONCE, here. Never redefine --brand/--text/etc. elsewhere.
+   - Lime (--brand) is decoration only. It NEVER carries text on white.
+     Text links / kickers use --brand-ink (dark, AA-legible on white).
+   - New components live under their own class names so nothing else fights them.
+   ========================================================================== */
+
+:root {
+  /* Brand + surfaces (canonical — matches the shipped light theme) */
+  --brand: #c9ff45;          /* acid lime — decoration, fills, meters only */
+  --brand-strong: #b4ec2d;   /* lime border/hover */
+  --brand-soft: #efffd0;      /* lime tint background */
+  --brand-ink: #5d7800;       /* legible lime-family ink for text on white */
+
+  --text: #14202b;
+  --ink: #14202b;
+  --ink-2: #33414d;
+  --muted: #516273;
+  --faint: #75818c;
+
+  --surface: #ffffff;
+  --surface-2: #f6f8fa;
+  --surface-3: #edf2f5;
+  --line: #d9e0e5;
+  --line-strong: #bdc9d2;
+
+  /* Semantic status (verdict / severity) — bands are AA on their tint */
+  --allow: #1f8a4c;   --allow-bg: #e3f6ea;   --allow-line: #a6dcb9;
+  --review: #9a6512;  --review-bg: #fff2d6;  --review-line: #e6c98a;
+  --block: #b4373d;   --block-bg: #fde3e4;   --block-line: #eaa9ad;
+  --info: #516273;    --info-bg: #eef2f5;    --info-line: #cdd7de;
+  --violet: #67519b;  --violet-bg: #ece7f6;
+
+  /* Type + spacing scale */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px;
+  --radius-sm: 7px; --radius: 12px; --radius-lg: 16px;
+  --shadow-sm: 0 2px 8px rgba(20, 32, 43, .06);
+  --shadow: 0 16px 32px rgba(20, 32, 43, .10);
+  --shadow-lg: 0 24px 64px rgba(20, 32, 43, .12);
+}
+
+/* ============================================================================
+   Card — the reusable surface primitive (replaces ad-hoc row layouts)
+   ========================================================================== */
+.ds-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: var(--sp-5);
+  box-shadow: var(--shadow-sm);
+}
+.ds-card-hover { transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease; }
+.ds-card-hover:hover { transform: translateY(-3px); border-color: var(--brand-strong); box-shadow: var(--shadow); }
+.ds-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--sp-4); }
+
+/* ============================================================================
+   Extension identity — ONE canonical icon + name + version + verified badge.
+   Every page renders identity through <ExtensionIdentity/> which emits these.
+   ========================================================================== */
+.xid { display: flex; align-items: center; gap: var(--sp-4); min-width: 0; }
+.xid-icon {
+  position: relative; display: grid; place-items: center; flex: 0 0 auto;
+  overflow: hidden; border: 1px solid var(--line-strong); border-radius: 10px;
+  background: var(--surface); color: var(--brand-ink);
+  font: 800 14px var(--mono); text-transform: uppercase;
+}
+.xid-icon img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: var(--surface); }
+.xid-sm .xid-icon { width: 38px; height: 38px; font-size: 11px; border-radius: 8px; }
+.xid-md .xid-icon { width: 48px; height: 48px; font-size: 13px; }
+.xid-lg .xid-icon { width: 64px; height: 64px; font-size: 17px; border-radius: 12px; }
+.xid-body { display: grid; min-width: 0; gap: 3px; }
+.xid-eyebrow { color: var(--brand-ink); font: 800 10px var(--mono); letter-spacing: .04em; text-transform: uppercase; }
+.xid-name { display: flex; align-items: center; gap: 7px; min-width: 0; margin: 0; font-family: var(--sans); font-weight: 750; letter-spacing: 0; color: var(--text); }
+.xid-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.xid-sm .xid-name { font-size: 15px; }
+.xid-md .xid-name { font-size: 20px; }
+.xid-lg .xid-name { font-size: 34px; }
+.xid-verified { flex: 0 0 auto; width: 1em; height: 1em; color: #1685d1; fill: #e9f7ff; stroke-width: 2.6; }
+.xid-id { overflow: hidden; color: var(--muted); font: 11px/1.4 var(--mono); text-overflow: ellipsis; white-space: nowrap; }
+.xid-id b { color: var(--ink-2); font-weight: 700; }
+
+/* ============================================================================
+   Severity / risk gauge — armor1.ai-style speedometer.
+   Semicircular arc, colored zones, a needle, a numeric band underneath.
+   ========================================================================== */
+.gauge { display: grid; justify-items: center; gap: var(--sp-3); }
+.gauge-dial { position: relative; width: var(--gauge-size, 180px); height: calc(var(--gauge-size, 180px) / 2 + 14px); }
+.gauge-dial svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.gauge-track { fill: none; stroke: var(--surface-3); stroke-linecap: round; }
+.gauge-zone { fill: none; stroke-linecap: butt; opacity: .9; }
+.gauge-zone-low { stroke: var(--allow); }
+.gauge-zone-mid { stroke: var(--review); }
+.gauge-zone-high { stroke: var(--block); }
+.gauge-needle { stroke: var(--text); stroke-width: 3; stroke-linecap: round; }
+.gauge-hub { fill: var(--text); }
+.gauge-readout { position: absolute; inset: auto 0 0; display: grid; justify-items: center; gap: 2px; text-align: center; }
+.gauge-value { font: 800 30px var(--mono); line-height: 1; color: var(--text); }
+.gauge-value small { font-size: 14px; color: var(--faint); }
+.gauge-band { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 11px; font: 800 10px var(--mono); letter-spacing: .05em; text-transform: uppercase; }
+.gauge-band.low { background: var(--allow-bg); color: var(--allow); }
+.gauge-band.mid { background: var(--review-bg); color: var(--review); }
+.gauge-band.high { background: var(--block-bg); color: var(--block); }
+.gauge-band.info { background: var(--info-bg); color: var(--info); }
+.gauge-caption { max-width: 220px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; text-align: center; }
+
+/* Compact inline meter (registry rows / cards) reuses the zone colors */
+.gauge-mini { position: relative; display: inline-block; width: 42px; height: 23px; }
+.gauge-mini svg { width: 100%; height: 100%; overflow: visible; }
+
+/* ============================================================================
+   Verdict + severity pills — fixed sizing so they can NEVER overlap a title.
+   ========================================================================== */
+.ds-pill { display: inline-flex; align-items: center; gap: 6px; width: fit-content; border-radius: 999px; padding: 5px 10px; font: 800 10px var(--mono); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+.ds-pill.allow, .ds-pill.low { background: var(--allow-bg); color: var(--allow); }
+.ds-pill.review, .ds-pill.medium, .ds-pill.incomplete { background: var(--review-bg); color: var(--review); }
+.ds-pill.block, .ds-pill.critical, .ds-pill.high { background: var(--block-bg); color: var(--block); }
+.ds-pill.info, .ds-pill.informational { background: var(--info-bg); color: var(--info); }
+
+/* ============================================================================
+   Evidence row — severity pill is a FIXED grid column, so it can never
+   render on top of the finding title (the reported deep-scan bug).
+   ========================================================================== */
+.ds-evidence { margin-top: var(--sp-5); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.ds-evidence details + details { border-top: 1px solid var(--line); }
+.ds-evidence summary {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr) 20px; gap: var(--sp-4);
+  align-items: start; list-style: none; cursor: pointer; padding: var(--sp-4) var(--sp-5);
+}
+.ds-evidence summary::-webkit-details-marker { display: none; }
+.ds-evidence summary:hover { background: var(--surface-2); }
+.ds-evidence .ds-pill { grid-column: 1; justify-self: start; margin-top: 1px; padding: 5px 6px; }
+.ds-evidence-body { grid-column: 2; min-width: 0; }
+.ds-evidence-body strong { display: block; color: var(--text); font-size: 15px; font-weight: 700; line-height: 1.4; }
+.ds-evidence-body p { margin: 5px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.ds-evidence-body code { display: block; margin-top: 7px; overflow-wrap: anywhere; color: var(--faint); font: 11px var(--mono); }
+.ds-evidence-chevron { grid-column: 3; width: 18px; color: var(--brand-ink); transition: transform .15s ease; }
+.ds-evidence details[open] .ds-evidence-chevron { transform: rotate(90deg); }
+.ds-evidence-locations { padding: 0 var(--sp-5) var(--sp-4) 60px; }
+.ds-evidence-locations p { margin: 0 0 8px; color: var(--muted); font-size: 13px; }
+.ds-evidence-locations code { display: block; margin-top: 6px; overflow-wrap: anywhere; color: var(--brand-ink); font: 12px var(--mono); }
+
+/* ============================================================================
+   Rendered README / markdown
+   ========================================================================== */
+.ds-markdown { max-width: 760px; color: var(--ink-2); font-size: 15px; line-height: 1.7; }
+.ds-markdown > :first-child { margin-top: 0; }
+.ds-markdown h1, .ds-markdown h2, .ds-markdown h3 { margin: 1.6em 0 .5em; font-family: var(--sans); color: var(--text); line-height: 1.25; }
+.ds-markdown h1 { font-size: 28px; }
+.ds-markdown h2 { font-size: 22px; padding-bottom: .3em; border-bottom: 1px solid var(--line); }
+.ds-markdown h3 { font-size: 17px; }
+.ds-markdown p { color: var(--ink-2); }
+.ds-markdown a { color: var(--brand-ink); font-weight: 650; text-decoration: underline; text-underline-offset: 2px; }
+.ds-markdown code { background: var(--surface-3); padding: 2px 5px; border-radius: 4px; font-size: .88em; }
+.ds-markdown pre { overflow: auto; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); padding: var(--sp-4); }
+.ds-markdown pre code { background: none; padding: 0; }
+.ds-markdown ul, .ds-markdown ol { padding-left: 1.4em; }
+.ds-markdown li { margin: .3em 0; }
+.ds-markdown img { max-width: 100%; height: auto; border-radius: var(--radius-sm); }
+.ds-markdown blockquote { margin: 1em 0; border-left: 3px solid var(--brand-strong); padding-left: var(--sp-4); color: var(--muted); }
+.ds-markdown table { border-collapse: collapse; width: 100%; font-size: 14px; }
+.ds-markdown th, .ds-markdown td { border: 1px solid var(--line); padding: 8px 11px; text-align: left; }
+.ds-markdown th { background: var(--surface-2); }
+.ds-markdown hr { border: 0; border-top: 1px solid var(--line); margin: 1.6em 0; }
+.ds-readme-empty { display: grid; justify-items: center; gap: 10px; min-height: 180px; place-content: center; border: 1px dashed var(--line-strong); border-radius: var(--radius); color: var(--muted); text-align: center; }
+.ds-readme-empty svg { width: 26px; color: var(--faint); }
+.ds-readme { margin-top: var(--sp-5); }
+
+/* ============================================================================
+   Deep Scan overview — gauge leads, supporting stats beside it.
+   ========================================================================== */
+.overviewLede { display: grid; grid-template-columns: minmax(220px, 260px) minmax(0, 1fr); gap: var(--sp-5); align-items: center; margin-top: var(--sp-5); }
+.overviewGauge { display: grid; justify-items: center; padding: var(--sp-4); border: 1px solid var(--line); border-radius: var(--radius-lg); background: linear-gradient(180deg, var(--surface-2), var(--surface)); box-shadow: var(--shadow-sm); }
+@media (max-width: 720px) { .overviewLede { grid-template-columns: 1fr; } }
+.ds-evidence-preview { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--sp-4); align-items: start; }
