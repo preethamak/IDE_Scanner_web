@@ -7,6 +7,7 @@ import SiteNav from "./SiteNav";
 import HeaderAccount from "./HeaderAccount";
 import BrandMark from "./BrandMark";
 import "./globals.css";
+import "./guardrails.css";
 import "./visual-refresh.css";
 
 const instrument = Instrument_Sans({ subsets: ["latin"], variable: "--font-sans" });
