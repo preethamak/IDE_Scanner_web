@@ -34,13 +34,27 @@ export default function DeepScanButton({ extensionId, version, showReportLink = 
 
   useEffect(() => {
     if (!jobId || !["queued", "running"].includes(state)) return;
+    const startedAt = Date.now();
     const timer = window.setInterval(async () => {
-      const response = await fetch(`/api/deep-scans/${jobId}`, { cache: "no-store" });
-      const body = await response.json();
+      let response: Response;
+      let body: { status?: string; report_url?: string; error?: string };
+      try {
+        response = await fetch(`/api/deep-scans/${jobId}`, { cache: "no-store" });
+        body = await response.json();
+      } catch { return; } // transient network blip: keep polling, the server reconciles stale jobs to a terminal state
       if (!response.ok) { setState("error"); setMessage(body.error || "Scan progress is unavailable."); window.clearInterval(timer); return; }
-      if (["complete", "incomplete"].includes(body.status)) { setState("complete"); setReportUrl(String(body.report_url || `/extensions/${encodeURIComponent(extensionId)}/versions/${encodeURIComponent(version)}`)); setMessage("Deep Scan complete. Exact-version intelligence is ready."); window.clearInterval(timer); router.refresh(); }
+      if (["complete", "incomplete"].includes(String(body.status))) { setState("complete"); setReportUrl(String(body.report_url || `/extensions/${encodeURIComponent(extensionId)}/versions/${encodeURIComponent(version)}`)); setMessage("Deep Scan complete. Exact-version intelligence is ready."); window.clearInterval(timer); router.refresh(); }
       else if (body.status === "failed") { setState("error"); setMessage(body.error || "Deep Scan failed. Retry when the runner is available."); window.clearInterval(timer); }
-      else { setState(body.status === "running" ? "running" : "queued"); }
+      else {
+        const nextState = body.status === "running" ? "running" : "queued";
+        setState(nextState);
+        // The runner is best-effort and can take a few minutes to start. Reassure
+        // the user instead of leaving a silent spinner; the poll still resolves to
+        // a terminal state on its own once the job passes its deadline.
+        const waited = Date.now() - startedAt;
+        if (waited > 120_000) setMessage(nextState === "running" ? "Still analyzing the exact artifact — larger extensions take a few minutes." : "Waiting for an available runner. This resolves automatically; you can safely leave this page.");
+        else setMessage(nextState === "running" ? "Analyzers are inspecting the exact artifact." : "Starting the isolated analysis runner…");
+      }
     }, 5000);
     return () => window.clearInterval(timer);
   }, [jobId, state, router, extensionId, version]);
