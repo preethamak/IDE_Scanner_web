@@ -10,6 +10,7 @@ import "./globals.css";
 import "./guardrails.css";
 import "./visual-refresh.css";
 import "./design-system.css";
+import "./landing.css";
 
 const instrument = Instrument_Sans({ subsets: ["latin"], variable: "--font-sans" });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
