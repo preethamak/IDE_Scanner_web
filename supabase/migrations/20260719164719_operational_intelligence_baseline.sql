@@ -1,0 +1,7 @@
+-- Migration-history baseline only.
+--
+-- The original operational-intelligence schema was applied before the repository
+-- adopted timestamped migration files. Its complete, idempotent replacement is
+-- 20260716181302_reconcile_operational_intelligence.sql, which runs earlier in
+-- fresh databases. Production was verified to contain every legacy object before
+-- this baseline version was recorded as applied.

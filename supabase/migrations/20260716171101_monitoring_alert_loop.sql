@@ -20,7 +20,6 @@ create table public.monitoring_alerts (
   resolved_at timestamptz,
   unique(owner_id, dedupe_key)
 );
-
 create table public.monitoring_preferences (
   owner_id uuid primary key references auth.users(id) on delete cascade,
   in_app_enabled boolean not null default true,
@@ -31,21 +30,16 @@ create table public.monitoring_preferences (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 create index monitoring_alerts_owner_state_created on public.monitoring_alerts(owner_id, state, created_at desc);
 create index monitoring_alerts_extension_version on public.monitoring_alerts(extension_id, version, created_at desc);
-
 alter table public.monitoring_alerts enable row level security;
 alter table public.monitoring_preferences enable row level security;
-
 create policy "own monitoring alerts" on public.monitoring_alerts
   for all using (owner_id = auth.uid()) with check (owner_id = auth.uid());
 create policy "own monitoring preferences" on public.monitoring_preferences
   for all using (owner_id = auth.uid()) with check (owner_id = auth.uid());
-
 grant select, insert, update, delete on public.monitoring_alerts to authenticated;
 grant select, insert, update, delete on public.monitoring_preferences to authenticated;
-
 create or replace function public.create_scan_monitoring_alert()
 returns trigger
 language plpgsql
@@ -98,12 +92,10 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists scan_monitoring_alert on public.scans;
 create trigger scan_monitoring_alert
   after insert on public.scans
   for each row execute function public.create_scan_monitoring_alert();
-
 create or replace function public.initialize_monitoring_preferences()
 returns trigger
 language plpgsql
@@ -115,11 +107,9 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists monitoring_preferences_on_new_user on auth.users;
 create trigger monitoring_preferences_on_new_user
   after insert on auth.users
   for each row execute function public.initialize_monitoring_preferences();
-
 insert into public.monitoring_preferences(owner_id)
 select id from auth.users on conflict (owner_id) do nothing;

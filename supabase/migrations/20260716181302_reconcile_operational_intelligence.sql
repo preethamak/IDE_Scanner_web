@@ -4,17 +4,14 @@
 alter table public.extension_versions
   add column if not exists discovered_at timestamptz,
   add column if not exists last_seen_at timestamptz;
-
 update public.extension_versions
 set discovered_at = coalesce(discovered_at, published_at, now()),
     last_seen_at = coalesce(last_seen_at, published_at, now())
 where discovered_at is null or last_seen_at is null;
-
 alter table public.scan_jobs
   add column if not exists scan_purpose text not null default 'public_intelligence';
 alter table public.scans
   add column if not exists scan_purpose text not null default 'public_intelligence';
-
 do $$ begin
   alter table public.scan_jobs add constraint scan_jobs_purpose_check
     check (scan_purpose in ('public_intelligence','user_request','benchmark','development'));
@@ -23,7 +20,6 @@ do $$ begin
   alter table public.scans add constraint scans_purpose_check
     check (scan_purpose in ('public_intelligence','user_request','benchmark','development'));
 exception when duplicate_object then null; end $$;
-
 create table if not exists public.registry_refreshes (
   id uuid primary key default gen_random_uuid(),
   registry text not null check (registry in ('vs-marketplace','openvsx')),
@@ -40,11 +36,9 @@ drop policy if exists "public registry refresh status" on public.registry_refres
 create policy "public registry refresh status" on public.registry_refreshes for select to anon, authenticated using (true);
 grant select on public.registry_refreshes to anon, authenticated;
 grant all on public.registry_refreshes to service_role;
-
 create index if not exists extension_versions_discovered_at on public.extension_versions(discovered_at desc);
 create index if not exists scans_operational_metrics on public.scans(scan_purpose, scanned_at desc, decision, severity);
 create index if not exists registry_refreshes_latest on public.registry_refreshes(registry, completed_at desc);
-
 create or replace function public.public_intelligence_metrics()
 returns table (
   indexed_extensions bigint, exact_releases_indexed bigint,

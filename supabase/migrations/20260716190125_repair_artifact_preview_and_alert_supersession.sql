@@ -13,7 +13,6 @@ set download_url = case
 end
 from public.extensions e
 where e.id = v.extension_id and coalesce(v.download_url, '') = '';
-
 -- Only the newest scan alert for one exact release is actionable. Older
 -- results remain auditable but leave the active queue after a rescan.
 with ranked as (
@@ -30,7 +29,6 @@ set state = 'dismissed', resolved_at = coalesce(a.resolved_at, now()),
     metadata = a.metadata || jsonb_build_object('superseded', true)
 from ranked r
 where a.id = r.id and r.position > 1;
-
 create or replace function public.create_scan_monitoring_alert()
 returns trigger
 language plpgsql

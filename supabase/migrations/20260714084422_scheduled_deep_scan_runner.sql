@@ -101,4 +101,4 @@ where version.scan_state in ('queued', 'running')
     where job.extension_id = version.extension_id
       and job.version = version.version
       and job.status in ('queued', 'running')
-  );
+  );;
