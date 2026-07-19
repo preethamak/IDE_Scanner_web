@@ -1,3 +1,3 @@
 import { redirect } from "next/navigation";
 
-export default function InventoryAlias() { redirect("/catalog"); }
+export default function InventoryAlias() { redirect("/public-scan"); }
