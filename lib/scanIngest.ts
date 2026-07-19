@@ -78,8 +78,9 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
   const versionUpdate = await db.from("extension_versions").update({ artifact_sha256: artifactSha, latest_scan_id: scanId, scan_state: scanRow.decision === "incomplete" ? "incomplete" : "complete" }).eq("extension_id", extensionId).eq("version", version);
   if (versionUpdate.error) throw versionUpdate.error;
   await Promise.all([
-    db.from("scan_jobs").update({ status: scanRow.decision === "incomplete" ? "incomplete" : "complete", ruleset_version: scanRow.ruleset_version, completed_at: completedAt, lease_expires_at: null }).eq("id", jobId),
+    db.from("scan_jobs").update({ status: scanRow.decision === "incomplete" ? "incomplete" : "complete", lifecycle_stage: "completed", ruleset_version: scanRow.ruleset_version, callback_error: null, completed_at: completedAt, lease_expires_at: null, updated_at: completedAt, last_event_at: completedAt }).eq("id", jobId),
     db.from("scan_runner_status").upsert({ id: "github-actions", last_seen_at: completedAt, last_success_at: completedAt, last_error: null }, { onConflict: "id" }),
+    db.from("scan_job_events").insert({ job_id: jobId, stage: "completed", event_type: "report_published", detail: { scan_id: scanId, decision: scanRow.decision } }),
   ]);
   return scanId;
 

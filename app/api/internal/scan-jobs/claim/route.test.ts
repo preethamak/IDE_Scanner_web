@@ -26,5 +26,19 @@ describe("scan claim endpoint", () => {
     const response = await POST(request());
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ id: "job-1", extension_id: "publisher.extension", version: "1.2.3" });
+    expect(rpc).toHaveBeenCalledWith("claim_deep_scan_job", { p_runner_id: "github-actions-1", p_job_id: null, p_github_run_id: null });
+  });
+
+  it("claims an explicitly dispatched job and records its GitHub run", async () => {
+    rpc.mockResolvedValue({ data: { id: "550e8400-e29b-41d4-a716-446655440000", extension_id: "publisher.extension", version: "1.2.3" }, error: null });
+    const response = await POST(request("runner-secret", { runner_id: "github-actions-42", job_id: "550e8400-e29b-41d4-a716-446655440000", github_run_id: "42" }));
+    expect(response.status).toBe(200);
+    expect(rpc).toHaveBeenCalledWith("claim_deep_scan_job", { p_runner_id: "github-actions-42", p_job_id: "550e8400-e29b-41d4-a716-446655440000", p_github_run_id: 42 });
+  });
+
+  it("rejects malformed job and run identities", async () => {
+    expect((await POST(request("runner-secret", { runner_id: "github-actions", job_id: "not-a-uuid" }))).status).toBe(400);
+    expect((await POST(request("runner-secret", { runner_id: "github-actions", github_run_id: -1 }))).status).toBe(400);
+    expect(rpc).not.toHaveBeenCalled();
   });
 });

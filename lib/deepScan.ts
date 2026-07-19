@@ -15,11 +15,12 @@ export async function queueDeepScan(extensionId: string, requestedVersion: strin
   const active = await db.from("scan_jobs").select("*").eq("extension_id", extensionId).eq("version", version).eq("profile", "deep").in("status", ["queued", "running"]).maybeSingle();
   if (active.error) throw active.error;
   if (active.data) {
+    await subscribeToJob(String(active.data.id), requestedBy);
     // A prior dispatch can be lost or GitHub schedules can be delayed. Do not
     // leave a deduplicated queued job stranded: a new request is a safe wake-up
     // signal because workers claim jobs atomically and extra workflows exit on
     // an empty queue.
-    if (active.data.status === "queued") await dispatchDeepScan();
+    if (active.data.status === "queued") await dispatchDeepScan(String(active.data.id));
     return withReportUrl({ ...active.data, deduplicated: true });
   }
 
@@ -47,15 +48,22 @@ export async function queueDeepScan(extensionId: string, requestedVersion: strin
   const job = await db.from("scan_jobs").insert({ extension_id: extensionId, version, profile: "deep", requester_hash: requesterHash, requested_by: requestedBy, scan_purpose: "user_request", status: "queued" }).select("*").single();
   if (job.error) {
     const concurrent = await db.from("scan_jobs").select("*").eq("extension_id", extensionId).eq("version", version).eq("profile", "deep").in("status", ["queued", "running"]).maybeSingle();
-    if (concurrent.data) return { ...concurrent.data, deduplicated: true };
+    if (concurrent.data) {
+      await subscribeToJob(String(concurrent.data.id), requestedBy);
+      if (concurrent.data.status === "queued") await dispatchDeepScan(String(concurrent.data.id));
+      return { ...concurrent.data, deduplicated: true };
+    }
     await db.from("extension_versions").update({ scan_state: "failed" }).eq("extension_id", extensionId).eq("version", version);
     throw job.error;
   }
+  await subscribeToJob(String(job.data.id), requestedBy);
+  await db.from("scan_job_events").insert({ job_id: job.data.id, stage: "queued", event_type: "created", detail: { extension_id: extensionId, version, requested_by: requestedBy } });
   try {
-    await dispatchDeepScan();
+    await dispatchDeepScan(String(job.data.id));
   } catch (error) {
     const message = error instanceof Error ? error.message : "The Deep Scan worker could not be started.";
-    await db.from("scan_jobs").update({ status: "failed", error: message, completed_at: new Date().toISOString() }).eq("id", job.data.id);
+    await db.from("scan_jobs").update({ status: "failed", lifecycle_stage: "failed", error: message, callback_error: message, completed_at: new Date().toISOString(), updated_at: new Date().toISOString(), last_event_at: new Date().toISOString() }).eq("id", job.data.id);
+    await db.from("scan_job_events").insert({ job_id: job.data.id, stage: "failed", event_type: "dispatch_failed", detail: { error: message } });
     await db.from("extension_versions").update({ scan_state: "failed" }).eq("extension_id", extensionId).eq("version", version);
     throw new Error(message);
   }
@@ -69,18 +77,32 @@ export function withReportUrl<T extends Record<string, unknown>>(result: T): T &
   return complete && extensionId && version ? { ...result, report_url: `/extensions/${encodeURIComponent(extensionId)}/versions/${encodeURIComponent(version)}` } : result;
 }
 
-async function dispatchDeepScan(): Promise<void> {
+async function dispatchDeepScan(jobId: string): Promise<void> {
   const token = process.env.GITHUB_ACTIONS_TOKEN;
   const owner = process.env.GITHUB_REPO_OWNER || "preethamak";
   const repository = process.env.GITHUB_SCANNER_REPO || "IDE_Scanner";
   if (!token) throw new Error("Deep Scan dispatch is not configured.");
+  const db = serviceDb();
+  const requestedAt = new Date().toISOString();
+  await db.from("scan_jobs").update({ lifecycle_stage: "dispatching", dispatch_requested_at: requestedAt, updated_at: requestedAt, last_event_at: requestedAt }).eq("id", jobId).eq("status", "queued");
+  const increment = await db.rpc("increment_scan_dispatch_count", { p_job_id: jobId });
+  if (increment.error) throw increment.error;
+  await db.from("scan_job_events").insert({ job_id: jobId, stage: "dispatching", event_type: "dispatch_requested", detail: { repository: `${owner}/${repository}` } });
   const response = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/actions/workflows/deep-scan.yml/dispatches`, {
     method: "POST",
     headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" },
-    body: JSON.stringify({ ref: "main" }),
+    body: JSON.stringify({ ref: "main", inputs: { job_id: jobId } }),
     cache: "no-store",
   });
   if (!response.ok) throw new Error(`Deep Scan dispatch failed (${response.status}).`);
+  const succeededAt = new Date().toISOString();
+  await db.from("scan_jobs").update({ lifecycle_stage: "dispatched", dispatch_succeeded_at: succeededAt, updated_at: succeededAt, last_event_at: succeededAt }).eq("id", jobId).eq("status", "queued");
+  await db.from("scan_job_events").insert({ job_id: jobId, stage: "dispatched", event_type: "dispatch_accepted", detail: { repository: `${owner}/${repository}` } });
+}
+
+async function subscribeToJob(jobId: string, userId: string): Promise<void> {
+  const result = await serviceDb().from("scan_job_subscribers").upsert({ job_id: jobId, user_id: userId }, { onConflict: "job_id,user_id" });
+  if (result.error) throw result.error;
 }
 
 async function currentScannerBuild(): Promise<string | null> {

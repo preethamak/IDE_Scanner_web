@@ -39,6 +39,11 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local agent and Supabase CLI state
+/.claude/
+/prompt.txt
+/supabase/.temp/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

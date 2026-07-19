@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { normalizeMarketplaceId } from "@/lib/marketplace";
+import { serviceDb } from "@/lib/supabase";
 import { serverDb } from "@/lib/supabaseServer";
-import { queueDeepScan, withReportUrl } from "@/lib/deepScan";
+import { queueDeepScan } from "@/lib/deepScan";
+import { scanProgressColumns, scanProgressPayload } from "@/lib/scanProgress";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,11 +16,16 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const extensionId = normalizeMarketplaceId(url.searchParams.get("extension_id") || "");
     const version = (url.searchParams.get("version") || "").trim();
-    let query = db.from("scan_jobs").select("id,extension_id,version,profile,status,error,created_at,started_at,completed_at").eq("extension_id", extensionId).eq("requested_by", user.id).order("created_at", { ascending: false }).limit(1);
+    const service = serviceDb();
+    const subscriptions = await service.from("scan_job_subscribers").select("job_id").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50);
+    if (subscriptions.error) throw subscriptions.error;
+    const jobIds = (subscriptions.data || []).map((item) => String(item.job_id));
+    if (!jobIds.length) return new NextResponse(null, { status: 204 });
+    let query = service.from("scan_jobs").select(scanProgressColumns).in("id", jobIds).eq("extension_id", extensionId).order("created_at", { ascending: false }).limit(1);
     if (version) query = query.eq("version", version);
     const result = await query.maybeSingle();
     if (result.error) throw result.error;
-    return result.data ? NextResponse.json(withReportUrl(result.data)) : new NextResponse(null, { status: 204 });
+    return result.data ? NextResponse.json(await scanProgressPayload(service, result.data)) : new NextResponse(null, { status: 204 });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Scan lookup failed." }, { status: 400 });
   }
