@@ -1,7 +1,5 @@
 import { publicDb, serviceDb } from "@/lib/supabase";
 import { listMarketplaceVersions, resolveMarketplaceExtension, searchMarketplace } from "@/lib/marketplace";
-import { benchmarkRows } from "@/lib/websiteBenchmarkRows";
-import { websiteBenchmark } from "@/lib/websiteBenchmark";
 import { unstable_cache } from "next/cache";
 
 const cachedVersions=unstable_cache(async(id:string)=>listMarketplaceVersions(id),["registry-versions-v2"],{revalidate:21600,tags:["registry-versions"]});
@@ -24,14 +22,14 @@ export type CatalogExtension = {
   latest_scan?: Record<string, unknown> | null;
 };
 
-export type PublicSecurityFeedItem = { extension_id: string; version: string; display_name: string; severity: string; decision: string; scanned_at: string; coverage_percent: number; decision_reason: string };
-export type PublicInventoryItem = PublicSecurityFeedItem & { publisher: string; publisher_verified: boolean; description: string; icon_url: string; risk_score: number; malware_score: number; artifact_sha256: string };
-export type PublicInventory = { items: PublicInventoryItem[]; totals: { extensions: number; releases: number; complete: number; review: number; blocked: number; lastScannedAt: string | null } };
+export type PublicSecurityFeedItem = { scan_id: string; extension_id: string; version: string; display_name: string; severity: string; decision: string; public_outcome: string; decision_basis: string; evidence_confidence: string; scanned_at: string; coverage_percent: number; decision_reason: string };
+export type PublicInventoryItem = PublicSecurityFeedItem & { publisher: string; publisher_verified: boolean; description: string; icon_url: string; risk_score: number; malware_score: number; artifact_sha256: string; provenance_tier: string; expected_profile_id: string; capability_assessment: Record<string, unknown>; scanner_build: string; ruleset_version: string; score_schema_version: string };
+export type PublicInventory = { items: PublicInventoryItem[]; totals: { extensions: number; releases: number; complete: number; allowed: number; expected: number; investigate: number; review: number; blocked: number; lastScannedAt: string | null } };
 
 export async function getPublicSecurityFeed(limit = 6): Promise<PublicSecurityFeedItem[]> {
   const db = publicDb();
   if (!db) return [];
-  const { data: scans } = await db.from("scans").select("extension_id,version,severity,decision,scanned_at,coverage_percent,decision_reason").eq("scan_purpose", "public_intelligence").is("superseded_at", null).in("decision", ["review", "block", "incomplete"]).order("scanned_at", { ascending: false }).limit(80);
+  const { data: scans } = await db.from("scans").select("id,extension_id,version,severity,decision,public_outcome,decision_basis,evidence_confidence,scanned_at,coverage_percent,decision_reason").eq("scan_purpose", "public_intelligence").is("superseded_at", null).in("decision", ["review", "block", "incomplete"]).order("scanned_at", { ascending: false }).limit(80);
   const rank = (severity: string) => ({ CRITICAL: 5, HIGH: 4, MEDIUM: 3, LOW: 2, INFO: 1 }[severity] || 0);
   const latest = new Map<string, Record<string, unknown>>();
   for (const scan of (scans || []) as Array<Record<string, unknown>>) { const key = `${scan.extension_id}@${scan.version}`; if (!latest.has(key)) latest.set(key, scan); }
@@ -39,68 +37,34 @@ export async function getPublicSecurityFeed(limit = 6): Promise<PublicSecurityFe
   const ids = [...new Set(rows.map((item) => String(item.extension_id)))];
   const { data: extensions } = ids.length ? await db.from("extensions").select("id,display_name").in("id", ids) : { data: [] as Array<{ id: string; display_name: string }> };
   const names = new Map((extensions || []).map((item) => [String(item.id), String(item.display_name)]));
-  return rows.map((item) => ({ extension_id: String(item.extension_id), version: String(item.version), display_name: names.get(String(item.extension_id)) || String(item.extension_id), severity: String(item.severity || "INFO"), decision: String(item.decision || "incomplete"), scanned_at: String(item.scanned_at), coverage_percent: Number(item.coverage_percent || 0), decision_reason: String(item.decision_reason || "Open the exact artifact evidence.") }));
+  return rows.map((item) => ({ scan_id: String(item.id), extension_id: String(item.extension_id), version: String(item.version), display_name: names.get(String(item.extension_id)) || String(item.extension_id), severity: String(item.severity || "INFO"), decision: String(item.decision || "incomplete"), public_outcome: String(item.public_outcome || legacyPublicOutcome(item)), decision_basis: String(item.decision_basis || "legacy_scanner_result"), evidence_confidence: String(item.evidence_confidence || "none"), scanned_at: String(item.scanned_at), coverage_percent: Number(item.coverage_percent || 0), decision_reason: String(item.decision_reason || "Open the exact artifact evidence.") }));
 }
 
 /** Public operational scans only. Benchmark, development and private work never enter this catalog. */
 export async function getPublicInventory(limit = 240): Promise<PublicInventory> {
-  // The registry intentionally uses the frozen July 16 cohort everywhere. This
-  // prevents a partially populated operational database from presenting stale
-  // or different extension results to different visitors.
-  const publishedAt = `${websiteBenchmark.publishedAt}T00:00:00.000Z`;
   const db = publicDb();
-  const ids = benchmarkRows.slice(0, limit).map((row) => row.id);
-  const { data: stored } = db ? await db.from("extensions").select("id,icon_url,publisher_verified").in("id", ids) : { data: [] as Array<{ id: string; icon_url: string | null; publisher_verified: boolean | null }> };
+  if (!db) return emptyInventory();
+  const { data: scans, error } = await db.from("scans").select("id,extension_id,version,artifact_sha256,severity,decision,decision_reason,public_outcome,decision_basis,evidence_confidence,provenance_tier,expected_profile_id,capability_assessment,score_schema_version,risk_score,malware_score,coverage_percent,scanner_build,ruleset_version,scanned_at").eq("scan_purpose", "public_intelligence").is("superseded_at", null).order("scanned_at", { ascending: false }).limit(Math.min(limit, 240));
+  if (error || !scans?.length) return emptyInventory();
+  const ids = [...new Set(scans.map((row) => String(row.extension_id)))];
+  const { data: stored } = await db.from("extensions").select("id,display_name,publisher,description,icon_url,publisher_verified").in("id", ids);
   const metadata = new Map((stored || []).map((item) => [String(item.id), item]));
-  const items: PublicInventoryItem[] = benchmarkRows.slice(0, limit).map((row) => ({
-    extension_id: row.id,
-    version: row.version,
-    artifact_sha256: row.sha256,
-    display_name: displayNameForExtension(row.id),
-    publisher: row.id.split(".")[0],
-    description: `${row.classification.replaceAll("-", " ")} · final regression result`,
-    icon_url: String(metadata.get(row.id)?.icon_url || marketplaceIcon(row.id, row.version)),
-    publisher_verified: Boolean(metadata.get(row.id)?.publisher_verified || verifiedPublisher(row.id)),
-    severity: row.final_severity,
-    decision: row.final_decision,
-    scanned_at: publishedAt,
-    coverage_percent: row.final_coverage,
-    decision_reason: `Final updated-scanner disposition: ${row.final_decision}.`,
-    risk_score: row.risk,
-    malware_score: row.malware,
-  }));
-  return { items, totals: { extensions: items.length, releases: items.length, complete: items.filter((item) => item.decision !== "incomplete").length, review: items.filter((item) => item.decision === "review").length, blocked: items.filter((item) => item.decision === "block").length, lastScannedAt: publishedAt } };
-}
-
-function marketplaceIcon(id: string, version: string) {
-  const [publisher, ...name] = id.split(".");
-  return `https://${encodeURIComponent(publisher)}.gallery.vsassets.io/_apis/public/gallery/publisher/${encodeURIComponent(publisher)}/extension/${encodeURIComponent(name.join("."))}/${encodeURIComponent(version)}/assetbyname/Microsoft.VisualStudio.Services.Icons.Default`;
-}
-
-function verifiedPublisher(id: string) {
-  return new Set(["GitHub", "ms-vscode", "ms-vscode-remote", "ms-azuretools", "ms-kubernetes-tools", "ms-python", "amazonwebservices", "aquasecurityofficial", "SonarSource", "redhat", "golang"]).has(id.split(".")[0]);
-}
-
-function displayNameForExtension(id: string): string {
-  const names: Record<string, string> = {
-    "amazonwebservices.aws-toolkit-vscode": "AWS Toolkit",
-    "aquasecurityofficial.trivy-vulnerability-scanner": "Trivy Vulnerability Scanner",
-    "dbaeumer.vscode-eslint": "ESLint",
-    "esbenp.prettier-vscode": "Prettier",
-    "GitHub.copilot": "GitHub Copilot",
-    "GitHub.copilot-chat": "GitHub Copilot Chat",
-    "GitHub.vscode-pull-request-github": "GitHub Pull Requests",
-    "ms-azuretools.vscode-docker": "Docker Extension Pack",
-    "ms-kubernetes-tools.vscode-kubernetes-tools": "Kubernetes",
-    "ms-vscode-remote.remote-containers": "Dev Containers",
-    "ms-vscode-remote.remote-ssh": "Remote - SSH",
-    "ms-vscode.azure-account": "Azure Account",
-    "ms-vscode.cpptools": "C/C++",
-    "PKief.material-icon-theme": "Material Icon Theme",
-    "RooVeterinaryInc.roo-cline": "Roo Code",
-    "SonarSource.sonarlint-vscode": "SonarQube for IDE",
-  };
-  return names[id] || id.split(".").slice(1).join(" ").replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  const items: PublicInventoryItem[] = scans.map((row) => {
+    const extension = metadata.get(String(row.extension_id));
+    const assessment = objectValue(row.capability_assessment);
+    const matched = Array.isArray(assessment.matched) ? assessment.matched.map(String) : [];
+    return {
+      scan_id: String(row.id), extension_id: String(row.extension_id), version: String(row.version), artifact_sha256: String(row.artifact_sha256),
+      display_name: String(extension?.display_name || row.extension_id), publisher: String(extension?.publisher || String(row.extension_id).split(".")[0]),
+      description: matched.length ? `Expected: ${matched.map(humanize).join(", ")}` : String(row.decision_reason || extension?.description || "Open the exact artifact evidence."),
+      icon_url: String(extension?.icon_url || ""), publisher_verified: Boolean(extension?.publisher_verified), severity: String(row.severity || "INFO"),
+      decision: String(row.decision || "incomplete"), public_outcome: String(row.public_outcome || legacyPublicOutcome(row)), decision_basis: String(row.decision_basis || "legacy_scanner_result"),
+      evidence_confidence: String(row.evidence_confidence || "none"), provenance_tier: String(row.provenance_tier || "unknown"), expected_profile_id: String(row.expected_profile_id || ""), capability_assessment: assessment,
+      scanned_at: String(row.scanned_at), coverage_percent: Number(row.coverage_percent || 0), decision_reason: String(row.decision_reason || "Open the exact artifact evidence."),
+      risk_score: Number(row.risk_score || 0), malware_score: Number(row.malware_score || 0), scanner_build: String(row.scanner_build || "unknown"), ruleset_version: String(row.ruleset_version || "unknown"), score_schema_version: String(row.score_schema_version || "1"),
+    };
+  });
+  return { items, totals: { extensions: new Set(items.map((item) => item.extension_id)).size, releases: items.length, complete: items.filter((item) => item.public_outcome !== "incomplete").length, allowed: items.filter((item) => item.decision === "allow").length, expected: items.filter((item) => item.public_outcome === "expected_capability").length, investigate: items.filter((item) => item.public_outcome === "investigate").length, review: items.filter((item) => item.decision === "review").length, blocked: items.filter((item) => item.decision === "block").length, lastScannedAt: items[0]?.scanned_at || null } };
 }
 
 export async function listCatalog(query = "", limit = 50): Promise<CatalogExtension[]> {
@@ -168,13 +132,26 @@ export async function getVersionProduct(id: string, version: string): Promise<Re
   if (!versionRow) return null;
   const scanId = versionRow.latest_scan_id;
   if (!scanId) return { version: versionRow, scan: null, findings: [], files: [], dependencies: [] };
+  return loadVersionScan(db, id, version, String(scanId), versionRow);
+}
+
+export async function getVersionScanProduct(id: string, version: string, scanId: string): Promise<Record<string, unknown> | null> {
+  const db = publicDb();
+  if (!db) return null;
+  const { data: versionRow } = await db.from("extension_versions").select("*").eq("extension_id", id).eq("version", version).maybeSingle();
+  if (!versionRow) return null;
+  return loadVersionScan(db, id, version, scanId, versionRow);
+}
+
+async function loadVersionScan(db: NonNullable<ReturnType<typeof publicDb>>, id: string, version: string, scanId: string, versionRow: Record<string, unknown>): Promise<Record<string, unknown> | null> {
   const [scan, findings, files, dependencies, previews] = await Promise.all([
-    db.from("scans").select("*").eq("id", scanId).single(),
+    db.from("scans").select("*").eq("id", scanId).eq("extension_id", id).eq("version", version).maybeSingle(),
     db.from("findings").select("*").eq("scan_id", scanId).order("severity"),
     db.from("artifact_files").select("*").eq("scan_id", scanId).order("path").limit(5000),
     db.from("dependencies").select("*").eq("scan_id", scanId).order("relationship").order("name"),
     db.from("artifact_file_previews").select("path,content_sha256,truncated").eq("scan_id", scanId),
   ]);
+  if (!scan.data) return null;
   const available = new Map((previews.data || []).map((item) => [String(item.path), item]));
   const fileRows = (files.data || []).map((item) => ({ ...item, preview_available: available.has(String(item.path)), preview: available.get(String(item.path)) || null }));
   return { version: versionRow, scan: scan.data, findings: findings.data || [], files: fileRows, dependencies: dependencies.data || [] };
@@ -198,4 +175,22 @@ function normalizeCatalogRow(row: Record<string, unknown>): CatalogExtension {
 
 function escapeFilter(value: string): string {
   return value.replace(/[,%()]/g, " ").trim();
+}
+
+function objectValue(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function legacyPublicOutcome(row: Record<string, unknown>): string {
+  const decision = String(row.decision || "incomplete");
+  if (decision === "allow") return "clear";
+  if (decision === "review") return "investigate";
+  if (decision === "block") return String(row.verdict || "") === "malicious" ? "confirmed_threat" : "preventive_block";
+  return "incomplete";
+}
+
+function humanize(value: string): string { return value.replaceAll("_", " "); }
+
+function emptyInventory(): PublicInventory {
+  return { items: [], totals: { extensions: 0, releases: 0, complete: 0, allowed: 0, expected: 0, investigate: 0, review: 0, blocked: 0, lastScannedAt: null } };
 }

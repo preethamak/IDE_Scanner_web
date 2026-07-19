@@ -50,10 +50,10 @@ export default async function HomePage() {
       </div>
       <div className="lpAnswerCopy">
         <span className="lpKicker"><i/> What GuardRails does</span>
-        <h2>A clear verdict on the exact code — not the description.</h2>
-        <p>Marketplace listings can lie. GuardRails analyses the precise file that would land on your machine, then tells you in plain language whether it&apos;s safe, worth a look, or best avoided.</p>
+        <h2>A clear outcome on the exact code — not the description.</h2>
+        <p>Marketplace listings can be incomplete. GuardRails analyzes the precise file that would land on your machine, separates expected power from unexplained evidence, and records the boundary behind the result.</p>
         <ul className="lpAnswerList">
-          <li><span className="lpDot allow"/><div><strong>Tied to the exact artifact</strong><small>Every verdict is bound to one version and its SHA-256 — never a guess.</small></div></li>
+          <li><span className="lpDot allow"/><div><strong>Tied to the exact artifact</strong><small>Every outcome is bound to one version, SHA-256, scanner build, ruleset, and immutable report.</small></div></li>
           <li><span className="lpDot allow"/><div><strong>We never run the extension</strong><small>Analysis is static and read-only. Nothing executes on your machine or ours.</small></div></li>
           <li><span className="lpDot allow"/><div><strong>Evidence you can open</strong><small>Behind every claim: the findings, the files, and the rules that produced it.</small></div></li>
         </ul>
@@ -65,12 +65,12 @@ export default async function HomePage() {
     <section className="lpSection" id="how">
       <div className="lpSectionHead">
         <span className="lpKicker"><i/> How it works</span>
-        <h2>From name to verdict in three steps.</h2>
+        <h2>From name to evidence in three steps.</h2>
         <p>No security background required. Anyone on the team can read the answer.</p>
       </div>
       <div className="lpSteps">
         <article className="lpStep"><div className="lpStepNum"><PackageX/></div><h3>1 · Point us at it</h3><p>Give us an extension name or publisher ID. We pull the exact file straight from the marketplace.</p></article>
-        <article className="lpStep"><div className="lpStepNum"><Eye/></div><h3>2 · Read the verdict</h3><p>A plain-language summary of what it can do — and whether anything looks off.</p></article>
+        <article className="lpStep"><div className="lpStepNum"><Eye/></div><h3>2 · Read the outcome</h3><p>A plain-language summary of expected capabilities, provenance, and anything unexplained.</p></article>
         <article className="lpStep"><div className="lpStepNum"><ShieldCheck/></div><h3>3 · Decide with proof</h3><p>Open the evidence behind every finding, then install with confidence or walk away.</p></article>
       </div>
     </section>
@@ -85,7 +85,7 @@ export default async function HomePage() {
       <div className="lpFeatures">
         <article className="lpFeature"><div className="lpFeatureIcon"><Fingerprint/></div><h3>Exact-artifact analysis</h3><p>One registry, one version, one hash. Results can&apos;t drift from what you&apos;ll actually install.</p></article>
         <article className="lpFeature"><div className="lpFeatureIcon"><ShieldOff/></div><h3>Zero execution, zero risk</h3><p>Static, deterministic analysis. GuardRails reads code — it never lets it run.</p></article>
-        <article className="lpFeature"><div className="lpFeatureIcon"><Eye/></div><h3>Evidence, not vibes</h3><p>Findings, affected files, and the ruleset behind each verdict are always one click away.</p></article>
+        <article className="lpFeature"><div className="lpFeatureIcon"><Eye/></div><h3>Evidence, not vibes</h3><p>Findings, affected files, artifact hash, scanner build, and ruleset are always one click away.</p></article>
       </div>
     </section>
 
@@ -93,7 +93,7 @@ export default async function HomePage() {
     <section className="lpSection lpMonitor" style={{ paddingTop: 0 }}>
       <div className="lpMonitorCopy">
         <span className="lpKicker"><i/> Stay in the loop</span>
-        <h2>The safe extension today can turn hostile tomorrow.</h2>
+        <h2>An approved extension today can change tomorrow.</h2>
         <p>Attackers push malicious code through updates and reused names. GuardRails re-checks every new release and alerts you only when something actually needs a decision.</p>
         <Link className="lpLink" href="/monitor">Set up monitoring <ArrowRight/></Link>
       </div>

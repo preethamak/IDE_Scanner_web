@@ -11,6 +11,8 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
   const scannerBuild = String(metadata.scanner_build || "").trim();
   const identity = object(detail.artifact_identity);
   const coverage = object(detail.analysis_coverage);
+  const provenance = object(detail.provenance);
+  const capabilityAssessment = object(detail.capability_assessment);
   const extensionId = String(detail.extension_id || identity.extension_id || "");
   const version = String(detail.version || identity.version || "");
   const artifactSha = String(identity.sha256 || detail.artifact_sha256 || "");
@@ -37,6 +39,13 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
     ruleset_version: String(metadata.ruleset_version || "unknown"),
     decision: String(detail.decision || "incomplete"),
     decision_reason: String(detail.decision_reason || detail.verdict_reason || "Review scan evidence."),
+    public_outcome: String(detail.public_outcome || legacyOutcome(detail)),
+    decision_basis: String(detail.decision_basis || "legacy_scanner_result"),
+    evidence_confidence: String(detail.evidence_confidence || "none"),
+    provenance_tier: String(provenance.tier || "unknown"),
+    expected_profile_id: String(provenance.profile_id || capabilityAssessment.profile_id || "") || null,
+    capability_assessment: capabilityAssessment,
+    score_schema_version: String(detail.score_schema_version || "1"),
     verdict: String(detail.verdict || "review"),
     severity: String(detail.severity || "INFO"),
     risk_score: Number(detail.risk_score || 0),
@@ -99,6 +108,13 @@ function firstExtension(value: Bundle["extensions"]): Record<string, unknown> | 
 }
 function object(value: unknown): Record<string, unknown> { return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; }
 function array(value: unknown): unknown[] { return Array.isArray(value) ? value : []; }
+function legacyOutcome(detail: Record<string, unknown>): string {
+  const decision = String(detail.decision || "incomplete");
+  if (decision === "allow") return "clear";
+  if (decision === "review") return "investigate";
+  if (decision === "block") return String(detail.verdict) === "malicious" ? "confirmed_threat" : "preventive_block";
+  return "incomplete";
+}
 
 function compactBundle(bundle: Bundle): Bundle {
   const extensions = bundle.extensions;

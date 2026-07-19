@@ -1,6 +1,7 @@
 export type Verdict = "clean" | "review" | "suspicious" | "malicious";
 export type VerdictState = "safe" | "safe_with_notes" | "needs_review" | "suspicious" | "confirmed_malicious";
 export type Decision = "allow" | "review" | "block" | "incomplete";
+export type PublicOutcome = "clear" | "expected_capability" | "investigate" | "preventive_block" | "confirmed_threat" | "incomplete";
 
 export type InventoryExtension = {
   type: string;
@@ -66,6 +67,12 @@ export type ExtensionSummary = {
   skipped_reason?: string;
   decision?: Decision;
   decision_reason?: string;
+  public_outcome?: PublicOutcome;
+  decision_basis?: string;
+  evidence_confidence?: string;
+  provenance?: Record<string, unknown>;
+  capability_assessment?: Record<string, unknown>;
+  score_schema_version?: string;
   artifact_sha256?: string;
   coverage_percent?: number;
   baseline_changed?: boolean;

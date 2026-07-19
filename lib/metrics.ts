@@ -1,6 +1,6 @@
 export type MetricDomain = { id: string; label: string; short: string; detail: string; why: string; outputs: string[] };
 export type RuleReference = { id: string; title: string; category: string; evidence: string; severity: string; engine: string; description: string };
-export const RULESET_VERSION = "2026.07.15";
+export const RULESET_VERSION = "2026.07.19";
 
 export const metricCatalog: MetricDomain[] = [
   { id: "confirmed-intelligence", label: "Confirmed intelligence", short: "Known-bad artifacts and malicious dependencies.", detail: "Exact package and file SHA-256 matches, configured threat intelligence, and dependencies identified as malicious.", why: "This is authoritative evidence and can directly drive a BLOCK decision when the intelligence source and artifact identity are valid.", outputs: ["artifact SHA-256", "feed source", "matched dependency"] },
@@ -24,7 +24,7 @@ export const ruleCatalog: RuleReference[] = [
   rule("malicious-npm-dependency", "Malicious npm dependency", "dependency", "confirmed", "CRITICAL", "dependency intelligence", "A runtime dependency is identified as a malicious package."),
   rule("marketplace-removed-package", "Marketplace removed package", "provenance", "provenance", "HIGH", "marketplace intelligence", "The package appears in a marketplace removal list."),
   rule("vulnerable-npm-dependency", "Vulnerable npm dependency", "dependency", "dependency", "HIGH", "dependency intelligence", "Runtime dependency intelligence reports a known vulnerability."),
-  rule("untrusted-workspace-input-to-process", "Workspace input reaches process execution", "execution", "correlated", "HIGH", "Semgrep", "Workspace-controlled data reaches a process execution sink."),
+  rule("untrusted-workspace-input-to-process", "Workspace input reaches process execution", "execution", "capability", "MEDIUM", "Semgrep", "Workspace or user configuration reaches a process execution API; common developer-tool behavior that requires shell and trust context."),
   rule("webview-message-to-process", "Webview message reaches execution", "webview", "correlated", "HIGH", "Semgrep", "Webview-controlled message data reaches process execution."),
   rule("decoded-payload-execution", "Decoded payload reaches dynamic execution", "code", "correlated", "HIGH", "Semgrep", "Decoded or deobfuscated data flows into dynamic execution."),
   rule("encoded-dynamic-execution", "Encoded dynamic execution", "code", "correlated", "HIGH", "YARA", "Encoded payload handling appears with dynamic execution markers."),

@@ -8,11 +8,15 @@ const TEXT_FILE = /\.(?:[cm]?[jt]sx?|jsonc?|ya?ml|md|txt|html?|css|scss|xml|toml
 
 export async function GET(request: Request, context: { params: Promise<{ id: string; version: string }> }) {
   const path = new URL(request.url).searchParams.get("path") || "";
+  const requestedScanId = new URL(request.url).searchParams.get("scan") || "";
   const { id, version } = await context.params;
   if (!path || path.length > 300 || path.includes("\\") || path.split("/").some((part) => !part || part === "." || part === "..") || !TEXT_FILE.test(path)) return NextResponse.json({ error: "This path cannot be previewed safely." }, { status: 400 });
   const db = publicDb();
   if (!db) return NextResponse.json({ error: "Source preview is unavailable." }, { status: 503 });
-  const { data: scan } = await db.from("scans").select("id,canonical_report").eq("extension_id", decodeURIComponent(id)).eq("version", decodeURIComponent(version)).is("superseded_at", null).order("scanned_at", { ascending: false }).limit(1).maybeSingle();
+  let scanQuery = db.from("scans").select("id,canonical_report").eq("extension_id", decodeURIComponent(id)).eq("version", decodeURIComponent(version));
+  if (requestedScanId) scanQuery = scanQuery.eq("id", requestedScanId);
+  else scanQuery = scanQuery.is("superseded_at", null).order("scanned_at", { ascending: false }).limit(1);
+  const { data: scan } = await scanQuery.maybeSingle();
   if (!scan) return NextResponse.json({ error: "This report is not available." }, { status: 404 });
   const { data: preview } = await db.from("artifact_file_previews").select("content,content_sha256,byte_length,truncated").eq("scan_id", scan.id).eq("path", path).maybeSingle();
   if (preview) {
