@@ -24,10 +24,10 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
   const coverage = object(detail.analysis_coverage);
   const provenance = object(detail.provenance);
   const capabilityAssessment = object(detail.capability_assessment);
-  const extensionId = String(detail.extension_id || identity.extension_id || "");
+  const reportedExtensionId = String(detail.extension_id || identity.extension_id || "");
   const version = String(detail.version || identity.version || "");
   const artifactSha = String(identity.sha256 || detail.artifact_sha256 || "");
-  if (!extensionId || !version || !artifactSha) throw new Error("Bundle is missing immutable artifact identity.");
+  if (!reportedExtensionId || !version || !artifactSha) throw new Error("Bundle is missing immutable artifact identity.");
   if (!scannerBuild || scannerBuild === "unknown") throw new Error("Bundle is missing immutable scanner build identity.");
   // Keep the scan callback compatible with the currently deployed database
   // while operational-intelligence migration 011 rolls out. A worker result
@@ -36,7 +36,11 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
   const queuedJob = await db.from("scan_jobs").select("extension_id,version,scan_purpose").eq("id", jobId).maybeSingle();
   if (queuedJob.error) throw new Error(`Scan job lookup failed: ${queuedJob.error.message}`);
   if (!queuedJob.data) throw new Error("Scan job was not found.");
-  if (String(queuedJob.data.extension_id).toLowerCase() !== extensionId.toLowerCase() || queuedJob.data.version !== version) throw new Error("Scanner result does not match the claimed artifact.");
+  if (String(queuedJob.data.extension_id).toLowerCase() !== reportedExtensionId.toLowerCase() || queuedJob.data.version !== version) throw new Error("Scanner result does not match the claimed artifact.");
+  // Registry identifiers are case-insensitive. Persist the inventory/job form
+  // as the canonical database key so catalog, benchmark, and exact-report
+  // queries all resolve the same row even when package.json uses display case.
+  const extensionId = String(queuedJob.data.extension_id);
   const publicPurpose = ["public_intelligence", "benchmark"].includes(String(queuedJob.data.scan_purpose));
   if (publicPurpose && String(detail.score_schema_version || "") !== "2") throw new Error("Public scans require canonical score schema v2.");
   if (publicPurpose && String(metadata.scanner_version || "").includes("hosted-static")) throw new Error("Hosted-static reports cannot be published as canonical scans.");
