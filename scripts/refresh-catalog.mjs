@@ -4,6 +4,7 @@ const gallery = "https://marketplace.visualstudio.com/_apis/public/gallery/exten
 const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 const scanLimit = Number(process.env.SCAN_BATCH_LIMIT || 100);
 const refreshStartedAt = new Date().toISOString();
+const scannerBuild = await currentScannerBuild();
 const chunks = (items, size = 60) => Array.from({ length: Math.ceil(items.length / size) }, (_, index) => items.slice(index * size, (index + 1) * size));
 let terminating = false;
 process.on("uncaughtException", async (error) => {
@@ -31,7 +32,7 @@ function normalizeMarketplace(raw) {
   const publisher = raw.publisher?.publisherName || "unknown"; const name = raw.extensionName; const version = raw.versions?.[0] || {};
   const stats = Object.fromEntries((raw.statistics || []).map((item) => [String(item.statisticName).toLowerCase(), Number(item.value || 0)]));
   const icon = version.files?.find((item) => item.assetType?.includes("Icons.Small"))?.source || "";
-  return { id: `${publisher}.${name}`, name, display_name: raw.displayName || name, publisher, description: raw.shortDescription || "", registry: "vs-marketplace", publisher_verified: Boolean(raw.publisher?.isDomainVerified || raw.publisher?.isVerified), installs: stats.install || 0, rating: stats.averagerating || 0, icon_url: icon, last_published_at: version.lastUpdated || raw.lastUpdated || null, version: version.version || "", published_at: version.lastUpdated || null };
+  return { id: `${publisher}.${name}`, name, display_name: raw.displayName || name, publisher, description: raw.shortDescription || "", registry: "vs-marketplace", publisher_verified: Boolean(raw.publisher?.isDomainVerified || raw.publisher?.isVerified || String(raw.publisher?.flags || "").toLowerCase().includes("verified")), installs: stats.install || 0, rating: stats.averagerating || 0, icon_url: icon, last_published_at: version.lastUpdated || raw.lastUpdated || null, version: version.version || "", published_at: version.lastUpdated || null };
 }
 
 async function openVsxTop() {
@@ -107,7 +108,10 @@ for (const extension of cohort) {
   for (const item of rows.slice(0, 4)) {
     if (queued >= scanLimit) break;
     const existing = await db.from("extension_versions").select("scan_state").eq("extension_id", extension.id).eq("version", item.version).single();
-    if (["complete", "queued", "running"].includes(existing.data?.scan_state)) continue;
+    if (["queued", "running"].includes(existing.data?.scan_state)) continue;
+    const canonical = await db.from("scans").select("id").eq("extension_id", extension.id).eq("version", item.version).eq("scan_purpose", "public_intelligence").eq("score_schema_version", "2").eq("scanner_build", scannerBuild).neq("decision", "incomplete").is("superseded_at", null).limit(1).maybeSingle();
+    if (canonical.error) throw canonical.error;
+    if (canonical.data) continue;
     const job = await db.from("scan_jobs").insert({ extension_id: extension.id, version: item.version, profile: "deep", requester_hash: "catalog-refresh", scan_purpose: "public_intelligence" }).select("id").single();
     if (job.error) continue;
     await db.from("extension_versions").update({ scan_state: "queued" }).eq("extension_id", extension.id).eq("version", item.version);
@@ -149,3 +153,13 @@ for (const registry of ["vs-marketplace", "openvsx"]) {
 }
 
 console.log(JSON.stringify({ extensions: cohort.length, deep_scans_queued: queued }));
+
+async function currentScannerBuild() {
+  const repository = process.env.SCANNER_REPOSITORY || "preethamak/IDE_Scanner";
+  const response = await fetch(`https://api.github.com/repos/${repository}/commits/main`, { headers: { Accept: "application/vnd.github+json", "User-Agent": "ide-scanner-catalog-refresh" } });
+  if (!response.ok) throw new Error(`Could not resolve the canonical scanner build (${response.status}).`);
+  const body = await response.json();
+  const sha = String(body.sha || "");
+  if (!/^[0-9a-f]{40}$/i.test(sha)) throw new Error("Canonical scanner build identity is invalid.");
+  return sha;
+}
