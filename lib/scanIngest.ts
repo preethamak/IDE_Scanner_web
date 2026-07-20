@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { serviceDb } from "@/lib/supabase";
+import { benchmarkRows } from "@/lib/websiteBenchmarkRows";
 
 type Bundle = { metadata?: Record<string, unknown>; extensions?: Record<string, Record<string, unknown>> | Array<Record<string, unknown>> };
 
@@ -22,10 +23,17 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
   // while operational-intelligence migration 011 rolls out. A worker result
   // must never be rejected simply because an optional metrics column has not
   // been deployed yet.
-  const queuedJob = await db.from("scan_jobs").select("extension_id,version").eq("id", jobId).maybeSingle();
+  const queuedJob = await db.from("scan_jobs").select("extension_id,version,scan_purpose").eq("id", jobId).maybeSingle();
   if (queuedJob.error) throw new Error(`Scan job lookup failed: ${queuedJob.error.message}`);
   if (!queuedJob.data) throw new Error("Scan job was not found.");
   if (queuedJob.data.extension_id !== extensionId || queuedJob.data.version !== version) throw new Error("Scanner result does not match the claimed artifact.");
+  const publicPurpose = ["public_intelligence", "benchmark"].includes(String(queuedJob.data.scan_purpose));
+  if (publicPurpose && String(detail.score_schema_version || "") !== "2") throw new Error("Public scans require canonical score schema v2.");
+  if (publicPurpose && String(metadata.scanner_version || "").includes("hosted-static")) throw new Error("Hosted-static reports cannot be published as canonical scans.");
+  if (queuedJob.data.scan_purpose === "benchmark") {
+    const expected = benchmarkRows.find((row) => row.id.toLowerCase() === extensionId.toLowerCase() && row.version === version);
+    if (!expected || expected.sha256.toLowerCase() !== artifactSha.toLowerCase()) throw new Error("Benchmark result does not match the frozen artifact hash.");
+  }
 
   const scanRow = {
     job_id: jobId,
@@ -82,8 +90,10 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
   await insertChunks("dependencies", dependencies);
   await insertChunks("artifact_file_previews", previews);
   const completedAt = new Date().toISOString();
-  const supersede = await db.from("scans").update({ superseded_at: completedAt }).eq("extension_id", extensionId).eq("version", version).neq("id", scanId).is("superseded_at", null);
-  if (supersede.error) throw supersede.error;
+  if (scanRow.decision !== "incomplete") {
+    const supersede = await db.from("scans").update({ superseded_at: completedAt }).eq("extension_id", extensionId).eq("version", version).eq("scan_purpose", queuedJob.data.scan_purpose).neq("id", scanId).is("superseded_at", null);
+    if (supersede.error) throw supersede.error;
+  }
   const versionUpdate = await db.from("extension_versions").update({ artifact_sha256: artifactSha, latest_scan_id: scanId, scan_state: scanRow.decision === "incomplete" ? "incomplete" : "complete" }).eq("extension_id", extensionId).eq("version", version);
   if (versionUpdate.error) throw versionUpdate.error;
   await Promise.all([
