@@ -30,10 +30,9 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
   const publicPurpose = ["public_intelligence", "benchmark"].includes(String(queuedJob.data.scan_purpose));
   if (publicPurpose && String(detail.score_schema_version || "") !== "2") throw new Error("Public scans require canonical score schema v2.");
   if (publicPurpose && String(metadata.scanner_version || "").includes("hosted-static")) throw new Error("Hosted-static reports cannot be published as canonical scans.");
-  if (queuedJob.data.scan_purpose === "benchmark") {
-    const expected = benchmarkRows.find((row) => row.id.toLowerCase() === extensionId.toLowerCase() && row.version === version);
-    if (!expected || expected.sha256.toLowerCase() !== artifactSha.toLowerCase()) throw new Error("Benchmark result does not match the frozen artifact hash.");
-  }
+  const frozenBenchmarkArtifact = benchmarkRows.find((row) => row.id.toLowerCase() === extensionId.toLowerCase() && row.version === version);
+  if (queuedJob.data.scan_purpose === "benchmark" && !frozenBenchmarkArtifact) throw new Error("Benchmark result is not part of the frozen corpus.");
+  if (frozenBenchmarkArtifact && frozenBenchmarkArtifact.sha256.toLowerCase() !== artifactSha.toLowerCase()) throw new Error("Canonical result does not match the frozen benchmark artifact hash.");
 
   const scanRow = {
     job_id: jobId,
@@ -45,6 +44,7 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
     scanner_version: String(metadata.scanner_version || "unknown"),
     scanner_build: scannerBuild,
     ruleset_version: String(metadata.ruleset_version || "unknown"),
+    scan_purpose: String(queuedJob.data.scan_purpose),
     decision: String(detail.decision || "incomplete"),
     decision_reason: String(detail.decision_reason || detail.verdict_reason || "Review scan evidence."),
     public_outcome: String(detail.public_outcome || legacyOutcome(detail)),
