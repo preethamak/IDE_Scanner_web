@@ -1,5 +1,5 @@
-import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
+import { validRunnerSecret } from "@/lib/internalRunnerAuth";
 import { serviceDb } from "@/lib/supabase";
 
 export const runtime = "nodejs";
@@ -20,13 +20,4 @@ export async function POST(request: Request) {
   const job = Array.isArray(result.data) ? result.data[0] : result.data;
   if (!job?.id) return new NextResponse(null, { status: 204 });
   return NextResponse.json({ id: job.id, extension_id: job.extension_id, version: job.version, callback_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://ide-scanner.vercel.app"}/api/internal/scan-results` });
-}
-
-function validRunnerSecret(authorization: string | null): boolean {
-  const expected = process.env.SCAN_RUNNER_SECRET || "";
-  const supplied = authorization?.startsWith("Bearer ") ? authorization.slice(7) : "";
-  if (!expected || !supplied) return false;
-  const left = createHash("sha256").update(expected).digest();
-  const right = createHash("sha256").update(supplied).digest();
-  return timingSafeEqual(left, right);
 }
