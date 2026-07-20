@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const surfaces = [
-  ["/", /Understand every extension/i],
+  ["/", /The security check before you click Install/i],
   ["/catalog", /Find the extension/i],
   ["/public-scan", /Extension registry/i],
   ["/scan", /Inspect an extension before installation/i],
