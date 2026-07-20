@@ -4,6 +4,16 @@ import { benchmarkRows } from "@/lib/websiteBenchmarkRows";
 
 type Bundle = { metadata?: Record<string, unknown>; extensions?: Record<string, Record<string, unknown>> | Array<Record<string, unknown>> };
 
+export function incompleteArtifactReason(bundle: Bundle): string | null {
+  const detail = firstExtension(bundle.extensions);
+  if (!detail) return null;
+  const identity = object(detail.artifact_identity);
+  if (String(identity.sha256 || detail.artifact_sha256 || "")) return null;
+  if (String(detail.decision || "") !== "incomplete" && String(detail.source || "") !== "marketplace-error") return null;
+  const inventory = object(detail.artifact_inventory);
+  return String(inventory.skipped_reason || detail.decision_reason || detail.verdict_reason || "Artifact acquisition did not complete.").slice(0, 1000);
+}
+
 export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<string> {
   const db = serviceDb();
   const detail = firstExtension(bundle.extensions);
@@ -26,7 +36,7 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
   const queuedJob = await db.from("scan_jobs").select("extension_id,version,scan_purpose").eq("id", jobId).maybeSingle();
   if (queuedJob.error) throw new Error(`Scan job lookup failed: ${queuedJob.error.message}`);
   if (!queuedJob.data) throw new Error("Scan job was not found.");
-  if (queuedJob.data.extension_id !== extensionId || queuedJob.data.version !== version) throw new Error("Scanner result does not match the claimed artifact.");
+  if (String(queuedJob.data.extension_id).toLowerCase() !== extensionId.toLowerCase() || queuedJob.data.version !== version) throw new Error("Scanner result does not match the claimed artifact.");
   const publicPurpose = ["public_intelligence", "benchmark"].includes(String(queuedJob.data.scan_purpose));
   if (publicPurpose && String(detail.score_schema_version || "") !== "2") throw new Error("Public scans require canonical score schema v2.");
   if (publicPurpose && String(metadata.scanner_version || "").includes("hosted-static")) throw new Error("Hosted-static reports cannot be published as canonical scans.");

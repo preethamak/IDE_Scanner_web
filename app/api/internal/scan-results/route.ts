@@ -1,7 +1,7 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { gunzipSync } from "node:zlib";
 import { NextResponse } from "next/server";
-import { ingestScanBundle } from "@/lib/scanIngest";
+import { incompleteArtifactReason, ingestScanBundle } from "@/lib/scanIngest";
 import { serviceDb } from "@/lib/supabase";
 
 export const runtime = "nodejs";
@@ -43,6 +43,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ status: "failed" });
     }
     if (!payload.bundle) throw new Error("bundle is required for a completed scan.");
+    const acquisitionFailure = incompleteArtifactReason(payload.bundle);
+    if (acquisitionFailure) {
+      const incompleteAt = new Date().toISOString();
+      await Promise.all([
+        db.from("scan_jobs").update({ status: "incomplete", lifecycle_stage: "completed", error: acquisitionFailure, callback_error: null, completed_at: incompleteAt, lease_expires_at: null, updated_at: incompleteAt, last_event_at: incompleteAt }).eq("id", payload.job_id),
+        db.from("extension_versions").update({ scan_state: "incomplete" }).eq("extension_id", job.data.extension_id).eq("version", job.data.version),
+        db.from("scan_runner_status").upsert({ id: "github-actions", last_seen_at: incompleteAt, last_failure_at: incompleteAt, last_error: acquisitionFailure.slice(0, 500) }, { onConflict: "id" }),
+        db.from("scan_job_events").insert({ job_id: payload.job_id, stage: "completed", event_type: "artifact_incomplete", detail: { error: acquisitionFailure } }),
+        db.from("scan_callback_receipts").update({ outcome: "accepted", completed_at: incompleteAt }).eq("id", receiptId),
+      ]);
+      return NextResponse.json({ status: "incomplete", reason: acquisitionFailure });
+    }
     const scanId = await ingestScanBundle(payload.job_id, payload.bundle);
     await db.from("scan_callback_receipts").update({ outcome: "accepted", completed_at: new Date().toISOString() }).eq("id", receiptId);
     return NextResponse.json({ scan_id: scanId });
