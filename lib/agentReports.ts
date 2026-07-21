@@ -46,7 +46,7 @@ export async function saveAgentReport(payload: unknown): Promise<UploadedAgentRe
     source: "agent",
     agent,
     summary: data.summary as ReportSummary,
-    report: data.report
+    report: redactReportSource(data.report)
   };
   await mkdir(reportsDir, { recursive: true });
   await writeFile(reportPath(item.id), JSON.stringify(item, null, 2) + "\n", "utf-8");
@@ -107,6 +107,32 @@ export function agentReportToJob(item: UploadedAgentReport): ScanJobPublic {
 
 function reportPath(id: string): string {
   return path.join(reportsDir, `${id}.json`);
+}
+
+// Defense in depth: even if an old or rogue agent uploads raw source-file
+// bodies, never persist them. Source code is meant to stay on the scanned
+// machine; we keep only path + hash metadata for each preview.
+function redactReportSource(report: unknown): unknown {
+  if (!report || typeof report !== "object") return report;
+  const root = report as { extensions?: unknown };
+  if (!Array.isArray(root.extensions)) return report;
+  for (const extension of root.extensions) {
+    if (!extension || typeof extension !== "object") continue;
+    const inventory = (extension as { artifact_inventory?: unknown }).artifact_inventory;
+    if (!inventory || typeof inventory !== "object") continue;
+    const previews = (inventory as { source_previews?: unknown }).source_previews;
+    if (!Array.isArray(previews)) continue;
+    (inventory as { source_previews: unknown }).source_previews = previews.map((preview) => {
+      if (!preview || typeof preview !== "object") return preview;
+      const item = preview as Record<string, unknown>;
+      return {
+        path: item.path,
+        content_sha256: item.content_sha256,
+        redacted: true
+      };
+    });
+  }
+  return report;
 }
 
 function normalizeAgent(value: unknown): AgentMetadata {

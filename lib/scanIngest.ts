@@ -14,6 +14,25 @@ export function incompleteArtifactReason(bundle: Bundle): string | null {
   return String(inventory.skipped_reason || detail.decision_reason || detail.verdict_reason || "Artifact acquisition did not complete.").slice(0, 1000);
 }
 
+// Gate for scans that will be published as canonical public/benchmark
+// intelligence. These must carry the exact canonical contract -- report
+// schema 2.2 and score schema v2 -- and must not be a hosted-static report
+// masquerading as a full engine result. Returns an error string when the
+// bundle cannot be published, or null when it is admissible. A non-public
+// scan is always admissible here.
+export function publicCanonicalError(
+  publicPurpose: boolean,
+  reportedSchemaVersion: string,
+  detail: Record<string, unknown>,
+  metadata: Record<string, unknown>,
+): string | null {
+  if (!publicPurpose) return null;
+  if (reportedSchemaVersion !== "2.2") return "Public scans require canonical report schema 2.2.";
+  if (String(detail.score_schema_version || "") !== "2") return "Public scans require canonical score schema v2.";
+  if (String(metadata.scanner_version || "").includes("hosted-static")) return "Hosted-static reports cannot be published as canonical scans.";
+  return null;
+}
+
 export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<string> {
   const db = serviceDb();
   const detail = firstExtension(bundle.extensions);
@@ -42,8 +61,9 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
   // queries all resolve the same row even when package.json uses display case.
   const extensionId = String(queuedJob.data.extension_id);
   const publicPurpose = ["public_intelligence", "benchmark"].includes(String(queuedJob.data.scan_purpose));
-  if (publicPurpose && String(detail.score_schema_version || "") !== "2") throw new Error("Public scans require canonical score schema v2.");
-  if (publicPurpose && String(metadata.scanner_version || "").includes("hosted-static")) throw new Error("Hosted-static reports cannot be published as canonical scans.");
+  const reportedSchemaVersion = String(metadata.schema_version || "").trim();
+  const canonicalError = publicCanonicalError(publicPurpose, reportedSchemaVersion, detail, metadata);
+  if (canonicalError) throw new Error(canonicalError);
   const frozenBenchmarkArtifact = benchmarkRows.find((row) => row.id.toLowerCase() === extensionId.toLowerCase() && row.version === version);
   if (queuedJob.data.scan_purpose === "benchmark" && !frozenBenchmarkArtifact) throw new Error("Benchmark result is not part of the frozen corpus.");
   if (frozenBenchmarkArtifact && frozenBenchmarkArtifact.sha256.toLowerCase() !== artifactSha.toLowerCase()) throw new Error("Canonical result does not match the frozen benchmark artifact hash.");
@@ -54,7 +74,7 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
     version,
     artifact_sha256: artifactSha,
     profile: String(metadata.profile || "deep"),
-    schema_version: String(metadata.schema_version || "2.2"),
+    schema_version: reportedSchemaVersion || "unknown",
     scanner_version: String(metadata.scanner_version || "unknown"),
     scanner_build: scannerBuild,
     ruleset_version: String(metadata.ruleset_version || "unknown"),
