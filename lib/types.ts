@@ -32,6 +32,7 @@ export type FindingSummary = {
   rule_id: string;
   category: string;
   severity: string;
+  effective_severity?: string;
   confidence: number;
   evidence_summary: string;
   file_refs: string[];
@@ -97,7 +98,7 @@ export type ScannerFinding = FindingSummary & {
   score?: number;
   evidence_type?: string;
   evidence_class?: string;
-  actionability?: "contextual" | "review" | "investigate" | "block";
+  actionability?: "contextual" | "low" | "review" | "investigate" | "block";
 };
 
 export type Recommendation = {
@@ -187,6 +188,8 @@ export type ReportMetadata = {
   completed_extensions: number;
   incomplete_extensions: number;
   scanner_build?: string;
+  policy_version?: string;
+  intelligence_snapshot?: Record<string, unknown>;
 };
 
 export type ScannerBundleSummary = {
