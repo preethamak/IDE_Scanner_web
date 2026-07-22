@@ -78,7 +78,10 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
     scanner_version: String(metadata.scanner_version || "unknown"),
     scanner_build: scannerBuild,
     ruleset_version: String(metadata.ruleset_version || "unknown"),
+    policy_version: String(metadata.policy_version || "legacy"),
+    intelligence_snapshot: object(metadata.intelligence_snapshot),
     scan_purpose: String(queuedJob.data.scan_purpose),
+    analysis_status: canonicalAnalysisStatus(detail),
     decision: String(detail.decision || "incomplete"),
     decision_reason: String(detail.decision_reason || detail.verdict_reason || "Review scan evidence."),
     public_outcome: String(detail.public_outcome || legacyOutcome(detail)),
@@ -152,6 +155,10 @@ function firstExtension(value: Bundle["extensions"]): Record<string, unknown> | 
 }
 function object(value: unknown): Record<string, unknown> { return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; }
 function array(value: unknown): unknown[] { return Array.isArray(value) ? value : []; }
+export function canonicalAnalysisStatus(detail: Record<string, unknown>): "complete" | "incomplete" | "failed" {
+  const status = String(detail.analysis_status || object(detail.analysis_coverage).status || "incomplete");
+  return status === "complete" || status === "failed" ? status : "incomplete";
+}
 function legacyOutcome(detail: Record<string, unknown>): string {
   const decision = String(detail.decision || "incomplete");
   if (decision === "allow") return "clear";

@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { incompleteArtifactReason, publicCanonicalError } from "@/lib/scanIngest";
+import { canonicalAnalysisStatus, incompleteArtifactReason, publicCanonicalError } from "@/lib/scanIngest";
 
 describe("scan ingestion boundaries", () => {
+  it("preserves canonical analysis status and fails unknown states closed", () => {
+    expect(canonicalAnalysisStatus({ analysis_status: "complete" })).toBe("complete");
+    expect(canonicalAnalysisStatus({ analysis_status: "failed" })).toBe("failed");
+    expect(canonicalAnalysisStatus({ analysis_coverage: { status: "pending" } })).toBe("incomplete");
+  });
+
   it("keeps artifact acquisition failures explicit without inventing identity", () => {
     const reason = incompleteArtifactReason({ extensions: { "extensions/publisher.large@unknown.json": {
       source: "marketplace-error",
