@@ -30,6 +30,13 @@ export function publicCanonicalError(
   if (reportedSchemaVersion !== "2.2") return "Public scans require canonical report schema 2.2.";
   if (String(detail.score_schema_version || "") !== "2") return "Public scans require canonical score schema v2.";
   if (String(metadata.scanner_version || "").includes("hosted-static")) return "Hosted-static reports cannot be published as canonical scans.";
+  if (String(metadata.policy_version || "").startsWith("3.")) {
+    const status = canonicalAnalysisStatus(detail);
+    const decision = String(detail.decision || "incomplete");
+    if (!detail.analysis_status) return "Policy v3 public scans require canonical analysis status.";
+    if (status === "complete" && !["allow", "review", "block"].includes(decision)) return "A complete Policy v3 scan requires an allow, review, or block decision.";
+    if (status !== "complete" && decision !== "incomplete") return "An incomplete or failed Policy v3 scan cannot publish an approval decision.";
+  }
   return null;
 }
 

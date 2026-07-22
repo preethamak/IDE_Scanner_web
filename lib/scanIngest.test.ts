@@ -52,4 +52,11 @@ describe("public canonical schema enforcement", () => {
   it("does not gate non-public scans on the canonical schema", () => {
     expect(publicCanonicalError(false, "0.1.0", { score_schema_version: "1" }, { scanner_version: "hosted-static-1" })).toBeNull();
   });
+
+  it("enforces independent status and decision for Policy v3", () => {
+    const meta = { scanner_version: "engine-1", policy_version: "3.0.0" };
+    expect(publicCanonicalError(true, "2.2", { score_schema_version: "2", analysis_status: "complete", decision: "allow" }, meta)).toBeNull();
+    expect(publicCanonicalError(true, "2.2", { score_schema_version: "2", decision: "allow" }, meta)).toContain("analysis status");
+    expect(publicCanonicalError(true, "2.2", { score_schema_version: "2", analysis_status: "failed", decision: "allow" }, meta)).toContain("cannot publish");
+  });
 });
