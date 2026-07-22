@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { canonicalAnalysisStatus } from "@/lib/classificationContract";
 import { serviceDb } from "@/lib/supabase";
 import { benchmarkRows } from "@/lib/websiteBenchmarkRows";
 
@@ -25,18 +26,22 @@ export function publicCanonicalError(
   reportedSchemaVersion: string,
   detail: Record<string, unknown>,
   metadata: Record<string, unknown>,
+  expectedScannerBuild?: string,
 ): string | null {
   if (!publicPurpose) return null;
   if (reportedSchemaVersion !== "2.2") return "Public scans require canonical report schema 2.2.";
   if (String(detail.score_schema_version || "") !== "2") return "Public scans require canonical score schema v2.";
   if (String(metadata.scanner_version || "").includes("hosted-static")) return "Hosted-static reports cannot be published as canonical scans.";
-  if (String(metadata.policy_version || "").startsWith("3.")) {
-    const status = canonicalAnalysisStatus(detail);
-    const decision = String(detail.decision || "incomplete");
-    if (!detail.analysis_status) return "Policy v3 public scans require canonical analysis status.";
-    if (status === "complete" && !["allow", "review", "block"].includes(decision)) return "A complete Policy v3 scan requires an allow, review, or block decision.";
-    if (status !== "complete" && decision !== "incomplete") return "An incomplete or failed Policy v3 scan cannot publish an approval decision.";
-  }
+  if (!metadata.policy_version || metadata.policy_version === "legacy") return "Public scans require an explicit non-legacy classification policy.";
+  if (!metadata.ruleset_version || metadata.ruleset_version === "unknown") return "Public scans require an explicit ruleset version.";
+  const scannerBuild = String(metadata.scanner_build || "");
+  if (!expectedScannerBuild) return "Public scans require a job-bound scanner build.";
+  if (scannerBuild !== expectedScannerBuild) return "Scanner build does not match the build bound to this job.";
+  const status = canonicalAnalysisStatus(detail);
+  const decision = String(detail.decision || "incomplete");
+  if (!detail.analysis_status) return "Public scans require canonical analysis status.";
+  if (status === "complete" && !["allow", "review", "block"].includes(decision)) return "A complete scan requires an allow, review, or block decision.";
+  if (status !== "complete" && decision !== "incomplete") return "An incomplete or failed scan cannot publish an approval decision.";
   return null;
 }
 
@@ -59,9 +64,12 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
   // while operational-intelligence migration 011 rolls out. A worker result
   // must never be rejected simply because an optional metrics column has not
   // been deployed yet.
-  const queuedJob = await db.from("scan_jobs").select("extension_id,version,scan_purpose").eq("id", jobId).maybeSingle();
+  const queuedJob = await db.from("scan_jobs").select("extension_id,version,scan_purpose,expected_scanner_build").eq("id", jobId).maybeSingle();
   if (queuedJob.error) throw new Error(`Scan job lookup failed: ${queuedJob.error.message}`);
   if (!queuedJob.data) throw new Error("Scan job was not found.");
+  const expectedScannerBuild = String(queuedJob.data.expected_scanner_build || "").trim();
+  if (!expectedScannerBuild) throw new Error("Scan job is missing its bound scanner build identity.");
+  if (scannerBuild !== expectedScannerBuild) throw new Error("Scanner result build does not match the build bound to this job.");
   if (String(queuedJob.data.extension_id).toLowerCase() !== reportedExtensionId.toLowerCase() || queuedJob.data.version !== version) throw new Error("Scanner result does not match the claimed artifact.");
   // Registry identifiers are case-insensitive. Persist the inventory/job form
   // as the canonical database key so catalog, benchmark, and exact-report
@@ -69,7 +77,7 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
   const extensionId = String(queuedJob.data.extension_id);
   const publicPurpose = ["public_intelligence", "benchmark"].includes(String(queuedJob.data.scan_purpose));
   const reportedSchemaVersion = String(metadata.schema_version || "").trim();
-  const canonicalError = publicCanonicalError(publicPurpose, reportedSchemaVersion, detail, metadata);
+  const canonicalError = publicCanonicalError(publicPurpose, reportedSchemaVersion, detail, metadata, expectedScannerBuild);
   if (canonicalError) throw new Error(canonicalError);
   const frozenBenchmarkArtifact = benchmarkRows.find((row) => row.id.toLowerCase() === extensionId.toLowerCase() && row.version === version);
   if (queuedJob.data.scan_purpose === "benchmark" && !frozenBenchmarkArtifact) throw new Error("Benchmark result is not part of the frozen corpus.");
@@ -134,16 +142,18 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
   await insertChunks("dependencies", dependencies);
   await insertChunks("artifact_file_previews", previews);
   const completedAt = new Date().toISOString();
-  if (scanRow.decision !== "incomplete") {
+  if (scanRow.analysis_status === "complete") {
     const supersede = await db.from("scans").update({ superseded_at: completedAt }).eq("extension_id", extensionId).eq("version", version).eq("scan_purpose", queuedJob.data.scan_purpose).neq("id", scanId).is("superseded_at", null);
     if (supersede.error) throw supersede.error;
   }
-  const versionUpdate = await db.from("extension_versions").update({ artifact_sha256: artifactSha, latest_scan_id: scanId, scan_state: scanRow.decision === "incomplete" ? "incomplete" : "complete" }).eq("extension_id", extensionId).eq("version", version);
+  const terminalState = scanRow.analysis_status === "complete" ? "complete" : scanRow.analysis_status;
+  const lifecycleStage = terminalState === "failed" ? "failed" : "completed";
+  const versionUpdate = await db.from("extension_versions").update({ artifact_sha256: artifactSha, latest_scan_id: scanId, scan_state: terminalState }).eq("extension_id", extensionId).eq("version", version);
   if (versionUpdate.error) throw versionUpdate.error;
   await Promise.all([
-    db.from("scan_jobs").update({ status: scanRow.decision === "incomplete" ? "incomplete" : "complete", lifecycle_stage: "completed", ruleset_version: scanRow.ruleset_version, callback_error: null, completed_at: completedAt, lease_expires_at: null, updated_at: completedAt, last_event_at: completedAt }).eq("id", jobId),
+    db.from("scan_jobs").update({ status: terminalState, lifecycle_stage: lifecycleStage, ruleset_version: scanRow.ruleset_version, callback_error: null, completed_at: completedAt, lease_expires_at: null, updated_at: completedAt, last_event_at: completedAt }).eq("id", jobId),
     db.from("scan_runner_status").upsert({ id: "github-actions", last_seen_at: completedAt, last_success_at: completedAt, last_error: null }, { onConflict: "id" }),
-    db.from("scan_job_events").insert({ job_id: jobId, stage: "completed", event_type: "report_published", detail: { scan_id: scanId, decision: scanRow.decision } }),
+    db.from("scan_job_events").insert({ job_id: jobId, stage: lifecycleStage, event_type: "report_published", detail: { scan_id: scanId, decision: scanRow.decision, analysis_status: scanRow.analysis_status } }),
   ]);
   return scanId;
 
@@ -162,10 +172,6 @@ function firstExtension(value: Bundle["extensions"]): Record<string, unknown> | 
 }
 function object(value: unknown): Record<string, unknown> { return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; }
 function array(value: unknown): unknown[] { return Array.isArray(value) ? value : []; }
-export function canonicalAnalysisStatus(detail: Record<string, unknown>): "complete" | "incomplete" | "failed" {
-  const status = String(detail.analysis_status || object(detail.analysis_coverage).status || "incomplete");
-  return status === "complete" || status === "failed" ? status : "incomplete";
-}
 function legacyOutcome(detail: Record<string, unknown>): string {
   const decision = String(detail.decision || "incomplete");
   if (decision === "allow") return "clear";

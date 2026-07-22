@@ -109,10 +109,10 @@ for (const extension of cohort) {
     if (queued >= scanLimit) break;
     const existing = await db.from("extension_versions").select("scan_state").eq("extension_id", extension.id).eq("version", item.version).single();
     if (["queued", "running"].includes(existing.data?.scan_state)) continue;
-    const canonical = await db.from("scans").select("id").eq("extension_id", extension.id).eq("version", item.version).eq("scan_purpose", "public_intelligence").eq("score_schema_version", "2").eq("scanner_build", scannerBuild).neq("decision", "incomplete").is("superseded_at", null).limit(1).maybeSingle();
+    const canonical = await db.from("scans").select("id").eq("extension_id", extension.id).eq("version", item.version).eq("scan_purpose", "public_intelligence").eq("score_schema_version", "2").eq("scanner_build", scannerBuild).eq("analysis_status", "complete").is("superseded_at", null).limit(1).maybeSingle();
     if (canonical.error) throw canonical.error;
     if (canonical.data) continue;
-    const job = await db.from("scan_jobs").insert({ extension_id: extension.id, version: item.version, profile: "deep", requester_hash: "catalog-refresh", scan_purpose: "public_intelligence" }).select("id").single();
+    const job = await db.from("scan_jobs").insert({ extension_id: extension.id, version: item.version, profile: "deep", requester_hash: "catalog-refresh", scan_purpose: "public_intelligence", expected_scanner_build: scannerBuild }).select("id").single();
     if (job.error) continue;
     await db.from("extension_versions").update({ scan_state: "queued" }).eq("extension_id", extension.id).eq("version", item.version);
     queued += 1;

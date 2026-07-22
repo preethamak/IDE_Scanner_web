@@ -11,6 +11,7 @@ type RequestedJob = {
   version?: unknown;
   scan_purpose?: unknown;
   registry?: unknown;
+  scanner_build?: unknown;
 };
 
 const extensionPattern = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+$/;
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
 
   const jobs = payload.jobs.map(normalizeJob);
   if (jobs.some((job) => !job)) return NextResponse.json({ error: "One or more scan jobs are invalid." }, { status: 400 });
-  const normalized = jobs as Array<{ extension_id: string; version: string; scan_purpose: "benchmark" | "public_intelligence"; registry: "vs-marketplace" | "openvsx" }>;
+  const normalized = jobs as Array<{ extension_id: string; version: string; scan_purpose: "benchmark" | "public_intelligence"; registry: "vs-marketplace" | "openvsx"; scanner_build: string }>;
   for (const job of normalized) {
     if (job.scan_purpose !== "benchmark") continue;
     const frozen = benchmarkRows.find((row) => row.id.toLowerCase() === job.extension_id.toLowerCase() && row.version === job.version);
@@ -61,7 +62,7 @@ export async function POST(request: Request) {
       queued.push({ ...active.data, deduplicated: true });
       continue;
     }
-    const inserted = await db.from("scan_jobs").insert({ extension_id: requested.extension_id, version: requested.version, profile: "deep", requester_hash: `canonical-${requested.scan_purpose}`, scan_purpose: requested.scan_purpose, status: "queued" }).select("id,extension_id,version,scan_purpose").single();
+    const inserted = await db.from("scan_jobs").insert({ extension_id: requested.extension_id, version: requested.version, profile: "deep", requester_hash: `canonical-${requested.scan_purpose}`, scan_purpose: requested.scan_purpose, status: "queued", expected_scanner_build: requested.scanner_build }).select("id,extension_id,version,scan_purpose").single();
     if (inserted.error) return NextResponse.json({ error: `Could not queue ${requested.extension_id}@${requested.version}.` }, { status: 503 });
     queued.push({ ...inserted.data, deduplicated: false });
   }
@@ -73,6 +74,7 @@ function normalizeJob(job: RequestedJob) {
   const version = String(job.version || "").trim();
   const purpose = String(job.scan_purpose || "");
   const registry = String(job.registry || "vs-marketplace");
-  if (!extensionPattern.test(extensionId) || !versionPattern.test(version) || !allowedPurposes.has(purpose) || !["vs-marketplace", "openvsx"].includes(registry)) return null;
-  return { extension_id: extensionId, version, scan_purpose: purpose as "benchmark" | "public_intelligence", registry: registry as "vs-marketplace" | "openvsx" };
+  const scannerBuild = String(job.scanner_build || "").trim().toLowerCase();
+  if (!extensionPattern.test(extensionId) || !versionPattern.test(version) || !allowedPurposes.has(purpose) || !["vs-marketplace", "openvsx"].includes(registry) || !/^[0-9a-f]{40}$/.test(scannerBuild)) return null;
+  return { extension_id: extensionId, version, scan_purpose: purpose as "benchmark" | "public_intelligence", registry: registry as "vs-marketplace" | "openvsx", scanner_build: scannerBuild };
 }

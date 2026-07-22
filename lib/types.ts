@@ -65,6 +65,7 @@ export type ExtensionSummary = {
   icon_ref?: string;
   from_cache?: boolean;
   scan_incomplete?: boolean;
+  analysis_status?: "complete" | "incomplete" | "failed";
   skipped_reason?: string;
   decision?: Decision;
   decision_reason?: string;
@@ -139,7 +140,7 @@ export type ExtensionDetail = Omit<ExtensionSummary, "top_findings"> & {
     signature?: Record<string, unknown>;
   };
   analysis_coverage?: {
-    status?: "complete" | "incomplete" | "pending";
+    status?: "complete" | "incomplete" | "failed" | "pending";
     coverage_percent?: number;
     discovered_files?: number;
     declared_entrypoints?: string[];

@@ -13,6 +13,7 @@ function request(secret: string, jobs: unknown[]) {
 }
 
 describe("canonical scan enqueue endpoint", () => {
+  const scannerBuild = "a".repeat(40);
   beforeEach(() => {
     process.env.SCAN_RUNNER_SECRET = "runner-secret";
     from.mockReset();
@@ -30,7 +31,7 @@ describe("canonical scan enqueue endpoint", () => {
   });
 
   it("only permits hash-frozen artifacts in the benchmark queue", async () => {
-    const response = await POST(request("runner-secret", [{ extension_id: "dbaeumer.vscode-eslint", version: "0.0.1", scan_purpose: "benchmark" }]));
+    const response = await POST(request("runner-secret", [{ extension_id: "dbaeumer.vscode-eslint", version: "0.0.1", scan_purpose: "benchmark", scanner_build: scannerBuild }]));
     expect(response.status).toBe(400);
     expect(await response.json()).toMatchObject({ error: "Benchmark artifact is not frozen: dbaeumer.vscode-eslint@0.0.1" });
     expect(from).not.toHaveBeenCalled();

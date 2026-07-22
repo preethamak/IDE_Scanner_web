@@ -29,7 +29,7 @@ export type PublicInventory = { items: PublicInventoryItem[]; totals: { extensio
 export async function getPublicSecurityFeed(limit = 6): Promise<PublicSecurityFeedItem[]> {
   const db = publicDb();
   if (!db) return [];
-  const { data: scans } = await db.from("scans").select("id,extension_id,version,severity,decision,public_outcome,decision_basis,evidence_confidence,scanned_at,coverage_percent,decision_reason").eq("scan_purpose", "public_intelligence").eq("score_schema_version", "2").is("superseded_at", null).in("decision", ["review", "block"]).order("scanned_at", { ascending: false }).limit(80);
+  const { data: scans } = await db.from("scans").select("id,extension_id,version,severity,decision,public_outcome,decision_basis,evidence_confidence,scanned_at,coverage_percent,decision_reason").eq("scan_purpose", "public_intelligence").eq("score_schema_version", "2").eq("analysis_status", "complete").is("superseded_at", null).in("decision", ["review", "block"]).order("scanned_at", { ascending: false }).limit(80);
   const rank = (severity: string) => ({ CRITICAL: 5, HIGH: 4, MEDIUM: 3, LOW: 2, INFO: 1 }[severity] || 0);
   const latest = new Map<string, Record<string, unknown>>();
   for (const scan of (scans || []) as Array<Record<string, unknown>>) { const key = `${scan.extension_id}@${scan.version}`; if (!latest.has(key)) latest.set(key, scan); }
@@ -44,7 +44,7 @@ export async function getPublicSecurityFeed(limit = 6): Promise<PublicSecurityFe
 export async function getPublicInventory(limit = 240): Promise<PublicInventory> {
   const db = publicDb();
   if (!db) return emptyInventory();
-  const { data: scans, error } = await db.from("scans").select("id,extension_id,version,artifact_sha256,severity,decision,decision_reason,public_outcome,decision_basis,evidence_confidence,provenance_tier,expected_profile_id,capability_assessment,score_schema_version,risk_score,malware_score,coverage_percent,scanner_build,ruleset_version,scanned_at").eq("scan_purpose", "public_intelligence").eq("score_schema_version", "2").is("superseded_at", null).in("decision", ["allow", "review", "block"]).order("scanned_at", { ascending: false }).limit(Math.min(limit, 240));
+  const { data: scans, error } = await db.from("scans").select("id,extension_id,version,artifact_sha256,severity,decision,decision_reason,public_outcome,decision_basis,evidence_confidence,provenance_tier,expected_profile_id,capability_assessment,score_schema_version,risk_score,malware_score,coverage_percent,scanner_build,ruleset_version,scanned_at").eq("scan_purpose", "public_intelligence").eq("score_schema_version", "2").eq("analysis_status", "complete").is("superseded_at", null).in("decision", ["allow", "review", "block"]).order("scanned_at", { ascending: false }).limit(Math.min(limit, 240));
   if (error || !scans?.length) return emptyInventory();
   const ids = [...new Set(scans.map((row) => String(row.extension_id)))];
   const { data: stored } = await db.from("extensions").select("id,display_name,publisher,description,icon_url,publisher_verified").in("id", ids);
