@@ -1,5 +1,5 @@
 import { publicDb, serviceDb } from "@/lib/supabase";
-import { listMarketplaceVersions, resolveMarketplaceExtension, searchMarketplace } from "@/lib/marketplace";
+import { isConcreteVersion, listMarketplaceVersions, resolveMarketplaceExtension, searchMarketplace } from "@/lib/marketplace";
 import { unstable_cache } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -109,6 +109,7 @@ export async function getExtensionProduct(id: string, client?: SupabaseClient): 
         versionRows = registryVersions.map((item) => ({ ...item, ...(persisted.get(item.version) || {}) }));
         if (!versionRows.length) versionRows = versions || [];
       }
+      versionRows = dedupeVersions(versionRows);
       const latest = versionRows.find((item) => item.is_latest) || versionRows[0];
       let scan: Record<string, unknown> | null = null;
       const scanIds = versionRows.map((item) => String(item.latest_scan_id || "")).filter(Boolean);
@@ -226,7 +227,7 @@ async function resolveStoredExtensionId(db: SupabaseClient, id: string): Promise
 }
 
 function dedupeVersions(rows: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
-  return [...new Map(rows.map((row) => [String(row.version), row])).values()];
+  return [...new Map(rows.filter((row) => isConcreteVersion(String(row.version || ""))).map((row) => [String(row.version), row])).values()];
 }
 
 async function activePublicPolicy(db: SupabaseClient): Promise<string | null> {

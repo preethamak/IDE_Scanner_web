@@ -96,9 +96,13 @@ export async function listMarketplaceVersions(extensionId: string): Promise<Arra
 
   const openvsx = await fetch(`https://open-vsx.org/api/${encodeURIComponent(publisher)}/${encodeURIComponent(name)}`, { cache: "no-store" }).then(async (response) => response.ok ? response.json() as Promise<OpenVsxExtension & { allVersions?: Record<string, string> }> : null).catch(() => null);
   if (!openvsx) return [];
-  const all = Object.keys(openvsx.allVersions || {});
+  const all = Object.keys(openvsx.allVersions || {}).filter(isConcreteVersion);
   const versionValues = all.length ? all : openvsx.version ? [openvsx.version] : [];
   return versionValues.map((version, index) => ({ extension_id: normalized, version, registry: "openvsx" as const, published_at: version === openvsx.version ? String(openvsx.timestamp || "") : "", download_url: version === openvsx.version ? String(openvsx.files?.download || "") : `https://open-vsx.org/api/${encodeURIComponent(publisher)}/${encodeURIComponent(name)}/${encodeURIComponent(version)}/file/${encodeURIComponent(publisher)}.${encodeURIComponent(name)}-${encodeURIComponent(version)}.vsix`, is_latest: index === 0 || version === openvsx.version, scan_state: "not_scanned" as const }));
+}
+
+export function isConcreteVersion(value: string): boolean {
+  return Boolean(value.trim()) && !["latest"].includes(value.trim().toLowerCase());
 }
 
 export function marketplaceVsixUrl(item: MarketplaceSearchResult): string {

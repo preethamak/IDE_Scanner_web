@@ -91,7 +91,7 @@ for (const extension of cohort) {
   const rows = versions
     .map((item, index) => ({ extension_id: extension.id, version: item.version, registry: extension.registry, published_at: item.published_at, download_url: item.download_url || null, is_latest: Boolean(item.is_latest ?? index === 0), discovered_at: refreshStartedAt, last_seen_at: refreshStartedAt }))
     .filter((item) => {
-      if (!item.version || seenVersions.has(item.version)) return false;
+      if (!item.version || item.version.trim().toLowerCase() === "latest" || seenVersions.has(item.version)) return false;
       seenVersions.add(item.version);
       return true;
     });

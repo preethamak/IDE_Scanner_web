@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { listMarketplaceVersions } from "@/lib/marketplace";
+import { isConcreteVersion, listMarketplaceVersions } from "@/lib/marketplace";
 
 describe("listMarketplaceVersions", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -17,5 +17,10 @@ describe("listMarketplaceVersions", () => {
     const versions = await listMarketplaceVersions("Anthropic.claude-code");
     expect(versions.map((item) => item.version)).toEqual(["2.1.218", "2.1.217"]);
     expect(versions.filter((item) => item.is_latest)).toHaveLength(1);
+  });
+
+  it("rejects registry channel aliases as exact versions", () => {
+    expect(isConcreteVersion("latest")).toBe(false);
+    expect(isConcreteVersion("2.1.218")).toBe(true);
   });
 });
