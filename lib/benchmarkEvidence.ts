@@ -13,7 +13,8 @@ export async function getReproducibleBenchmark(): Promise<{ rows: ReproducibleBe
   const db = publicDb();
   if (!db) return { rows: benchmarkRows.map((row) => ({ ...row, scan: null })), published: 0, awaiting: benchmarkRows.length };
   const ids = [...new Set(benchmarkRows.map((row) => row.id))];
-  const { data } = await db.from("scans").select("id,extension_id,version,artifact_sha256,public_outcome,decision,decision_reason,scanner_build,ruleset_version,coverage_percent,scanned_at,score_schema_version,severity,malware_score,risk_score").in("scan_purpose", ["public_intelligence", "benchmark"]).eq("score_schema_version", "2").eq("analysis_status", "complete").in("extension_id", ids).order("scanned_at", { ascending: false });
+  const identityFilter = ids.map((id) => `extension_id.ilike.${id}`).join(",");
+  const { data } = await db.from("scans").select("id,extension_id,version,artifact_sha256,public_outcome,decision,decision_reason,scanner_build,ruleset_version,coverage_percent,scanned_at,score_schema_version,severity,malware_score,risk_score").in("scan_purpose", ["public_intelligence", "benchmark"]).eq("score_schema_version", "2").eq("analysis_status", "complete").or(identityFilter).order("scanned_at", { ascending: false });
   const byArtifact = new Map<string, Record<string, unknown>>();
   for (const scan of (data || []) as Array<Record<string, unknown>>) {
     const key = artifactKey(String(scan.extension_id), String(scan.version), String(scan.artifact_sha256));
