@@ -27,10 +27,11 @@ export async function queueDeepScan(extensionId: string, requestedVersion: strin
   // A version is not a sufficient cache key. Reusing an older scanner build
   // would silently return a result produced before a precision or coverage fix.
   const requiredBuild = await currentScannerBuild();
-  if (!requiredBuild) throw new Error("Deep Scan cannot bind the job to the current scanner build.");
-  const complete = await db.from("scans").select("id").eq("extension_id", extensionId).eq("version", version).eq("scanner_build", requiredBuild).eq("analysis_status", "complete").order("scanned_at", { ascending: false }).limit(1).maybeSingle();
-  if (complete.error) throw complete.error;
-  if (complete.data) return withReportUrl({ status: "complete", scan_id: complete.data.id, reused: true, extension_id: extensionId, version });
+  if (requiredBuild) {
+    const complete = await db.from("scans").select("id").eq("extension_id", extensionId).eq("version", version).eq("scanner_build", requiredBuild).eq("analysis_status", "complete").order("scanned_at", { ascending: false }).limit(1).maybeSingle();
+    if (complete.error) throw complete.error;
+    if (complete.data) return withReportUrl({ status: "complete", scan_id: complete.data.id, reused: true, extension_id: extensionId, version });
+  }
 
   const since = new Date(Date.now() - 86_400_000).toISOString();
   const recent = await db.from("scan_jobs").select("id", { count: "exact", head: true }).eq("requested_by", requestedBy).gte("created_at", since);
@@ -44,7 +45,10 @@ export async function queueDeepScan(extensionId: string, requestedVersion: strin
   if (artifact.error) throw artifact.error;
 
   const requesterHash = hashRequester(request);
-  const job = await db.from("scan_jobs").insert({ extension_id: extensionId, version, profile: "deep", requester_hash: requesterHash, requested_by: requestedBy, scan_purpose: "user_request", status: "queued", expected_scanner_build: requiredBuild }).select("*").single();
+  // The workflow binds this job to its actual github.sha in the atomic claim.
+  // Predicting main here creates a race when the branch advances before the
+  // dispatched workflow starts.
+  const job = await db.from("scan_jobs").insert({ extension_id: extensionId, version, profile: "deep", requester_hash: requesterHash, requested_by: requestedBy, scan_purpose: "user_request", status: "queued", expected_scanner_build: null }).select("*").single();
   if (job.error) {
     const concurrent = await db.from("scan_jobs").select("*").eq("extension_id", extensionId).eq("version", version).eq("profile", "deep").in("status", ["queued", "running"]).maybeSingle();
     if (concurrent.data) {

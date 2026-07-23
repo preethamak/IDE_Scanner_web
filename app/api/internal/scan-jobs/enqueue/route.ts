@@ -56,10 +56,28 @@ export async function POST(request: Request) {
 
   const queued: Array<{ id: string; extension_id: string; version: string; scan_purpose: string; deduplicated: boolean }> = [];
   for (const requested of normalized) {
-    const active = await db.from("scan_jobs").select("id,extension_id,version,scan_purpose").eq("extension_id", requested.extension_id).eq("version", requested.version).eq("profile", "deep").in("status", ["queued", "running"]).maybeSingle();
+    const active = await db.from("scan_jobs").select("id,extension_id,version,scan_purpose,status,expected_scanner_build").eq("extension_id", requested.extension_id).eq("version", requested.version).eq("profile", "deep").in("status", ["queued", "running"]).maybeSingle();
     if (active.error) return NextResponse.json({ error: "Active scan lookup failed." }, { status: 503 });
     if (active.data) {
-      queued.push({ ...active.data, deduplicated: true });
+      const activeBuild = String(active.data.expected_scanner_build || "");
+      if (activeBuild === requested.scanner_build) {
+        queued.push({ ...active.data, deduplicated: true });
+        continue;
+      }
+      if (active.data.status === "running") {
+        return NextResponse.json({ error: `A different scanner build is already analyzing ${requested.extension_id}@${requested.version}.` }, { status: 409 });
+      }
+      // A queued job has not executed and can safely be rebound to the workflow
+      // that is about to claim it. This also promotes an unbound user request
+      // into the requested canonical publication purpose.
+      const rebound = await db.from("scan_jobs").update({
+        expected_scanner_build: requested.scanner_build,
+        scan_purpose: requested.scan_purpose,
+        requester_hash: `canonical-${requested.scan_purpose}`,
+      }).eq("id", active.data.id).eq("status", "queued").select("id,extension_id,version,scan_purpose").maybeSingle();
+      if (rebound.error) return NextResponse.json({ error: "Queued scan could not be bound to this scanner build." }, { status: 503 });
+      if (!rebound.data) return NextResponse.json({ error: "Queued scan changed state before it could be bound." }, { status: 409 });
+      queued.push({ ...rebound.data, deduplicated: true });
       continue;
     }
     const inserted = await db.from("scan_jobs").insert({ extension_id: requested.extension_id, version: requested.version, profile: "deep", requester_hash: `canonical-${requested.scan_purpose}`, scan_purpose: requested.scan_purpose, status: "queued", expected_scanner_build: requested.scanner_build }).select("id,extension_id,version,scan_purpose").single();

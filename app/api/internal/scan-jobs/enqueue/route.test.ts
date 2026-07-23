@@ -36,4 +36,86 @@ describe("canonical scan enqueue endpoint", () => {
     expect(await response.json()).toMatchObject({ error: "Benchmark artifact is not frozen: dbaeumer.vscode-eslint@0.0.1" });
     expect(from).not.toHaveBeenCalled();
   });
+
+  it("rebinds an unstarted job to the workflow build that will claim it", async () => {
+    const update = vi.fn();
+    from.mockImplementation((table: string) => {
+      if (table === "extensions") return { select: () => ({ in: async () => ({ data: [{ id: "publisher.extension" }], error: null }) }) };
+      if (table === "extension_versions") return { upsert: async () => ({ error: null }) };
+      if (table === "scan_jobs") {
+        if (!update.mock.calls.length) {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: () => ({
+                  eq: () => ({
+                    in: () => ({
+                      maybeSingle: async () => ({
+                        data: { id: "job-1", extension_id: "publisher.extension", version: "1.2.3", scan_purpose: "user_request", status: "queued", expected_scanner_build: null },
+                        error: null,
+                      }),
+                    }),
+                  }),
+                }),
+              }),
+            }),
+            update,
+          };
+        }
+      }
+      throw new Error(`Unexpected table access: ${table}`);
+    });
+    update.mockReturnValue({
+      eq: () => ({
+        eq: () => ({
+          select: () => ({
+            maybeSingle: async () => ({ data: { id: "job-1", extension_id: "publisher.extension", version: "1.2.3", scan_purpose: "public_intelligence" }, error: null }),
+          }),
+        }),
+      }),
+    });
+
+    const response = await POST(request("runner-secret", [{
+      extension_id: "publisher.extension",
+      version: "1.2.3",
+      scan_purpose: "public_intelligence",
+      scanner_build: scannerBuild,
+    }]));
+
+    expect(response.status).toBe(200);
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ expected_scanner_build: scannerBuild, scan_purpose: "public_intelligence" }));
+  });
+
+  it("does not rebind a job that is already running under another build", async () => {
+    from.mockImplementation((table: string) => {
+      if (table === "extensions") return { select: () => ({ in: async () => ({ data: [{ id: "publisher.extension" }], error: null }) }) };
+      if (table === "extension_versions") return { upsert: async () => ({ error: null }) };
+      if (table === "scan_jobs") return {
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              eq: () => ({
+                in: () => ({
+                  maybeSingle: async () => ({
+                    data: { id: "job-1", extension_id: "publisher.extension", version: "1.2.3", scan_purpose: "user_request", status: "running", expected_scanner_build: "b".repeat(40) },
+                    error: null,
+                  }),
+                }),
+              }),
+            }),
+          }),
+        }),
+      };
+      throw new Error(`Unexpected table access: ${table}`);
+    });
+
+    const response = await POST(request("runner-secret", [{
+      extension_id: "publisher.extension",
+      version: "1.2.3",
+      scan_purpose: "public_intelligence",
+      scanner_build: scannerBuild,
+    }]));
+
+    expect(response.status).toBe(409);
+  });
 });

@@ -885,7 +885,7 @@ function Versions({
       <div className="dossierTable versionTable">
         <div>
           <span>Version</span>
-          <span>Published</span>
+          <span>Artifact scope</span>
           <span>Decision</span>
           <span />
         </div>
@@ -897,7 +897,7 @@ function Versions({
               className={String(item.version) === current ? "current" : ""}
             >
               <strong>{String(item.version)}</strong>
-              <span>{formatDate(String(item.published_at || ""))}</span>
+              <span>Exact version</span>
               <span
                 className={`decisionTechnical ${decision.toLowerCase().replaceAll(" ", "-")}`}
               >
@@ -992,10 +992,6 @@ function Provenance({ scan }: { scan: RecordValue }) {
           value={String(scan.ruleset_version || "Not recorded")}
         />
         <Fact label="Scanner profile" value={String(scan.profile || "deep")} />
-        <Fact
-          label="Scan time"
-          value={formatDate(String(scan.scanned_at || ""))}
-        />
         <Fact
           label="VSIX signature"
           value={String(
@@ -1516,12 +1512,6 @@ function capabilityIcon(key: string) {
   if (key.includes("shell") || key.includes("process")) return <Terminal />;
   if (key.includes("dependency")) return <Package />;
   return <Boxes />;
-}
-function formatDate(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.valueOf())
-    ? "Not recorded"
-    : new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(date);
 }
 function formatBytes(value: number) {
   return value < 1024
