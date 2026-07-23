@@ -3,7 +3,7 @@ import { resolveMarketplaceExtension } from "@/lib/marketplace";
 import { serviceDb } from "@/lib/supabase";
 import { getDeepScanHealth } from "@/lib/deepScanHealth";
 
-export async function queueDeepScan(extensionId: string, requestedVersion: string | undefined, request: Request, requestedBy: string): Promise<Record<string, unknown>> {
+export async function queueDeepScan(extensionId: string, requestedVersion: string | undefined, request: Request, requestedBy: string, force = false): Promise<Record<string, unknown>> {
   const db = serviceDb();
   const health = await getDeepScanHealth();
   if (!health.available) throw new Error("Deep Scan is temporarily paused while the analysis runner reconnects.");
@@ -27,7 +27,7 @@ export async function queueDeepScan(extensionId: string, requestedVersion: strin
   // A version is not a sufficient cache key. Reusing an older scanner build
   // would silently return a result produced before a precision or coverage fix.
   const requiredBuild = await currentScannerBuild();
-  if (requiredBuild) {
+  if (requiredBuild && !force) {
     const complete = await db.from("scans").select("id").eq("extension_id", extensionId).eq("version", version).eq("scanner_build", requiredBuild).eq("analysis_status", "complete").order("scanned_at", { ascending: false }).limit(1).maybeSingle();
     if (complete.error) throw complete.error;
     if (complete.data) return withReportUrl({ status: "complete", scan_id: complete.data.id, reused: true, extension_id: extensionId, version });
@@ -48,7 +48,7 @@ export async function queueDeepScan(extensionId: string, requestedVersion: strin
   // The workflow binds this job to its actual github.sha in the atomic claim.
   // Predicting main here creates a race when the branch advances before the
   // dispatched workflow starts.
-  const job = await db.from("scan_jobs").insert({ extension_id: extensionId, version, profile: "deep", requester_hash: requesterHash, requested_by: requestedBy, scan_purpose: "user_request", status: "queued", expected_scanner_build: null }).select("*").single();
+  const job = await db.from("scan_jobs").insert({ extension_id: extensionId, version, profile: "deep", requester_hash: requesterHash, requested_by: requestedBy, scan_purpose: "user_request", status: "queued", expected_scanner_build: null, claim_protocol: 2 }).select("*").single();
   if (job.error) {
     const concurrent = await db.from("scan_jobs").select("*").eq("extension_id", extensionId).eq("version", version).eq("profile", "deep").in("status", ["queued", "running"]).maybeSingle();
     if (concurrent.data) {

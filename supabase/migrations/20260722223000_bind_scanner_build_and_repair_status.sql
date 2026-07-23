@@ -1,6 +1,9 @@
 alter table public.scan_jobs
   add column if not exists expected_scanner_build text;
 
+alter table public.scan_jobs
+  add column if not exists claim_protocol smallint not null default 1;
+
 do $$ begin
   alter table public.scan_jobs
     add constraint scan_jobs_expected_scanner_build_check
@@ -8,25 +11,6 @@ do $$ begin
 exception when duplicate_object then null;
 end $$;
 
--- Jobs created before build binding cannot be executed reproducibly. Fail them
--- explicitly so operators can retry them under the deployed scanner build.
-update public.scan_jobs
-set status = 'failed', lifecycle_stage = 'failed',
-    error = 'This job predates scanner build binding. Retry the scan.',
-    completed_at = now(), lease_expires_at = null,
-    updated_at = now(), last_event_at = now()
-where status in ('queued', 'running') and expected_scanner_build is null;
-
-update public.extension_versions as version
-set scan_state = 'failed'
-from public.scan_jobs as job
-where job.extension_id = version.extension_id
-  and job.version = version.version
-  and job.status = 'failed'
-  and job.error = 'This job predates scanner build binding. Retry the scan.'
-  and version.scan_state in ('queued', 'running');
-
-drop function if exists public.claim_deep_scan_job(text, uuid, bigint);
 create or replace function public.claim_deep_scan_job(
   p_runner_id text,
   p_scanner_build text,
@@ -122,3 +106,5 @@ where policy_version = 'legacy';
 
 comment on column public.scan_jobs.expected_scanner_build is
   'Git commit SHA bound to the job before execution; signed callbacks must report the same scanner build.';
+comment on column public.scan_jobs.claim_protocol is
+  'Claim contract version. Legacy producers use 1; build-bound producers use 2.';

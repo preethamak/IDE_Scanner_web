@@ -83,7 +83,7 @@ describe("canonical scan enqueue endpoint", () => {
     }]));
 
     expect(response.status).toBe(200);
-    expect(update).toHaveBeenCalledWith(expect.objectContaining({ expected_scanner_build: scannerBuild, scan_purpose: "public_intelligence" }));
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ expected_scanner_build: scannerBuild, claim_protocol: 2, scan_purpose: "public_intelligence" }));
   });
 
   it("does not rebind a job that is already running under another build", async () => {

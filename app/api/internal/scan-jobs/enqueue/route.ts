@@ -72,6 +72,7 @@ export async function POST(request: Request) {
       // into the requested canonical publication purpose.
       const rebound = await db.from("scan_jobs").update({
         expected_scanner_build: requested.scanner_build,
+        claim_protocol: 2,
         scan_purpose: requested.scan_purpose,
         requester_hash: `canonical-${requested.scan_purpose}`,
       }).eq("id", active.data.id).eq("status", "queued").select("id,extension_id,version,scan_purpose").maybeSingle();
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
       queued.push({ ...rebound.data, deduplicated: true });
       continue;
     }
-    const inserted = await db.from("scan_jobs").insert({ extension_id: requested.extension_id, version: requested.version, profile: "deep", requester_hash: `canonical-${requested.scan_purpose}`, scan_purpose: requested.scan_purpose, status: "queued", expected_scanner_build: requested.scanner_build }).select("id,extension_id,version,scan_purpose").single();
+    const inserted = await db.from("scan_jobs").insert({ extension_id: requested.extension_id, version: requested.version, profile: "deep", requester_hash: `canonical-${requested.scan_purpose}`, scan_purpose: requested.scan_purpose, status: "queued", expected_scanner_build: requested.scanner_build, claim_protocol: 2 }).select("id,extension_id,version,scan_purpose").single();
     if (inserted.error) return NextResponse.json({ error: `Could not queue ${requested.extension_id}@${requested.version}.` }, { status: 503 });
     queued.push({ ...inserted.data, deduplicated: false });
   }
