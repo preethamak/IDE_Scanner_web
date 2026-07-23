@@ -36,13 +36,15 @@ export async function POST(request: Request) {
 
   const db = serviceDb();
   const ids = [...new Set(normalized.map((job) => job.extension_id))];
-  const existingExtensions = await db.from("extensions").select("id").in("id", ids);
+  const existingExtensions = await db.from("extensions").select("id").or(ids.map((id) => `id.ilike.${id}`).join(","));
   if (existingExtensions.error) return NextResponse.json({ error: "Extension inventory lookup failed." }, { status: 503 });
-  const existingIds = new Set((existingExtensions.data || []).map((row) => String(row.id)));
-  const missing = normalized.filter((job) => !existingIds.has(job.extension_id)).map((job) => {
+  const canonicalIds = new Map((existingExtensions.data || []).map((row) => [String(row.id).toLowerCase(), String(row.id)]));
+  for (const job of normalized) job.extension_id = canonicalIds.get(job.extension_id.toLowerCase()) || job.extension_id;
+  const existingIds = new Set((existingExtensions.data || []).map((row) => String(row.id).toLowerCase()));
+  const missing = normalized.filter((job) => !existingIds.has(job.extension_id.toLowerCase())).map((job) => {
     const [publisher, ...nameParts] = job.extension_id.split(".");
     const name = nameParts.join(".");
-    existingIds.add(job.extension_id);
+    existingIds.add(job.extension_id.toLowerCase());
     return { id: job.extension_id, name, display_name: name, publisher, description: "", registry: job.registry };
   });
   if (missing.length) {

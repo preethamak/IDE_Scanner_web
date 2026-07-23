@@ -90,7 +90,8 @@ export async function listMarketplaceVersions(extensionId: string): Promise<Arra
     cache: "no-store",
   }).then(async (response) => response.ok ? response.json() as Promise<{ results?: Array<{ extensions?: GalleryExtension[] }> }> : null).catch(() => null);
   const raw = marketplace?.results?.[0]?.extensions?.[0];
-  const versions = (raw?.versions || []).filter((item) => item.version).map((item, index) => ({ extension_id: normalized, version: String(item.version), registry: "vs-marketplace" as const, published_at: String(item.lastUpdated || ""), download_url: `https://marketplace.visualstudio.com/_apis/public/gallery/publishers/${encodeURIComponent(publisher)}/vsextensions/${encodeURIComponent(name)}/${encodeURIComponent(String(item.version))}/vspackage`, is_latest: index === 0, scan_state: "not_scanned" as const }));
+  const uniqueVersions = [...new Map((raw?.versions || []).filter((item) => item.version).map((item) => [String(item.version), item])).values()];
+  const versions = uniqueVersions.map((item, index) => ({ extension_id: normalized, version: String(item.version), registry: "vs-marketplace" as const, published_at: String(item.lastUpdated || ""), download_url: `https://marketplace.visualstudio.com/_apis/public/gallery/publishers/${encodeURIComponent(publisher)}/vsextensions/${encodeURIComponent(name)}/${encodeURIComponent(String(item.version))}/vspackage`, is_latest: index === 0, scan_state: "not_scanned" as const }));
   if (versions.length) return versions;
 
   const openvsx = await fetch(`https://open-vsx.org/api/${encodeURIComponent(publisher)}/${encodeURIComponent(name)}`, { cache: "no-store" }).then(async (response) => response.ok ? response.json() as Promise<OpenVsxExtension & { allVersions?: Record<string, string> }> : null).catch(() => null);

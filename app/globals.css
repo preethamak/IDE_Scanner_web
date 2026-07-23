@@ -419,9 +419,9 @@ code, pre { font-family: var(--mono); }
 .overviewDecision span { margin-top: 5px; color: var(--muted); font-size: 12px; }
 .unassessedBand p { margin: 5px 0 0; color: #6c4b0b; font-size: 12px; }
 .versionTable { margin-top: 26px; border-top: 1px solid var(--ink); }
-.versionHead, .versionRow { display: grid; grid-template-columns: 1fr 1fr 1fr 72px; gap: 20px; align-items: center; min-height: 54px; border-bottom: 1px solid var(--line); }
+.versionHead, .versionRow { display: grid; grid-template-columns: 1fr 1fr 72px; gap: 20px; align-items: center; min-height: 54px; border-bottom: 1px solid var(--line); }
 .versionHead { min-height: 34px; color: var(--faint); font-size: 10px; font-weight: 750; text-transform: uppercase; }
-.versionRow { font-size: 13px; }
+.versionRow { font-size: 13px; content-visibility: auto; contain-intrinsic-size: auto 54px; }
 .versionRow > span { color: var(--muted); }
 .versionRow > a { display: flex; align-items: center; justify-content: flex-end; gap: 3px; font-weight: 650; }
 .scanState { width: fit-content; border: 1px solid var(--line); border-radius: 3px; padding: 3px 6px; font-family: var(--mono); font-size: 9px; text-transform: uppercase; }
@@ -893,7 +893,6 @@ code, pre { font-family: var(--mono); }
   .fileExplorer > div { grid-template-columns: 18px minmax(0, 1fr) 70px; }
   .fileExplorer small { display: none; }
   .versionHead, .versionRow { grid-template-columns: 1fr 1fr 34px; }
-  .versionHead span:nth-child(2), .versionRow > span:nth-child(2) { display: none; }
   .catalogPromises { display: grid; gap: 6px; }
   .catalogDiscovery > div:nth-child(2) { grid-template-columns: 1fr 1fr; }
   .catalogDiscovery > aside { grid-template-columns: 1fr; }

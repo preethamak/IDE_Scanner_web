@@ -12,8 +12,15 @@ export async function scanProgressPayload(db: SupabaseClient, job: Record<string
   const runId = Number(job.github_run_id || 0);
   const owner = process.env.GITHUB_REPO_OWNER || "preethamak";
   const repository = process.env.GITHUB_SCANNER_REPO || "IDE_Scanner";
+  let scanId: string | null = null;
+  if (["complete", "incomplete"].includes(String(job.status))) {
+    const scan = await db.from("scans").select("id").eq("job_id", jobId).limit(1).maybeSingle();
+    if (scan.error) throw scan.error;
+    scanId = scan.data?.id ? String(scan.data.id) : null;
+  }
   return withReportUrl({
     ...job,
+    scan_id: scanId,
     queue_position: Number(queue.data || 0),
     github_run_url: Number.isSafeInteger(runId) && runId > 0 ? `https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/actions/runs/${runId}` : null,
     events: events.data || [],

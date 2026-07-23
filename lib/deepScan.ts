@@ -9,10 +9,11 @@ export async function queueDeepScan(extensionId: string, requestedVersion: strin
   if (!health.available) throw new Error("Deep Scan is temporarily paused while the analysis runner reconnects.");
 
   const item = await resolveMarketplaceExtension(extensionId);
+  const canonicalExtensionId = item.extension_id;
   const version = requestedVersion || item.version;
   if (!version) throw new Error("No published version is available for this extension.");
 
-  const active = await db.from("scan_jobs").select("*").eq("extension_id", extensionId).eq("version", version).eq("profile", "deep").in("status", ["queued", "running"]).maybeSingle();
+  const active = await db.from("scan_jobs").select("*").eq("extension_id", canonicalExtensionId).eq("version", version).eq("profile", "deep").in("status", ["queued", "running"]).maybeSingle();
   if (active.error) throw active.error;
   if (active.data) {
     await subscribeToJob(String(active.data.id), requestedBy);
@@ -28,9 +29,9 @@ export async function queueDeepScan(extensionId: string, requestedVersion: strin
   // would silently return a result produced before a precision or coverage fix.
   const requiredBuild = await currentScannerBuild();
   if (requiredBuild && !force) {
-    const complete = await db.from("scans").select("id").eq("extension_id", extensionId).eq("version", version).eq("scanner_build", requiredBuild).eq("analysis_status", "complete").order("scanned_at", { ascending: false }).limit(1).maybeSingle();
+    const complete = await db.from("scans").select("id").eq("extension_id", canonicalExtensionId).eq("version", version).eq("scanner_build", requiredBuild).eq("analysis_status", "complete").order("scanned_at", { ascending: false }).limit(1).maybeSingle();
     if (complete.error) throw complete.error;
-    if (complete.data) return withReportUrl({ status: "complete", scan_id: complete.data.id, reused: true, extension_id: extensionId, version });
+    if (complete.data) return withReportUrl({ status: "complete", scan_id: complete.data.id, reused: true, extension_id: canonicalExtensionId, version });
   }
 
   const since = new Date(Date.now() - 86_400_000).toISOString();
@@ -48,26 +49,26 @@ export async function queueDeepScan(extensionId: string, requestedVersion: strin
   // The workflow binds this job to its actual github.sha in the atomic claim.
   // Predicting main here creates a race when the branch advances before the
   // dispatched workflow starts.
-  const job = await db.from("scan_jobs").insert({ extension_id: extensionId, version, profile: "deep", requester_hash: requesterHash, requested_by: requestedBy, scan_purpose: "user_request", status: "queued", expected_scanner_build: null, claim_protocol: 2 }).select("*").single();
+  const job = await db.from("scan_jobs").insert({ extension_id: canonicalExtensionId, version, profile: "deep", requester_hash: requesterHash, requested_by: requestedBy, scan_purpose: "user_request", status: "queued", expected_scanner_build: null, claim_protocol: 2 }).select("*").single();
   if (job.error) {
-    const concurrent = await db.from("scan_jobs").select("*").eq("extension_id", extensionId).eq("version", version).eq("profile", "deep").in("status", ["queued", "running"]).maybeSingle();
+    const concurrent = await db.from("scan_jobs").select("*").eq("extension_id", canonicalExtensionId).eq("version", version).eq("profile", "deep").in("status", ["queued", "running"]).maybeSingle();
     if (concurrent.data) {
       await subscribeToJob(String(concurrent.data.id), requestedBy);
       if (concurrent.data.status === "queued") await dispatchDeepScan(String(concurrent.data.id));
       return { ...concurrent.data, deduplicated: true };
     }
-    await db.from("extension_versions").update({ scan_state: "failed" }).eq("extension_id", extensionId).eq("version", version);
+    await db.from("extension_versions").update({ scan_state: "failed" }).eq("extension_id", canonicalExtensionId).eq("version", version);
     throw job.error;
   }
   await subscribeToJob(String(job.data.id), requestedBy);
-  await db.from("scan_job_events").insert({ job_id: job.data.id, stage: "queued", event_type: "created", detail: { extension_id: extensionId, version, requested_by: requestedBy } });
+  await db.from("scan_job_events").insert({ job_id: job.data.id, stage: "queued", event_type: "created", detail: { extension_id: canonicalExtensionId, version, requested_by: requestedBy } });
   try {
     await dispatchDeepScan(String(job.data.id));
   } catch (error) {
     const message = error instanceof Error ? error.message : "The Deep Scan worker could not be started.";
     await db.from("scan_jobs").update({ status: "failed", lifecycle_stage: "failed", error: message, callback_error: message, completed_at: new Date().toISOString(), updated_at: new Date().toISOString(), last_event_at: new Date().toISOString() }).eq("id", job.data.id);
     await db.from("scan_job_events").insert({ job_id: job.data.id, stage: "failed", event_type: "dispatch_failed", detail: { error: message } });
-    await db.from("extension_versions").update({ scan_state: "failed" }).eq("extension_id", extensionId).eq("version", version);
+    await db.from("extension_versions").update({ scan_state: "failed" }).eq("extension_id", canonicalExtensionId).eq("version", version);
     throw new Error(message);
   }
   return withReportUrl({ ...job.data, profile: "deep", runner_poll_seconds: 0, dispatch: "started" });
@@ -76,8 +77,11 @@ export async function queueDeepScan(extensionId: string, requestedVersion: strin
 export function withReportUrl<T extends Record<string, unknown>>(result: T): T & { report_url?: string } {
   const extensionId = typeof result.extension_id === "string" ? result.extension_id : "";
   const version = typeof result.version === "string" ? result.version : "";
+  const scanId = typeof result.scan_id === "string" ? result.scan_id : "";
   const complete = ["complete", "incomplete"].includes(String(result.status));
-  return complete && extensionId && version ? { ...result, report_url: `/extensions/${encodeURIComponent(extensionId)}/versions/${encodeURIComponent(version)}` } : result;
+  if (!complete || !extensionId || !version) return result;
+  const base = `/extensions/${encodeURIComponent(extensionId)}/versions/${encodeURIComponent(version)}`;
+  return { ...result, report_url: scanId ? `${base}/scans/${encodeURIComponent(scanId)}` : base };
 }
 
 async function dispatchDeepScan(jobId: string): Promise<void> {

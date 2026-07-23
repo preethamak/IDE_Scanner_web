@@ -1,6 +1,7 @@
 import { publicDb, serviceDb } from "@/lib/supabase";
 import { listMarketplaceVersions, resolveMarketplaceExtension, searchMarketplace } from "@/lib/marketplace";
 import { unstable_cache } from "next/cache";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const cachedVersions=unstable_cache(async(id:string)=>listMarketplaceVersions(id),["registry-versions-v2"],{revalidate:21600,tags:["registry-versions"]});
 
@@ -30,10 +31,12 @@ export type PublicInventory = { items: PublicInventoryItem[]; totals: { extensio
 export async function getPublicSecurityFeed(limit = 6): Promise<PublicSecurityFeedItem[]> {
   const db = publicDb();
   if (!db) return [];
-  const { data: scans } = await db.from("scans").select("id,extension_id,version,severity,decision,public_outcome,decision_basis,evidence_confidence,scanned_at,coverage_percent,decision_reason").eq("scan_purpose", "public_intelligence").eq("score_schema_version", "2").eq("analysis_status", "complete").is("superseded_at", null).in("decision", ["review", "block"]).order("scanned_at", { ascending: false }).limit(80);
+  const policy = await activePublicPolicy(db);
+  if (!policy) return [];
+  const { data: scans } = await db.from("scans").select("id,extension_id,version,severity,decision,public_outcome,decision_basis,evidence_confidence,scanned_at,coverage_percent,decision_reason").eq("scan_purpose", "public_intelligence").eq("score_schema_version", "2").eq("analysis_status", "complete").eq("policy_version", policy).is("superseded_at", null).in("decision", ["review", "block"]).order("scanned_at", { ascending: false }).limit(80);
   const rank = (severity: string) => ({ CRITICAL: 5, HIGH: 4, MEDIUM: 3, LOW: 2, INFO: 1 }[severity] || 0);
   const latest = new Map<string, Record<string, unknown>>();
-  for (const scan of (scans || []) as Array<Record<string, unknown>>) { const key = `${scan.extension_id}@${scan.version}`; if (!latest.has(key)) latest.set(key, scan); }
+  for (const scan of (scans || []) as Array<Record<string, unknown>>) { const key = `${String(scan.extension_id).toLowerCase()}@${scan.version}`; if (!latest.has(key)) latest.set(key, scan); }
   const rows = [...latest.values()].sort((a, b) => rank(String(b.severity)) - rank(String(a.severity)) || String(b.scanned_at).localeCompare(String(a.scanned_at))).slice(0, limit);
   const ids = [...new Set(rows.map((item) => String(item.extension_id)))];
   const { data: extensions } = ids.length ? await db.from("extensions").select("id,display_name").in("id", ids) : { data: [] as Array<{ id: string; display_name: string }> };
@@ -45,12 +48,20 @@ export async function getPublicSecurityFeed(limit = 6): Promise<PublicSecurityFe
 export async function getPublicInventory(limit = 240): Promise<PublicInventory> {
   const db = publicDb();
   if (!db) return emptyInventory();
-  const { data: scans, error } = await db.from("scans").select("id,extension_id,version,artifact_sha256,severity,decision,decision_reason,public_outcome,decision_basis,evidence_confidence,provenance_tier,expected_profile_id,capability_assessment,score_schema_version,risk_score,malware_score,coverage_percent,scanner_build,ruleset_version,scanned_at").eq("scan_purpose", "public_intelligence").eq("score_schema_version", "2").eq("analysis_status", "complete").is("superseded_at", null).in("decision", ["allow", "review", "block"]).order("scanned_at", { ascending: false }).limit(Math.min(limit, 240));
+  const policy = await activePublicPolicy(db);
+  if (!policy) return emptyInventory();
+  const { data: scans, error } = await db.from("scans").select("id,extension_id,version,artifact_sha256,severity,decision,decision_reason,public_outcome,decision_basis,evidence_confidence,provenance_tier,expected_profile_id,capability_assessment,score_schema_version,risk_score,malware_score,coverage_percent,scanner_build,ruleset_version,scanned_at").eq("scan_purpose", "public_intelligence").eq("score_schema_version", "2").eq("analysis_status", "complete").eq("policy_version", policy).is("superseded_at", null).in("decision", ["allow", "review", "block"]).order("scanned_at", { ascending: false }).limit(240);
   if (error || !scans?.length) return emptyInventory();
-  const ids = [...new Set(scans.map((row) => String(row.extension_id)))];
+  const latest = new Map<string, (typeof scans)[number]>();
+  for (const scan of scans) {
+    const key = `${String(scan.extension_id).toLowerCase()}@${scan.version}`;
+    if (!latest.has(key)) latest.set(key, scan);
+  }
+  const selectedScans = [...latest.values()].slice(0, Math.min(limit, 240));
+  const ids = [...new Set(selectedScans.map((row) => String(row.extension_id)))];
   const { data: stored } = await db.from("extensions").select("id,display_name,publisher,description,icon_url,publisher_verified").in("id", ids);
   const metadata = new Map((stored || []).map((item) => [String(item.id), item]));
-  const items: PublicInventoryItem[] = scans.map((row) => {
+  const items: PublicInventoryItem[] = selectedScans.map((row) => {
     const extension = metadata.get(String(row.extension_id));
     const assessment = objectValue(row.capability_assessment);
     const matched = Array.isArray(assessment.matched) ? assessment.matched.map(String) : [];
@@ -81,17 +92,19 @@ export async function listCatalog(query = "", limit = 50): Promise<CatalogExtens
   return registry.map((item, index) => ({ id: item.extension_id, name: item.extension_id.split(".").slice(1).join("."), display_name: item.display_name, publisher: item.publisher, description: item.short_description, registry: item.registry || "vs-marketplace", publisher_verified: item.publisher_verified, installs: item.install_count, rating: item.rating_average, icon_url: item.icon_url, repository_url: "", last_published_at: item.last_updated || null, catalog_rank: index + 1, latest_version: item.version, latest_scan: null }));
 }
 
-export async function getExtensionProduct(id: string): Promise<{ extension: CatalogExtension; versions: Array<Record<string, unknown>>; scan: Record<string, unknown> | null } | null> {
-  const db = publicDb();
+export async function getExtensionProduct(id: string, client?: SupabaseClient): Promise<{ extension: CatalogExtension; versions: Array<Record<string, unknown>>; scan: Record<string, unknown> | null } | null> {
+  const db = client || publicDb();
   if (db) {
+    const storedId = await resolveStoredExtensionId(db, id);
+    if (!storedId) return registryProduct(id);
     const [{ data: extension }, { data: versions }] = await Promise.all([
-      db.from("extensions").select("*").eq("id", id).maybeSingle(),
-      db.from("extension_versions").select("*").eq("extension_id", id).order("published_at", { ascending: false, nullsFirst: false }),
+      db.from("extensions").select("*").eq("id", storedId).maybeSingle(),
+      db.from("extension_versions").select("*").eq("extension_id", storedId).order("published_at", { ascending: false, nullsFirst: false }),
     ]);
     if (extension) {
       let versionRows = versions || [];
       if (versionRows.length <= 1) {
-        const registryVersions = await cachedVersions(id).catch(() => []);
+        const registryVersions = await cachedVersions(storedId).catch(() => []);
         const persisted = new Map(versionRows.map((item) => [String(item.version), item]));
         versionRows = registryVersions.map((item) => ({ ...item, ...(persisted.get(item.version) || {}) }));
         if (!versionRows.length) versionRows = versions || [];
@@ -114,9 +127,13 @@ export async function getExtensionProduct(id: string): Promise<{ extension: Cata
         });
         scan = scansById.get(String(latest?.latest_scan_id || "")) || null;
       }
-      return { extension: normalizeCatalogRow(extension as Record<string, unknown>), versions: versionRows, scan };
+      return { extension: normalizeCatalogRow(extension as Record<string, unknown>), versions: dedupeVersions(versionRows), scan };
     }
   }
+  return registryProduct(id);
+}
+
+async function registryProduct(id: string): Promise<{ extension: CatalogExtension; versions: Array<Record<string, unknown>>; scan: Record<string, unknown> | null } | null> {
   try {
     const item = await resolveMarketplaceExtension(id);
     const versions = await cachedVersions(item.extension_id);
@@ -126,25 +143,29 @@ export async function getExtensionProduct(id: string): Promise<{ extension: Cata
   }
 }
 
-export async function getVersionProduct(id: string, version: string): Promise<Record<string, unknown> | null> {
-  const db = publicDb();
+export async function getVersionProduct(id: string, version: string, client?: SupabaseClient): Promise<Record<string, unknown> | null> {
+  const db = client || publicDb();
   if (!db) return null;
-  const { data: versionRow } = await db.from("extension_versions").select("*").eq("extension_id", id).eq("version", version).maybeSingle();
+  const storedId = await resolveStoredExtensionId(db, id);
+  if (!storedId) return null;
+  const { data: versionRow } = await db.from("extension_versions").select("*").eq("extension_id", storedId).eq("version", version).maybeSingle();
   if (!versionRow) return null;
   const scanId = versionRow.latest_scan_id;
   if (!scanId) return { version: versionRow, scan: null, findings: [], files: [], dependencies: [] };
-  return loadVersionScan(db, id, version, String(scanId), versionRow);
+  return loadVersionScan(db, storedId, version, String(scanId), versionRow);
 }
 
-export async function getVersionScanProduct(id: string, version: string, scanId: string): Promise<Record<string, unknown> | null> {
-  const db = publicDb();
+export async function getVersionScanProduct(id: string, version: string, scanId: string, client?: SupabaseClient): Promise<Record<string, unknown> | null> {
+  const db = client || publicDb();
   if (!db) return null;
-  const { data: versionRow } = await db.from("extension_versions").select("*").eq("extension_id", id).eq("version", version).maybeSingle();
+  const storedId = await resolveStoredExtensionId(db, id);
+  if (!storedId) return null;
+  const { data: versionRow } = await db.from("extension_versions").select("*").eq("extension_id", storedId).eq("version", version).maybeSingle();
   if (!versionRow) return null;
-  return loadVersionScan(db, id, version, scanId, versionRow);
+  return loadVersionScan(db, storedId, version, scanId, versionRow);
 }
 
-async function loadVersionScan(db: NonNullable<ReturnType<typeof publicDb>>, id: string, version: string, scanId: string, versionRow: Record<string, unknown>): Promise<Record<string, unknown> | null> {
+async function loadVersionScan(db: SupabaseClient, id: string, version: string, scanId: string, versionRow: Record<string, unknown>): Promise<Record<string, unknown> | null> {
   const [scan, findings, files, dependencies, previews] = await Promise.all([
     db.from("scans").select("*").eq("id", scanId).eq("extension_id", id).eq("version", version).maybeSingle(),
     db.from("findings").select("*").eq("scan_id", scanId).order("severity"),
@@ -196,6 +217,23 @@ function normalizeDecision(value: unknown): ScanDecision {
 }
 
 function humanize(value: string): string { return value.replaceAll("_", " "); }
+
+async function resolveStoredExtensionId(db: SupabaseClient, id: string): Promise<string | null> {
+  if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+$/.test(id)) return null;
+  const result = await db.from("extensions").select("id").ilike("id", id).limit(1).maybeSingle();
+  if (result.error) throw result.error;
+  return result.data?.id ? String(result.data.id) : null;
+}
+
+function dedupeVersions(rows: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
+  return [...new Map(rows.map((row) => [String(row.version), row])).values()];
+}
+
+async function activePublicPolicy(db: SupabaseClient): Promise<string | null> {
+  const result = await db.from("scans").select("policy_version").eq("scan_purpose", "public_intelligence").eq("score_schema_version", "2").eq("analysis_status", "complete").neq("policy_version", "legacy").is("superseded_at", null).order("scanned_at", { ascending: false }).limit(1).maybeSingle();
+  if (result.error) throw result.error;
+  return result.data?.policy_version ? String(result.data.policy_version) : null;
+}
 
 function emptyInventory(): PublicInventory {
   return { items: [], totals: { extensions: 0, releases: 0, complete: 0, allowed: 0, expected: 0, investigate: 0, review: 0, blocked: 0, lastScannedAt: null } };
