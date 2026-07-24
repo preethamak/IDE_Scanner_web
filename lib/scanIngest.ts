@@ -64,7 +64,7 @@ export function publicCanonicalError(
   return null;
 }
 
-export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<string> {
+export async function ingestScanBundle(jobId: string, bundle: Bundle, receiptId?: string): Promise<string> {
   const db = serviceDb();
   const detail = singleExtension(bundle.extensions);
   if (!detail) throw new Error("Scanner bundle must contain exactly one extension detail.");
@@ -161,6 +161,7 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
     p_files: files,
     p_dependencies: dependencies,
     p_previews: previews,
+    p_receipt_id: receiptId || null,
   });
   if (published.error) throw published.error;
   if (!published.data) throw new Error("Atomic scan publication returned no scan identity.");

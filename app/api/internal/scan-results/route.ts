@@ -27,51 +27,76 @@ export async function POST(request: Request) {
   let receiptId = "";
   let callbackJobId = "";
   try {
-    const decoded = request.headers.get("content-encoding") === "gzip"
-      ? gunzipSync(body, { maxOutputLength: MAX_DECODED_BYTES }).toString("utf8")
-      : body.toString("utf8");
+    const encoding = request.headers.get("content-encoding");
+    if (encoding && encoding !== "identity" && encoding !== "gzip") {
+      return NextResponse.json({ error: "Unsupported scan callback content encoding." }, { status: 415 });
+    }
+    let decoded: string;
+    try {
+      decoded = encoding === "gzip"
+        ? gunzipSync(body, { maxOutputLength: MAX_DECODED_BYTES }).toString("utf8")
+        : body.toString("utf8");
+    } catch (error) {
+      if (isOversizedDecodedPayload(error)) {
+        return NextResponse.json({ error: "Decoded scan callback payload is too large." }, { status: 413 });
+      }
+      return NextResponse.json({ error: "Scan callback compression is invalid." }, { status: 400 });
+    }
     if (Buffer.byteLength(decoded) > MAX_DECODED_BYTES) return NextResponse.json({ error: "Decoded scan callback payload is too large." }, { status: 413 });
-    const payload = JSON.parse(decoded) as { job_id?: string; bundle?: Record<string, unknown>; error?: string };
-    if (!payload.job_id) return NextResponse.json({ error: "job_id is required." }, { status: 400 });
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(decoded);
+    } catch {
+      return NextResponse.json({ error: "Scan callback payload is not valid JSON." }, { status: 400 });
+    }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return NextResponse.json({ error: "Scan callback payload must be an object." }, { status: 400 });
+    }
+    const payload = parsed as { job_id?: unknown; bundle?: unknown; error?: unknown };
+    if (typeof payload.job_id !== "string" || !payload.job_id) return NextResponse.json({ error: "job_id is required." }, { status: 400 });
+    if (payload.error !== undefined && typeof payload.error !== "string") {
+      return NextResponse.json({ error: "error must be a string." }, { status: 400 });
+    }
+    if (payload.error === undefined && (!payload.bundle || typeof payload.bundle !== "object" || Array.isArray(payload.bundle))) {
+      return NextResponse.json({ error: "bundle is required for a completed scan." }, { status: 400 });
+    }
     callbackJobId = payload.job_id;
     const db = serviceDb();
     const job = await db.from("scan_jobs").select("id,extension_id,version").eq("id", payload.job_id).maybeSingle();
     if (job.error) throw job.error;
     if (!job.data) return NextResponse.json({ error: "Scan job was not found." }, { status: 404 });
-    const receipt = await db.from("scan_callback_receipts").insert({ job_id: payload.job_id, payload_sha256: createHash("sha256").update(body).digest("hex"), outcome: "received" }).select("id").single();
+    const receipt = await db.rpc("begin_scan_callback", {
+      p_job_id: payload.job_id,
+      p_payload_sha256: createHash("sha256").update(body).digest("hex"),
+    });
     if (receipt.error) throw receipt.error;
-    receiptId = String(receipt.data.id);
-    const receivedAt = new Date().toISOString();
-    requireSuccessfulWrites(await Promise.all([
-      db.from("scan_jobs").update({ lifecycle_stage: payload.error ? "failed" : "ingesting", result_received_at: receivedAt, updated_at: receivedAt, last_event_at: receivedAt }).eq("id", payload.job_id),
-      db.from("scan_job_events").insert({ job_id: payload.job_id, stage: payload.error ? "failed" : "ingesting", event_type: payload.error ? "worker_failed" : "callback_received", detail: payload.error ? { error: payload.error.slice(0, 1000) } : {} }),
-    ]));
-    if (payload.error) {
-      const failedAt = new Date().toISOString();
-      requireSuccessfulWrites(await Promise.all([
-        db.from("scan_jobs").update({ status: "failed", lifecycle_stage: "failed", error: payload.error.slice(0, 1000), callback_error: null, completed_at: failedAt, lease_expires_at: null, updated_at: failedAt, last_event_at: failedAt }).eq("id", payload.job_id),
-        db.from("extension_versions").update({ scan_state: "failed" }).eq("extension_id", job.data.extension_id).eq("version", job.data.version),
-        db.from("scan_runner_status").upsert({ id: "github-actions", last_seen_at: failedAt, last_failure_at: failedAt, last_error: payload.error.slice(0, 500) }, { onConflict: "id" }),
-        db.from("scan_callback_receipts").update({ outcome: "accepted", completed_at: failedAt }).eq("id", receiptId),
-      ]));
+    receiptId = typeof receipt.data === "string" ? receipt.data : "";
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(receiptId)) {
+      throw new Error("Callback receipt did not return a valid identity.");
+    }
+    if (payload.error !== undefined) {
+      const finalized = await db.rpc("finish_scan_callback", {
+        p_job_id: payload.job_id,
+        p_receipt_id: receiptId,
+        p_result: "worker_failed",
+        p_error: payload.error,
+      });
+      if (finalized.error) throw finalized.error;
       return NextResponse.json({ status: "failed" });
     }
-    if (!payload.bundle) throw new Error("bundle is required for a completed scan.");
-    const acquisitionFailure = incompleteArtifactReason(payload.bundle);
+    const bundle = payload.bundle as Record<string, unknown>;
+    const acquisitionFailure = incompleteArtifactReason(bundle);
     if (acquisitionFailure) {
-      const incompleteAt = new Date().toISOString();
-      requireSuccessfulWrites(await Promise.all([
-        db.from("scan_jobs").update({ status: "incomplete", lifecycle_stage: "completed", error: acquisitionFailure, callback_error: null, completed_at: incompleteAt, lease_expires_at: null, updated_at: incompleteAt, last_event_at: incompleteAt }).eq("id", payload.job_id),
-        db.from("extension_versions").update({ scan_state: "incomplete" }).eq("extension_id", job.data.extension_id).eq("version", job.data.version),
-        db.from("scan_runner_status").upsert({ id: "github-actions", last_seen_at: incompleteAt, last_failure_at: incompleteAt, last_error: acquisitionFailure.slice(0, 500) }, { onConflict: "id" }),
-        db.from("scan_job_events").insert({ job_id: payload.job_id, stage: "completed", event_type: "artifact_incomplete", detail: { error: acquisitionFailure } }),
-        db.from("scan_callback_receipts").update({ outcome: "accepted", completed_at: incompleteAt }).eq("id", receiptId),
-      ]));
+      const finalized = await db.rpc("finish_scan_callback", {
+        p_job_id: payload.job_id,
+        p_receipt_id: receiptId,
+        p_result: "artifact_incomplete",
+        p_error: acquisitionFailure,
+      });
+      if (finalized.error) throw finalized.error;
       return NextResponse.json({ status: "incomplete", reason: acquisitionFailure });
     }
-    const scanId = await ingestScanBundle(payload.job_id, payload.bundle);
-    const accepted = await db.from("scan_callback_receipts").update({ outcome: "accepted", completed_at: new Date().toISOString() }).eq("id", receiptId);
-    if (accepted.error) throw accepted.error;
+    const scanId = await ingestScanBundle(payload.job_id, bundle, receiptId);
     return NextResponse.json({ scan_id: scanId });
   } catch (error) {
     const detail = error instanceof Error ? error.message : typeof error === "object" && error ? JSON.stringify(error) : "Scan ingestion failed.";
@@ -83,14 +108,13 @@ export async function POST(request: Request) {
     }
     if (receiptId) {
       const db = serviceDb();
-      const rejectedAt = new Date().toISOString();
-      const rejectedWrites = await Promise.all([
-        db.from("scan_callback_receipts").update({ outcome: "rejected", error: detail.slice(0, 2000), completed_at: rejectedAt }).eq("id", receiptId),
-        db.from("scan_jobs").update({ lifecycle_stage: "failed", status: "failed", callback_error: detail.slice(0, 1000), error: "The worker result could not be ingested.", completed_at: rejectedAt, lease_expires_at: null, updated_at: rejectedAt, last_event_at: rejectedAt }).eq("id", callbackJobId),
-        db.from("scan_job_events").insert({ job_id: callbackJobId, stage: "failed", event_type: "callback_rejected", detail: { error: detail.slice(0, 2000) } }),
-      ]);
-      const rejectionError = rejectedWrites.find((result) => result.error)?.error;
-      if (rejectionError) return NextResponse.json({ error: "Scan ingestion and failure recording both failed." }, { status: 503 });
+      const rejected = await db.rpc("finish_scan_callback", {
+        p_job_id: callbackJobId,
+        p_receipt_id: receiptId,
+        p_result: "callback_rejected",
+        p_error: detail,
+      });
+      if (rejected.error) return NextResponse.json({ error: "Scan ingestion and failure recording both failed." }, { status: 503 });
     }
     return NextResponse.json({ error: detail.slice(0, 2000) }, { status: 422 });
   }
@@ -114,9 +138,8 @@ async function readBoundedBody(request: Request, limit: number): Promise<Buffer>
   return Buffer.concat(chunks, length);
 }
 
-function requireSuccessfulWrites(
-  results: Array<{ error: { message?: string } | null }>,
-): void {
-  const error = results.find((result) => result.error)?.error;
-  if (error) throw error;
+function isOversizedDecodedPayload(error: unknown): boolean {
+  return error instanceof Error
+    && ("code" in error && error.code === "ERR_BUFFER_TOO_LARGE"
+      || error.message.toLowerCase().includes("larger than maxoutputlength"));
 }

@@ -4,7 +4,8 @@ create or replace function public.publish_scan_result_atomically(
   p_findings jsonb default '[]'::jsonb,
   p_files jsonb default '[]'::jsonb,
   p_dependencies jsonb default '[]'::jsonb,
-  p_previews jsonb default '[]'::jsonb
+  p_previews jsonb default '[]'::jsonb,
+  p_receipt_id uuid default null
 )
 returns uuid
 language plpgsql
@@ -66,6 +67,15 @@ begin
   end if;
   if v_job.status not in ('running', 'incomplete', 'failed', 'complete') then
     raise exception 'Scan job is not in a publishable state';
+  end if;
+  if p_receipt_id is not null and not exists (
+    select 1
+    from public.scan_callback_receipts
+    where id = p_receipt_id
+      and job_id = p_job_id
+      and outcome in ('received', 'accepted')
+  ) then
+    raise exception 'Scan callback receipt is not publishable';
   end if;
   if p_scan ->> 'extension_id' <> v_job.extension_id
     or p_scan ->> 'version' <> v_job.version
@@ -298,17 +308,30 @@ begin
       and detail ->> 'scan_id' = v_scan_id::text
   );
 
+  if p_receipt_id is not null then
+    update public.scan_callback_receipts
+    set outcome = 'accepted',
+        error = null,
+        completed_at = coalesce(completed_at, v_completed_at)
+    where id = p_receipt_id
+      and job_id = p_job_id
+      and outcome in ('received', 'accepted');
+    if not found then
+      raise exception 'Scan callback receipt could not be accepted';
+    end if;
+  end if;
+
   return v_scan_id;
 end;
 $$;
 
 revoke all on function public.publish_scan_result_atomically(
-  uuid, jsonb, jsonb, jsonb, jsonb, jsonb
+  uuid, jsonb, jsonb, jsonb, jsonb, jsonb, uuid
 ) from public, anon, authenticated;
 grant execute on function public.publish_scan_result_atomically(
-  uuid, jsonb, jsonb, jsonb, jsonb, jsonb
+  uuid, jsonb, jsonb, jsonb, jsonb, jsonb, uuid
 ) to service_role;
 
 comment on function public.publish_scan_result_atomically(
-  uuid, jsonb, jsonb, jsonb, jsonb, jsonb
+  uuid, jsonb, jsonb, jsonb, jsonb, jsonb, uuid
 ) is 'Atomically validates and publishes one immutable exact-artifact scan result.';
