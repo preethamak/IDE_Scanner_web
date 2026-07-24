@@ -31,9 +31,9 @@ export type PublicInventory = { items: PublicInventoryItem[]; totals: { extensio
 export async function getPublicSecurityFeed(limit = 6): Promise<PublicSecurityFeedItem[]> {
   const db = publicDb();
   if (!db) return [];
-  const policy = await activePublicPolicy(db);
-  if (!policy) return [];
-  const { data: scans } = await db.from("scans").select("id,extension_id,version,severity,decision,public_outcome,decision_basis,evidence_confidence,scanned_at,coverage_percent,decision_reason").in("scan_purpose", ["public_intelligence", "benchmark"]).eq("score_schema_version", "2").eq("analysis_status", "complete").eq("policy_version", policy).is("superseded_at", null).in("decision", ["review", "block"]).order("scanned_at", { ascending: false }).limit(80);
+  const classification = await activePublicClassification(db);
+  if (!classification) return [];
+  const { data: scans } = await db.from("scans").select("id,extension_id,version,severity,decision,public_outcome,decision_basis,evidence_confidence,scanned_at,coverage_percent,decision_reason").in("scan_purpose", ["public_intelligence", "benchmark"]).eq("score_schema_version", "2").eq("analysis_status", "complete").eq("policy_version", classification.policyVersion).eq("ruleset_version", classification.rulesetVersion).is("superseded_at", null).in("decision", ["review", "block"]).order("scanned_at", { ascending: false }).limit(80);
   const rank = (severity: string) => ({ CRITICAL: 5, HIGH: 4, MEDIUM: 3, LOW: 2, INFO: 1 }[severity] || 0);
   const latest = new Map<string, Record<string, unknown>>();
   for (const scan of (scans || []) as Array<Record<string, unknown>>) { const key = `${String(scan.extension_id).toLowerCase()}@${scan.version}`; if (!latest.has(key)) latest.set(key, scan); }
@@ -48,9 +48,9 @@ export async function getPublicSecurityFeed(limit = 6): Promise<PublicSecurityFe
 export async function getPublicInventory(limit = 240): Promise<PublicInventory> {
   const db = publicDb();
   if (!db) return emptyInventory();
-  const policy = await activePublicPolicy(db);
-  if (!policy) return emptyInventory();
-  const { data: scans, error } = await db.from("scans").select("id,extension_id,version,artifact_sha256,severity,decision,decision_reason,public_outcome,decision_basis,evidence_confidence,provenance_tier,expected_profile_id,capability_assessment,score_schema_version,risk_score,malware_score,coverage_percent,scanner_build,ruleset_version,scanned_at").in("scan_purpose", ["public_intelligence", "benchmark"]).eq("score_schema_version", "2").eq("analysis_status", "complete").eq("policy_version", policy).is("superseded_at", null).in("decision", ["allow", "review", "block"]).order("scanned_at", { ascending: false }).limit(240);
+  const classification = await activePublicClassification(db);
+  if (!classification) return emptyInventory();
+  const { data: scans, error } = await db.from("scans").select("id,extension_id,version,artifact_sha256,severity,decision,decision_reason,public_outcome,decision_basis,evidence_confidence,provenance_tier,expected_profile_id,capability_assessment,score_schema_version,risk_score,malware_score,coverage_percent,scanner_build,ruleset_version,scanned_at").in("scan_purpose", ["public_intelligence", "benchmark"]).eq("score_schema_version", "2").eq("analysis_status", "complete").eq("policy_version", classification.policyVersion).eq("ruleset_version", classification.rulesetVersion).is("superseded_at", null).in("decision", ["allow", "review", "block"]).order("scanned_at", { ascending: false }).limit(240);
   if (error || !scans?.length) return emptyInventory();
   const latest = new Map<string, (typeof scans)[number]>();
   for (const scan of scans) {
@@ -230,10 +230,16 @@ function dedupeVersions(rows: Array<Record<string, unknown>>): Array<Record<stri
   return [...new Map(rows.filter((row) => isConcreteVersion(String(row.version || ""))).map((row) => [String(row.version), row])).values()];
 }
 
-async function activePublicPolicy(db: SupabaseClient): Promise<string | null> {
-  const result = await db.from("scans").select("policy_version").in("scan_purpose", ["public_intelligence", "benchmark"]).eq("score_schema_version", "2").eq("analysis_status", "complete").neq("policy_version", "legacy").is("superseded_at", null).order("scanned_at", { ascending: false }).limit(1).maybeSingle();
+async function activePublicClassification(
+  db: SupabaseClient,
+): Promise<{ policyVersion: string; rulesetVersion: string } | null> {
+  const result = await db.from("scan_publication_releases").select("policy_version,ruleset_version").eq("active", true).limit(1).maybeSingle();
   if (result.error) throw result.error;
-  return result.data?.policy_version ? String(result.data.policy_version) : null;
+  if (!result.data?.policy_version || !result.data?.ruleset_version) return null;
+  return {
+    policyVersion: String(result.data.policy_version),
+    rulesetVersion: String(result.data.ruleset_version),
+  };
 }
 
 function emptyInventory(): PublicInventory {
