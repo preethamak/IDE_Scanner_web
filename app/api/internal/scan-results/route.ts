@@ -1,6 +1,7 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { gunzipSync } from "node:zlib";
 import { NextResponse } from "next/server";
+import { isTransientScanCallbackError } from "@/lib/scanCallbackError";
 import { incompleteArtifactReason, ingestScanBundle } from "@/lib/scanIngest";
 import { serviceDb } from "@/lib/supabase";
 
@@ -23,7 +24,8 @@ export async function POST(request: Request) {
     callbackJobId = payload.job_id;
     const db = serviceDb();
     const job = await db.from("scan_jobs").select("id,extension_id,version").eq("id", payload.job_id).maybeSingle();
-    if (job.error || !job.data) return NextResponse.json({ error: "Scan job was not found." }, { status: 404 });
+    if (job.error) throw job.error;
+    if (!job.data) return NextResponse.json({ error: "Scan job was not found." }, { status: 404 });
     const receipt = await db.from("scan_callback_receipts").insert({ job_id: payload.job_id, payload_sha256: createHash("sha256").update(body).digest("hex"), outcome: "received" }).select("id").single();
     if (receipt.error) throw receipt.error;
     receiptId = String(receipt.data.id);
@@ -60,6 +62,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ scan_id: scanId });
   } catch (error) {
     const detail = error instanceof Error ? error.message : typeof error === "object" && error ? JSON.stringify(error) : "Scan ingestion failed.";
+    if (isTransientScanCallbackError(error)) {
+      return NextResponse.json(
+        { error: "Scan result storage is temporarily unavailable. Retry this callback." },
+        { status: 503, headers: { "Retry-After": "2" } },
+      );
+    }
     if (receiptId) {
       const db = serviceDb();
       const rejectedAt = new Date().toISOString();
