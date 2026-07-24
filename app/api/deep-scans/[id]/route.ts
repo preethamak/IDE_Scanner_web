@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { dispatchDeepScan } from "@/lib/deepScan";
 import { serviceDb } from "@/lib/supabase";
 import { serverDb } from "@/lib/supabaseServer";
 import { scanProgressColumns, scanProgressPayload } from "@/lib/scanProgress";
@@ -24,6 +25,13 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     const { data, error } = await service.from("scan_jobs").select(scanProgressColumns).eq("id", id).maybeSingle();
     if (error) throw error;
     if (!data) return NextResponse.json({ error: "Scan job not found." }, { status: 404 });
+
+    if (data.status === "queued" && !data.github_run_id) {
+      // GitHub can acknowledge a workflow dispatch without starting it. Polling
+      // provides a bounded, atomic wake-up path rather than waiting for the
+      // delayed schedule or incorrectly declaring that no runner exists.
+      await dispatchDeepScan(String(data.id), 120).catch(() => false);
+    }
 
     if (isStale(data)) {
       const reconciled = await service.rpc("reconcile_stale_deep_scans", { p_queue_grace_minutes: QUEUE_GRACE_MINUTES });
