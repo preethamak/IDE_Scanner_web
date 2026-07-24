@@ -21,3 +21,35 @@ export function displayedDecision(detail: Detail): "allow" | "review" | "block" 
 export function requiresReview(actionability: unknown): boolean {
   return ["review", "investigate", "block"].includes(String(actionability || "contextual"));
 }
+
+export function coveragePresentation(detail: Detail): {
+  label: string;
+  percent: number;
+  providerDetail: string;
+} {
+  const coverage = object(detail.analysis_coverage);
+  const status = canonicalAnalysisStatus(detail);
+  const percent = Number(
+    coverage.executable_file_coverage_percent ?? detail.coverage_percent ?? coverage.coverage_percent ?? 0,
+  );
+  const required = Array.isArray(coverage.required_providers) ? coverage.required_providers.length : 0;
+  const completed = Array.isArray(coverage.completed_required_providers)
+    ? coverage.completed_required_providers.length
+    : 0;
+  const providerCompletionRecorded = typeof coverage.required_providers_complete === "boolean";
+  const providersComplete = coverage.required_providers_complete === true;
+  const providerDetail = !providerCompletionRecorded
+    ? "Analyzer completion was not recorded by this report contract"
+    : status === "complete" && providersComplete
+    ? required
+      ? `${completed}/${required} required analyzers completed`
+      : "No required analyzer failed"
+    : status === "failed"
+      ? "Analysis failed; no approval decision"
+      : "Required analysis did not complete";
+  return {
+    label: "Executable-file coverage",
+    percent: Number.isFinite(percent) ? Math.max(0, Math.min(100, percent)) : 0,
+    providerDetail,
+  };
+}

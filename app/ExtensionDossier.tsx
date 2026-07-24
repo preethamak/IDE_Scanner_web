@@ -27,6 +27,7 @@ import SeverityGauge from "@/app/SeverityGauge";
 import Markdown from "@/app/Markdown";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
 import {
+  coveragePresentation,
   displayedDecision,
   requiresReview,
 } from "@/lib/classificationContract";
@@ -134,10 +135,7 @@ export default function ExtensionDossier({
           <span>Security outcome</span>
           <strong>{decisionLabel(decision)}</strong>
           <p>{String(scan.decision_reason || decisionExplanation(decision))}</p>
-          <small>
-            {Number(scan.coverage_percent || 0)}% analysis coverage · exact
-            version only
-          </small>
+          <small>{coveragePresentation(scan).percent}% executable-file coverage · exact version only</small>
           <DeepScanButton
             extensionId={id}
             version={version}
@@ -216,7 +214,6 @@ export default function ExtensionDossier({
               version={version}
               scanId={String(scan.id || "")}
               files={files}
-              extension={extension}
             />
           ) : null}
           {active === "changes" ? (
@@ -276,6 +273,8 @@ function Overview({
   const malware = Number(scan.malware_score || 0);
   const risk = Number(scan.risk_score || 0);
   const legacyScore = String(scan.score_schema_version || "1") === "1";
+  const coverage = coveragePresentation(scan);
+  const canonicalReason = String(scan.decision_reason || decisionExplanation(decision));
   const gaugeValue = Math.max(malware, risk);
   const gaugeBand =
     decision === "block"
@@ -293,7 +292,9 @@ function Overview({
         detail={
           decision === "allow"
             ? "Required analysis completed without evidence that crosses the active review policy."
-            : "Review the grouped evidence, affected locations, and whether each behavior matches the extension’s purpose."
+            : decision === "incomplete" || decision === "failed"
+              ? canonicalReason
+              : "Review the grouped evidence, affected locations, and whether each behavior matches the extension’s purpose."
         }
       />
       <div className="overviewLede">
@@ -312,9 +313,9 @@ function Overview({
             <p>Policy result for this exact artifact</p>
           </article>
           <ScoreStat
-            label="Coverage"
-            value={Number(scan.coverage_percent || 0)}
-            detail="Required analyzers completed"
+            label={coverage.label}
+            value={coverage.percent}
+            detail={coverage.providerDetail}
           />
           <ScoreStat
             label={legacyScore ? "Legacy malware signal" : "Malware signal"}
@@ -341,13 +342,14 @@ function Overview({
         <article className="whyCard">
           <span>Why this outcome</span>
           <h3>
-            {actionableGroups.length
+            {decision === "incomplete" || decision === "failed"
+              ? "Analysis did not produce an approval decision."
+              : actionableGroups.length
               ? `${actionableGroups.length} behavior group${actionableGroups.length === 1 ? " needs" : "s need"} context before approval.`
               : "No behavior group currently requires review."}
           </h3>
           <p>
-            {actionableGroups[0]?.summary ||
-              "Contextual capabilities remain visible but do not independently change the outcome."}
+            {canonicalReason}
           </p>
           <button type="button" onClick={onOpenAlerts}>
             Inspect all evidence <ChevronRight />
@@ -1015,6 +1017,7 @@ function Coverage({ scan }: { scan: RecordValue }) {
   const resolved = arrayLength(coverage.resolved_entrypoints);
   const executable = arrayLength(coverage.executable_candidates);
   const files = arrayLength(inventory.files);
+  const presentation = coveragePresentation(scan);
   return (
     <>
       <SectionHead
@@ -1024,9 +1027,9 @@ function Coverage({ scan }: { scan: RecordValue }) {
       />
       <div className="coverageGrid coverageExplained">
         <Fact
-          label="Analysis coverage"
-          value={`${Number(scan.coverage_percent || 0)}%`}
-          detail="Required analyzers completed"
+          label={presentation.label}
+          value={`${presentation.percent}%`}
+          detail={presentation.providerDetail}
         />
         <Fact
           label="Declared entrypoints"
@@ -1103,13 +1106,11 @@ function Readme({
   version,
   scanId,
   files,
-  extension,
 }: {
   id: string;
   version: string;
   scanId: string;
   files: RecordValue[];
-  extension: RecordValue;
 }) {
   const readme = files.find((item) =>
     /(^|\/)readme(?:\.[a-z]+)?$/i.test(String(item.path || "")),
@@ -1149,12 +1150,7 @@ function Readme({
         <div className="ds-readme-empty">
           <FileText />
           <strong>README packaged but not captured</strong>
-          <p>
-            {String(
-              extension.description ||
-                "This scan did not retain a text snapshot of the README.",
-            )}
-          </p>
+          <p>This scan did not retain a verified text snapshot of the packaged README.</p>
         </div>
       ) : state === "loading" ? (
         <div className="dossierEmpty">
