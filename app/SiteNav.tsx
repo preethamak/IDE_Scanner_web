@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUpRight, BellRing, BookOpen, Boxes, ChevronDown, FileSearch, FlaskConical, Menu, Radar, ScanSearch, ScrollText, ShieldCheck, X } from "lucide-react";
+import { ArrowUpRight, BellRing, BookOpen, Boxes, ChevronDown, FileSearch, FlaskConical, Menu, Radar, ScanSearch, ScrollText, ShieldCheck, TerminalSquare, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 const directLinks = [
   ["/catalog", "Discover", Boxes],
   ["/public-scan", "Extension Registry", Radar],
   ["/scan", "Analyze", ScanSearch],
+  ["/cli", "CLI", TerminalSquare],
   ["/monitor", "Monitor", BellRing],
 ] as const;
 const documentationLinks = [

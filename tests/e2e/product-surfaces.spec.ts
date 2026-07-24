@@ -5,6 +5,7 @@ const surfaces = [
   ["/catalog", /Find the extension/i],
   ["/public-scan", /Extension registry/i],
   ["/scan", /Inspect an extension before installation/i],
+  ["/cli", /See what is already inside your editor/i],
   ["/workspace", /Turn extension changes into an evidence queue/i],
   ["/monitor", /Watch the release/i],
   ["/account", /Keep watching after the first scan/i],
