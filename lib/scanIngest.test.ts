@@ -43,7 +43,12 @@ describe("public canonical schema enforcement", () => {
     scanner_build: build,
     ruleset_version: "rules-1",
     policy_version: "3.0.0",
-    intelligence_snapshot: { registry: { sha256: "c".repeat(64) } },
+    intelligence_snapshot: {
+      registry: {
+        sha256: "c".repeat(64),
+        payload: { enabled: true, mode: "batched", findings: [], errors: [] },
+      },
+    },
   };
 
   it("admits a canonical 2.2 / score v2 public bundle", () => {
@@ -86,5 +91,18 @@ describe("public canonical schema enforcement", () => {
       { ...goodMeta, intelligence_snapshot: {} },
       build,
     )).toContain("registry intelligence identity");
+  });
+
+  it("rejects a digest without replayable registry evidence", () => {
+    expect(publicCanonicalError(
+      true,
+      "2.2",
+      goodDetail,
+      {
+        ...goodMeta,
+        intelligence_snapshot: { registry: { sha256: "c".repeat(64) } },
+      },
+      build,
+    )).toContain("replayable registry intelligence evidence");
   });
 });

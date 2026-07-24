@@ -39,6 +39,10 @@ export function publicCanonicalError(
   if (!/^[0-9a-f]{64}$/.test(String(registryIntelligence.sha256 || ""))) {
     return "Public scans require immutable registry intelligence identity.";
   }
+  const registryPayload = object(registryIntelligence.payload);
+  if (!Array.isArray(registryPayload.findings) || !Array.isArray(registryPayload.errors)) {
+    return "Public scans require replayable registry intelligence evidence.";
+  }
   const scannerBuild = String(metadata.scanner_build || "");
   if (!expectedScannerBuild) return "Public scans require a job-bound scanner build.";
   if (scannerBuild !== expectedScannerBuild) return "Scanner build does not match the build bound to this job.";
