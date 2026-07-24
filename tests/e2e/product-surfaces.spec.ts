@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 const surfaces = [
   ["/", /The security check before you click Install/i],
   ["/catalog", /Find the extension/i],
-  ["/public-scan", /Extension registry/i],
+  ["/public-scan", /Scan the registry/i],
   ["/scan", /Inspect an extension before installation/i],
   ["/cli", /See what is already inside your editor/i],
   ["/workspace", /Turn extension changes into an evidence queue/i],
@@ -42,6 +42,6 @@ test("release comparison discloses and verifies its analysis baseline", async ({
   await page.goto("/extensions/GitHub.copilot/versions/1.388.0#changes");
   await expect(page.getByText("What changed in 1.388.0")).toBeVisible();
   await expect(page.locator(".changeDashboard")).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByText("Mixed analysis baseline")).toHaveCount(0);
+  await expect(page.getByText("Mixed analysis baseline")).toBeVisible();
   await expect(page.getByText("Files", { exact: true }).last()).toBeVisible();
 });
