@@ -34,6 +34,11 @@ export function publicCanonicalError(
   if (String(metadata.scanner_version || "").includes("hosted-static")) return "Hosted-static reports cannot be published as canonical scans.";
   if (!metadata.policy_version || metadata.policy_version === "legacy") return "Public scans require an explicit non-legacy classification policy.";
   if (!metadata.ruleset_version || metadata.ruleset_version === "unknown") return "Public scans require an explicit ruleset version.";
+  const intelligence = object(metadata.intelligence_snapshot);
+  const registryIntelligence = object(intelligence.registry);
+  if (!/^[0-9a-f]{64}$/.test(String(registryIntelligence.sha256 || ""))) {
+    return "Public scans require immutable registry intelligence identity.";
+  }
   const scannerBuild = String(metadata.scanner_build || "");
   if (!expectedScannerBuild) return "Public scans require a job-bound scanner build.";
   if (scannerBuild !== expectedScannerBuild) return "Scanner build does not match the build bound to this job.";
@@ -51,6 +56,8 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
   if (!detail) throw new Error("Scanner bundle contains no extension detail.");
   const metadata = bundle.metadata || {};
   const scannerBuild = String(metadata.scanner_build || "").trim();
+  const intelligenceSnapshot = object(metadata.intelligence_snapshot);
+  const intelligenceDigest = String(object(intelligenceSnapshot.registry).sha256 || "");
   const identity = object(detail.artifact_identity);
   const coverage = object(detail.analysis_coverage);
   const provenance = object(detail.provenance);
@@ -94,7 +101,8 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
     scanner_build: scannerBuild,
     ruleset_version: String(metadata.ruleset_version || "unknown"),
     policy_version: String(metadata.policy_version || "legacy"),
-    intelligence_snapshot: object(metadata.intelligence_snapshot),
+    intelligence_snapshot: intelligenceSnapshot,
+    intelligence_digest: intelligenceDigest || "legacy",
     scan_purpose: String(queuedJob.data.scan_purpose),
     analysis_status: canonicalAnalysisStatus(detail),
     decision: String(detail.decision || "incomplete"),
@@ -121,7 +129,7 @@ export async function ingestScanBundle(jobId: string, bundle: Bundle): Promise<s
     canonical_report: compactBundle(bundle),
     scanned_at: String(metadata.created_at || new Date().toISOString()),
   };
-  const { data: scan, error } = await db.from("scans").upsert(scanRow, { onConflict: "extension_id,version,artifact_sha256,ruleset_version,scanner_build" }).select("id").single();
+  const { data: scan, error } = await db.from("scans").upsert(scanRow, { onConflict: "extension_id,version,artifact_sha256,ruleset_version,scanner_build,intelligence_digest" }).select("id").single();
   if (error) throw error;
   const scanId = String(scan.id);
   await Promise.all([db.from("findings").delete().eq("scan_id", scanId), db.from("artifact_files").delete().eq("scan_id", scanId), db.from("dependencies").delete().eq("scan_id", scanId), db.from("artifact_file_previews").delete().eq("scan_id", scanId)]);

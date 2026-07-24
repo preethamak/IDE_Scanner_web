@@ -38,7 +38,13 @@ describe("scan ingestion boundaries", () => {
 describe("public canonical schema enforcement", () => {
   const build = "a".repeat(40);
   const goodDetail = { score_schema_version: "2", analysis_status: "complete", decision: "allow" };
-  const goodMeta = { scanner_version: "engine-1", scanner_build: build, ruleset_version: "rules-1", policy_version: "3.0.0" };
+  const goodMeta = {
+    scanner_version: "engine-1",
+    scanner_build: build,
+    ruleset_version: "rules-1",
+    policy_version: "3.0.0",
+    intelligence_snapshot: { registry: { sha256: "c".repeat(64) } },
+  };
 
   it("admits a canonical 2.2 / score v2 public bundle", () => {
     expect(publicCanonicalError(true, "2.2", goodDetail, goodMeta, build)).toBeNull();
@@ -70,5 +76,15 @@ describe("public canonical schema enforcement", () => {
   it("rejects missing policy identity and self-asserted scanner builds", () => {
     expect(publicCanonicalError(true, "2.2", goodDetail, { ...goodMeta, policy_version: undefined }, build)).toContain("classification policy");
     expect(publicCanonicalError(true, "2.2", goodDetail, goodMeta, "b".repeat(40))).toContain("bound to this job");
+  });
+
+  it("rejects missing registry intelligence identity", () => {
+    expect(publicCanonicalError(
+      true,
+      "2.2",
+      goodDetail,
+      { ...goodMeta, intelligence_snapshot: {} },
+      build,
+    )).toContain("registry intelligence identity");
   });
 });
