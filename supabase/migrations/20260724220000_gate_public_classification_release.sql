@@ -3,11 +3,12 @@ create table if not exists public.scan_publication_releases (
   policy_version text not null,
   ruleset_version text not null,
   score_schema_version text not null,
+  scanner_build text not null check (scanner_build ~ '^[0-9a-f]{40}$'),
   expected_reports integer not null check (expected_reports > 0),
   report_count_at_activation integer not null check (report_count_at_activation >= expected_reports),
   active boolean not null default false,
   activated_at timestamptz not null default now(),
-  unique (policy_version, ruleset_version, score_schema_version)
+  unique (policy_version, ruleset_version, score_schema_version, scanner_build)
 );
 
 create unique index if not exists scan_publication_releases_one_active
@@ -32,6 +33,7 @@ with candidate as (
     policy_version,
     ruleset_version,
     score_schema_version,
+    scanner_build,
     count(distinct (lower(extension_id), version))::integer as report_count,
     max(scanned_at) as latest_scan
   from public.scans
@@ -40,7 +42,7 @@ with candidate as (
     and policy_version <> 'legacy'
     and ruleset_version <> 'unknown'
     and superseded_at is null
-  group by policy_version, ruleset_version, score_schema_version
+  group by policy_version, ruleset_version, score_schema_version, scanner_build
   order by report_count desc, latest_scan desc
   limit 1
 )
@@ -48,6 +50,7 @@ insert into public.scan_publication_releases (
   policy_version,
   ruleset_version,
   score_schema_version,
+  scanner_build,
   expected_reports,
   report_count_at_activation,
   active
@@ -56,11 +59,12 @@ select
   policy_version,
   ruleset_version,
   score_schema_version,
+  scanner_build,
   report_count,
   report_count,
   true
 from candidate
-on conflict (policy_version, ruleset_version, score_schema_version)
+on conflict (policy_version, ruleset_version, score_schema_version, scanner_build)
 do update set
   expected_reports = excluded.expected_reports,
   report_count_at_activation = excluded.report_count_at_activation,
@@ -71,6 +75,7 @@ create or replace function public.activate_scan_publication_release(
   p_policy_version text,
   p_ruleset_version text,
   p_score_schema_version text,
+  p_scanner_build text,
   p_expected_reports integer
 )
 returns public.scan_publication_releases
@@ -86,6 +91,7 @@ begin
   if coalesce(p_policy_version, '') in ('', 'legacy')
     or coalesce(p_ruleset_version, '') in ('', 'unknown')
     or coalesce(p_score_schema_version, '') = ''
+    or coalesce(p_scanner_build, '') !~ '^[0-9a-f]{40}$'
     or p_expected_reports <= 0 then
     raise exception 'Invalid scan publication release identity';
   end if;
@@ -99,6 +105,7 @@ begin
     and policy_version = p_policy_version
     and ruleset_version = p_ruleset_version
     and score_schema_version = p_score_schema_version
+    and scanner_build = p_scanner_build
     and superseded_at is null;
   if v_report_count < p_expected_reports then
     raise exception 'Classification release has % complete reports; % required',
@@ -110,6 +117,7 @@ begin
     policy_version,
     ruleset_version,
     score_schema_version,
+    scanner_build,
     expected_reports,
     report_count_at_activation,
     active,
@@ -119,12 +127,13 @@ begin
     p_policy_version,
     p_ruleset_version,
     p_score_schema_version,
+    p_scanner_build,
     p_expected_reports,
     v_report_count,
     true,
     now()
   )
-  on conflict (policy_version, ruleset_version, score_schema_version)
+  on conflict (policy_version, ruleset_version, score_schema_version, scanner_build)
   do update set
     expected_reports = excluded.expected_reports,
     report_count_at_activation = excluded.report_count_at_activation,
@@ -136,10 +145,10 @@ end;
 $$;
 
 revoke all on function public.activate_scan_publication_release(
-  text, text, text, integer
+  text, text, text, text, integer
 ) from public, anon, authenticated;
 grant execute on function public.activate_scan_publication_release(
-  text, text, text, integer
+  text, text, text, text, integer
 ) to service_role;
 
 comment on table public.scan_publication_releases is
