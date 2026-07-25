@@ -1,4 +1,4 @@
-# IDE Scanner Web
+# IDE Scanner Web:
 
 Public, version-specific security intelligence for VS Code-compatible extensions.
 
