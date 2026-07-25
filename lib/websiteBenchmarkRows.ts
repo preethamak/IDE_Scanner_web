@@ -110,7 +110,7 @@ export const benchmarkRows = [
     version: "2026.5.2026070801",
     split: "prior-exposure",
     classification: "legitimate-privileged",
-    sha256: "95d8af5d113124f8795a31fffe9eae75fafc7ed4de73ae1a90656cf166aebefa",
+    sha256: "7edf45e8e93fd155373fdf80000c56e75344e519442ba570b453da318abe18b8",
   },
   {
     id: "ms-vscode-remote.remote-containers",

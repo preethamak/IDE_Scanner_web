@@ -10,14 +10,14 @@ describe("benchmark artifact identity", () => {
       benchmarkValidation(
         id,
         version,
-        "95d8af5d113124f8795a31fffe9eae75fafc7ed4de73ae1a90656cf166aebefa",
+        "7edf45e8e93fd155373fdf80000c56e75344e519442ba570b453da318abe18b8",
       ),
     ).toMatchObject({ id, version });
     expect(
       benchmarkValidation(
         id,
         version,
-        "7edf45e8e93fd155373fdf80000c56e75344e519442ba570b453da318abe18b8",
+        "95d8af5d113124f8795a31fffe9eae75fafc7ed4de73ae1a90656cf166aebefa",
       ),
     ).toBeNull();
   });
