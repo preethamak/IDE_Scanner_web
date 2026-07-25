@@ -33,7 +33,10 @@ export async function getPublicSecurityFeed(limit = 6): Promise<PublicSecurityFe
   if (!db) return [];
   const classification = await activePublicClassification(db);
   if (!classification) return [];
-  const { data: scans } = await db.from("scans").select("id,extension_id,version,severity,decision,public_outcome,decision_basis,evidence_confidence,scanned_at,coverage_percent,decision_reason").in("scan_purpose", ["public_intelligence", "benchmark"]).eq("score_schema_version", classification.scoreSchemaVersion).eq("analysis_status", "complete").eq("policy_version", classification.policyVersion).eq("ruleset_version", classification.rulesetVersion).eq("scanner_build", classification.scannerBuild).is("superseded_at", null).in("decision", ["review", "block"]).order("scanned_at", { ascending: false }).limit(80);
+  if (classification.scanIds?.length === 0) return [];
+  let request = db.from("scans").select("id,extension_id,version,severity,decision,public_outcome,decision_basis,evidence_confidence,scanned_at,coverage_percent,decision_reason").in("scan_purpose", ["public_intelligence", "benchmark"]).eq("score_schema_version", classification.scoreSchemaVersion).eq("analysis_status", "complete").eq("policy_version", classification.policyVersion).eq("ruleset_version", classification.rulesetVersion).eq("scanner_build", classification.scannerBuild).in("decision", ["review", "block"]).order("scanned_at", { ascending: false }).limit(80);
+  request = classification.scanIds ? request.in("id", classification.scanIds) : request.is("superseded_at", null);
+  const { data: scans } = await request;
   const rank = (severity: string) => ({ CRITICAL: 5, HIGH: 4, MEDIUM: 3, LOW: 2, INFO: 1 }[severity] || 0);
   const latest = new Map<string, Record<string, unknown>>();
   for (const scan of (scans || []) as Array<Record<string, unknown>>) { const key = `${String(scan.extension_id).toLowerCase()}@${scan.version}`; if (!latest.has(key)) latest.set(key, scan); }
@@ -50,7 +53,10 @@ export async function getPublicInventory(limit = 240): Promise<PublicInventory> 
   if (!db) return emptyInventory();
   const classification = await activePublicClassification(db);
   if (!classification) return emptyInventory();
-  const { data: scans, error } = await db.from("scans").select("id,extension_id,version,artifact_sha256,severity,decision,decision_reason,public_outcome,decision_basis,evidence_confidence,provenance_tier,expected_profile_id,capability_assessment,score_schema_version,risk_score,malware_score,coverage_percent,scanner_build,ruleset_version,scanned_at").in("scan_purpose", ["public_intelligence", "benchmark"]).eq("score_schema_version", classification.scoreSchemaVersion).eq("analysis_status", "complete").eq("policy_version", classification.policyVersion).eq("ruleset_version", classification.rulesetVersion).eq("scanner_build", classification.scannerBuild).is("superseded_at", null).in("decision", ["allow", "review", "block"]).order("scanned_at", { ascending: false }).limit(240);
+  if (classification.scanIds?.length === 0) return emptyInventory();
+  let request = db.from("scans").select("id,extension_id,version,artifact_sha256,severity,decision,decision_reason,public_outcome,decision_basis,evidence_confidence,provenance_tier,expected_profile_id,capability_assessment,score_schema_version,risk_score,malware_score,coverage_percent,scanner_build,ruleset_version,scanned_at").in("scan_purpose", ["public_intelligence", "benchmark"]).eq("score_schema_version", classification.scoreSchemaVersion).eq("analysis_status", "complete").eq("policy_version", classification.policyVersion).eq("ruleset_version", classification.rulesetVersion).eq("scanner_build", classification.scannerBuild).in("decision", ["allow", "review", "block"]).order("scanned_at", { ascending: false }).limit(240);
+  request = classification.scanIds ? request.in("id", classification.scanIds) : request.is("superseded_at", null);
+  const { data: scans, error } = await request;
   if (error || !scans?.length) return emptyInventory();
   const latest = new Map<string, (typeof scans)[number]>();
   for (const scan of scans) {
@@ -112,21 +118,20 @@ export async function getExtensionProduct(id: string, client?: SupabaseClient): 
       versionRows = dedupeVersions(versionRows);
       const latest = versionRows.find((item) => item.is_latest) || versionRows[0];
       let scan: Record<string, unknown> | null = null;
-      const scanIds = versionRows.map((item) => String(item.latest_scan_id || "")).filter(Boolean);
-      if (scanIds.length) {
-        const result = await db.from("scans").select("*").in("id", scanIds);
-        const scans = (result.data || []) as Array<Record<string, unknown>>;
-        const scansById = new Map(scans.map((item) => [String(item.id), item]));
+      if (versionRows.length) {
+        const scansByVersion = await getVisibleScansByVersion(db, storedId);
         versionRows = versionRows.map((item) => {
-          const versionScan = scansById.get(String(item.latest_scan_id || ""));
+          const versionScan = scansByVersion.get(String(item.version));
           return {
             ...item,
+            latest_scan_id: versionScan?.id || null,
+            scan_state: versionScan ? String(versionScan.analysis_status || "complete") : "not_scanned",
             decision: versionScan?.decision || null,
             coverage_percent: versionScan?.coverage_percent ?? null,
             scanned_at: versionScan?.scanned_at || null,
           };
         });
-        scan = scansById.get(String(latest?.latest_scan_id || "")) || null;
+        scan = scansByVersion.get(String(latest?.version || "")) || null;
       }
       return { extension: normalizeCatalogRow(extension as Record<string, unknown>), versions: dedupeVersions(versionRows), scan };
     }
@@ -151,9 +156,14 @@ export async function getVersionProduct(id: string, version: string, client?: Su
   if (!storedId) return null;
   const { data: versionRow } = await db.from("extension_versions").select("*").eq("extension_id", storedId).eq("version", version).maybeSingle();
   if (!versionRow) return null;
-  const scanId = versionRow.latest_scan_id;
-  if (!scanId) return { version: versionRow, scan: null, findings: [], files: [], dependencies: [] };
-  return loadVersionScan(db, storedId, version, String(scanId), versionRow);
+  const scan = (await getVisibleScansByVersion(db, storedId, version)).get(version);
+  const visibleVersion = {
+    ...versionRow,
+    latest_scan_id: scan?.id || null,
+    scan_state: scan ? String(scan.analysis_status || "complete") : "not_scanned",
+  };
+  if (!scan?.id) return { version: visibleVersion, scan: null, findings: [], files: [], dependencies: [] };
+  return loadVersionScan(db, storedId, version, String(scan.id), visibleVersion);
 }
 
 export async function getVersionScanProduct(id: string, version: string, scanId: string, client?: SupabaseClient): Promise<Record<string, unknown> | null> {
@@ -232,19 +242,99 @@ function dedupeVersions(rows: Array<Record<string, unknown>>): Array<Record<stri
 
 async function activePublicClassification(
   db: SupabaseClient,
-): Promise<{ policyVersion: string; rulesetVersion: string; scoreSchemaVersion: string; scannerBuild: string } | null> {
-  const result = await db.from("scan_publication_releases").select("policy_version,ruleset_version,score_schema_version,scanner_build").eq("active", true).limit(1).maybeSingle();
+): Promise<PublicClassification | null> {
+  const result = await db.from("scan_publication_releases").select("id,policy_version,ruleset_version,score_schema_version,scanner_build").eq("active", true).limit(1).maybeSingle();
   if (result.error) {
     if (!isMissingPublicationReleaseTable(result.error)) throw result.error;
-    return dominantPublicClassification(await legacyPublicationRows(db));
+    const fallback = dominantPublicClassification(await legacyPublicationRows(db));
+    return fallback ? { ...fallback, scanIds: null } : null;
   }
   if (!result.data?.policy_version || !result.data?.ruleset_version || !result.data?.score_schema_version || !result.data?.scanner_build) return null;
+  const members = await db.from("scan_publication_release_scans").select("scan_id").eq("release_id", result.data.id);
+  if (members.error && !isMissingPublicationMembershipTable(members.error)) throw members.error;
   return {
     policyVersion: String(result.data.policy_version),
     rulesetVersion: String(result.data.ruleset_version),
     scoreSchemaVersion: String(result.data.score_schema_version),
     scannerBuild: String(result.data.scanner_build),
+    scanIds: members.error ? null : (members.data || []).map((row) => String(row.scan_id)).filter(Boolean),
   };
+}
+
+type PublicClassification = {
+  policyVersion: string;
+  rulesetVersion: string;
+  scoreSchemaVersion: string;
+  scannerBuild: string;
+  scanIds: string[] | null;
+};
+
+export async function getVisibleScansByVersion(
+  db: SupabaseClient,
+  extensionId: string,
+  version?: string,
+): Promise<Map<string, Record<string, unknown>>> {
+  const classification = await activePublicClassification(db);
+  const publicRequest = classification && classification.scanIds?.length !== 0
+    ? applyVersionFilter(
+      db.from("scans")
+        .select("*")
+        .eq("extension_id", extensionId)
+        .in("scan_purpose", ["public_intelligence", "benchmark"])
+        .eq("analysis_status", "complete")
+        .eq("policy_version", classification.policyVersion)
+        .eq("ruleset_version", classification.rulesetVersion)
+        .eq("score_schema_version", classification.scoreSchemaVersion)
+        .eq("scanner_build", classification.scannerBuild)
+        .order("scanned_at", { ascending: false })
+        .limit(5000),
+      version,
+    )
+    : null;
+  const releaseRequest = publicRequest && classification?.scanIds
+    ? publicRequest.in("id", classification.scanIds)
+    : publicRequest?.is("superseded_at", null) || null;
+  let ownRequest = db.from("scan_job_results")
+    .select("linked_at,scan:scans!inner(*)")
+    .eq("scan.extension_id", extensionId)
+    .order("linked_at", { ascending: false })
+    .limit(5000);
+  if (version) ownRequest = ownRequest.eq("scan.version", version);
+  const [published, ownedLinks] = await Promise.all([
+    releaseRequest || Promise.resolve({ data: [] as Record<string, unknown>[], error: null }),
+    ownRequest,
+  ]);
+  if (published.error) throw published.error;
+  if (ownedLinks.error && !isMissingScanJobResultsTable(ownedLinks.error)) throw ownedLinks.error;
+  const owned = (ownedLinks.data || [])
+    .flatMap((row) => Array.isArray(row.scan) ? row.scan : [row.scan])
+    .filter((row) => Boolean(row && typeof row === "object" && !Array.isArray(row)))
+    .map((row) => row as Record<string, unknown>);
+  return selectVisibleScans(
+    (published.data || []) as Record<string, unknown>[],
+    owned,
+  );
+}
+
+export function selectVisibleScans(
+  published: Record<string, unknown>[],
+  owned: Record<string, unknown>[],
+): Map<string, Record<string, unknown>> {
+  const selected = new Map<string, Record<string, unknown>>();
+  // A signed-in user's own exact scan takes precedence. RLS makes the owned
+  // query empty for anonymous users and for scans requested by anyone else.
+  for (const row of [...owned, ...published]) {
+    const rowVersion = String(row.version || "");
+    if (rowVersion && !selected.has(rowVersion)) selected.set(rowVersion, row);
+  }
+  return selected;
+}
+
+function applyVersionFilter<T extends { eq(column: string, value: string): T }>(
+  request: T,
+  version?: string,
+): T {
+  return version ? request.eq("version", version) : request;
 }
 
 type ClassificationRow = {
@@ -329,6 +419,16 @@ async function legacyPublicationRows(db: SupabaseClient): Promise<Classification
 function isMissingPublicationReleaseTable(error: { code?: string; message?: string }): boolean {
   return error.code === "PGRST205"
     && String(error.message || "").includes("scan_publication_releases");
+}
+
+function isMissingPublicationMembershipTable(error: { code?: string; message?: string }): boolean {
+  return error.code === "PGRST205"
+    && String(error.message || "").includes("scan_publication_release_scans");
+}
+
+function isMissingScanJobResultsTable(error: { code?: string; message?: string }): boolean {
+  return error.code === "PGRST205"
+    && String(error.message || "").includes("scan_job_results");
 }
 
 function emptyInventory(): PublicInventory {

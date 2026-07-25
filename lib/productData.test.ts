@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dominantPublicClassification } from "@/lib/productData";
+import { dominantPublicClassification, selectVisibleScans } from "@/lib/productData";
 
 describe("public classification rollout selection", () => {
   const build1 = "a".repeat(40);
@@ -43,5 +43,19 @@ describe("public classification rollout selection", () => {
       scoreSchemaVersion: "2",
       scannerBuild: build2,
     });
+  });
+
+  it("selects one visible scan per exact version and prefers the user's own scan", () => {
+    const selected = selectVisibleScans(
+      [
+        { id: "public-1", version: "1.0.0" },
+        { id: "public-2", version: "2.0.0" },
+      ],
+      [
+        { id: "owned-1", version: "1.0.0" },
+      ],
+    );
+    expect(selected.get("1.0.0")?.id).toBe("owned-1");
+    expect(selected.get("2.0.0")?.id).toBe("public-2");
   });
 });
