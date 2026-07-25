@@ -26,7 +26,7 @@ GITHUB_ACTIONS_TOKEN=... # fine-grained Actions:write for IDE_Scanner only
 GITHUB_REPO_OWNER=preethamak
 GITHUB_SCANNER_REPO=IDE_Scanner
 SCAN_CALLBACK_SECRET=... # random 32+ byte value
-SCAN_RATE_LIMIT_SECRET=... # separate random value
+SCAN_RATE_LIMIT_SECRET=... 
 ```
 
 Configure the scanner repository Action secret `SCAN_CALLBACK_SECRET` with the same callback value. Configure the web repository Action secrets:
