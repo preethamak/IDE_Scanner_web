@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canonicalAnalysisStatus, coveragePresentation, requiresReview } from "@/lib/classificationContract";
+import { canonicalAnalysisStatus, coveragePresentation, displayedDecision, requiresReview } from "@/lib/classificationContract";
 import { incompleteArtifactReason, publicCanonicalError, singleExtension } from "@/lib/scanIngest";
 
 describe("scan ingestion boundaries", () => {
@@ -14,6 +14,10 @@ describe("scan ingestion boundaries", () => {
     expect(canonicalAnalysisStatus({ analysis_status: "complete" })).toBe("complete");
     expect(canonicalAnalysisStatus({ analysis_status: "failed" })).toBe("failed");
     expect(canonicalAnalysisStatus({ analysis_coverage: { status: "pending" } })).toBe("incomplete");
+    expect(displayedDecision({
+      analysis_status: "incomplete",
+      decision: "block",
+    })).toBe("block");
   });
 
   it("does not label file coverage as analyzer completion", () => {
@@ -112,6 +116,18 @@ describe("public canonical schema enforcement", () => {
       ...goodDetail,
       analysis_status: "failed",
       decision: "allow",
+      analysis_coverage: { ...goodDetail.analysis_coverage, status: "incomplete", required_providers_complete: false },
+    }, goodMeta, build)).toContain("cannot publish");
+    expect(publicCanonicalError(true, "2.3", {
+      ...goodDetail,
+      analysis_status: "incomplete",
+      decision: "block",
+      analysis_coverage: { ...goodDetail.analysis_coverage, status: "incomplete", required_providers_complete: false },
+    }, goodMeta, build)).toBeNull();
+    expect(publicCanonicalError(true, "2.3", {
+      ...goodDetail,
+      analysis_status: "incomplete",
+      decision: "review",
       analysis_coverage: { ...goodDetail.analysis_coverage, status: "incomplete", required_providers_complete: false },
     }, goodMeta, build)).toContain("cannot publish");
   });

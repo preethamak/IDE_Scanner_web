@@ -60,7 +60,7 @@ export function publicCanonicalError(
     return "A complete scan requires every required analyzer to complete.";
   }
   if (status === "complete" && !["allow", "review", "block"].includes(decision)) return "A complete scan requires an allow, review, or block decision.";
-  if (status !== "complete" && decision !== "incomplete") return "An incomplete or failed scan cannot publish an approval decision.";
+  if (status !== "complete" && !["incomplete", "block"].includes(decision)) return "An incomplete or failed scan cannot publish an approval decision.";
   return null;
 }
 

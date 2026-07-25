@@ -13,8 +13,9 @@ export function canonicalAnalysisStatus(detail: Detail): AnalysisStatus {
 
 export function displayedDecision(detail: Detail): "allow" | "review" | "block" | "incomplete" | "failed" {
   const status = canonicalAnalysisStatus(detail);
-  if (status !== "complete") return status;
   const decision = String(detail.decision || "incomplete");
+  if (decision === "block") return "block";
+  if (status !== "complete") return status;
   return decision === "allow" || decision === "review" || decision === "block" ? decision : "incomplete";
 }
 
@@ -38,6 +39,7 @@ export function coveragePresentation(detail: Detail): {
     : 0;
   const providerCompletionRecorded = typeof coverage.required_providers_complete === "boolean";
   const providersComplete = coverage.required_providers_complete === true;
+  const enforceableBlock = String(detail.decision || "") === "block";
   const providerDetail = !providerCompletionRecorded
     ? "Analyzer completion was not recorded by this report contract"
     : status === "complete" && providersComplete
@@ -45,8 +47,12 @@ export function coveragePresentation(detail: Detail): {
       ? `${completed}/${required} required analyzers completed`
       : "No required analyzer failed"
     : status === "failed"
-      ? "Analysis failed; no approval decision"
-      : "Required analysis did not complete";
+      ? enforceableBlock
+        ? "Analysis failed; block evidence remains enforceable"
+        : "Analysis failed; no approval decision"
+      : enforceableBlock
+        ? "Required analysis incomplete; block evidence remains enforceable"
+        : "Required analysis did not complete";
   return {
     label: "Executable-file coverage",
     percent: Number.isFinite(percent) ? Math.max(0, Math.min(100, percent)) : 0,
