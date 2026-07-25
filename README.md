@@ -8,7 +8,7 @@ The product has three independently truthful modes:
 - Instant Preflight groups bounded hosted-static capability hints and never emits a security decision.
 - Deep Scan runs the canonical Python engine on GitHub Actions with required native, AST, Semgrep, YARA, and dependency-intelligence providers.
 
-## Free hosted architecture:
+## Free hosted architecture
 
 - Vercel hosts the Next.js UI and signed ingestion APIs.
 - Supabase Free provides Postgres, Auth, and RLS-protected personal data.
