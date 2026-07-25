@@ -1,5 +1,4 @@
 import { benchmarkRows } from "@/lib/websiteBenchmarkRows";
-import { websiteBenchmark } from "@/lib/websiteBenchmark";
 
 export type BenchmarkValidation = {
   id: string;
@@ -7,10 +6,6 @@ export type BenchmarkValidation = {
   sha256: string;
   split: string;
   classification: string;
-  firstDecision: string;
-  finalDecision: string;
-  finalSeverity: string;
-  publishedAt: string;
 };
 
 const byKey = new Map(benchmarkRows.map((row) => [`${row.id.toLowerCase()}@${row.version}`, row]));
@@ -30,9 +25,5 @@ export function benchmarkValidation(id: string, version: string, sha256?: string
     sha256: row.sha256,
     split: row.split,
     classification: row.classification,
-    firstDecision: row.first_decision,
-    finalDecision: row.final_decision,
-    finalSeverity: row.final_severity,
-    publishedAt: websiteBenchmark.publishedAt,
   };
 }

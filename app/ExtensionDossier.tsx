@@ -155,9 +155,8 @@ export default function ExtensionDossier({
             </strong>
             <p>
               Hash-pinned as a {validation.classification.replaceAll("-", " ")}{" "}
-              case. First pass routed <b>{validation.firstDecision}</b>; final
-              regression settled <b>{validation.finalDecision}</b>. This is
-              internal regression evidence, not independent validation.
+              case. The exact artifact identity matches the frozen cohort; the
+              current decision above comes only from this scan&apos;s evidence.
             </p>
           </div>
           <ChevronRight aria-hidden="true" />
