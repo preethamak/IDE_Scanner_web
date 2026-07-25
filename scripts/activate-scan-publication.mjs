@@ -61,9 +61,28 @@ for (const wanted of expected) {
   }
   const coverage = objectValue(actual.analysis_coverage);
   const providers = objectValue(coverage.providers);
+  const expectedCoverage = objectValue(wanted.analysis_coverage);
+  const expectedProviders = objectValue(expectedCoverage.providers);
   for (const provider of ["semgrep", "yara", "dependency_intelligence"]) {
     if (objectValue(providers[provider]).status !== "completed") {
       mismatches.push(`${key_}: required provider ${provider} did not complete`);
+    }
+  }
+  for (const [provider, fields] of Object.entries({
+    semgrep: ["version", "ruleset_hash"],
+    yara: ["version", "ruleset_hash"],
+    extension_advisories: ["snapshot_version", "sha256"],
+  })) {
+    const expectedProvider = objectValue(expectedProviders[provider]);
+    const actualProvider = objectValue(providers[provider]);
+    for (const field of fields) {
+      const expectedValue = String(expectedProvider[field] || "");
+      const actualValue = String(actualProvider[field] || "");
+      if (!expectedValue) {
+        mismatches.push(`${key_}: validation report lacks ${provider} ${field}`);
+      } else if (expectedValue !== actualValue) {
+        mismatches.push(`${key_}: ${provider} ${field} expected ${expectedValue}, received ${actualValue}`);
+      }
     }
   }
   if (coverage.required_providers_complete !== true) {
