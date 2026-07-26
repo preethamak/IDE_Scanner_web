@@ -291,6 +291,8 @@ function Overview({
         detail={
           decision === "allow"
             ? "Required analysis completed without evidence that crosses the active review policy."
+            : decision === "block"
+              ? "Inspect the evidence that supports this do-not-install policy decision."
             : decision === "incomplete" || decision === "failed"
               ? canonicalReason
               : "Review the grouped evidence, affected locations, and whether each behavior matches the extension’s purpose."
@@ -328,7 +330,7 @@ function Overview({
           <article>
             <span>Evidence groups</span>
             <strong>{actionableGroups.length}</strong>
-            <p>{noteGroups.length} non-review notes kept separate</p>
+            <p>{noteGroups.length} contextual notes kept separate</p>
           </article>
           <article>
             <span>Capabilities</span>
@@ -340,13 +342,7 @@ function Overview({
       <div className="overviewGrid">
         <article className="whyCard">
           <span>Why this outcome</span>
-          <h3>
-            {decision === "incomplete" || decision === "failed"
-              ? "Analysis did not produce an approval decision."
-              : actionableGroups.length
-              ? `${actionableGroups.length} behavior group${actionableGroups.length === 1 ? " needs" : "s need"} context before approval.`
-              : "No behavior group currently requires review."}
-          </h3>
+          <h3>{outcomeGroupSummary(decision, actionableGroups.length)}</h3>
           <p>
             {canonicalReason}
           </p>
@@ -366,7 +362,7 @@ function Overview({
       </div>
       <section className="evidencePreview">
         <div>
-          <span>Evidence that drives review</span>
+          <span>{evidenceSectionLabel(decision)}</span>
           <button type="button" onClick={onOpenAlerts}>
             Open evidence <ChevronRight />
           </button>
@@ -1480,6 +1476,28 @@ function decisionHeadline(value: string) {
         : value === "failed"
           ? "Analysis failed before a decision could be assigned."
           : "Analysis must complete before an approval decision.";
+}
+export function outcomeGroupSummary(decision: string, count: number) {
+  if (decision === "incomplete" || decision === "failed") {
+    return "Analysis did not produce an approval decision.";
+  }
+  if (decision === "block") {
+    return count
+      ? `${count} evidence group${count === 1 ? "" : "s"} support this do-not-install decision.`
+      : "The canonical policy reason requires rejecting this artifact.";
+  }
+  if (decision === "review" && count) {
+    return `${count} behavior group${count === 1 ? " needs" : "s need"} context before approval.`;
+  }
+  return "No behavior group currently requires review.";
+}
+export function evidenceSectionLabel(decision: string) {
+  if (decision === "block") return "Evidence supporting this decision";
+  if (decision === "review") return "Evidence that drives review";
+  if (decision === "incomplete" || decision === "failed") {
+    return "Evidence collected before completion";
+  }
+  return "Evidence assessed by policy";
 }
 function actionabilityRank(value: string) {
   return (
