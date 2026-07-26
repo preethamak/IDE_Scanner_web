@@ -917,9 +917,7 @@ function Publisher({
   extension: RecordValue;
   files: RecordValue[];
 }) {
-  const readme = files.find((item) =>
-    /(^|\/)readme(?:\.[a-z]+)?$/i.test(String(item.path || "")),
-  );
+  const readme = selectPackagedReadme(files);
   return (
     <>
       <SectionHead
@@ -1498,6 +1496,18 @@ export function evidenceSectionLabel(decision: string) {
     return "Evidence collected before completion";
   }
   return "Evidence assessed by policy";
+}
+export function selectPackagedReadme(files: RecordValue[]) {
+  return files
+    .filter((item) =>
+      /(^|\/)readme\.(?:md|markdown|rst)$/i.test(String(item.path || "")),
+    )
+    .sort((left, right) => {
+      const leftPath = String(left.path || "");
+      const rightPath = String(right.path || "");
+      const depth = leftPath.split("/").length - rightPath.split("/").length;
+      return depth || leftPath.localeCompare(rightPath, undefined, { sensitivity: "base" });
+    })[0];
 }
 function actionabilityRank(value: string) {
   return (

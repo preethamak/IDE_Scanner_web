@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   evidenceSectionLabel,
   outcomeGroupSummary,
+  selectPackagedReadme,
 } from "@/app/ExtensionDossier";
 
 describe("outcome-specific evidence copy", () => {
@@ -21,5 +22,17 @@ describe("outcome-specific evidence copy", () => {
     expect(evidenceSectionLabel("incomplete")).toBe(
       "Evidence collected before completion",
     );
+  });
+});
+
+describe("packaged README selection", () => {
+  it("prefers the root text README over nested icon and dependency files", () => {
+    expect(
+      selectPackagedReadme([
+        { path: "assets/icons/readme.svg", preview_available: false },
+        { path: "node_modules/example/README.md", preview_available: true },
+        { path: "readme.md", preview_available: true },
+      ]),
+    ).toMatchObject({ path: "readme.md", preview_available: true });
   });
 });
