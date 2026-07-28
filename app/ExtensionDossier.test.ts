@@ -3,7 +3,7 @@ import {
   evidenceSectionLabel,
   outcomeGroupSummary,
   selectPackagedReadme,
-} from "@/app/ExtensionDossier";
+} from "@/lib/dossierPresentation";
 
 describe("outcome-specific evidence copy", () => {
   it("does not describe a block as approval review", () => {
