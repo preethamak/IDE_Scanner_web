@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -74,38 +74,12 @@ export function HeroProductScene({ item }: { item: FeedItem }) {
 }
 
 export function CredibilityStory() {
-  const countRef = useRef<HTMLElement>(null);
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    const node = countRef.current;
-    if (!node) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let frame = 0;
-    if (reduced) {
-      frame = requestAnimationFrame(() => setCount(60000));
-      return () => cancelAnimationFrame(frame);
-    }
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return;
-      observer.disconnect();
-      const start = performance.now();
-      const tick = (now: number) => {
-        const progress = Math.min((now - start) / 1100, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        setCount(Math.round(eased * 60000));
-        if (progress < 1) frame = requestAnimationFrame(tick);
-      };
-      frame = requestAnimationFrame(tick);
-    }, { threshold: 0.35 });
-    observer.observe(node);
-    return () => { observer.disconnect(); cancelAnimationFrame(frame); };
-  }, []);
+  const count = 60000;
 
   return <section className={styles.credibility} aria-labelledby="marketplace-scale">
     <div className={styles.credibilityLead}>
       <span className={styles.kicker}><i /> Marketplace scale</span>
-      <strong id="marketplace-scale" ref={countRef}>~{count.toLocaleString("en-US")}</strong>
+      <strong id="marketplace-scale">~{count.toLocaleString("en-US")}</strong>
       <p>extensions compete for a place inside developer environments.</p>
     </div>
     <div className={styles.publisherProof}>
@@ -147,13 +121,20 @@ export function ProductWalkthrough({ item }: { item: FeedItem }) {
   const Icon = step.icon;
   const title = item?.display_name || "Choose an extension";
 
+  const selectStep = (index: number) => setActive((index + walkthrough.length) % walkthrough.length);
+
   return <div className={styles.walkthrough}>
     <div className={styles.walkthroughNav} role="tablist" aria-label="GuardRails product walkthrough">
-      {walkthrough.map((candidate, index) => <button type="button" role="tab" aria-selected={index === active} className={index === active ? styles.activeStep : ""} onClick={() => setActive(index)} key={candidate.id}>
+      {walkthrough.map((candidate, index) => <button type="button" role="tab" id={`walkthrough-tab-${candidate.id}`} aria-controls={`walkthrough-panel-${candidate.id}`} tabIndex={index === active ? 0 : -1} aria-selected={index === active} className={index === active ? styles.activeStep : ""} onClick={() => setActive(index)} onKeyDown={(event) => {
+        if (event.key === "ArrowDown" || event.key === "ArrowRight") { event.preventDefault(); selectStep(index + 1); }
+        if (event.key === "ArrowUp" || event.key === "ArrowLeft") { event.preventDefault(); selectStep(index - 1); }
+        if (event.key === "Home") { event.preventDefault(); selectStep(0); }
+        if (event.key === "End") { event.preventDefault(); selectStep(walkthrough.length - 1); }
+      }} key={candidate.id}>
         <span>{candidate.label}</span><strong>{candidate.title}</strong><i aria-hidden="true" />
       </button>)}
     </div>
-    <div className={styles.walkthroughStage}>
+      <div className={styles.walkthroughStage} id={`walkthrough-panel-${step.id}`} role="tabpanel" aria-labelledby={`walkthrough-tab-${step.id}`}>
       <header><span><i /><i /><i /></span><code>guardrails.app / inspection</code><small><BadgeCheck /> Public intelligence</small></header>
       <div className={styles.stageBody}>
         <div className={styles.stageExplanation}>

@@ -24,6 +24,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en" className={`${instrument.variable} ${mono.variable} ${brand.variable}`}><body>
     <div className="siteFrame">
+      <a className="skipLink" href="#main-content">Skip to content</a>
       <header className="siteHeader">
         <div className="headerInner">
           <Link className="wordmark" href="/" aria-label="Guardrails home"><BrandMark/><strong>Guardrails</strong></Link>
@@ -31,10 +32,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <div className="headerCommands"><HeaderAccount /></div>
         </div>
       </header>
-      <div className="pageContent">{children}</div>
+      <div id="main-content" className="pageContent">{children}</div>
       <footer className="siteFooter">
         <div className="footerMain"><div className="footerLead"><Link className="wordmark footerWordmark" href="/"><BrandMark/><strong>Guardrails</strong></Link><h2>Extension security,<br/>kept in the loop.</h2><p>Exact-artifact intelligence for the developer tools your organization installs and trusts.</p><Link className="footerCta" href="/scan">Analyze an extension <ArrowUpRight/></Link></div>
-        <div className="footerLinks"><div><strong>Product</strong><Link href="/catalog">Discover</Link><Link href="/scan">Analyze</Link><Link href="/cli">Guardrails CLI</Link><Link href="/workspace">Dashboard</Link><Link href="/monitor">Monitor</Link></div><div><strong>Intelligence</strong><Link href="/research">Research</Link><Link href="/metrics">Detection catalog</Link><Link href="/benchmark">Validation</Link><Link href="/scoring">Severity guide</Link></div><div><strong>Trust</strong><Link href="/about">About the product</Link><Link href="/privacy">Data handling</Link><Link href="/settings">Analysis boundaries</Link><Link href="/security">Security</Link></div></div></div>
+        <div className="footerLinks"><div><strong>Product</strong><Link href="/catalog">Reports</Link><Link href="/scan">Analyze</Link><Link href="/cli">Guardrails CLI</Link><Link href="/monitor">Monitor</Link></div><div><strong>Trust & docs</strong><Link href="/research">How analysis works</Link><Link href="/metrics">Detection catalog</Link><Link href="/benchmark">Validation</Link><Link href="/scoring">Verdicts & severity</Link></div><div><strong>Company</strong><Link href="/about">About Guardrails</Link><Link href="/privacy">Data handling</Link><Link href="/settings">Analysis boundaries</Link><Link href="/security">Security</Link></div></div></div>
         <div className="footerBottom"><span>© GuardRails</span><span>Exact artifacts · Evidence first</span></div>
       </footer>
     </div>

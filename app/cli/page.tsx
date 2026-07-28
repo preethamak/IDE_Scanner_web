@@ -38,7 +38,7 @@ export default function CliPage() {
         <h1>See what is already inside your editor.</h1>
         <p>Guardrails CLI discovers locally installed extensions and scans private snapshots without executing or uploading their code.</p>
         <CliInstallCommand />
-        <div className="cliHeroNotes"><span><Check /> Package: <code>guardlens</code></span><span><Check /> Command: <code>guardrails</code></span><span><Check /> Python 3.11+</span></div>
+        <div className="cliHeroNotes"><span><Check /> Package: <code>guardlens</code></span><span><Check /> Command: <code>guardrails</code></span><span><Check /> Python 3.11+</span><span><Check /> One self-contained, integrity-checked package</span></div>
       </div>
       <div className="cliTerminal" aria-label="Guardrails CLI terminal preview">
         <header><span><i /><i /><i /></span><code>local extension audit</code><b>private</b></header>
@@ -71,7 +71,7 @@ export default function CliPage() {
       <div><span className="cliEyebrow"><LockKeyhole /> Local by design</span><h2>Your extension code stays on your machine.</h2><p>Guardrails copies selected extensions into a temporary private snapshot, scans it locally, then removes the snapshot. It never launches extension code.</p></div>
       <div className="cliPrivacyFacts">
         <article><Code2 /><div><strong>No code upload</strong><p>Source files and package contents are not sent to Guardrails.</p></div></article>
-        <article><ShieldCheck /><div><strong>No code execution</strong><p>Static analysis reads the artifact; it does not activate the extension.</p></div></article>
+        <article><ShieldCheck /><div><strong>Verified scanner runtime</strong><p>The scanner is bundled with Guardrails and checked for unexpected changes before it runs.</p></div></article>
         <article><Cloud /><div><strong>Optional intelligence lookups</strong><p>Deep mode can query Marketplace, dependency, and repository metadata using IDs, versions, dependencies, and URLs.</p></div></article>
       </div>
     </section>

@@ -2,18 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUpRight, BellRing, BookOpen, Boxes, ChevronDown, FileSearch, FlaskConical, Menu, Radar, ScanSearch, ScrollText, ShieldCheck, TerminalSquare, X } from "lucide-react";
+import { ArrowUpRight, BellRing, BookOpen, Boxes, ChevronDown, FileSearch, FlaskConical, Menu, ScanSearch, ScrollText, ShieldCheck, TerminalSquare, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 const directLinks = [
-  ["/catalog", "Discover", Boxes],
-  ["/public-scan", "Extension Registry", Radar],
+  ["/catalog", "Reports", Boxes],
   ["/scan", "Analyze", ScanSearch],
   ["/cli", "CLI", TerminalSquare],
   ["/monitor", "Monitor", BellRing],
 ] as const;
 const documentationLinks = [
-  ["/research", "Documentation", "How GUARDRAILS evaluates extensions", BookOpen],
+  ["/research", "Trust & docs", "How Guardrails evaluates extensions", BookOpen],
   ["/metrics", "Detection catalog", "Inspect rules and evidence classes", FileSearch],
   ["/benchmark", "Validation", "Frozen artifacts and regression evidence", FlaskConical],
   ["/scoring", "Verdicts & severity", "How severity and decisions are explained", ShieldCheck],
@@ -36,8 +35,8 @@ export default function SiteNav() {
     <button className="mobileNavToggle" aria-label={open === "mobile" ? "Close navigation" : "Open navigation"} onClick={() => setOpen(open === "mobile" ? null : "mobile")}>{open === "mobile" ? <X/> : <Menu/>}</button>
     <div className="desktopNav">
       {directLinks.map(([href, label]) => <Link className={active(href) ? "active" : ""} href={href} key={href}>{label}</Link>)}
-      <div className="navMenu"><button className={documentationLinks.some(([href]) => active(href)) ? "active" : ""} aria-expanded={open === "documentation"} onClick={() => setOpen(open === "documentation" ? null : "documentation")}>Documentation <ChevronDown/></button><div role="menu" className={`navPopover guardrailPopover documentationPopover ${open === "documentation" ? "isOpen" : ""}`}><div>{documentationLinks.map(menuLink)}</div></div></div>
+      <div className="navMenu"><button className={documentationLinks.some(([href]) => active(href)) ? "active" : ""} aria-expanded={open === "documentation"} aria-controls="documentation-menu" onClick={() => setOpen(open === "documentation" ? null : "documentation")}>Trust & docs <ChevronDown/></button><div id="documentation-menu" role="menu" className={`navPopover guardrailPopover documentationPopover ${open === "documentation" ? "isOpen" : ""}`}><div>{documentationLinks.map(menuLink)}</div></div></div>
     </div>
-    <div className={`mobileNavPanel ${open === "mobile" ? "isOpen" : ""}`}><span>Explore</span>{directLinks.map(([href, label, Icon]) => <Link href={href} key={href} onClick={() => setOpen(null)}><Icon/><strong>{label}</strong></Link>)}<span>Documentation</span>{documentationLinks.map(menuLink)}</div>
+    <div className={`mobileNavPanel ${open === "mobile" ? "isOpen" : ""}`}><span>Explore</span>{directLinks.map(([href, label, Icon]) => <Link href={href} key={href} onClick={() => setOpen(null)}><Icon/><strong>{label}</strong></Link>)}<span>Trust &amp; docs</span>{documentationLinks.map(menuLink)}</div>
   </nav>;
 }
