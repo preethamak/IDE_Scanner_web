@@ -11,7 +11,7 @@ The web product publishes version-specific extension intelligence. It renders ca
 
 ## Lifecycle
 
-The web app queues a Deep Scan, a worker claims it atomically, the worker executes `guardlens-core`, and a signed callback ingests the report. Expired leases and unclaimed queued jobs are reconciled to terminal failures so polling never waits indefinitely.
+The web app queues a Deep Scan, a worker claims it atomically, the worker executes the canonical scanner runtime, and a signed callback ingests the report. Expired leases and unclaimed queued jobs are reconciled to terminal failures so polling never waits indefinitely.
 
 ## Trust rules
 

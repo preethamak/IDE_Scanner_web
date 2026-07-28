@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -117,19 +117,24 @@ const walkthrough = [
 
 export function ProductWalkthrough({ item }: { item: FeedItem }) {
   const [active, setActive] = useState(0);
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const step = walkthrough[active];
   const Icon = step.icon;
   const title = item?.display_name || "Choose an extension";
 
-  const selectStep = (index: number) => setActive((index + walkthrough.length) % walkthrough.length);
+  const selectStep = (index: number, focus = false) => {
+    const next = (index + walkthrough.length) % walkthrough.length;
+    setActive(next);
+    if (focus) tabRefs.current[next]?.focus();
+  };
 
   return <div className={styles.walkthrough}>
     <div className={styles.walkthroughNav} role="tablist" aria-label="GuardRails product walkthrough">
-      {walkthrough.map((candidate, index) => <button type="button" role="tab" id={`walkthrough-tab-${candidate.id}`} aria-controls={`walkthrough-panel-${candidate.id}`} tabIndex={index === active ? 0 : -1} aria-selected={index === active} className={index === active ? styles.activeStep : ""} onClick={() => setActive(index)} onKeyDown={(event) => {
-        if (event.key === "ArrowDown" || event.key === "ArrowRight") { event.preventDefault(); selectStep(index + 1); }
-        if (event.key === "ArrowUp" || event.key === "ArrowLeft") { event.preventDefault(); selectStep(index - 1); }
-        if (event.key === "Home") { event.preventDefault(); selectStep(0); }
-        if (event.key === "End") { event.preventDefault(); selectStep(walkthrough.length - 1); }
+      {walkthrough.map((candidate, index) => <button ref={(node) => { tabRefs.current[index] = node; }} type="button" role="tab" id={`walkthrough-tab-${candidate.id}`} aria-controls={`walkthrough-panel-${candidate.id}`} tabIndex={index === active ? 0 : -1} aria-selected={index === active} className={index === active ? styles.activeStep : ""} onClick={() => setActive(index)} onKeyDown={(event) => {
+        if (event.key === "ArrowDown" || event.key === "ArrowRight") { event.preventDefault(); selectStep(index + 1, true); }
+        if (event.key === "ArrowUp" || event.key === "ArrowLeft") { event.preventDefault(); selectStep(index - 1, true); }
+        if (event.key === "Home") { event.preventDefault(); selectStep(0, true); }
+        if (event.key === "End") { event.preventDefault(); selectStep(walkthrough.length - 1, true); }
       }} key={candidate.id}>
         <span>{candidate.label}</span><strong>{candidate.title}</strong><i aria-hidden="true" />
       </button>)}
