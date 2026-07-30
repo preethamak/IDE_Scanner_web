@@ -65,8 +65,8 @@ drop policy if exists "team comments access" on public.finding_comments;
 create policy "team members can read teams" on public.teams for select to authenticated using (public.is_team_member(id));
 create policy "owners can update teams" on public.teams for update to authenticated using (public.team_role(id) = 'owner') with check (public.team_role(id) = 'owner');
 create policy "members can read memberships" on public.team_members for select to authenticated using (public.is_team_member(team_id));
-create policy "admins manage memberships" on public.team_members for all to authenticated using (public.can_manage_team(team_id)) with check (public.can_manage_team(team_id));
-create policy "admins manage invitations" on public.team_invitations for all to authenticated using (public.can_manage_team(team_id)) with check (public.can_manage_team(team_id));
+-- Membership and invitation mutation is server mediated. A generic RLS policy
+-- cannot safely distinguish the caller's old role from an untrusted new role.
 create policy "members read team watchlist" on public.team_watchlist_items for select to authenticated using (public.is_team_member(team_id));
 create policy "analysts manage team watchlist" on public.team_watchlist_items for all to authenticated using (public.can_decide_for_team(team_id)) with check (public.can_decide_for_team(team_id));
 create policy "members read team decisions" on public.team_decisions for select to authenticated using (public.is_team_member(team_id));
@@ -76,6 +76,7 @@ create policy "members read decision events" on public.team_decision_events for 
 create policy "actors append decision events" on public.team_decision_events for insert to authenticated with check (actor_id = (select auth.uid()) and exists (select 1 from public.team_decisions d where d.id = decision_id and public.can_decide_for_team(d.team_id)));
 
 revoke all on public.teams, public.team_members, public.team_invitations, public.team_watchlist_items, public.team_decisions, public.team_decision_events from anon;
-grant select, insert, update, delete on public.teams, public.team_members, public.team_invitations, public.team_watchlist_items, public.team_decisions, public.team_decision_events to authenticated;
+grant select on public.teams, public.team_members, public.team_invitations to authenticated;
+grant select, insert, update, delete on public.team_watchlist_items, public.team_decisions, public.team_decision_events to authenticated;
 revoke all on function public.team_role(uuid), public.can_manage_team(uuid), public.can_decide_for_team(uuid) from public;
 grant execute on function public.team_role(uuid), public.can_manage_team(uuid), public.can_decide_for_team(uuid) to authenticated;
