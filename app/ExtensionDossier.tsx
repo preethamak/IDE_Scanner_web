@@ -22,6 +22,7 @@ import {
   Waypoints,
 } from "lucide-react";
 import DossierHeader from "@/app/dossier/DossierHeader";
+import DecisionSummary from "@/app/dossier/DecisionSummary";
 import SeverityGauge from "@/app/SeverityGauge";
 import Markdown from "@/app/Markdown";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
@@ -38,7 +39,7 @@ import {
   outcomeGroupSummary,
   selectPackagedReadme,
 } from "@/lib/dossierPresentation";
-import type { ExtensionDossierData } from "@/lib/reportContract";
+import type { ExtensionDossierData, ReportScan } from "@/lib/reportContract";
 
 type RecordValue = Record<string, unknown>;
 type Section =
@@ -232,7 +233,7 @@ function Overview({
   onOpenAlerts,
 }: {
   decision: string;
-  scan: RecordValue;
+  scan: ReportScan;
   actionableGroups: Group[];
   noteGroups: Group[];
   capabilities: Record<string, RecordValue>;
@@ -267,6 +268,7 @@ function Overview({
               : "Review the grouped evidence, affected locations, and whether each behavior matches the extension’s purpose."
         }
       />
+      <DecisionSummary decision={decision} scan={scan} />
       <div className="overviewLede">
         <div className="overviewGauge">
           <SeverityGauge
