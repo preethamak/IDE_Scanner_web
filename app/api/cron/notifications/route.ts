@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { decryptTarget } from "@/lib/notificationCrypto";
+import { alertEvent, retryDisposition, shouldNotify } from "@/lib/monitoringPolicy";
 import { serviceDb } from "@/lib/supabase";
 
 export const runtime = "nodejs";
@@ -44,14 +45,18 @@ async function deliverTeamNotifications(db: Db, now: string) {
   let sent = 0; let failed = 0; let skipped = 0;
   for (const row of data || []) {
     const channel = one(row.team_notification_channels); const alert = one(row.team_monitoring_alerts); const attempts = Number(row.attempts || 0);
-    if (!channel?.enabled || alert?.state === "dismissed") { await finishTeam(db, row.id, "skipped", null, attempts); skipped += 1; continue; }
+    const metadata = one(alert?.metadata);
+    const eligible = shouldNotify({ decision: String(metadata.decision || "incomplete"), severity: typeof alert?.severity === "string" ? alert.severity : null, coveragePercent: Number(metadata.coverage_percent || 0), event: alertEvent(alert?.kind), minimumSeverity: String(channel?.minimum_severity || "MEDIUM"), releaseAlerts: true, scanAlerts: true });
+    if (!channel?.enabled || alert?.state === "dismissed" || !eligible) { await finishTeam(db, row.id, "skipped", null, attempts); skipped += 1; continue; }
     await db.from("team_notification_deliveries").update({ status: "sending", attempts: attempts + 1, updated_at: now }).eq("id", row.id).in("status", ["pending", "failed"]);
     try {
       const response = await fetch(decryptTarget(String(channel.target_encrypted)), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(slackMessage(alert)), signal: AbortSignal.timeout(12_000) });
       if (!response.ok) throw new Error(`Slack returned ${response.status}`);
       await finishTeam(db, row.id, "sent", null, attempts + 1); sent += 1;
     } catch (deliveryError) {
-      await finishTeam(db, row.id, "failed", deliveryError instanceof Error ? deliveryError.message : "Delivery failed", attempts + 1); failed += 1;
+      const message = deliveryError instanceof Error ? deliveryError.message : "Delivery failed";
+      if (retryDisposition(attempts + 1) === "skip") { await finishTeam(db, row.id, "skipped", message, attempts + 1); skipped += 1; }
+      else { await finishTeam(db, row.id, "failed", message, attempts + 1); failed += 1; }
     }
   }
   return { error: "", considered: (data || []).length, sent, failed, skipped };

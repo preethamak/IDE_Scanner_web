@@ -8,3 +8,13 @@ export function shouldNotify(input: MonitoringInput): boolean {
   if (input.coveragePercent < 100 || input.decision === "incomplete") return true;
   return (weight[input.severity || "INFORMATIONAL"] || 1) >= (weight[input.minimumSeverity] || 3);
 }
+
+export const MAX_NOTIFICATION_ATTEMPTS = 5;
+
+export function retryDisposition(attempts: number): "retry" | "skip" {
+  return attempts >= MAX_NOTIFICATION_ATTEMPTS ? "skip" : "retry";
+}
+
+export function alertEvent(kind: unknown): MonitoringInput["event"] {
+  return String(kind) === "release_detected" ? "release" : String(kind) === "decision_due" ? "decision" : "scan";
+}
