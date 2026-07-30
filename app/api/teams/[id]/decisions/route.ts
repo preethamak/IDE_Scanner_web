@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticated } from "@/lib/auth";
 import { asUuid, requireTeamRole, teamDecision } from "@/lib/teams";
+import { decisionEventKind, type DecisionSnapshot } from "@/lib/teamDecisionLifecycle";
 import { serviceDb } from "@/lib/supabase";
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
@@ -27,11 +28,36 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const dueAt = body.due_at == null ? null : new Date(String(body.due_at));
     if (body.assigned_to != null && !assignedTo) return NextResponse.json({ error: "Invalid assignee." }, { status: 400 });
     if (dueAt && Number.isNaN(dueAt.getTime())) return NextResponse.json({ error: "Invalid due date." }, { status: 400 });
-    const payload = { team_id: id, scan_id: scanId, extension_id: scan.extension_id, version: scan.version, decision, rationale, assigned_to: assignedTo, due_at: dueAt?.toISOString() || null, created_by: user.id, updated_by: user.id, resolved_at: decision === "review" ? null : new Date().toISOString() };
-    const { data, error } = await db.from("team_decisions").upsert(payload, { onConflict: "team_id,scan_id" }).select().single();
+    if (assignedTo) {
+      const assignee = await db.from("team_members").select("user_id").eq("team_id", id).eq("user_id", assignedTo).maybeSingle();
+      if (assignee.error) throw assignee.error;
+      if (!assignee.data) return NextResponse.json({ error: "The assignee must be a member of this team." }, { status: 400 });
+    }
+    const existing = await db.from("team_decisions").select("*").eq("team_id", id).eq("scan_id", scanId).maybeSingle();
+    if (existing.error) throw existing.error;
+    const before = existing.data ? snapshot(existing.data) : null;
+    const resolvedAt = decision === "review" ? null : before?.resolved_at || new Date().toISOString();
+    const after: DecisionSnapshot = { decision, rationale, assigned_to: assignedTo, due_at: dueAt?.toISOString() || null, resolved_at: resolvedAt };
+    const payload = { team_id: id, scan_id: scanId, extension_id: scan.extension_id, version: scan.version, ...after, updated_by: user.id };
+    const result = existing.data
+      ? await db.from("team_decisions").update(payload).eq("id", existing.data.id).select().single()
+      : await db.from("team_decisions").insert({ ...payload, created_by: user.id }).select().single();
+    const { data, error } = result;
     if (error) throw error;
-    const event = await db.from("team_decision_events").insert({ decision_id: data.id, actor_id: user.id, kind: "created", after_value: { decision, rationale, assigned_to: assignedTo, due_at: payload.due_at } });
+    const event = await db.from("team_decision_events").insert({ decision_id: data.id, actor_id: user.id, kind: decisionEventKind(before, after), before_value: before || {}, after_value: after });
     if (event.error) throw event.error;
-    return NextResponse.json(data, { status: 201 });
+    return NextResponse.json(data, { status: existing.data ? 200 : 201 });
   } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Decision update failed." }, { status: 400 }); }
+}
+
+function snapshot(value: Record<string, unknown>): DecisionSnapshot {
+  const decision = teamDecision(value.decision);
+  if (!decision) throw new Error("Stored decision is invalid.");
+  return {
+    decision,
+    rationale: typeof value.rationale === "string" ? value.rationale : "",
+    assigned_to: typeof value.assigned_to === "string" ? value.assigned_to : null,
+    due_at: typeof value.due_at === "string" ? value.due_at : null,
+    resolved_at: typeof value.resolved_at === "string" ? value.resolved_at : null,
+  };
 }
