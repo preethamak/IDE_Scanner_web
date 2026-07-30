@@ -35,3 +35,16 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     return NextResponse.json({ invitation: data, invitation_path: `/workspace/invitations/${token}` }, { status: 201 });
   } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Could not create invitation." }, { status: 400 }); }
 }
+
+export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
+  try {
+    const { user } = await authenticated(request); const { id } = await context.params;
+    await requireTeamRole(id, user.id, ["owner", "admin"]);
+    const invitationId = new URL(request.url).searchParams.get("invitation_id") || "";
+    if (!/^[0-9a-f-]{36}$/i.test(invitationId)) return NextResponse.json({ error: "A valid invitation id is required." }, { status: 400 });
+    const { data, error } = await serviceDb().from("team_invitations").delete().eq("id", invitationId).eq("team_id", id).is("accepted_at", null).select("id").maybeSingle();
+    if (error) throw error;
+    if (!data) return NextResponse.json({ error: "Pending invitation not found." }, { status: 404 });
+    return new NextResponse(null, { status: 204 });
+  } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Invitation revocation failed." }, { status: 403 }); }
+}

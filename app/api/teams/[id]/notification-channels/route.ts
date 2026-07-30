@@ -31,4 +31,17 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Channel creation failed." }, { status: 403 }); }
 }
 
+export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
+  try {
+    const { user } = await authenticated(request); const { id } = await context.params;
+    await requireTeamRole(id, user.id, ["owner", "admin"]);
+    const channelId = new URL(request.url).searchParams.get("channel_id") || "";
+    if (!/^[0-9a-f-]{36}$/i.test(channelId)) return NextResponse.json({ error: "A valid channel id is required." }, { status: 400 });
+    const { data, error } = await serviceDb().from("team_notification_channels").delete().eq("id", channelId).eq("team_id", id).select("id").maybeSingle();
+    if (error) throw error;
+    if (!data) return NextResponse.json({ error: "Notification channel not found." }, { status: 404 });
+    return new NextResponse(null, { status: 204 });
+  } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Channel removal failed." }, { status: 403 }); }
+}
+
 function isSlackWebhook(value: string) { try { const url = new URL(value); return url.protocol === "https:" && url.hostname === "hooks.slack.com" && /^\/services\/[A-Z0-9]+\/[A-Z0-9]+\/[A-Za-z0-9]+$/.test(url.pathname); } catch { return false; } }
