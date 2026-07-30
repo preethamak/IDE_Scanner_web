@@ -40,6 +40,7 @@ import {
   outcomeGroupSummary,
   selectPackagedReadme,
 } from "@/lib/dossierPresentation";
+import type { ExtensionDossierData } from "@/lib/reportContract";
 
 type RecordValue = Record<string, unknown>;
 type Section =
@@ -55,16 +56,7 @@ type Section =
   | "provenance"
   | "coverage"
   | "raw";
-type Props = {
-  id: string;
-  version: string;
-  extension: RecordValue;
-  versions: RecordValue[];
-  scan: RecordValue;
-  findings: RecordValue[];
-  files: RecordValue[];
-  dependencies: RecordValue[];
-};
+type Props = { data: ExtensionDossierData };
 
 const sections: Array<{ id: Section; label: string; icon: typeof Radar }> = [
   { id: "overview", label: "Overview", icon: Radar },
@@ -81,16 +73,8 @@ const sections: Array<{ id: Section; label: string; icon: typeof Radar }> = [
   { id: "raw", label: "Raw evidence", icon: Terminal },
 ];
 
-export default function ExtensionDossier({
-  id,
-  version,
-  extension,
-  versions,
-  scan,
-  findings,
-  files,
-  dependencies,
-}: Props) {
+export default function ExtensionDossier({ data }: Props) {
+  const { id, version, extension, versions, scan, findings, files, dependencies } = data;
   const [active, setActive] = useState<Section>("overview");
   const decision = displayedDecision(scan);
   const capabilities = normalizeCapabilities(scan.capabilities);
