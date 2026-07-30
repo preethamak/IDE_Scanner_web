@@ -86,13 +86,21 @@ export default function DeepScanButton({ extensionId, version, showReportLink = 
   }, [jobId, state, router, extensionId, version]);
 
   async function queue() {
-    if (signedOut) { router.push(`/account?next=${encodeURIComponent(window.location.pathname)}`); return; }
+    if (signedOut) {
+      const next = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      router.push(`/account?next=${encodeURIComponent(next)}`);
+      return;
+    }
     if (health !== "available") return;
     const force = state === "complete" || state === "incomplete";
     setState("loading"); setMessage("");
     const response = await fetch("/api/deep-scans", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ extension_id: extensionId, version, force }) });
     const body = await response.json().catch(() => ({}));
-    if (response.status === 401) { router.push(`/account?next=${encodeURIComponent(window.location.pathname)}`); return; }
+    if (response.status === 401) {
+      const next = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      router.push(`/account?next=${encodeURIComponent(next)}`);
+      return;
+    }
     if (!response.ok) { setState("error"); setMessage(body.error || "Deep Scan is temporarily unavailable."); return; }
     if (body.status === "complete") { setState("complete"); setReportUrl(String(body.report_url || `/extensions/${encodeURIComponent(extensionId)}/versions/${encodeURIComponent(version)}`)); setMessage("A completed Deep Scan already exists for this version."); router.refresh(); return; }
     setJobId(String(body.id || "")); setState(body.status === "running" ? "running" : "queued"); setMessage("Runner started. Preparing the exact published artifact for analysis.");
