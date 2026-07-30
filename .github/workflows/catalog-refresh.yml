@@ -29,3 +29,10 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           SCAN_BATCH_LIMIT: ${{ inputs.scan_batch_limit || '100' }}
+      - name: Verify public release health
+        env:
+          LAUNCH_HEALTH_SECRET: ${{ secrets.LAUNCH_HEALTH_SECRET }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer ${LAUNCH_HEALTH_SECRET}" \
+            https://ide-scanner.vercel.app/api/internal/launch-health
