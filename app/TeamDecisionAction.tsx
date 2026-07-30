@@ -34,7 +34,7 @@ export default function TeamDecisionAction({ scanId, extensionId }: { scanId: st
     })();
   }, [token]);
   useEffect(() => {
-    if (!teamId) { setMembers([]); return; }
+    if (!teamId) return;
     void (async () => {
       const accessToken = await token();
       const response = await fetch(`/api/teams/${encodeURIComponent(teamId)}/members`, { headers: { Authorization: `Bearer ${accessToken}` } });
