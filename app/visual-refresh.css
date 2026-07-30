@@ -61,3 +61,4 @@ body{font-size:16px!important}.siteFrame :is(p,small,code){font-size:inherit}.si
 @media(max-width:760px){body{font-size:16px!important}.catalogHero{padding-top:40px!important}.catalogHero h1{font-size:48px!important}.catalogHero p{font-size:16px!important}.documentationPopover,.navPopover.documentationPopover{width:min(420px,calc(100vw - 24px))!important}.gatePage{gap:32px!important}.gatePreview{min-width:0!important}.monitorAlert{grid-template-columns:1fr!important}.alertActions{grid-column:1!important}.inventoryCard strong{font-size:18px!important}.evidencePreview article{padding:16px!important}}
 .dossierDecision.failed{border-left-color:var(--violet)!important}
 .inventoryCard .inventoryDecision{display:inline-flex;margin-top:9px}
+.reportActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.reportActions .button{min-height:34px;padding:7px 10px;font-size:12px!important}.reportActions a{text-decoration:none}

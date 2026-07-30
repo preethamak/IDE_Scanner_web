@@ -22,6 +22,7 @@ import {
   Waypoints,
 } from "lucide-react";
 import DeepScanButton from "@/app/DeepScanButton";
+import ReportActions from "@/app/ReportActions";
 import ExtensionIdentity from "@/app/ExtensionIdentity";
 import SeverityGauge from "@/app/SeverityGauge";
 import Markdown from "@/app/Markdown";
@@ -149,6 +150,7 @@ export default function ExtensionDossier({
             version={version}
             showReportLink={false}
           />
+          <ReportActions extensionId={id} version={version} />
         </div>
       </header>
       {validation ? (
