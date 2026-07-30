@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Users } from "lucide-react";
 import { browserDb } from "@/lib/supabase";
+import { groupDecisionQueue, type QueueDecision } from "@/lib/teamDecisionQueue";
 
 type Team = { id: string; name: string; slug: string; role: string };
 type Alert = { id: string; title: string; summary: string; severity: string | null; state: string; extension_id: string; version: string };
@@ -16,6 +17,7 @@ export default function TeamWorkspace() {
   const [error, setError] = useState("");
   const [activeTeamId, setActiveTeamId] = useState("");
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [decisions, setDecisions] = useState<QueueDecision[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [webhook, setWebhook] = useState("");
   const [channelLabel, setChannelLabel] = useState("Security alerts");
@@ -60,6 +62,15 @@ export default function TeamWorkspace() {
     if (!activeTeamId) return;
     void (async () => {
       const accessToken = await token();
+      const response = await fetch(`/api/teams/${encodeURIComponent(activeTeamId)}/decisions`, { headers: { Authorization: `Bearer ${accessToken}` } });
+      const body = await response.json();
+      if (response.ok) setDecisions(Array.isArray(body.decisions) ? body.decisions : []);
+    })();
+  }, [activeTeamId, token]);
+  useEffect(() => {
+    if (!activeTeamId) return;
+    void (async () => {
+      const accessToken = await token();
       const response = await fetch(`/api/teams/${encodeURIComponent(activeTeamId)}/notification-channels`, { headers: { Authorization: `Bearer ${accessToken}` } });
       const body = await response.json();
       if (response.ok) setChannels(Array.isArray(body.channels) ? body.channels : []);
@@ -87,6 +98,7 @@ export default function TeamWorkspace() {
     setInviteUrl(`${window.location.origin}${body.invitation_path}`); setInviteState("idle");
   }
   const activeTeam = teams.find((team) => team.id === activeTeamId);
+  const decisionQueue = groupDecisionQueue(decisions);
   return <section className="workspaceSection teamWorkspace">
     <div className="workspaceSectionHead"><div><span>Team workspace</span><h2>Shared decisions</h2></div><Users/></div>
     <p className="sectionIntro">Teams share review ownership and decision history while public reports remain open and exact-artifact evidence stays unchanged.</p>
@@ -95,8 +107,13 @@ export default function TeamWorkspace() {
     {state === "ready" && !teams.length ? <p className="workspaceMessage">Create a team to share review ownership and an auditable decision queue.</p> : null}
     {teams.map((team) => <button className={`teamWorkspaceRow ${activeTeamId === team.id ? "active" : ""}`} type="button" onClick={() => setActiveTeamId(team.id)} key={team.id}><div><strong>{team.name}</strong><small>{team.role} · {team.slug}</small></div><span>{team.role}</span></button>)}
     {activeTeamId ? <div className="teamAlertQueue"><strong>Team attention queue</strong>{!alerts.length ? <p>No shared alerts need attention.</p> : alerts.map((alert) => <article key={alert.id}><span>{alert.severity || "INFORMATIONAL"}</span><div><strong>{alert.title}</strong><p>{alert.summary}</p><small>{alert.extension_id}@{alert.version}</small></div>{alert.state === "acknowledged" ? <em>Acknowledged</em> : <button type="button" onClick={() => void acknowledge(alert)}>Acknowledge</button>}</article>)}</div> : null}
+    {activeTeamId ? <div className="teamAlertQueue"><strong>Decision queue</strong><DecisionGroup title="Due soon" decisions={decisionQueue.dueSoon}/><DecisionGroup title="Open" decisions={decisionQueue.open}/><DecisionGroup title="Resolved" decisions={decisionQueue.resolved}/></div> : null}
     {activeTeam && ["owner", "admin"].includes(activeTeam.role) ? <div className="teamChannels"><strong>Invite a teammate</strong><form className="channelForm" onSubmit={createInvite}><select aria-label="Invite role" value={inviteRole} onChange={(event) => setInviteRole(event.target.value)}><option value="admin">Administrator</option><option value="analyst">Analyst</option><option value="viewer">Viewer</option></select><span>Expires in 7 days</span><button className="button buttonQuiet" type="submit" disabled={inviteState === "saving"}>{inviteState === "saving" ? "Creating" : "Create invite"}</button></form>{inviteUrl ? <p className="workspaceMessage">Share once: <a href={inviteUrl}>{inviteUrl}</a></p> : null}{inviteState === "error" ? <p className="previewError">Could not create the invitation.</p> : null}</div> : null}
     {activeTeam && ["owner", "admin"].includes(activeTeam.role) ? <div className="teamChannels"><strong>Team Slack delivery</strong>{channels.map((channel) => <p key={channel.id}>{channel.label} · {channel.minimum_severity} and above{channel.last_validated_at ? " · connected" : ""}</p>)}<form className="channelForm" onSubmit={connectChannel}><input type="password" value={webhook} onChange={(event) => setWebhook(event.target.value)} placeholder="Slack incoming webhook" aria-label="Team Slack incoming webhook" autoComplete="off"/><input value={channelLabel} onChange={(event) => setChannelLabel(event.target.value)} placeholder="Channel name" aria-label="Team channel name" maxLength={80}/><button className="button buttonQuiet" type="submit" disabled={channelState === "saving"}>{channelState === "saving" ? "Connecting" : "Connect Slack"}</button></form>{channelState === "error" ? <p className="previewError">Could not connect the Slack channel.</p> : null}</div> : null}
     {error ? <p className="previewError">{error}</p> : null}
   </section>;
+}
+
+function DecisionGroup({ title, decisions }: { title: string; decisions: QueueDecision[] }) {
+  return <div className="teamDecisionGroup"><small>{title}</small>{!decisions.length ? <p>None.</p> : decisions.map((decision) => <article key={decision.id}><span>{decision.decision}</span><div><strong>{decision.extension_id}@{decision.version}</strong><p>{decision.due_at ? `Due ${new Date(decision.due_at).toLocaleString()}` : "No review due date"}</p></div></article>)}</div>;
 }
