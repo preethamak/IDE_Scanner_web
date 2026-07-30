@@ -26,7 +26,9 @@ export async function POST(request: Request) {
       await finish(db, row.id, "failed", deliveryError instanceof Error ? deliveryError.message : "Delivery failed", Number(row.attempts || 0) + 1); failed += 1;
     }
   }
-  return NextResponse.json({ considered: (data || []).length, sent, failed, skipped });
+  const team = await deliverTeamNotifications(db, now);
+  if (team.error) return NextResponse.json({ error: team.error }, { status: 500 });
+  return NextResponse.json({ considered: (data || []).length + team.considered, sent: sent + team.sent, failed: failed + team.failed, skipped: skipped + team.skipped });
 }
 
 type Db = ReturnType<typeof serviceDb>;
@@ -35,6 +37,28 @@ function one(value: unknown): Row { return (Array.isArray(value) ? value[0] : va
 async function finish(db: Db, id: unknown, status: "sent" | "failed" | "skipped", lastError: string | null, attempts: number) {
   const retryMinutes = Math.min(360, 5 * 2 ** Math.min(attempts, 6));
   await db.from("notification_deliveries").update({ status, last_error: lastError, delivered_at: status === "sent" ? new Date().toISOString() : null, next_attempt_at: status === "failed" ? new Date(Date.now() + retryMinutes * 60_000).toISOString() : new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", id);
+}
+async function deliverTeamNotifications(db: Db, now: string) {
+  const { data, error } = await db.from("team_notification_deliveries").select("id,attempts,team_notification_channels!inner(id,kind,label,target_encrypted,enabled),team_monitoring_alerts!inner(id,extension_id,version,kind,severity,state,title,summary,created_at)").in("status", ["pending", "failed"]).lte("next_attempt_at", now).order("created_at").limit(50);
+  if (error) return { error: error.message, considered: 0, sent: 0, failed: 0, skipped: 0 };
+  let sent = 0; let failed = 0; let skipped = 0;
+  for (const row of data || []) {
+    const channel = one(row.team_notification_channels); const alert = one(row.team_monitoring_alerts); const attempts = Number(row.attempts || 0);
+    if (!channel?.enabled || alert?.state === "dismissed") { await finishTeam(db, row.id, "skipped", null, attempts); skipped += 1; continue; }
+    await db.from("team_notification_deliveries").update({ status: "sending", attempts: attempts + 1, updated_at: now }).eq("id", row.id).in("status", ["pending", "failed"]);
+    try {
+      const response = await fetch(decryptTarget(String(channel.target_encrypted)), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(slackMessage(alert)), signal: AbortSignal.timeout(12_000) });
+      if (!response.ok) throw new Error(`Slack returned ${response.status}`);
+      await finishTeam(db, row.id, "sent", null, attempts + 1); sent += 1;
+    } catch (deliveryError) {
+      await finishTeam(db, row.id, "failed", deliveryError instanceof Error ? deliveryError.message : "Delivery failed", attempts + 1); failed += 1;
+    }
+  }
+  return { error: "", considered: (data || []).length, sent, failed, skipped };
+}
+async function finishTeam(db: Db, id: unknown, status: "sent" | "failed" | "skipped", lastError: string | null, attempts: number) {
+  const retryMinutes = Math.min(360, 5 * 2 ** Math.min(attempts, 6));
+  await db.from("team_notification_deliveries").update({ status, last_error: lastError, delivered_at: status === "sent" ? new Date().toISOString() : null, next_attempt_at: status === "failed" ? new Date(Date.now() + retryMinutes * 60_000).toISOString() : new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", id);
 }
 function slackMessage(alert: Row) {
   const site = process.env.NEXT_PUBLIC_SITE_URL || "https://ide-scanner.vercel.app";
