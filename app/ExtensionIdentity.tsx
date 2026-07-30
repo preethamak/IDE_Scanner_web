@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { BadgeCheck } from "lucide-react";
 
 type Props = {
@@ -24,7 +25,7 @@ export default function ExtensionIdentity({ id, name, version, iconUrl, publishe
   return (
     <div className={`xid xid-${size}`}>
       <span className="xid-icon" aria-hidden="true">
-        {iconUrl && !failed ? <img src={iconUrl} alt="" onError={() => setFailed(true)} /> : initials}
+        {iconUrl && !failed ? <Image src={iconUrl} alt="" fill sizes="64px" unoptimized onError={() => setFailed(true)} /> : initials}
       </span>
       <div className="xid-body">
         {eyebrow ? <span className="xid-eyebrow">{eyebrow}</span> : null}
