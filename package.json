@@ -10,7 +10,8 @@
     "start:lan": "next start -H 0.0.0.0 -p 8765",
     "lint": "eslint",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "launch:readiness": "node scripts/launch-readiness.mjs"
   },
   "dependencies": {
     "@fontsource-variable/ibm-plex-sans": "^5.2.8",
