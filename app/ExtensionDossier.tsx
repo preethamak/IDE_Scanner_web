@@ -21,9 +21,7 @@ import {
   UserRound,
   Waypoints,
 } from "lucide-react";
-import DeepScanButton from "@/app/DeepScanButton";
-import ReportActions from "@/app/ReportActions";
-import ExtensionIdentity from "@/app/ExtensionIdentity";
+import DossierHeader from "@/app/dossier/DossierHeader";
 import SeverityGauge from "@/app/SeverityGauge";
 import Markdown from "@/app/Markdown";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
@@ -113,30 +111,7 @@ export default function ExtensionDossier({ data }: Props) {
   }, []);
   return (
     <main className="dossierPage">
-      <header className="dossierMast">
-        <ExtensionIdentity
-          size="lg"
-          eyebrow="Exact artifact intelligence"
-          id={id}
-          version={version}
-          name={String(extension.display_name || id)}
-          iconUrl={String(extension.icon_url || "")}
-          publisher={String(extension.publisher || "")}
-          verified={Boolean(extension.publisher_verified)}
-        />
-        <div className={`dossierDecision ${decision}`}>
-          <span>Security outcome</span>
-          <strong>{decisionLabel(decision)}</strong>
-          <p>{String(scan.decision_reason || decisionExplanation(decision))}</p>
-          <small>{coveragePresentation(scan).percent}% executable-file coverage · exact version only</small>
-          <DeepScanButton
-            extensionId={id}
-            version={version}
-            showReportLink={false}
-          />
-          <ReportActions extensionId={id} version={version} scanId={String(scan.id || "")} />
-        </div>
-      </header>
+      <DossierHeader id={id} version={version} extension={extension} scan={scan} />
       {validation ? (
         <Link className="dossierValidated" href="/benchmark">
           <span className="dossierValidatedMark">
