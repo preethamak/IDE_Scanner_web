@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckSquare } from "lucide-react";
+import { trackProductEvent } from "@/lib/analyticsEvents";
 import { browserDb } from "@/lib/supabase";
 
 type Team = { id: string; name: string; role: string };
@@ -33,13 +34,19 @@ export default function TeamDecisionAction({ scanId, extensionId }: { scanId: st
     setState("saving");
     const accessToken = await token();
     const response = await fetch(`/api/teams/${encodeURIComponent(teamId)}/decisions`, { method: "POST", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: scanId, decision }) });
-    setState(response.ok ? "saved" : "error");
+    if (response.ok) {
+      trackProductEvent({ name: "decision_created", source_route: window.location.pathname, decision: decision as "allow" | "review" | "block" | "exception" });
+      setState("saved");
+    } else setState("error");
   }
   async function watch() {
     if (!teamId) return;
     setWatchState("saving"); const accessToken = await token();
     const response = await fetch(`/api/teams/${encodeURIComponent(teamId)}/watchlist`, { method: "POST", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ extension_id: extensionId }) });
-    setWatchState(response.ok ? "saved" : "error");
+    if (response.ok) {
+      trackProductEvent({ name: "watch_created", source_route: window.location.pathname, scope: "team" });
+      setWatchState("saved");
+    } else setWatchState("error");
   }
   if (state === "hidden") return null;
   if (state === "saved") return <span className="actionNotice" role="status">Team decision saved.</span>;

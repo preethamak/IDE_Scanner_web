@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LoaderCircle, ScanSearch } from "lucide-react";
 import Link from "next/link";
+import { trackProductEvent } from "@/lib/analyticsEvents";
 
 type ScanState = "idle" | "loading" | "queued" | "running" | "complete" | "incomplete" | "error";
 type Health = { available?: boolean };
@@ -15,6 +16,22 @@ async function fetchJson<T>(url: string, timeoutMs = 2_000): Promise<T> {
     const response = await fetch(url, { cache: "no-store", signal: controller.signal });
     if (!response.ok) throw new Error(`Request failed with ${response.status}`);
     return await response.json() as T;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+async function fetchExistingJob(extensionId: string, version: string): Promise<ExistingJob> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 2_000);
+  try {
+    const response = await fetch(`/api/deep-scans?extension_id=${encodeURIComponent(extensionId)}&version=${encodeURIComponent(version)}`, { cache: "no-store", signal: controller.signal });
+    if (response.status === 204) return null;
+    if (response.status === 401) return { auth_required: true };
+    if (!response.ok) return null;
+    return await response.json() as ExistingJob;
+  } catch {
+    return null;
   } finally {
     window.clearTimeout(timeout);
   }
@@ -33,7 +50,7 @@ export default function DeepScanButton({ extensionId, version, showReportLink = 
     let active = true;
     void Promise.all([
       fetchJson<Health>("/api/deep-scans/health"),
-      fetch(`/api/deep-scans?extension_id=${encodeURIComponent(extensionId)}&version=${encodeURIComponent(version)}`, { cache: "no-store" }).then(async (response): Promise<ExistingJob> => response.status === 204 ? null : response.status === 401 ? { auth_required: true } : response.ok ? response.json() as Promise<ExistingJob> : null),
+      fetchExistingJob(extensionId, version),
     ]).then(([runner, job]) => {
       if (!active) return;
       setHealth(runner.available ? "available" : "unavailable");
@@ -87,6 +104,7 @@ export default function DeepScanButton({ extensionId, version, showReportLink = 
 
   async function queue() {
     if (signedOut) {
+      trackProductEvent({ name: "workspace_signup_started", source_route: window.location.pathname, entry_point: "deep_scan" });
       const next = `${window.location.pathname}${window.location.search}${window.location.hash}`;
       router.push(`/account?next=${encodeURIComponent(next)}`);
       return;
@@ -97,6 +115,7 @@ export default function DeepScanButton({ extensionId, version, showReportLink = 
     const response = await fetch("/api/deep-scans", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ extension_id: extensionId, version, force }) });
     const body = await response.json().catch(() => ({}));
     if (response.status === 401) {
+      trackProductEvent({ name: "workspace_signup_started", source_route: window.location.pathname, entry_point: "deep_scan" });
       const next = `${window.location.pathname}${window.location.search}${window.location.hash}`;
       router.push(`/account?next=${encodeURIComponent(next)}`);
       return;
