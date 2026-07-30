@@ -5,6 +5,20 @@ import { LoaderCircle, ScanSearch } from "lucide-react";
 import Link from "next/link";
 
 type ScanState = "idle" | "loading" | "queued" | "running" | "complete" | "incomplete" | "error";
+type Health = { available?: boolean };
+type ExistingJob = { auth_required?: boolean; report_url?: string; status?: string; id?: string; error?: string } | null;
+
+async function fetchJson<T>(url: string, timeoutMs = 2_000): Promise<T> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { cache: "no-store", signal: controller.signal });
+    if (!response.ok) throw new Error(`Request failed with ${response.status}`);
+    return await response.json() as T;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
 
 export default function DeepScanButton({ extensionId, version, showReportLink = true }: { extensionId: string; version: string; showReportLink?: boolean }) {
   const router = useRouter();
@@ -18,8 +32,8 @@ export default function DeepScanButton({ extensionId, version, showReportLink = 
   useEffect(() => {
     let active = true;
     void Promise.all([
-      fetch("/api/deep-scans/health", { cache: "no-store" }).then((response) => response.json()),
-      fetch(`/api/deep-scans?extension_id=${encodeURIComponent(extensionId)}&version=${encodeURIComponent(version)}`, { cache: "no-store" }).then(async (response) => response.status === 204 ? null : response.status === 401 ? { auth_required: true } : response.json()),
+      fetchJson<Health>("/api/deep-scans/health"),
+      fetch(`/api/deep-scans?extension_id=${encodeURIComponent(extensionId)}&version=${encodeURIComponent(version)}`, { cache: "no-store" }).then(async (response): Promise<ExistingJob> => response.status === 204 ? null : response.status === 401 ? { auth_required: true } : response.ok ? response.json() as Promise<ExistingJob> : null),
     ]).then(([runner, job]) => {
       if (!active) return;
       setHealth(runner.available ? "available" : "unavailable");
@@ -29,8 +43,9 @@ export default function DeepScanButton({ extensionId, version, showReportLink = 
         setReportUrl(String(job.report_url)); setState(terminal);
         setMessage(showReportLink ? terminal === "complete" ? "Completed Deep Scan is available for this exact release." : "The Deep Scan is incomplete. Review missing coverage before making a trust decision." : "");
       }
-      else if (job && ["queued", "running"].includes(job.status)) {
-        setJobId(String(job.id)); setState(job.status); setMessage(job.status === "queued" ? "Starting the isolated analysis runner…" : "Analyzers are inspecting the exact artifact.");
+      else if (job?.status === "queued" || job?.status === "running") {
+        const nextState: ScanState = job.status;
+        setJobId(String(job.id || "")); setState(nextState); setMessage(nextState === "queued" ? "Starting the isolated analysis runner…" : "Analyzers are inspecting the exact artifact.");
       } else if (job?.status === "failed") {
         setState("error"); setMessage(job.error || "The previous Deep Scan failed. Retry when the runner is available.");
       }
@@ -71,8 +86,8 @@ export default function DeepScanButton({ extensionId, version, showReportLink = 
   }, [jobId, state, router, extensionId, version]);
 
   async function queue() {
-    if (health !== "available") return;
     if (signedOut) { router.push(`/account?next=${encodeURIComponent(window.location.pathname)}`); return; }
+    if (health !== "available") return;
     const force = state === "complete" || state === "incomplete";
     setState("loading"); setMessage("");
     const response = await fetch("/api/deep-scans", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ extension_id: extensionId, version, force }) });
@@ -85,9 +100,10 @@ export default function DeepScanButton({ extensionId, version, showReportLink = 
 
   const unavailable = health === "unavailable";
   return <div className="deepScanAction">
-    <button className="button buttonDark" onClick={queue} disabled={health !== "available" || ["loading", "queued", "running"].includes(state)}>
-      {health === "checking" ? <><LoaderCircle className="spin" size={16}/> Checking runner</> : unavailable ? "Deep Scan paused" : signedOut ? <>Sign in to Deep Scan <ScanSearch size={16}/></> : state === "loading" ? <><LoaderCircle className="spin" size={16}/> Queueing</> : state === "queued" ? "Queued" : state === "running" ? <><LoaderCircle className="spin" size={16}/> Analyzing</> : ["complete", "incomplete"].includes(state) ? <>Run a new scan <ScanSearch size={16}/></> : <>Deep Scan <ScanSearch size={16}/></>}
+    <button className="button buttonDark" onClick={queue} disabled={(!signedOut && health !== "available") || ["loading", "queued", "running"].includes(state)}>
+      {signedOut ? <>Create free workspace to Deep Scan <ScanSearch size={16}/></> : health === "checking" ? <><LoaderCircle className="spin" size={16}/> Checking runner</> : unavailable ? "Deep Scan paused" : state === "loading" ? <><LoaderCircle className="spin" size={16}/> Queueing</> : state === "queued" ? "Queued" : state === "running" ? <><LoaderCircle className="spin" size={16}/> Analyzing</> : ["complete", "incomplete"].includes(state) ? <>Run a new scan <ScanSearch size={16}/></> : <>Deep Scan <ScanSearch size={16}/></>}
     </button>
+    {signedOut ? <span className="actionNotice" role="status">Free workspaces save exact-version reports, monitoring, and your review queue.</span> : null}
     {showReportLink && reportUrl ? <Link className="deepScanReportLink" href={reportUrl}>Open Deep Scan report</Link> : null}
     {unavailable ? <span className="actionError" role="status">The analysis runner is offline. No scan job was created.</span> : message ? <span className={state === "error" ? "actionError" : "actionNotice"} role="status">{message}</span> : null}
   </div>;
