@@ -20,6 +20,9 @@ export default function TeamWorkspace() {
   const [webhook, setWebhook] = useState("");
   const [channelLabel, setChannelLabel] = useState("Security alerts");
   const [channelState, setChannelState] = useState<"idle" | "saving" | "error">("idle");
+  const [inviteRole, setInviteRole] = useState("analyst");
+  const [inviteState, setInviteState] = useState<"idle" | "saving" | "error">("idle");
+  const [inviteUrl, setInviteUrl] = useState("");
 
   const token = useCallback(async () => {
     const session = await db?.auth.getSession();
@@ -75,6 +78,14 @@ export default function TeamWorkspace() {
     if (!response.ok) { setChannelState("error"); return; }
     setWebhook(""); setChannels((current) => [...current, body]); setChannelState("idle");
   }
+  async function createInvite(event: FormEvent) {
+    event.preventDefault(); if (!activeTeamId) return;
+    setInviteState("saving"); setInviteUrl(""); const accessToken = await token();
+    const response = await fetch(`/api/teams/${encodeURIComponent(activeTeamId)}/invites`, { method: "POST", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ role: inviteRole, expires_in_days: 7 }) });
+    const body = await response.json();
+    if (!response.ok) { setInviteState("error"); return; }
+    setInviteUrl(`${window.location.origin}${body.invitation_path}`); setInviteState("idle");
+  }
   const activeTeam = teams.find((team) => team.id === activeTeamId);
   return <section className="workspaceSection teamWorkspace">
     <div className="workspaceSectionHead"><div><span>Team workspace</span><h2>Shared decisions</h2></div><Users/></div>
@@ -84,6 +95,7 @@ export default function TeamWorkspace() {
     {state === "ready" && !teams.length ? <p className="workspaceMessage">Create a team to share review ownership and an auditable decision queue.</p> : null}
     {teams.map((team) => <button className={`teamWorkspaceRow ${activeTeamId === team.id ? "active" : ""}`} type="button" onClick={() => setActiveTeamId(team.id)} key={team.id}><div><strong>{team.name}</strong><small>{team.role} · {team.slug}</small></div><span>{team.role}</span></button>)}
     {activeTeamId ? <div className="teamAlertQueue"><strong>Team attention queue</strong>{!alerts.length ? <p>No shared alerts need attention.</p> : alerts.map((alert) => <article key={alert.id}><span>{alert.severity || "INFORMATIONAL"}</span><div><strong>{alert.title}</strong><p>{alert.summary}</p><small>{alert.extension_id}@{alert.version}</small></div>{alert.state === "acknowledged" ? <em>Acknowledged</em> : <button type="button" onClick={() => void acknowledge(alert)}>Acknowledge</button>}</article>)}</div> : null}
+    {activeTeam && ["owner", "admin"].includes(activeTeam.role) ? <div className="teamChannels"><strong>Invite a teammate</strong><form className="channelForm" onSubmit={createInvite}><select aria-label="Invite role" value={inviteRole} onChange={(event) => setInviteRole(event.target.value)}><option value="admin">Administrator</option><option value="analyst">Analyst</option><option value="viewer">Viewer</option></select><span>Expires in 7 days</span><button className="button buttonQuiet" type="submit" disabled={inviteState === "saving"}>{inviteState === "saving" ? "Creating" : "Create invite"}</button></form>{inviteUrl ? <p className="workspaceMessage">Share once: <a href={inviteUrl}>{inviteUrl}</a></p> : null}{inviteState === "error" ? <p className="previewError">Could not create the invitation.</p> : null}</div> : null}
     {activeTeam && ["owner", "admin"].includes(activeTeam.role) ? <div className="teamChannels"><strong>Team Slack delivery</strong>{channels.map((channel) => <p key={channel.id}>{channel.label} · {channel.minimum_severity} and above{channel.last_validated_at ? " · connected" : ""}</p>)}<form className="channelForm" onSubmit={connectChannel}><input type="password" value={webhook} onChange={(event) => setWebhook(event.target.value)} placeholder="Slack incoming webhook" aria-label="Team Slack incoming webhook" autoComplete="off"/><input value={channelLabel} onChange={(event) => setChannelLabel(event.target.value)} placeholder="Channel name" aria-label="Team channel name" maxLength={80}/><button className="button buttonQuiet" type="submit" disabled={channelState === "saving"}>{channelState === "saving" ? "Connecting" : "Connect Slack"}</button></form>{channelState === "error" ? <p className="previewError">Could not connect the Slack channel.</p> : null}</div> : null}
     {error ? <p className="previewError">{error}</p> : null}
   </section>;
