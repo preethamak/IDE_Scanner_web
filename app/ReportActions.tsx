@@ -13,6 +13,6 @@ export default function ReportActions({ extensionId, version, scanId }: { extens
     <Link className="button buttonQuiet" href={`/monitor?extension=${encodeURIComponent(extensionId)}`}><Radar size={15}/> Monitor release</Link>
     <a className="button buttonQuiet" href={exportUrl}><Download size={15}/> Export evidence</a>
     <button className="button buttonQuiet" type="button" onClick={() => void copyLink()}><Copy size={15}/> Copy link</button>
-    <TeamDecisionAction scanId={scanId}/>
+    <TeamDecisionAction scanId={scanId} extensionId={extensionId}/>
   </div>;
 }
