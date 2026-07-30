@@ -150,7 +150,7 @@ export default function ExtensionDossier({
             version={version}
             showReportLink={false}
           />
-          <ReportActions extensionId={id} version={version} />
+          <ReportActions extensionId={id} version={version} scanId={String(scan.id || "")} />
         </div>
       </header>
       {validation ? (
