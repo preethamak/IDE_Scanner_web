@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckSquare } from "lucide-react";
 import { browserDb } from "@/lib/supabase";
 
@@ -13,10 +13,10 @@ export default function TeamDecisionAction({ scanId }: { scanId: string }) {
   const [decision, setDecision] = useState("review");
   const [state, setState] = useState<"hidden" | "ready" | "saving" | "saved" | "error">("hidden");
 
-  async function token() {
+  const token = useCallback(async () => {
     const session = await db?.auth.getSession();
     return session?.data.session?.access_token || "";
-  }
+  }, [db]);
   useEffect(() => {
     void (async () => {
       const accessToken = await token();
@@ -26,7 +26,7 @@ export default function TeamDecisionAction({ scanId }: { scanId: string }) {
       const available = Array.isArray(body.teams) ? body.teams.filter((team: Team) => ["owner", "admin", "analyst"].includes(team.role)) : [];
       if (response.ok && available.length) { setTeams(available); setTeamId(available[0].id); setState("ready"); }
     })();
-  }, []);
+  }, [token]);
   async function save() {
     if (!teamId) return;
     setState("saving");
