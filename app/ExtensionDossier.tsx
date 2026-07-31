@@ -27,6 +27,7 @@ import DossierNavigation from "@/app/dossier/DossierNavigation";
 import ReportIdentityPanel from "@/app/dossier/ReportIdentityPanel";
 import DossierSectionHead from "@/app/dossier/DossierSectionHead";
 import ScoreStat from "@/app/dossier/ScoreStat";
+import DependenciesSection from "@/app/dossier/DependenciesSection";
 import SeverityGauge from "@/app/SeverityGauge";
 import Markdown from "@/app/Markdown";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
@@ -183,9 +184,7 @@ export default function ExtensionDossier({ data }: Props) {
           {active === "capabilities" ? (
             <Capabilities capabilities={capabilities} />
           ) : null}
-          {active === "dependencies" ? (
-            <Dependencies dependencies={dependencies} />
-          ) : null}
+          {active === "dependencies" ? <DependenciesSection dependencies={dependencies} /> : null}
           {active === "files" ? (
             <Files
               id={id}
@@ -666,39 +665,6 @@ function Capabilities({
         </div>
       ) : (
         <Empty text="No capability families were recorded by this scan." />
-      )}
-    </>
-  );
-}
-function Dependencies({ dependencies }: { dependencies: RecordValue[] }) {
-  return (
-    <>
-      <SectionHead
-        eyebrow="Supply chain"
-        title="Runtime dependencies"
-        detail="Packages are tied to this exact artifact, not to the repository in general."
-      />
-      {dependencies.length ? (
-        <div className="dossierTable">
-          <div>
-            <span>Package</span>
-            <span>Version</span>
-            <span>Relationship</span>
-            <span>Advisories</span>
-          </div>
-          {dependencies.map((item) => (
-            <article key={`${item.name}@${item.version}`}>
-              <strong>{String(item.name)}</strong>
-              <code>{String(item.version)}</code>
-              <span>{String(item.relationship || "runtime")}</span>
-              <span>
-                {Array.isArray(item.advisories) ? item.advisories.length : 0}
-              </span>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <Empty text="No runtime dependencies were reported for this artifact." />
       )}
     </>
   );
