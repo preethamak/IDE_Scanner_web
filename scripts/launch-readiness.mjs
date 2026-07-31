@@ -4,6 +4,7 @@ const commands = [
   ["npm", ["run", "lint"]],
   ["npx", ["tsc", "--noEmit"]],
   ["npm", ["run", "test"]],
+  ["npm", ["run", "test:public-corpus"]],
   ["npm", ["run", "test:e2e"]],
   ["npm", ["run", "build"]],
 ];
@@ -21,8 +22,9 @@ if (process.argv.includes("--with-health")) {
     process.exit(1);
   }
   const response = await fetch(`${baseUrl.replace(/\/$/, "")}/api/internal/launch-health`, { headers: { Authorization: `Bearer ${secret}` } });
-  if (!response.ok) {
-    console.error(`Launch health failed: ${response.status} ${await response.text()}`);
+  const body = await response.json().catch(() => null);
+  if (!response.ok || !body?.healthy) {
+    console.error(`Launch health failed: ${response.status} ${JSON.stringify(body)}`);
     process.exit(1);
   }
 }
