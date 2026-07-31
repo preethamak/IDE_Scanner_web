@@ -1,6 +1,7 @@
 export type MonitoringEvent = "release" | "scan" | "decision_changed" | "high_evidence" | "provenance_changed" | "coverage_regressed" | "decision_due";
 export type MonitoringInput = {
   decision: string;
+  publicOutcome?: string | null;
   severity: string | null;
   coveragePercent: number;
   event: MonitoringEvent;
@@ -24,6 +25,7 @@ export function shouldNotify(input: MonitoringInput): boolean {
   if (input.event === "provenance_changed" && input.provenanceAlerts === false) return false;
   if (input.event === "coverage_regressed" && input.coverageAlerts === false) return false;
   if (input.event === "decision_due") return input.dueAlerts !== false;
+  if (["investigate", "blocked", "incomplete"].includes(String(input.publicOutcome || "").toLowerCase())) return true;
   if (input.coveragePercent < 100 || input.decision === "incomplete") return true;
   return (weight[input.severity || "INFORMATIONAL"] || 1) >= (weight[input.minimumSeverity] || 3);
 }
