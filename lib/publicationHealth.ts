@@ -8,6 +8,7 @@ export type PublicationHealth = {
   current_report_count: number;
   newest_scan_at: string | null;
   runner_status: string;
+  runner_last_seen_at: string | null;
   notification_failure_rate: number;
 };
 
@@ -16,7 +17,7 @@ export function evaluatePublicationHealth(input: Omit<PublicationHealth, "health
   if (!input.active_release) reasons.push("No active public classification release.");
   else if (input.current_report_count < input.active_release.expected_reports) reasons.push("Active release is missing published reports.");
   if (!input.newest_scan_at || Date.now() - new Date(input.newest_scan_at).getTime() > 30 * 60 * 60 * 1000) reasons.push("Public scan corpus is older than 30 hours.");
-  if (input.runner_status === "unconfigured") reasons.push("Deep Scan runner is unconfigured.");
+  if (input.runner_status !== "available") reasons.push(`Deep Scan runner is ${input.runner_status}.`);
   if (input.notification_failure_rate > 0.1) reasons.push("Notification failure rate exceeds 10 percent.");
   return { ...input, healthy: reasons.length === 0, reasons };
 }
@@ -39,5 +40,5 @@ export async function getPublicationHealth(): Promise<PublicationHealth> {
   }
   const completed = deliveries.data || [];
   const failures = completed.filter((item) => item.status === "failed").length;
-  return evaluatePublicationHealth({ active_release: release ? { id: String(release.id), expected_reports: Number(release.expected_reports), activated_at: String(release.activated_at) } : null, current_report_count: currentReportCount, newest_scan_at: newestScanAt, runner_status: runner.status, notification_failure_rate: completed.length ? failures / completed.length : 0 });
+  return evaluatePublicationHealth({ active_release: release ? { id: String(release.id), expected_reports: Number(release.expected_reports), activated_at: String(release.activated_at) } : null, current_report_count: currentReportCount, newest_scan_at: newestScanAt, runner_status: runner.status, runner_last_seen_at: runner.last_seen_at, notification_failure_rate: completed.length ? failures / completed.length : 0 });
 }
