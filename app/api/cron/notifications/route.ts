@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { decryptTarget } from "@/lib/notificationCrypto";
 import { alertEvent, retryDisposition, shouldNotify } from "@/lib/monitoringPolicy";
 import { serviceDb } from "@/lib/supabase";
+import { genericWebhookMessage } from "@/lib/teamNotificationPayload";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -66,7 +67,9 @@ async function deliverTeamNotifications(db: Db, now: string) {
     if (!channel?.enabled || alert?.state === "dismissed" || !eligible) { await finishTeam(db, row.id, "skipped", null, attempts); skipped += 1; continue; }
     await db.from("team_notification_deliveries").update({ status: "sending", attempts: attempts + 1, updated_at: now }).eq("id", row.id).in("status", ["pending", "failed"]);
     try {
-      const response = await fetch(decryptTarget(String(channel.target_encrypted)), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(slackMessage(alert)), signal: AbortSignal.timeout(12_000) });
+      const kind = String(channel.kind || "slack_webhook");
+      const payload = kind === "generic_webhook" ? genericWebhookMessage(alert) : slackMessage(alert);
+      const response = await fetch(decryptTarget(String(channel.target_encrypted)), { method: "POST", redirect: "error", headers: { "Content-Type": "application/json", "User-Agent": "GuardRails-Notification-Delivery/1.0", ...(kind === "generic_webhook" ? { "X-GuardRails-Event": "monitoring_alert" } : {}) }, body: JSON.stringify(payload), signal: AbortSignal.timeout(12_000) });
       if (!response.ok) throw new Error(`Slack returned ${response.status}`);
       await finishTeam(db, row.id, "sent", null, attempts + 1); sent += 1;
     } catch (deliveryError) {

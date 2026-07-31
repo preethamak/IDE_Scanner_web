@@ -3,6 +3,7 @@ import { authenticated } from "@/lib/auth";
 import { requireTeamRole } from "@/lib/teams";
 import { encryptTarget, outboundNotificationsConfigured } from "@/lib/notificationCrypto";
 import { serviceDb } from "@/lib/supabase";
+import { isSafeWebhookUrl } from "@/lib/teamNotificationPayload";
 
 const severities = new Set(["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFORMATIONAL"]);
 
@@ -21,11 +22,11 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const { user } = await authenticated(request); const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin"]);
     if (!outboundNotificationsConfigured()) return NextResponse.json({ error: "Outbound notifications are not configured by the service operator." }, { status: 503 });
-    const body = await request.json(); const url = String(body.webhook_url || "").trim(); const label = String(body.label || "Security alerts").trim().slice(0, 80); const severity = String(body.minimum_severity || "MEDIUM").toUpperCase();
-    if (!isSlackWebhook(url) || !label || !severities.has(severity)) return NextResponse.json({ error: "Provide a valid Slack webhook, channel name, and severity." }, { status: 400 });
-    const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: "GuardRails team notifications connected." }), signal: AbortSignal.timeout(10_000) });
-    if (!response.ok) return NextResponse.json({ error: "Slack rejected this webhook." }, { status: 400 });
-    const { data, error } = await serviceDb().from("team_notification_channels").insert({ team_id: id, kind: "slack_webhook", label, target_encrypted: encryptTarget(url), minimum_severity: severity, last_validated_at: new Date().toISOString() }).select("id,kind,label,enabled,minimum_severity,last_validated_at,last_error,created_at").single();
+    const body = await request.json(); const url = String(body.webhook_url || "").trim(); const kind = String(body.kind || "slack_webhook"); const label = String(body.label || "Security alerts").trim().slice(0, 80); const severity = String(body.minimum_severity || "MEDIUM").toUpperCase();
+    if (!label || !severities.has(severity) || !["slack_webhook", "generic_webhook"].includes(kind) || (kind === "slack_webhook" ? !isSlackWebhook(url) : !isSafeWebhookUrl(url))) return NextResponse.json({ error: "Provide a valid notification type, HTTPS target, channel name, and severity." }, { status: 400 });
+    const response = await fetch(url, { method: "POST", redirect: "error", headers: { "Content-Type": "application/json", "User-Agent": "GuardRails-Notification-Validator/1.0" }, body: JSON.stringify(kind === "slack_webhook" ? { text: "GuardRails team notifications connected." } : { event: "guardrails.channel_verified", message: "GuardRails team notifications connected." }), signal: AbortSignal.timeout(10_000) });
+    if (!response.ok) return NextResponse.json({ error: "The notification endpoint rejected validation." }, { status: 400 });
+    const { data, error } = await serviceDb().from("team_notification_channels").insert({ team_id: id, kind, label, target_encrypted: encryptTarget(url), minimum_severity: severity, last_validated_at: new Date().toISOString() }).select("id,kind,label,enabled,minimum_severity,last_validated_at,last_error,created_at").single();
     if (error) throw error;
     return NextResponse.json(data, { status: 201 });
   } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Channel creation failed." }, { status: 403 }); }
