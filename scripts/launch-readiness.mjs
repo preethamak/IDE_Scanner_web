@@ -21,7 +21,11 @@ if (process.argv.includes("--with-health")) {
     console.error("LAUNCH_HEALTH_URL and LAUNCH_HEALTH_SECRET are required with --with-health.");
     process.exit(1);
   }
-  const response = await fetch(`${baseUrl.replace(/\/$/, "")}/api/internal/launch-health`, { headers: { Authorization: `Bearer ${secret}` } });
+  const headers = { Authorization: `Bearer ${secret}` };
+  if (process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
+    headers["x-vercel-protection-bypass"] = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  }
+  const response = await fetch(`${baseUrl.replace(/\/$/, "")}/api/internal/launch-health`, { headers });
   const body = await response.json().catch(() => null);
   if (!response.ok || !body?.healthy) {
     console.error(`Launch health failed: ${response.status} ${JSON.stringify(body)}`);

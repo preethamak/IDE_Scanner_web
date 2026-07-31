@@ -32,7 +32,10 @@ jobs:
       - name: Verify public release health
         env:
           LAUNCH_HEALTH_SECRET: ${{ secrets.LAUNCH_HEALTH_SECRET }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
-          curl --fail-with-body --silent --show-error \
-            --header "Authorization: Bearer ${LAUNCH_HEALTH_SECRET}" \
-            https://ide-scanner.vercel.app/api/internal/launch-health
+          headers=(--header "Authorization: Bearer ${LAUNCH_HEALTH_SECRET}")
+          if [ -n "${VERCEL_AUTOMATION_BYPASS_SECRET}" ]; then
+            headers+=(--header "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}")
+          fi
+          curl --fail-with-body --silent --show-error "${headers[@]}" https://ide-scanner.vercel.app/api/internal/launch-health
