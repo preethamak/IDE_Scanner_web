@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowRight, Bell, Check, MessageSquare, Pencil, Plus, Search, Settings2, ShieldCheck, Trash2, X } from "lucide-react";
 import { browserDb } from "@/lib/supabase";
 import ExtensionIcon from "@/app/ExtensionIcon";
@@ -14,6 +14,10 @@ type MarketplaceMatch = { extension_id: string; display_name: string; publisher:
 const defaultPreferences: Preferences = { in_app_enabled: true, email_digest: "off", minimum_severity: "MEDIUM", release_alerts: true, scan_alerts: true };
 
 export default function MonitorPage() {
+  return <Suspense fallback={<main className="workspacePage"><div className="workspaceMessage">Loading monitoring…</div></main>}><MonitorPageContent /></Suspense>;
+}
+
+function MonitorPageContent() {
   const params = useSearchParams(); const db = useMemo(() => browserDb(), []); const [lists, setLists] = useState<Watchlist[]>([]); const [preferences, setPreferences] = useState<Preferences>(defaultPreferences); const [channels, setChannels] = useState<Channel[]>([]); const [deliveryConfigured, setDeliveryConfigured] = useState(false); const [slackUrl, setSlackUrl] = useState(""); const [channelLabel, setChannelLabel] = useState("Security alerts"); const [channelError, setChannelError] = useState(""); const [name, setName] = useState(""); const [query, setQuery] = useState(""); const [matches, setMatches] = useState<MarketplaceMatch[]>([]); const [searching, setSearching] = useState(false); const [adding, setAdding] = useState(""); const [state, setState] = useState<"loading" | "ready" | "signed-out" | "error">("loading"); const [saving, setSaving] = useState(false);
   useEffect(() => { const timer = window.setTimeout(() => { const extension = params.get("extension") || ""; if (extension && !query) setQuery(extension); }, 0); return () => window.clearTimeout(timer); }, [params, query]);
   const load = useCallback(async () => { if (!db) return setState("error"); const { data: { user } } = await db.auth.getUser(); if (!user) return setState("signed-out"); const session = await db.auth.getSession(); const token = session.data.session?.access_token || ""; const [watch, preference, channelResponse] = await Promise.all([db.from("watchlists").select("*,watchlist_items(extension_id,created_at,extensions(display_name,icon_url))").order("created_at"), db.from("monitoring_preferences").select("in_app_enabled,email_digest,minimum_severity,release_alerts,scan_alerts").maybeSingle(), fetch("/api/notification-channels", { headers: { Authorization: `Bearer ${token}` } })]); if (watch.error || preference.error) return setState("error"); const channelBody = channelResponse.ok ? await channelResponse.json() : { channels: [], configured: false }; setLists(watch.data || []); setPreferences(preference.data || defaultPreferences); setChannels(channelBody.channels || []); setDeliveryConfigured(Boolean(channelBody.configured)); setState("ready"); }, [db]);
