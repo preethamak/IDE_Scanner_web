@@ -4,6 +4,7 @@ import { alertEvent, retryDisposition, shouldNotify } from "@/lib/monitoringPoli
 import { serviceDb } from "@/lib/supabase";
 import { genericWebhookMessage } from "@/lib/teamNotificationPayload";
 import { jiraAuthorization, jiraIssuePayload, parseJiraTarget } from "@/lib/jiraNotification";
+import { emailDeliveryConfigured, emailPayload } from "@/lib/emailNotification";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -71,6 +72,7 @@ async function deliverTeamNotifications(db: Db, now: string) {
       const kind = String(channel.kind || "slack_webhook"); const target = decryptTarget(String(channel.target_encrypted));
       let destination = target; let payload: unknown = kind === "generic_webhook" ? genericWebhookMessage(alert) : slackMessage(alert); let authorization: string | null = null;
       if (kind === "jira_cloud") { const jira = parseJiraTarget(target); destination = `${jira.site}/rest/api/3/issue`; payload = jiraIssuePayload(alert, jira.project_key); authorization = jiraAuthorization(jira); }
+      if (kind === "email_resend") { if (!emailDeliveryConfigured()) throw new Error("Email delivery is not configured by the service operator."); destination = "https://api.resend.com/emails"; payload = emailPayload(alert, target); authorization = `Bearer ${process.env.RESEND_API_KEY}`; }
       const response = await fetch(destination, { method: "POST", redirect: "error", headers: { "Content-Type": "application/json", "User-Agent": "GuardRails-Notification-Delivery/1.0", ...(kind === "generic_webhook" ? { "X-GuardRails-Event": "monitoring_alert" } : {}), ...(authorization ? { Authorization: authorization, Accept: "application/json" } : {}) }, body: JSON.stringify(payload), signal: AbortSignal.timeout(12_000) });
       if (!response.ok) throw new Error(`Slack returned ${response.status}`);
       await finishTeam(db, row.id, "sent", null, attempts + 1); sent += 1;
