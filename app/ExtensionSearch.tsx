@@ -33,7 +33,7 @@ export default function ExtensionSearch({ initialQuery = "", onSelect, submitLab
   useEffect(() => { if (!initialQuery) return; const timer = window.setTimeout(() => { void search(initialQuery); }, 0); return () => window.clearTimeout(timer); // initial route query is an external navigation input
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuery]);
-  const open = (item: DiscoveryResult) => onSelect ? <button type="button" onClick={() => onSelect(item)}>Choose release <ArrowRight size={15}/></button> : <Link href={`/extensions/${encodeURIComponent(item.extension_id)}`}>Open profile <ArrowRight size={15}/></Link>;
+  const open = (item: DiscoveryResult) => onSelect ? <button type="button" onClick={() => onSelect(item)}>Choose release <ArrowRight size={15}/></button> : <div className="discoveryActions"><Link className="primary" href={`/extensions/${encodeURIComponent(item.extension_id)}/versions/${encodeURIComponent(item.version)}`}>Open public report <ArrowRight size={15}/></Link><Link href={`/scan?q=${encodeURIComponent(item.extension_id)}`}>Deep Scan</Link><Link href={`/monitor?extension=${encodeURIComponent(item.extension_id)}`}>Monitor</Link></div>;
   return <div className={`extensionSearch ${compact ? "compact" : ""}`}>
     <form onSubmit={(event) => { event.preventDefault(); void search(); }}>
       <Search size={18}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name, publisher.extension, Marketplace URL, or VS Code URI" aria-label="Find an extension"/>
