@@ -30,3 +30,11 @@ test("anonymous catalog results make workspace creation the primary scan action"
   await expect(actions.getByRole("link", { name: "Open public report" })).toHaveAttribute("href", "/extensions/GitHub.copilot/versions/1.388.0");
   await expect(actions.getByRole("link", { name: "Monitor", exact: true })).toHaveAttribute("href", "/monitor?extension=GitHub.copilot");
 });
+
+test("unavailable Deep Scan runner has an explicit non-submitting state", async ({ page }) => {
+  await page.route("**/api/deep-scans/health", (route) => route.fulfill({ contentType: "application/json", body: JSON.stringify({ available: false }) }));
+  await page.route("**/api/deep-scans?extension_id=GitHub.copilot&version=1.388.0", (route) => route.fulfill({ status: 204 }));
+  await page.goto("/extensions/GitHub.copilot/versions/1.388.0");
+  await expect(page.getByRole("button", { name: "Deep Scan paused" })).toBeDisabled();
+  await expect(page.getByText("The analysis runner is offline. No scan job was created.")).toBeVisible();
+});
