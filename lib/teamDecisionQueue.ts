@@ -1,8 +1,11 @@
 export type QueueDecision = {
   id: string;
+  scan_id: string;
   decision: string;
   extension_id: string;
   version: string;
+  rationale?: string;
+  assigned_to?: string | null;
   due_at: string | null;
   resolved_at: string | null;
   updated_at: string;
