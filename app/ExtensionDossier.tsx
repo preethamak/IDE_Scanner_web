@@ -25,6 +25,7 @@ import DossierHeader from "@/app/dossier/DossierHeader";
 import DecisionSummary from "@/app/dossier/DecisionSummary";
 import DossierNavigation from "@/app/dossier/DossierNavigation";
 import ReportIdentityPanel from "@/app/dossier/ReportIdentityPanel";
+import DossierSectionHead from "@/app/dossier/DossierSectionHead";
 import SeverityGauge from "@/app/SeverityGauge";
 import Markdown from "@/app/Markdown";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
@@ -1105,23 +1106,7 @@ function Readme({
     </>
   );
 }
-function SectionHead({
-  eyebrow,
-  title,
-  detail,
-}: {
-  eyebrow: string;
-  title: string;
-  detail: string;
-}) {
-  return (
-    <header className="dossierHead">
-      <span>{eyebrow}</span>
-      <h2>{title}</h2>
-      <p>{detail}</p>
-    </header>
-  );
-}
+const SectionHead = DossierSectionHead;
 function ScoreStat({
   label,
   value,
