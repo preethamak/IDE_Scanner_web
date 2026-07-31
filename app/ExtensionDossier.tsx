@@ -33,9 +33,8 @@ import ChangesSection from "@/app/dossier/ChangesSection";
 import OverviewSection from "@/app/dossier/OverviewSection";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
 import { displayedDecision, requiresReview } from "@/lib/classificationContract";
-import type { ExtensionDossierData } from "@/lib/reportContract";
+import type { ExtensionDossierData, ReportFinding, ReportObject } from "@/lib/reportContract";
 
-type RecordValue = Record<string, unknown>;
 type Section =
   | "overview"
   | "readme"
@@ -206,7 +205,7 @@ type Group = {
   actionability: string;
   evidenceClasses: string[];
 };
-function groupFindings(findings: RecordValue[]): Group[] {
+function groupFindings(findings: ReportFinding[]): Group[] {
   const groups = new Map<string, Group>();
   for (const item of findings) {
     const rule = String(item.rule_id || "observed-capability");
@@ -217,7 +216,7 @@ function groupFindings(findings: RecordValue[]): Group[] {
     const actionability = String(item.actionability || "contextual");
     const evidenceClass = String(
       item.evidence_class ||
-        (item.evidence as RecordValue | undefined)?.evidence_class ||
+        (item.evidence as ReportObject | undefined)?.evidence_class ||
         "weak",
     );
     const locations = Array.isArray(item.file_refs)
