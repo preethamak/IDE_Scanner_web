@@ -9,6 +9,8 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   const expected = process.env.NOTIFICATION_CRON_SECRET || "";
   if (!expected || request.headers.get("authorization") !== `Bearer ${expected}`) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const workflowRun = request.headers.get("x-workflow-run-url");
+  if (workflowRun) console.info("Notification delivery workflow", { workflow_run_url: workflowRun });
   const db = serviceDb();
   const now = new Date().toISOString();
   const dueAlerts = await queueDecisionDueAlerts(db, now);

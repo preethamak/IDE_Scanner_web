@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: notification-delivery
@@ -17,12 +18,29 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Check delivery cadence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          last_success=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/notification-delivery.yml/runs?status=completed&per_page=20" --jq '[.workflow_runs[] | select(.conclusion == "success") | .updated_at][0] // empty')
+          if [ -z "${last_success}" ]; then
+            echo "No previous successful delivery run exists; allowing the initial dispatch to establish the baseline."
+            exit 0
+          fi
+          age_seconds=$(( $(date +%s) - $(date -d "${last_success}" +%s) ))
+          if [ "${age_seconds}" -gt 1200 ]; then
+            echo "Notification delivery has had no successful run for ${age_seconds} seconds."
+            exit 1
+          fi
       - name: Dispatch pending alerts
         env:
           NOTIFICATION_CRON_SECRET: ${{ secrets.NOTIFICATION_CRON_SECRET }}
         run: |
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          echo "Notification delivery workflow: ${run_url}"
           curl --fail-with-body --silent --show-error \
             --retry 2 --retry-all-errors \
             --request POST \
             --header "Authorization: Bearer ${NOTIFICATION_CRON_SECRET}" \
+            --header "X-Workflow-Run-Url: ${run_url}" \
             https://ide-scanner.vercel.app/api/cron/notifications
