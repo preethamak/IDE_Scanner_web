@@ -7,6 +7,7 @@ import SiteNav from "./SiteNav";
 import HeaderAccount from "./HeaderAccount";
 import BrandMark from "./BrandMark";
 import "./globals.css";
+import "./accessibility.css";
 import "./guardrails.css";
 import "./visual-refresh.css";
 import "./design-system.css";
