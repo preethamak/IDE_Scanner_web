@@ -34,7 +34,7 @@ jobs:
           LAUNCH_HEALTH_SECRET: ${{ secrets.LAUNCH_HEALTH_SECRET }}
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
-          headers=(--header "Authorization: Bearer ${LAUNCH_HEALTH_SECRET}")
+          headers=(--header "x-guardrails-health-token: ${LAUNCH_HEALTH_SECRET}")
           if [ -n "${VERCEL_AUTOMATION_BYPASS_SECRET}" ]; then
             headers+=(--header "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}")
           fi
