@@ -20,3 +20,13 @@ test("public reports expose evidence export and release monitoring actions", asy
   await expect(page.getByRole("link", { name: /Monitor release/i })).toHaveAttribute("href", "/monitor?extension=GitHub.copilot");
   await expect(page.getByRole("link", { name: /Export evidence/i })).toHaveAttribute("href", /\/api\/extensions\/GitHub\.copilot\/versions\/1\.388\.0\/export/);
 });
+
+test("anonymous catalog results make workspace creation the primary scan action", async ({ page }) => {
+  await page.route("**/api/marketplace/search?q=GitHub.copilot", (route) => route.fulfill({ contentType: "application/json", body: JSON.stringify({ query: "GitHub.copilot", exact_match: { extension_id: "GitHub.copilot", version: "1.388.0", display_name: "GitHub Copilot", publisher: "GitHub", publisher_verified: true, registry: "vs-marketplace", match_reason: "exact_identity" }, matching_extensions: [], related_extensions: [] }) }));
+  await page.goto("/catalog?q=GitHub.copilot");
+  const actions = page.locator(".discoveryActions");
+  const action = actions.getByRole("link", { name: /Create workspace to Deep Scan/i });
+  await expect(action).toHaveAttribute("href", /\/account\?next=/);
+  await expect(actions.getByRole("link", { name: "Open public report" })).toHaveAttribute("href", "/extensions/GitHub.copilot/versions/1.388.0");
+  await expect(actions.getByRole("link", { name: "Monitor", exact: true })).toHaveAttribute("href", "/monitor?extension=GitHub.copilot");
+});
