@@ -12,7 +12,7 @@ type Invitation = { id: string; role: string; expires_at: string; accepted_at: s
 type Member = { user_id: string; role: string; profiles?: { display_name?: string | null } | Array<{ display_name?: string | null }> | null };
 type WatchItem = { extension_id: string; created_at: string; extensions?: { display_name?: string; icon_url?: string } | Array<{ display_name?: string; icon_url?: string }> | null };
 
-export default function TeamWorkspace() {
+export default function TeamWorkspace({ initialExtension = "", focus = "workspace" }: { initialExtension?: string; focus?: "workspace" | "monitor" }) {
   const db = useMemo(() => browserDb(), []);
   const [teams, setTeams] = useState<Team[]>([]);
   const [name, setName] = useState("");
@@ -25,7 +25,7 @@ export default function TeamWorkspace() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [watchItems, setWatchItems] = useState<WatchItem[]>([]);
-  const [watchExtension, setWatchExtension] = useState("");
+  const [watchExtension, setWatchExtension] = useState(initialExtension);
   const [watchState, setWatchState] = useState<"idle" | "saving" | "error">("idle");
   const [webhook, setWebhook] = useState("");
   const [channelLabel, setChannelLabel] = useState("Security alerts");
@@ -159,7 +159,7 @@ export default function TeamWorkspace() {
   const activeTeam = teams.find((team) => team.id === activeTeamId);
   const decisionQueue = groupDecisionQueue(decisions);
   return <section className="workspaceSection teamWorkspace">
-    <div className="workspaceSectionHead"><div><span>Team workspace</span><h2>Shared decisions</h2></div><Users/></div>
+    <div className="workspaceSectionHead"><div><span>{focus === "monitor" ? "Team monitoring" : "Team workspace"}</span><h2>{focus === "monitor" ? "Shared release watches" : "Shared decisions"}</h2></div><Users/></div>
     <p className="sectionIntro">Teams share review ownership and decision history while public reports remain open and exact-artifact evidence stays unchanged.</p>
     <form className="createRow" onSubmit={create}><input value={name} onChange={(event) => setName(event.target.value)} placeholder="New team name" aria-label="New team name" maxLength={80}/><button className="iconButton" type="submit" title="Create team" aria-label="Create team"><Plus/></button></form>
     {state === "loading" ? <p className="workspaceMessage">Loading team workspaces…</p> : null}
