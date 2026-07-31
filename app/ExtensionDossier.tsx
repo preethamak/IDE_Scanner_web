@@ -24,6 +24,7 @@ import {
 import DossierHeader from "@/app/dossier/DossierHeader";
 import DecisionSummary from "@/app/dossier/DecisionSummary";
 import DossierNavigation from "@/app/dossier/DossierNavigation";
+import ReportIdentityPanel from "@/app/dossier/ReportIdentityPanel";
 import SeverityGauge from "@/app/SeverityGauge";
 import Markdown from "@/app/Markdown";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
@@ -303,15 +304,7 @@ function Overview({
             Inspect all evidence <ChevronRight />
           </button>
         </article>
-        <article className="identityCard">
-          <Fingerprint />
-          <span>Exact artifact</span>
-          <code>{String(scan.artifact_sha256 || "unavailable")}</code>
-          <p>
-            Build {String(scan.scanner_build || "not recorded").slice(0, 12)} ·
-            ruleset {String(scan.ruleset_version || "not recorded")}
-          </p>
-        </article>
+        <ReportIdentityPanel scan={scan} />
       </div>
       <section className="evidencePreview">
         <div>
