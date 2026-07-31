@@ -29,6 +29,7 @@ import CapabilitiesSection, { normalizeCapabilities, type CapabilityRecord } fro
 import FilesSection from "@/app/dossier/FilesSection";
 import PublisherSection from "@/app/dossier/PublisherSection";
 import VersionsSection from "@/app/dossier/VersionsSection";
+import CoverageSection from "@/app/dossier/CoverageSection";
 import SeverityGauge from "@/app/SeverityGauge";
 import Markdown from "@/app/Markdown";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
@@ -201,7 +202,7 @@ export default function ExtensionDossier({ data }: Props) {
             <PublisherSection extension={extension} files={files} />
           ) : null}
           {active === "provenance" ? <Provenance scan={scan} /> : null}
-          {active === "coverage" ? <Coverage scan={scan} /> : null}
+          {active === "coverage" ? <CoverageSection scan={scan} /> : null}
           {active === "raw" ? <Raw scan={scan} findings={findings} /> : null}
         </section>
       </div>
@@ -669,81 +670,6 @@ function Provenance({ scan }: { scan: RecordValue }) {
     </>
   );
 }
-function Coverage({ scan }: { scan: RecordValue }) {
-  const providers = (scan.provider_coverage || {}) as Record<
-    string,
-    RecordValue
-  >;
-  const coverage = (scan.analysis_coverage || {}) as RecordValue;
-  const inventory = (scan.artifact_inventory || {}) as RecordValue;
-  const declared = arrayLength(coverage.declared_entrypoints);
-  const resolved = arrayLength(coverage.resolved_entrypoints);
-  const executable = arrayLength(coverage.executable_candidates);
-  const files = arrayLength(inventory.files);
-  const presentation = coveragePresentation(scan);
-  return (
-    <>
-      <SectionHead
-        eyebrow="Analysis boundary"
-        title="What was actually assessed"
-        detail="Coverage shows the artifact scope behind this report. It is not a claim that the extension is safe."
-      />
-      <div className="coverageGrid coverageExplained">
-        <Fact
-          label={presentation.label}
-          value={`${presentation.percent}%`}
-          detail={presentation.providerDetail}
-        />
-        <Fact
-          label="Declared entrypoints"
-          value={String(declared)}
-          detail={
-            declared
-              ? "Declared by the extension manifest"
-              : "No launch entrypoints were declared"
-          }
-        />
-        <Fact
-          label="Resolved entrypoints"
-          value={String(resolved)}
-          detail={
-            resolved
-              ? "Entrypoints found in this exact artifact"
-              : "No declared entrypoint resolved to a file"
-          }
-        />
-        <Fact
-          label="Executable candidates"
-          value={String(executable)}
-          detail={
-            executable
-              ? "Files selected for executable analysis"
-              : files
-                ? "No executable candidate was recorded by this scanner"
-                : "Artifact file inventory was not emitted"
-          }
-        />
-      </div>
-      <div className="providerGrid coverageProviders">
-        {Object.entries(providers).map(([name, value]) => (
-          <article key={name}>
-            <span>{name.replaceAll("_", " ")}</span>
-            <strong>{String(value.status || "not assessed")}</strong>
-            <p>
-              {Number(value.finding_count || 0)} normalized finding
-              {Number(value.finding_count || 0) === 1 ? "" : "s"}
-            </p>
-          </article>
-        ))}
-      </div>
-      {!Object.keys(providers).length ? (
-        <div className="coverageNoProviders">
-          No analyzer-provider records were supplied with this report.
-        </div>
-      ) : null}
-    </>
-  );
-}
 function Raw({
   scan,
   findings,
@@ -1071,7 +997,4 @@ function actionabilityLabel(value: string) {
         : value === "low"
           ? "low hardening note"
           : "contextual observation";
-}
-function arrayLength(value: unknown) {
-  return Array.isArray(value) ? value.length : 0;
 }
