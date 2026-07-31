@@ -44,8 +44,11 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       : await db.from("team_decisions").insert({ ...payload, created_by: user.id }).select().single();
     const { data, error } = result;
     if (error) throw error;
-    const event = await db.from("team_decision_events").insert({ decision_id: data.id, actor_id: user.id, kind: decisionEventKind(before, after), before_value: before || {}, after_value: after });
+    const eventKind = decisionEventKind(before, after);
+    const event = await db.from("team_decision_events").insert({ decision_id: data.id, actor_id: user.id, kind: eventKind, before_value: before || {}, after_value: after }).select("id").single();
     if (event.error) throw event.error;
+    const alert = await db.from("team_monitoring_alerts").upsert({ team_id: id, extension_id: scan.extension_id, version: scan.version, scan_id: scanId, kind: "decision_changed", severity: null, title: `Team decision ${decision}: ${scan.extension_id}@${scan.version}`, summary: `A team member ${eventKind === "assigned" ? "changed ownership" : "updated the recorded decision"}.`, metadata: { decision, assigned_to: assignedTo, due_at: after.due_at, decision_event_id: event.data.id }, dedupe_key: `decision:${event.data.id}` }, { onConflict: "team_id,dedupe_key", ignoreDuplicates: true });
+    if (alert.error) throw alert.error;
     return NextResponse.json(data, { status: existing.data ? 200 : 201 });
   } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Decision update failed." }, { status: 400 }); }
 }
