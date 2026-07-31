@@ -13,7 +13,16 @@ describe("delivery controls", () => {
     expect(retryDisposition(4)).toBe("retry");
     expect(retryDisposition(5)).toBe("skip");
     expect(alertEvent("release_detected")).toBe("release");
-    expect(alertEvent("decision_due")).toBe("decision");
-    expect(alertEvent("review_required")).toBe("scan");
+    expect(alertEvent("decision_due")).toBe("decision_due");
+    expect(alertEvent("review_required")).toBe("high_evidence");
+  });
+
+  it("honors each exact monitoring event control", () => {
+    const base = { decision: "allow", severity: "LOW", coveragePercent: 100, event: "scan" as const, minimumSeverity: "HIGH", releaseAlerts: true, scanAlerts: true };
+    expect(shouldNotify({ ...base, event: "decision_changed", decisionAlerts: false })).toBe(false);
+    expect(shouldNotify({ ...base, event: "high_evidence", severity: "HIGH", highEvidenceAlerts: false })).toBe(false);
+    expect(shouldNotify({ ...base, event: "provenance_changed", provenanceAlerts: false })).toBe(false);
+    expect(shouldNotify({ ...base, event: "coverage_regressed", coverageAlerts: false })).toBe(false);
+    expect(shouldNotify({ ...base, event: "decision_due", dueAlerts: false })).toBe(false);
   });
 });
