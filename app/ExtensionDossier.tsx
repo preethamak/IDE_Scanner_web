@@ -33,6 +33,7 @@ import CoverageSection from "@/app/dossier/CoverageSection";
 import ReadmeSection from "@/app/dossier/ReadmeSection";
 import ProvenanceSection from "@/app/dossier/ProvenanceSection";
 import RawEvidenceSection from "@/app/dossier/RawEvidenceSection";
+import AlertsSection from "@/app/dossier/AlertsSection";
 import SeverityGauge from "@/app/SeverityGauge";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
 import {
@@ -178,7 +179,7 @@ export default function ExtensionDossier({ data }: Props) {
             <Changes id={id} current={version} versions={versions} />
           ) : null}
           {active === "alerts" ? (
-            <Alerts
+            <AlertsSection
               actionableGroups={actionableGroups}
               lowGroups={lowGroups}
               contextualGroups={contextualGroups}
@@ -539,102 +540,6 @@ function ChangeGroup({ title, value }: { title: string; value: unknown }) {
         <p>No normalized {title.toLowerCase()} changes.</p>
       )}
     </section>
-  );
-}
-function Alerts({
-  actionableGroups,
-  lowGroups,
-  contextualGroups,
-}: {
-  actionableGroups: Group[];
-  lowGroups: Group[];
-  contextualGroups: Group[];
-}) {
-  return (
-    <>
-      <SectionHead
-        eyebrow="Evidence"
-        title="Evidence, grouped by behavior"
-        detail="Repeated locations are one behavior group. Expand a group to inspect every recorded location and evidence class."
-      />
-      {actionableGroups.length ? (
-        <div className="dossierRows">
-          {actionableGroups.map((group) => (
-            <EvidenceGroup key={group.rule} group={group} />
-          ))}
-        </div>
-      ) : (
-        <Empty text="No behavior group requires review under the completed policy." />
-      )}
-      {lowGroups.length ? (
-        <details className="contextEvidence">
-          <summary>
-            {lowGroups.length} low-severity hardening note
-            {lowGroups.length === 1 ? "" : "s"} — visible but non-blocking
-          </summary>
-          <div className="dossierRows">
-            {lowGroups.map((group) => (
-              <EvidenceGroup key={group.rule} group={group} />
-            ))}
-          </div>
-        </details>
-      ) : null}
-      {contextualGroups.length ? (
-        <details className="contextEvidence">
-          <summary>
-            {contextualGroups.length} contextual behavior group
-            {contextualGroups.length === 1 ? "" : "s"} — not standalone security
-            evidence
-          </summary>
-          <div className="dossierRows">
-            {contextualGroups.map((group) => (
-              <EvidenceGroup key={group.rule} group={group} />
-            ))}
-          </div>
-        </details>
-      ) : null}
-    </>
-  );
-}
-function EvidenceGroup({
-  group,
-  open = false,
-}: {
-  group: Group;
-  open?: boolean;
-}) {
-  return (
-    <details className="ds-evidence" open={open}>
-      <summary>
-        <span className={`ds-pill ${pillVariant(group.severity)}`}>
-          {displaySeverity(group.severity)}
-        </span>
-        <div className="ds-evidence-body">
-          <strong>{group.summary}</strong>
-          <p>
-            {group.count} observed location{group.count === 1 ? "" : "s"} ·{" "}
-            {actionabilityLabel(group.actionability)}
-          </p>
-          <code>
-            {group.rule} · {group.evidenceClasses.join(", ")} evidence
-          </code>
-        </div>
-        <ChevronRight className="ds-evidence-chevron" />
-      </summary>
-      <div className="ds-evidence-locations">
-        <p>
-          {group.count} observation{group.count === 1 ? "" : "s"}. Every
-          recorded location is listed below.
-        </p>
-        {group.locations.length ? (
-          group.locations.map((location) => (
-            <code key={location}>{location}</code>
-          ))
-        ) : (
-          <small>No file location was recorded.</small>
-        )}
-      </div>
-    </details>
   );
 }
 const SectionHead = DossierSectionHead;
