@@ -39,7 +39,9 @@ GITHUB_ACTIONS_TOKEN
 
 The secret key and workflow token are server-only. Never expose them through `NEXT_PUBLIC_*` variables. Deep Scan callbacks are HMAC-verified before schema validation and ingestion.
 
-Configure Supabase Auth with site URL `https://ide-scanner-web.vercel.app` and redirect URLs `https://ide-scanner-web.vercel.app/auth/callback` and `http://localhost:8765/auth/callback`. GitHub OAuth uses callback `https://PROJECT.supabase.co/auth/v1/callback`.
+Configure Supabase Auth with site URL `https://ide-scanner-web.vercel.app` and redirect URLs `https://ide-scanner-web.vercel.app/auth/callback` and `http://localhost:8765/auth/callback`. Google OAuth uses callback `https://PROJECT.supabase.co/auth/v1/callback`.
+
+Email sign-in uses a six-digit one-time password so users can request the code in one browser and enter it in another. In Supabase Dashboard, open **Authentication → Email Templates → Magic Link**, use `{{ .Token }}` in the message body (not `{{ .ConfirmationURL }}`), and update the subject to describe a sign-in code. Keep the code expiry short and configure a custom SMTP provider before production volume; Supabase's default sender is intended for limited development use.
 
 ## Run the complete product locally
 

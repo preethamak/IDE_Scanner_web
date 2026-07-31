@@ -589,10 +589,15 @@ code, pre { font-family: var(--mono); }
 .googleMark { display: grid; place-items: center; width: 22px; height: 22px; color: #4285f4; font-family: var(--sans); font-size: 19px; font-weight: 800; }
 .authDivider { position: relative; margin: 25px 0 18px; border-top: 1px solid var(--line); text-align: center; }
 .authDivider span { position: relative; top: -9px; background: white; padding: 0 9px; color: var(--faint); font-size: 9px; text-transform: uppercase; }
-.magicLink { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 8px; border: 1px solid var(--line); padding: 5px 5px 5px 11px; }
-.magicLink svg { width: 16px; color: var(--muted); }
-.magicLink input { min-width: 0; height: 37px; border: 0; outline: 0; }
-.magicLink button { height: 37px; border: 1px solid var(--ink); border-radius: 3px; background: white; padding: 0 12px; font-size: 11px; font-weight: 650; }
+.emailOtp { display: grid; gap: 9px; }
+.emailOtp > label { display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: center; gap: 8px; border: 1px solid var(--line); padding: 5px 11px; }
+.emailOtp svg { width: 16px; color: var(--muted); }
+.emailOtp input { min-width: 0; height: 37px; border: 0; outline: 0; }
+.emailOtpCode { border: 1px solid var(--line) !important; padding: 0 11px; font-family: var(--mono); letter-spacing: .16em; }
+.emailOtp button { height: 37px; border: 1px solid var(--ink); border-radius: 3px; background: white; padding: 0 12px; font-size: 11px; font-weight: 650; }
+.emailOtp button:disabled { cursor: wait; opacity: .6; }
+.emailOtpActions { display: flex; align-items: center; gap: 13px; }
+.emailOtpActions .textAction { border: 0; padding: 0; color: var(--acid-dark); background: transparent; }
 .authMessage { margin: 13px 0 0; color: var(--acid-dark); font-size: 11px; }
 .oauthPanel > small { display: block; margin-top: 18px; color: var(--faint); font-size: 9px; line-height: 1.5; }
 .onboardingIntro { grid-column: 1; }
