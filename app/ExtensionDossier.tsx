@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import DossierHeader from "@/app/dossier/DossierHeader";
 import DecisionSummary from "@/app/dossier/DecisionSummary";
+import DossierNavigation from "@/app/dossier/DossierNavigation";
 import SeverityGauge from "@/app/SeverityGauge";
 import Markdown from "@/app/Markdown";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
@@ -143,26 +144,7 @@ export default function ExtensionDossier({ data }: Props) {
         </span>
       </div>
       <div className="dossierLayout">
-        <aside
-          className="dossierRail"
-          aria-label="Extension intelligence sections"
-        >
-          <strong>Extension intelligence</strong>
-          {sections.map(({ id: section, label, icon: Icon }) => (
-            <a
-              key={section}
-              href={`#${section}`}
-              className={active === section ? "active" : ""}
-              aria-current={active === section ? "page" : undefined}
-              title={label}
-              onClick={() => setActive(section)}
-            >
-              <Icon aria-hidden="true" />
-              <span>{label}</span>
-              {badgeCount(section) ? <b>{badgeCount(section)}</b> : null}
-            </a>
-          ))}
-        </aside>
+        <DossierNavigation items={sections} active={active} count={badgeCount} onSelect={setActive} />
         <section className="dossierContent">
           {active === "overview" ? (
             <Overview
