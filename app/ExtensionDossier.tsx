@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   AlertTriangle,
   BadgeCheck,
-  Boxes,
   ChevronRight,
   CircleCheck,
   FileCode2,
@@ -13,7 +12,6 @@ import {
   Fingerprint,
   FolderTree,
   GitCompareArrows,
-  Network,
   Package,
   Radar,
   ShieldCheck,
@@ -28,6 +26,7 @@ import ReportIdentityPanel from "@/app/dossier/ReportIdentityPanel";
 import DossierSectionHead from "@/app/dossier/DossierSectionHead";
 import ScoreStat from "@/app/dossier/ScoreStat";
 import DependenciesSection from "@/app/dossier/DependenciesSection";
+import CapabilitiesSection, { normalizeCapabilities, type CapabilityRecord } from "@/app/dossier/CapabilitiesSection";
 import SeverityGauge from "@/app/SeverityGauge";
 import Markdown from "@/app/Markdown";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
@@ -182,7 +181,7 @@ export default function ExtensionDossier({ data }: Props) {
             />
           ) : null}
           {active === "capabilities" ? (
-            <Capabilities capabilities={capabilities} />
+            <CapabilitiesSection capabilities={capabilities} />
           ) : null}
           {active === "dependencies" ? <DependenciesSection dependencies={dependencies} /> : null}
           {active === "files" ? (
@@ -220,7 +219,7 @@ function Overview({
   scan: ReportScan;
   actionableGroups: Group[];
   noteGroups: Group[];
-  capabilities: Record<string, RecordValue>;
+  capabilities: Record<string, CapabilityRecord>;
   onOpenAlerts: () => void;
 }) {
   const malware = Number(scan.malware_score || 0);
@@ -632,41 +631,6 @@ function EvidenceGroup({
         )}
       </div>
     </details>
-  );
-}
-function Capabilities({
-  capabilities,
-}: {
-  capabilities: Record<string, RecordValue>;
-}) {
-  const entries = Object.entries(capabilities);
-  return (
-    <>
-      <SectionHead
-        eyebrow="Capability map"
-        title="What this extension can access"
-        detail="Capabilities describe power, not malicious intent. Compare each one to the extension's stated purpose."
-      />
-      {entries.length ? (
-        <div className="dossierCapabilityGrid">
-          {entries.map(([key, value]) => (
-            <article key={key}>
-              {capabilityIcon(key)}
-              <div>
-                <strong>{key.replaceAll("_", " ")}</strong>
-                <p>
-                  {Array.isArray(value.evidence)
-                    ? `${value.evidence.length} evidence location(s)`
-                    : "Declared or detected capability"}
-                </p>
-              </div>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <Empty text="No capability families were recorded by this scan." />
-      )}
-    </>
   );
 }
 function Files({
@@ -1328,12 +1292,6 @@ function actionabilityLabel(value: string) {
           ? "low hardening note"
           : "contextual observation";
 }
-function capabilityIcon(key: string) {
-  if (key.includes("network")) return <Network />;
-  if (key.includes("shell") || key.includes("process")) return <Terminal />;
-  if (key.includes("dependency")) return <Package />;
-  return <Boxes />;
-}
 function formatBytes(value: number) {
   return value < 1024
     ? `${value} B`
@@ -1343,18 +1301,4 @@ function formatBytes(value: number) {
 }
 function arrayLength(value: unknown) {
   return Array.isArray(value) ? value.length : 0;
-}
-function normalizeCapabilities(value: unknown): Record<string, RecordValue> {
-  if (Array.isArray(value))
-    return Object.fromEntries(
-      value
-        .filter(
-          (item): item is RecordValue =>
-            Boolean(item) && typeof item === "object" && !Array.isArray(item),
-        )
-        .map((item, index) => [String(item.id || `capability-${index}`), item]),
-    );
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, RecordValue>)
-    : {};
 }
