@@ -30,6 +30,17 @@ insert into public.team_monitoring_alerts(id, team_id, extension_id, version, ki
 select 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', id, '1.0.0', 'review_required', 'HIGH', 'Team two alert', 'RLS test alert', 'team-two-rls-alert'
 from public.extensions order by id limit 1;
 
+do $$
+begin
+  begin
+    insert into public.team_notification_deliveries(team_id, alert_id, channel_id)
+    values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa02', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa01');
+    raise exception 'duplicate alert delivery was accepted';
+  exception when unique_violation then null;
+  end;
+end;
+$$;
+
 set local role authenticated;
 set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
 

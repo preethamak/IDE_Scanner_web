@@ -9,7 +9,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   try {
     const { user } = await authenticated(request); const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst", "viewer"]);
-    const { data, error } = await serviceDb().from("team_monitoring_alerts").select("*, team_notification_deliveries(status,attempts,delivered_at,last_error)").eq("team_id", id).in("state", ["unread", "read", "acknowledged"]).order("created_at", { ascending: false }).limit(100);
+    const { data, error } = await serviceDb().from("team_monitoring_alerts").select("*, team_notification_deliveries(status,attempts,delivered_at,last_error,next_attempt_at)").eq("team_id", id).in("state", ["unread", "read", "acknowledged"]).order("created_at", { ascending: false }).limit(100);
     if (error) throw error;
     return NextResponse.json({ alerts: data || [] });
   } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Alert lookup failed." }, { status: 403 }); }
