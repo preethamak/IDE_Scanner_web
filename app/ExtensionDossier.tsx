@@ -26,6 +26,7 @@ import DecisionSummary from "@/app/dossier/DecisionSummary";
 import DossierNavigation from "@/app/dossier/DossierNavigation";
 import ReportIdentityPanel from "@/app/dossier/ReportIdentityPanel";
 import DossierSectionHead from "@/app/dossier/DossierSectionHead";
+import ScoreStat from "@/app/dossier/ScoreStat";
 import SeverityGauge from "@/app/SeverityGauge";
 import Markdown from "@/app/Markdown";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
@@ -1107,37 +1108,6 @@ function Readme({
   );
 }
 const SectionHead = DossierSectionHead;
-function ScoreStat({
-  label,
-  value,
-  detail,
-}: {
-  label: string;
-  value: number;
-  detail: string;
-}) {
-  const score = Math.max(0, Math.min(100, value));
-  return (
-    <article className="scoreStat">
-      <span>{label}</span>
-      <div className="scoreRing">
-        <svg viewBox="0 0 42 42" aria-hidden="true">
-          <circle cx="21" cy="21" r="17" />
-          <circle
-            className="scoreRingValue"
-            cx="21"
-            cy="21"
-            r="17"
-            pathLength="100"
-            strokeDasharray={`${score} 100`}
-          />
-        </svg>
-        <strong>{score}</strong>
-      </div>
-      <p>{detail}</p>
-    </article>
-  );
-}
 function Fact({
   label,
   value,
