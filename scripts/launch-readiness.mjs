@@ -4,6 +4,7 @@ const commands = [
   ["npm", ["run", "lint"]],
   ["npx", ["tsc", "--noEmit"]],
   ["npm", ["run", "test"]],
+  ["npm", ["run", "test:e2e"]],
   ["npm", ["run", "build"]],
 ];
 
