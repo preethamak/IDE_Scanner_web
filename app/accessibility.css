@@ -5,3 +5,22 @@
 .siteFooter .footerCta {
   color: #14202b !important;
 }
+
+.extensionIcon > span {
+  color: #ffffff !important;
+}
+
+.studyStamp span,
+.recurringList article > span {
+  color: #425466 !important;
+}
+
+.dossierHead > span,
+.decisionSummary span {
+  color: #425466 !important;
+}
+
+.gauge-band.low { color: #1b4d2b !important; }
+.gauge-band.mid { color: #6b4b00 !important; }
+.gauge-band.high { color: #8b2b30 !important; }
+.gauge-band.info { color: #245d7e !important; }
