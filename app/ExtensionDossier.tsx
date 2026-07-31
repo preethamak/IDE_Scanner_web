@@ -30,8 +30,8 @@ import FilesSection from "@/app/dossier/FilesSection";
 import PublisherSection from "@/app/dossier/PublisherSection";
 import VersionsSection from "@/app/dossier/VersionsSection";
 import CoverageSection from "@/app/dossier/CoverageSection";
+import ReadmeSection from "@/app/dossier/ReadmeSection";
 import SeverityGauge from "@/app/SeverityGauge";
-import Markdown from "@/app/Markdown";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
 import {
   coveragePresentation,
@@ -44,7 +44,6 @@ import {
   decisionLabel,
   evidenceSectionLabel,
   outcomeGroupSummary,
-  selectPackagedReadme,
 } from "@/lib/dossierPresentation";
 import type { ExtensionDossierData, ReportScan } from "@/lib/reportContract";
 
@@ -166,7 +165,7 @@ export default function ExtensionDossier({ data }: Props) {
             />
           ) : null}
           {active === "readme" ? (
-            <Readme
+            <ReadmeSection
               id={id}
               version={version}
               scanId={String(scan.id || "")}
@@ -687,71 +686,6 @@ function Raw({
       <pre className="rawEvidence">
         {JSON.stringify({ scan, findings }, null, 2)}
       </pre>
-    </>
-  );
-}
-function Readme({
-  id,
-  version,
-  scanId,
-  files,
-}: {
-  id: string;
-  version: string;
-  scanId: string;
-  files: RecordValue[];
-}) {
-  const readme = selectPackagedReadme(files);
-  const readmePath = readme ? String(readme.path) : "";
-  const previewable = Boolean(readme && readme.preview_available === true);
-  const [source, setSource] = useState<string | null>(null);
-  const [state, setState] = useState<"idle" | "loading" | "error">("idle");
-  useEffect(() => {
-    if (!previewable || !readmePath) return;
-    const timer = window.setTimeout(() => {
-      setState("loading");
-      void fetch(
-        `/api/extensions/${encodeURIComponent(id)}/versions/${encodeURIComponent(version)}/source?path=${encodeURIComponent(readmePath)}&scan=${encodeURIComponent(scanId)}`,
-      )
-        .then(async (response) => {
-          const body = await response.json().catch(() => ({}));
-          if (!response.ok)
-            throw new Error(String(body.error || "README unavailable."));
-          setSource(String(body.content || ""));
-          setState("idle");
-        })
-        .catch(() => setState("error"));
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [id, version, scanId, readmePath, previewable]);
-  return (
-    <>
-      <SectionHead
-        eyebrow="Documentation"
-        title="Publisher README"
-        detail="Rendered from the README packaged inside this exact artifact — not fetched live from the Marketplace."
-      />
-      {!readme ? (
-        <Empty text="No README was packaged inside this exact artifact." />
-      ) : !previewable ? (
-        <div className="ds-readme-empty">
-          <FileText />
-          <strong>README packaged but not captured</strong>
-          <p>This scan did not retain a verified text snapshot of the packaged README.</p>
-        </div>
-      ) : state === "loading" ? (
-        <div className="dossierEmpty">
-          <p>Loading README…</p>
-        </div>
-      ) : state === "error" ? (
-        <p className="previewError">The README could not be loaded.</p>
-      ) : source ? (
-        <article className="ds-card ds-readme">
-          <Markdown source={source} />
-        </article>
-      ) : (
-        <Empty text="The README snapshot was empty." />
-      )}
     </>
   );
 }
