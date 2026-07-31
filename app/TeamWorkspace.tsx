@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Trash2, Users } from "lucide-react";
 import { browserDb } from "@/lib/supabase";
+import { trackProductEvent } from "@/lib/analyticsEvents";
 import { groupDecisionQueue, type QueueDecision } from "@/lib/teamDecisionQueue";
 
 type Team = { id: string; name: string; slug: string; role: string };
@@ -56,6 +57,7 @@ export default function TeamWorkspace({ initialExtension = "", focus = "workspac
     const body = await response.json();
     if (!response.ok) { setError(String(body.error || "Team creation failed.")); return; }
     setName(""); setTeams((current) => [body, ...current]); setActiveTeamId(body.id);
+    trackProductEvent({ name: "workspace_created", source_route: window.location.pathname });
   }
   useEffect(() => {
     if (!activeTeamId) return;
