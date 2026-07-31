@@ -13,6 +13,8 @@ type Channel = { id: string; label: string; minimum_severity: string; last_valid
 type Invitation = { id: string; role: string; expires_at: string; accepted_at: string | null; created_at: string };
 type Member = { user_id: string; role: string; profiles?: { display_name?: string | null } | Array<{ display_name?: string | null }> | null };
 type WatchItem = { extension_id: string; created_at: string; extensions?: { display_name?: string; icon_url?: string } | Array<{ display_name?: string; icon_url?: string }> | null };
+type MonitoringPreferences = { release_alerts: boolean; scan_alerts: boolean; decision_alerts: boolean; high_evidence_alerts: boolean; provenance_alerts: boolean; coverage_alerts: boolean; due_alerts: boolean };
+const defaultMonitoringPreferences: MonitoringPreferences = { release_alerts: true, scan_alerts: true, decision_alerts: true, high_evidence_alerts: true, provenance_alerts: true, coverage_alerts: true, due_alerts: true };
 
 export default function TeamWorkspace({ initialExtension = "", focus = "workspace" }: { initialExtension?: string; focus?: "workspace" | "monitor" }) {
   const db = useMemo(() => browserDb(), []);
@@ -26,6 +28,8 @@ export default function TeamWorkspace({ initialExtension = "", focus = "workspac
   const [alertState, setAlertState] = useState<"idle" | "saving" | "error">("idle");
   const [decisions, setDecisions] = useState<QueueDecision[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
+  const [monitoringPreferences, setMonitoringPreferences] = useState<MonitoringPreferences>(defaultMonitoringPreferences);
+  const [preferencesState, setPreferencesState] = useState<"idle" | "saving" | "error">("idle");
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [watchItems, setWatchItems] = useState<WatchItem[]>([]);
@@ -69,6 +73,15 @@ export default function TeamWorkspace({ initialExtension = "", focus = "workspac
       const response = await fetch(`/api/teams/${encodeURIComponent(activeTeamId)}/alerts`, { headers: { Authorization: `Bearer ${accessToken}` } });
       const body = await response.json();
       if (response.ok) setAlerts(Array.isArray(body.alerts) ? body.alerts : []);
+    })();
+  }, [activeTeamId, token]);
+  useEffect(() => {
+    if (!activeTeamId) return;
+    void (async () => {
+      const accessToken = await token();
+      const response = await fetch(`/api/teams/${encodeURIComponent(activeTeamId)}/monitoring-preferences`, { headers: { Authorization: `Bearer ${accessToken}` } });
+      const body = await response.json();
+      if (response.ok) setMonitoringPreferences({ ...defaultMonitoringPreferences, ...body });
     })();
   }, [activeTeamId, token]);
   useEffect(() => {
@@ -130,6 +143,13 @@ export default function TeamWorkspace({ initialExtension = "", focus = "workspac
     if (response.ok) { setAlerts((current) => current.filter((item) => item.id !== alert.id)); setDismissalReasons((current) => { const next = { ...current }; delete next[alert.id]; return next; }); setAlertState("idle"); }
     else setAlertState("error");
   }
+  async function updateMonitoringPreference(field: keyof MonitoringPreferences, value: boolean) {
+    setPreferencesState("saving"); const accessToken = await token();
+    const response = await fetch(`/api/teams/${encodeURIComponent(activeTeamId)}/monitoring-preferences`, { method: "PATCH", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ [field]: value }) });
+    const body = await response.json();
+    if (response.ok) { setMonitoringPreferences({ ...defaultMonitoringPreferences, ...body }); setPreferencesState("idle"); }
+    else setPreferencesState("error");
+  }
   async function saveDecision(decision: QueueDecision, patch: { decision?: string; assigned_to?: string | null; due_at?: string | null }) {
     const accessToken = await token();
     const response = await fetch(`/api/teams/${encodeURIComponent(activeTeamId)}/decisions`, { method: "POST", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: decision.scan_id, decision: patch.decision || decision.decision, rationale: decision.rationale || "", assigned_to: patch.assigned_to === undefined ? decision.assigned_to || null : patch.assigned_to, due_at: patch.due_at === undefined ? decision.due_at || null : patch.due_at }) });
@@ -186,6 +206,7 @@ export default function TeamWorkspace({ initialExtension = "", focus = "workspac
     {teams.map((team) => <button className={`teamWorkspaceRow ${activeTeamId === team.id ? "active" : ""}`} type="button" onClick={() => setActiveTeamId(team.id)} key={team.id}><div><strong>{team.name}</strong><small>{team.role} · {team.slug}</small></div><span>{team.role}</span></button>)}
     {activeTeamId ? <div className="teamChannels"><strong>Members</strong><p>{members.map((member) => `${memberName(member)} (${member.role})`).join(" · ") || "No members found."}</p></div> : null}
     {activeTeam && ["owner", "admin", "analyst"].includes(activeTeam.role) ? <div className="teamChannels"><strong>Team release watch</strong><p>Watch an exact registry extension once for the whole team. New releases and completed evidence enter the shared queue.</p><form className="channelForm" onSubmit={addWatchItem}><input value={watchExtension} onChange={(event) => setWatchExtension(event.target.value)} placeholder="publisher.extension" aria-label="Extension identifier to monitor" pattern="[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+"/><button className="button buttonQuiet" type="submit" disabled={watchState === "saving"}>{watchState === "saving" ? "Adding" : "Monitor extension"}</button></form>{watchItems.map((item) => <p key={item.extension_id}>{watchItemName(item)} <code>{item.extension_id}</code> <button type="button" className="textAction" onClick={() => void removeWatchItem(item.extension_id)} aria-label={`Stop monitoring ${item.extension_id}`}><Trash2/> Stop</button></p>)}{!watchItems.length ? <p>No team extensions are being monitored yet.</p> : null}{watchState === "error" ? <p className="previewError">Could not add that extension. It must already be in the GuardRails catalog.</p> : null}</div> : null}
+    {activeTeam && ["owner", "admin"].includes(activeTeam.role) ? <div className="teamChannels"><strong>Team notification events</strong><p>These controls determine which queued team alerts can reach connected channels.</p><div className="monitoringPreferences">{([['release_alerts', 'New releases'], ['scan_alerts', 'Completed scans'], ['decision_alerts', 'Decision changes'], ['high_evidence_alerts', 'High-severity evidence'], ['provenance_alerts', 'Provenance changes'], ['coverage_alerts', 'Coverage regressions'], ['due_alerts', 'Decision due dates']] as Array<[keyof MonitoringPreferences, string]>).map(([field, label]) => <label key={field}><input type="checkbox" checked={monitoringPreferences[field]} disabled={preferencesState === "saving"} onChange={(event) => void updateMonitoringPreference(field, event.target.checked)}/><span>{label}</span></label>)}</div>{preferencesState === "error" ? <p className="previewError">Could not save notification preferences.</p> : null}</div> : null}
     {activeTeamId ? <div className="teamAlertQueue"><strong>Team attention queue</strong>{!alerts.length ? <p>No shared alerts need attention.</p> : alerts.map((alert) => <article key={alert.id}><span>{alert.severity || "INFORMATIONAL"}</span><div><strong>{alert.title}</strong><p>{alert.summary}</p><small>{alert.extension_id}@{alert.version}{alert.team_notification_deliveries?.length ? ` · delivery ${alert.team_notification_deliveries.map((delivery) => delivery.status).join(", ")}` : " · no delivery channel"}</small></div><div className="teamAlertActions">{alert.state === "acknowledged" ? <em>Acknowledged</em> : <button type="button" onClick={() => void acknowledge(alert)}>Acknowledge</button>}<label><span className="srOnly">Dismissal reason for {alert.title}</span><input value={dismissalReasons[alert.id] || ""} onChange={(event) => setDismissalReasons((current) => ({ ...current, [alert.id]: event.target.value }))} maxLength={400} placeholder="Dismissal reason"/></label><button type="button" onClick={() => void dismiss(alert)} disabled={alertState === "saving"}>Dismiss</button></div></article>)}{alertState === "error" ? <p className="previewError">Add a dismissal reason before closing an alert.</p> : null}</div> : null}
     {activeTeamId ? <div className="teamAlertQueue"><strong>Decision queue</strong><DecisionGroup title="Due soon" decisions={decisionQueue.dueSoon} members={members} editable={Boolean(activeTeam && ["owner", "admin", "analyst"].includes(activeTeam.role))} onSave={saveDecision}/><DecisionGroup title="Open" decisions={decisionQueue.open} members={members} editable={Boolean(activeTeam && ["owner", "admin", "analyst"].includes(activeTeam.role))} onSave={saveDecision}/><DecisionGroup title="Resolved" decisions={decisionQueue.resolved} members={members} editable={Boolean(activeTeam && ["owner", "admin", "analyst"].includes(activeTeam.role))} onSave={saveDecision}/></div> : null}
     {activeTeam && ["owner", "admin"].includes(activeTeam.role) ? <div className="teamChannels"><strong>Invite a teammate</strong><form className="channelForm" onSubmit={createInvite}><select aria-label="Invite role" value={inviteRole} onChange={(event) => setInviteRole(event.target.value)}><option value="admin">Administrator</option><option value="analyst">Analyst</option><option value="viewer">Viewer</option></select><span>Expires in 7 days</span><button className="button buttonQuiet" type="submit" disabled={inviteState === "saving"}>{inviteState === "saving" ? "Creating" : "Create invite"}</button></form>{inviteUrl ? <p className="workspaceMessage">Share once: <a href={inviteUrl}>{inviteUrl}</a></p> : null}{invitations.filter((invitation) => !invitation.accepted_at).map((invitation) => <p key={invitation.id} className="workspaceMessage">Pending {invitation.role} invite · expires {new Date(invitation.expires_at).toLocaleDateString()} <button type="button" className="textAction" onClick={() => void revokeInvite(invitation.id)}>Revoke</button></p>)}{inviteState === "error" ? <p className="previewError">Could not create the invitation.</p> : null}</div> : null}

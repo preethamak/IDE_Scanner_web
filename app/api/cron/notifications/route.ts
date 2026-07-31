@@ -49,13 +49,20 @@ async function finish(db: Db, id: unknown, status: "sent" | "failed" | "skipped"
   await db.from("notification_deliveries").update({ status, last_error: lastError, delivered_at: status === "sent" ? new Date().toISOString() : null, next_attempt_at: status === "failed" ? new Date(Date.now() + retryMinutes * 60_000).toISOString() : new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", id);
 }
 async function deliverTeamNotifications(db: Db, now: string) {
-  const { data, error } = await db.from("team_notification_deliveries").select("id,attempts,team_notification_channels!inner(id,kind,label,target_encrypted,enabled,minimum_severity),team_monitoring_alerts!inner(id,extension_id,version,kind,severity,state,title,summary,metadata,created_at)").in("status", ["pending", "failed"]).lte("next_attempt_at", now).order("created_at").limit(50);
+  const { data, error } = await db.from("team_notification_deliveries").select("id,attempts,team_notification_channels!inner(id,kind,label,target_encrypted,enabled,minimum_severity),team_monitoring_alerts!inner(id,team_id,extension_id,version,kind,severity,state,title,summary,metadata,created_at)").in("status", ["pending", "failed"]).lte("next_attempt_at", now).order("created_at").limit(50);
   if (error) return { error: error.message, considered: 0, sent: 0, failed: 0, skipped: 0 };
   let sent = 0; let failed = 0; let skipped = 0;
+  const preferencesByTeam = new Map<string, Row>();
   for (const row of data || []) {
     const channel = one(row.team_notification_channels); const alert = one(row.team_monitoring_alerts); const attempts = Number(row.attempts || 0);
     const metadata = one(alert?.metadata);
-    const eligible = shouldNotify({ decision: String(metadata.decision || "incomplete"), severity: typeof alert?.severity === "string" ? alert.severity : null, coveragePercent: Number(metadata.coverage_percent || 0), event: alertEvent(alert?.kind), minimumSeverity: String(channel?.minimum_severity || "MEDIUM"), releaseAlerts: true, scanAlerts: true });
+    const teamId = String(alert?.team_id || "");
+    let preferences = preferencesByTeam.get(teamId);
+    if (!preferences && teamId) {
+      const response = await db.from("team_monitoring_preferences").select("*").eq("team_id", teamId).maybeSingle();
+      preferences = one(response.data); preferencesByTeam.set(teamId, preferences);
+    }
+    const eligible = shouldNotify({ decision: String(metadata.decision || "incomplete"), severity: typeof alert?.severity === "string" ? alert.severity : null, coveragePercent: Number(metadata.coverage_percent || 0), event: alertEvent(alert?.kind), minimumSeverity: String(channel?.minimum_severity || "MEDIUM"), releaseAlerts: preferences?.release_alerts !== false, scanAlerts: preferences?.scan_alerts !== false, decisionAlerts: preferences?.decision_alerts !== false, highEvidenceAlerts: preferences?.high_evidence_alerts !== false, provenanceAlerts: preferences?.provenance_alerts !== false, coverageAlerts: preferences?.coverage_alerts !== false, dueAlerts: preferences?.due_alerts !== false });
     if (!channel?.enabled || alert?.state === "dismissed" || !eligible) { await finishTeam(db, row.id, "skipped", null, attempts); skipped += 1; continue; }
     await db.from("team_notification_deliveries").update({ status: "sending", attempts: attempts + 1, updated_at: now }).eq("id", row.id).in("status", ["pending", "failed"]);
     try {
