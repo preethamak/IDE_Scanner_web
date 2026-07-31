@@ -121,15 +121,12 @@ for (const extension of cohort) {
 }
 
 async function notifyWatchersOfRelease(extensionId, version) {
-  const items = await db.from("watchlist_items").select("watchlist_id,watchlists(owner_id)").eq("extension_id", extensionId);
+  const items = await db.from("team_watchlist_items").select("team_id").eq("extension_id", extensionId);
   if (items.error) throw items.error;
-  const owners = [...new Set((items.data || []).map((item) => item.watchlists?.owner_id).filter(Boolean))];
-  if (!owners.length) return;
-  const preferences = await db.from("monitoring_preferences").select("owner_id,in_app_enabled,release_alerts").in("owner_id", owners);
-  if (preferences.error) throw preferences.error;
-  const enabled = new Set((preferences.data || []).filter((item) => item.in_app_enabled && item.release_alerts).map((item) => item.owner_id));
-  const alerts = owners.filter((ownerId) => enabled.has(ownerId)).map((ownerId) => ({
-    owner_id: ownerId,
+  const teamIds = [...new Set((items.data || []).map((item) => item.team_id).filter(Boolean))];
+  if (!teamIds.length) return;
+  const alerts = teamIds.map((teamId) => ({
+    team_id: teamId,
     extension_id: extensionId,
     version,
     kind: "release_detected",
@@ -139,7 +136,7 @@ async function notifyWatchersOfRelease(extensionId, version) {
     dedupe_key: `release:${extensionId}@${version}`,
   }));
   if (alerts.length) {
-    const result = await db.from("monitoring_alerts").upsert(alerts, { onConflict: "owner_id,dedupe_key", ignoreDuplicates: true });
+    const result = await db.from("team_monitoring_alerts").upsert(alerts, { onConflict: "team_id,dedupe_key", ignoreDuplicates: true });
     if (result.error) throw result.error;
   }
 }
