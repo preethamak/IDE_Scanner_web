@@ -31,6 +31,8 @@ import PublisherSection from "@/app/dossier/PublisherSection";
 import VersionsSection from "@/app/dossier/VersionsSection";
 import CoverageSection from "@/app/dossier/CoverageSection";
 import ReadmeSection from "@/app/dossier/ReadmeSection";
+import ProvenanceSection from "@/app/dossier/ProvenanceSection";
+import RawEvidenceSection from "@/app/dossier/RawEvidenceSection";
 import SeverityGauge from "@/app/SeverityGauge";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
 import {
@@ -200,9 +202,9 @@ export default function ExtensionDossier({ data }: Props) {
           {active === "publisher" ? (
             <PublisherSection extension={extension} files={files} />
           ) : null}
-          {active === "provenance" ? <Provenance scan={scan} /> : null}
+          {active === "provenance" ? <ProvenanceSection scan={scan} /> : null}
           {active === "coverage" ? <CoverageSection scan={scan} /> : null}
-          {active === "raw" ? <Raw scan={scan} findings={findings} /> : null}
+          {active === "raw" ? <RawEvidenceSection scan={scan} findings={findings} /> : null}
         </section>
       </div>
     </main>
@@ -633,60 +635,6 @@ function EvidenceGroup({
         )}
       </div>
     </details>
-  );
-}
-function Provenance({ scan }: { scan: RecordValue }) {
-  return (
-    <>
-      <SectionHead
-        eyebrow="Provenance"
-        title="Exact artifact identity"
-        detail="This is the evidence boundary for the report. A publisher name or repository cannot substitute for it."
-      />
-      <div className="provenanceList">
-        <Fact
-          label="Artifact SHA-256"
-          value={String(scan.artifact_sha256 || "Not recorded")}
-        />
-        <Fact
-          label="Scanner build"
-          value={String(scan.scanner_build || "Not recorded")}
-        />
-        <Fact
-          label="Ruleset"
-          value={String(scan.ruleset_version || "Not recorded")}
-        />
-        <Fact label="Scanner profile" value={String(scan.profile || "deep")} />
-        <Fact
-          label="VSIX signature"
-          value={String(
-            (scan.artifacts as RecordValue | undefined)?.vsix_signature
-              ? "Recorded in artifact evidence"
-              : "Not reported",
-          )}
-        />
-      </div>
-    </>
-  );
-}
-function Raw({
-  scan,
-  findings,
-}: {
-  scan: RecordValue;
-  findings: RecordValue[];
-}) {
-  return (
-    <>
-      <SectionHead
-        eyebrow="Technical evidence"
-        title="Raw scanner fields"
-        detail="Manifests, hashes, and normalized JSON are available here so they do not compete with the decision summary."
-      />
-      <pre className="rawEvidence">
-        {JSON.stringify({ scan, findings }, null, 2)}
-      </pre>
-    </>
   );
 }
 const SectionHead = DossierSectionHead;
