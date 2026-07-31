@@ -7,7 +7,6 @@ import {
   BadgeCheck,
   ChevronRight,
   CircleCheck,
-  FileCode2,
   FileText,
   Fingerprint,
   FolderTree,
@@ -28,6 +27,8 @@ import ScoreStat from "@/app/dossier/ScoreStat";
 import DependenciesSection from "@/app/dossier/DependenciesSection";
 import CapabilitiesSection, { normalizeCapabilities, type CapabilityRecord } from "@/app/dossier/CapabilitiesSection";
 import FilesSection from "@/app/dossier/FilesSection";
+import PublisherSection from "@/app/dossier/PublisherSection";
+import VersionsSection from "@/app/dossier/VersionsSection";
 import SeverityGauge from "@/app/SeverityGauge";
 import Markdown from "@/app/Markdown";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
@@ -194,10 +195,10 @@ export default function ExtensionDossier({ data }: Props) {
             />
           ) : null}
           {active === "versions" ? (
-            <Versions versions={versions} current={version} />
+            <VersionsSection versions={versions} current={version} />
           ) : null}
           {active === "publisher" ? (
-            <Publisher extension={extension} files={files} />
+            <PublisherSection extension={extension} files={files} />
           ) : null}
           {active === "provenance" ? <Provenance scan={scan} /> : null}
           {active === "coverage" ? <Coverage scan={scan} /> : null}
@@ -634,106 +635,6 @@ function EvidenceGroup({
     </details>
   );
 }
-function Versions({
-  versions,
-  current,
-}: {
-  versions: RecordValue[];
-  current: string;
-}) {
-  return (
-    <>
-      <SectionHead
-        eyebrow="Release history"
-        title="Published versions"
-        detail="Each decision belongs to an immutable version and exact artifact hash."
-      />
-      <div className="dossierTable versionTable">
-        <div>
-          <span>Version</span>
-          <span>Artifact scope</span>
-          <span>Decision</span>
-          <span />
-        </div>
-        {versions.map((item) => {
-          const decision = versionDecision(item.decision);
-          return (
-            <article
-              key={String(item.version)}
-              className={String(item.version) === current ? "current" : ""}
-            >
-              <strong>{String(item.version)}</strong>
-              <span>Exact version</span>
-              <span
-                className={`decisionTechnical ${decision.toLowerCase().replaceAll(" ", "-")}`}
-              >
-                {decision}
-              </span>
-              <span>
-                {String(item.version) === current ? "Current" : "Recorded"}
-              </span>
-            </article>
-          );
-        })}
-      </div>
-    </>
-  );
-}
-function Publisher({
-  extension,
-  files,
-}: {
-  extension: RecordValue;
-  files: RecordValue[];
-}) {
-  const readme = selectPackagedReadme(files);
-  return (
-    <>
-      <SectionHead
-        eyebrow="Package information"
-        title="Publisher and package context"
-        detail="Identity and popularity establish context. They do not override artifact evidence."
-      />
-      <div className="publisherGrid">
-        <article>
-          <UserRound />
-          <span>Publisher</span>
-          <strong>{String(extension.publisher || "Not reported")}</strong>
-          <p>
-            {extension.publisher_verified
-              ? "Registry reports a verified publisher."
-              : "Registry does not report publisher verification."}
-          </p>
-        </article>
-        <article>
-          <Package />
-          <span>Package</span>
-          <strong>{String(extension.id || "Not reported")}</strong>
-          <p>{String(extension.registry || "Registry not reported")}</p>
-        </article>
-        <article>
-          <BadgeCheck />
-          <span>Marketplace context</span>
-          <strong>
-            {Number(extension.installs || 0).toLocaleString()} installs
-          </strong>
-          <p>Rating {String(extension.rating || "not reported")}</p>
-        </article>
-        <article>
-          <FileCode2 />
-          <span>Documentation</span>
-          <strong>{readme ? "README packaged" : "README not packaged"}</strong>
-          <p>
-            {String(
-              extension.description ||
-                "No Marketplace description was reported.",
-            )}
-          </p>
-        </article>
-      </div>
-    </>
-  );
-}
 function Provenance({ scan }: { scan: RecordValue }) {
   return (
     <>
@@ -1149,18 +1050,6 @@ function severityRank(value: string) {
       >
     )[value] || 0
   );
-}
-function versionDecision(value: unknown) {
-  const decision = String(value || "").toLowerCase();
-  return decision === "allow"
-    ? "ALLOW"
-    : decision === "review"
-      ? "REVIEW"
-      : decision === "block"
-        ? "BLOCK"
-        : decision === "incomplete"
-          ? "INCOMPLETE"
-          : "NOT ANALYZED";
 }
 function actionabilityRank(value: string) {
   return (
