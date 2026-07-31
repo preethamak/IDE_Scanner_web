@@ -27,3 +27,16 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     return NextResponse.json(data, { status: 201 });
   } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Team watchlist update failed." }, { status: 403 }); }
 }
+
+export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
+  try {
+    const { user } = await authenticated(request); const { id } = await context.params;
+    await requireTeamRole(id, user.id, ["owner", "admin", "analyst"]);
+    const extensionId = new URL(request.url).searchParams.get("extension_id") || "";
+    if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+$/.test(extensionId)) return NextResponse.json({ error: "A valid extension id is required." }, { status: 400 });
+    const { data, error } = await serviceDb().from("team_watchlist_items").delete().eq("team_id", id).ilike("extension_id", extensionId).select("extension_id").maybeSingle();
+    if (error) throw error;
+    if (!data) return NextResponse.json({ error: "Team watchlist item not found." }, { status: 404 });
+    return new NextResponse(null, { status: 204 });
+  } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Team watchlist update failed." }, { status: 403 }); }
+}
