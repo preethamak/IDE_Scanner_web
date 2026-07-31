@@ -8,7 +8,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     await page.goto(report);
     await expect(page.getByText("Review needed", { exact: true }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /Export evidence/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Monitor release/i })).toHaveAttribute("href", "/monitor?extension=GitHub.copilot");
+    await expect(page.getByRole("link", { name: /Create workspace to monitor/i })).toHaveAttribute("href", "/account?next=%2Fmonitor%3Fextension%3DGitHub.copilot");
     await expect(page.locator("main")).toHaveScreenshot(`public-report-${viewport.width}.png`, { animations: "disabled", maxDiffPixelRatio: 0.01 });
   });
 }

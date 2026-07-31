@@ -15,9 +15,9 @@ test("signed-out Deep Scan preserves the exact public report return target", asy
   expect(next).toBe(reportPath);
 });
 
-test("public reports expose evidence export and release monitoring actions", async ({ page }) => {
+test("public reports expose evidence export and an account-aware monitoring action", async ({ page }) => {
   await page.goto("/extensions/GitHub.copilot/versions/1.388.0");
-  await expect(page.getByRole("link", { name: /Monitor release/i })).toHaveAttribute("href", "/monitor?extension=GitHub.copilot");
+  await expect(page.getByRole("link", { name: /Create workspace to monitor/i })).toHaveAttribute("href", "/account?next=%2Fmonitor%3Fextension%3DGitHub.copilot");
   await expect(page.getByRole("link", { name: /Export evidence/i })).toHaveAttribute("href", /\/api\/extensions\/GitHub\.copilot\/versions\/1\.388\.0\/export/);
 });
 

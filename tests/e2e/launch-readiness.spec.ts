@@ -22,7 +22,7 @@ for (const [path, heading] of publicRoutes) {
 test("launch conversion gates preserve public reports and expose the next action", async ({ page }) => {
   await page.route("**/api/deep-scans/health", (route) => route.fulfill({ contentType: "application/json", body: JSON.stringify({ available: true }) }));
   await page.goto("/extensions/GitHub.copilot/versions/1.388.0");
-  await expect(page.getByRole("link", { name: /Monitor release/i })).toHaveAttribute("href", "/monitor?extension=GitHub.copilot");
+  await expect(page.getByRole("link", { name: /Create workspace to monitor/i })).toHaveAttribute("href", "/account?next=%2Fmonitor%3Fextension%3DGitHub.copilot");
   await expect(page.getByRole("link", { name: /Export evidence/i })).toHaveAttribute("href", /\/api\/extensions\/GitHub\.copilot\/versions\/1\.388\.0\/export/);
   await expect(page.getByRole("button", { name: /Create free workspace to Deep Scan/i })).toBeVisible();
 
