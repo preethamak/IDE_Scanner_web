@@ -18,6 +18,18 @@ insert into public.team_members(team_id, user_id, role) values
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '44444444-4444-4444-8444-444444444444', 'admin'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '22222222-2222-4222-8222-222222222222', 'owner');
 
+insert into public.team_notification_channels(id, team_id, kind, label, target_encrypted) values
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa01', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'generic_webhook', 'Team one test relay', 'test-target-one'),
+  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'generic_webhook', 'Team two test relay', 'test-target-two');
+
+insert into public.team_monitoring_alerts(id, team_id, extension_id, version, kind, severity, title, summary, dedupe_key)
+select 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa02', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', id, '1.0.0', 'review_required', 'HIGH', 'Team one alert', 'RLS test alert', 'team-one-rls-alert'
+from public.extensions order by id limit 1;
+
+insert into public.team_monitoring_alerts(id, team_id, extension_id, version, kind, severity, title, summary, dedupe_key)
+select 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', id, '1.0.0', 'review_required', 'HIGH', 'Team two alert', 'RLS test alert', 'team-two-rls-alert'
+from public.extensions order by id limit 1;
+
 set local role authenticated;
 set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
 
@@ -31,6 +43,12 @@ begin
   end if;
   if exists (select 1 from public.teams where id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb') then
     raise exception 'viewer can read the other team';
+  end if;
+  if (select count(*) from public.team_monitoring_alerts) <> 1 then
+    raise exception 'viewer can read alerts outside its team';
+  end if;
+  if (select count(*) from public.team_notification_deliveries) <> 1 then
+    raise exception 'viewer can read deliveries outside its team';
   end if;
 end;
 $$;
