@@ -39,9 +39,13 @@ GITHUB_ACTIONS_TOKEN
 
 The secret key and workflow token are server-only. Never expose them through `NEXT_PUBLIC_*` variables. Deep Scan callbacks are HMAC-verified before schema validation and ingestion.
 
-Configure Supabase Auth with site URL `https://ide-scanner-web.vercel.app` and redirect URLs `https://ide-scanner-web.vercel.app/auth/callback` and `http://localhost:8765/auth/callback`. Google OAuth uses callback `https://PROJECT.supabase.co/auth/v1/callback`.
+Configure Supabase Auth with site URL `https://ide-scanner.vercel.app` and redirect URLs `https://ide-scanner.vercel.app/auth/callback` and `http://localhost:8765/auth/callback`. Google and GitHub OAuth use callback `https://PROJECT.supabase.co/auth/v1/callback`. Enable the corresponding production UI with `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true` and `NEXT_PUBLIC_GITHUB_AUTH_ENABLED=true` only after its provider is configured in Supabase.
 
-Email sign-in uses a six-digit one-time password so users can request the code in one browser and enter it in another. In Supabase Dashboard, open **Authentication → Email Templates → Magic Link**, use `{{ .Token }}` in the message body (not `{{ .ConfirmationURL }}`), and update the subject to describe a sign-in code. Keep the code expiry short and configure a custom SMTP provider before production volume; Supabase's default sender is intended for limited development use.
+Email sign-in uses a six-digit one-time password so users can request the code in one browser and enter it in another. In Supabase Dashboard, open **Authentication → Email Templates → Magic Link**, use `{{ .Token }}` in the message body (not `{{ .ConfirmationURL }}`), and update the subject to describe a sign-in code. Keep the code expiry short. Supabase's default sender is intended for limited development use; for a zero-cost launch, make GitHub OAuth the primary sign-in path and retain email OTP only while its delivery and template configuration are verified.
+
+### Free-plan authentication decision
+
+The application intentionally does not expose email-and-password sign-up, sign-in, or reset flows. It uses email OTP and OAuth instead, so Supabase's paid leaked-password-protection advisor finding is not a product password risk. Keep this visible as an accepted platform-plan exception in launch reviews; do not suppress it by adding a password flow. The regression test `lib/passwordlessAuthSurface.test.ts` protects that boundary.
 
 ## Run the complete product locally
 
