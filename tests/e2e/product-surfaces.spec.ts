@@ -24,14 +24,14 @@ test("Analyze search is the primary public route", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("textbox", { name: "Search extension intelligence" }).first().fill("vyper guard");
   await page.getByRole("button", { name: /Check extension/i }).first().click({ noWaitAfter: true });
-  await expect(page).toHaveURL(/\/analyze\?q=vyper%20guard/);
+  await expect(page).toHaveURL(/\/analyze\?q=vyper(?:%20|\+)guard/);
 });
 
 test("legacy discovery routes preserve the customer journey", async ({ page }) => {
   await page.goto("/public-scan");
   await expect(page).toHaveURL(/\/registry$/);
   await page.goto("/catalog?q=vyper%20guard");
-  await expect(page).toHaveURL(/\/analyze\?q=vyper%20guard/);
+  await expect(page).toHaveURL(/\/analyze\?q=vyper(?:%20|\+)guard/);
   await page.goto("/scan?mode=upload");
   await expect(page).toHaveURL(/\/analyze\?mode=upload/);
 });
