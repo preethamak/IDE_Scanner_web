@@ -3,10 +3,17 @@ import { resolveMarketplaceExtension } from "@/lib/marketplace";
 import { serviceDb } from "@/lib/supabase";
 import { getDeepScanHealth } from "@/lib/deepScanHealth";
 
+export class DeepScanUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DeepScanUnavailableError";
+  }
+}
+
 export async function queueDeepScan(extensionId: string, requestedVersion: string | undefined, request: Request, requestedBy: string, force = false): Promise<Record<string, unknown>> {
   const db = serviceDb();
   const health = await getDeepScanHealth();
-  if (!health.available) throw new Error("Deep Scan is temporarily paused while the analysis runner reconnects.");
+  if (!health.accepting_requests) throw new DeepScanUnavailableError("Deep Scan is not configured to accept requests.");
 
   const item = await resolveMarketplaceExtension(extensionId);
   const canonicalExtensionId = item.extension_id;

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { normalizeMarketplaceId } from "@/lib/marketplace";
 import { serviceDb } from "@/lib/supabase";
 import { serverDb } from "@/lib/supabaseServer";
-import { queueDeepScan } from "@/lib/deepScan";
+import { DeepScanUnavailableError, queueDeepScan } from "@/lib/deepScan";
 import { scanProgressColumns, scanProgressPayload } from "@/lib/scanProgress";
 
 export const runtime = "nodejs";
@@ -39,8 +39,8 @@ export async function POST(request: Request) {
     const result=await queueDeepScan(extensionId,payload.version?.trim()||undefined,request,user.id,payload.force === true);
     return NextResponse.json(result,{status:String(result.status)==="complete"?200:202});
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Deep Scan is temporarily unavailable.";
-    const unavailable = message.includes("paused") || message.includes("temporarily");
-    return NextResponse.json({ error: message, code: unavailable ? "runner_unavailable" : "scan_unavailable" }, { status: unavailable ? 503 : 400 });
+    if (error instanceof DeepScanUnavailableError || (error instanceof Error && error.name === "DeepScanUnavailableError")) return NextResponse.json({ error: "Deep Scan is temporarily unavailable.", code: "configuration_unavailable" }, { status: 503 });
+    const message = error instanceof Error ? error.message : "Deep Scan could not be requested.";
+    return NextResponse.json({ error: message, code: "scan_unavailable" }, { status: 400 });
   }
 }

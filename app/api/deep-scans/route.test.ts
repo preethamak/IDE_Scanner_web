@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { queueDeepScan } = vi.hoisted(() => ({ queueDeepScan: vi.fn() }));
-vi.mock("@/lib/deepScan", () => ({ queueDeepScan }));
+vi.mock("@/lib/deepScan", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/deepScan")>();
+  return { ...actual, queueDeepScan };
+});
 vi.mock("@/lib/supabaseServer", () => ({
   serverDb: async () => ({ auth: { getUser: async () => ({ data: { user: { id: "user-1" } } }) } }),
 }));

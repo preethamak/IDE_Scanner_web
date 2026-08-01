@@ -1,14 +1,20 @@
 import { serviceDb } from "@/lib/supabase";
 
-export type DeepScanHealth = { available: boolean; status: "available" | "degraded" | "unconfigured"; last_seen_at: string | null };
+export type DeepScanHealth = {
+  accepting_requests: boolean;
+  status: "ready" | "runner_delayed" | "configuration_unavailable";
+  last_seen_at: string | null;
+};
 
 export async function getDeepScanHealth(): Promise<DeepScanHealth> {
-  if (!process.env.SCAN_RUNNER_SECRET) return { available: false, status: "unconfigured", last_seen_at: null };
+  if (!process.env.SCAN_RUNNER_SECRET || !process.env.GITHUB_ACTIONS_TOKEN) {
+    return { accepting_requests: false, status: "configuration_unavailable", last_seen_at: null };
+  }
   const result = await serviceDb().from("scan_runner_status").select("last_seen_at").eq("id", "github-actions").maybeSingle();
   // GitHub schedules are best-effort. A delayed heartbeat must not prevent a valid
   // signed-in user from queueing work for the next runner invocation.
-  if (result.error || !result.data?.last_seen_at) return { available: true, status: "degraded", last_seen_at: null };
+  if (result.error || !result.data?.last_seen_at) return { accepting_requests: true, status: "runner_delayed", last_seen_at: null };
   const lastSeen = String(result.data.last_seen_at);
   const recent = Date.now() - new Date(lastSeen).getTime() < 12 * 60_000;
-  return { available: true, status: recent ? "available" : "degraded", last_seen_at: lastSeen };
+  return { accepting_requests: true, status: recent ? "ready" : "runner_delayed", last_seen_at: lastSeen };
 }
