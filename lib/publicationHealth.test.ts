@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluatePublicationHealth } from "@/lib/publicationHealth";
+import { evaluatePublicationHealth, summarizeReleaseMemberScans } from "@/lib/publicationHealth";
 
 describe("evaluatePublicationHealth", () => {
   it("requires an active, complete, current release", () => {
@@ -14,5 +14,12 @@ describe("evaluatePublicationHealth", () => {
     const health = evaluatePublicationHealth({ active_release: { id: "release", expected_reports: 1, activated_at: "2026-07-30T00:00:00.000Z" }, current_report_count: 1, newest_scan_at: new Date().toISOString(), runner_status: "degraded", runner_last_seen_at: "2026-07-30T00:00:00.000Z", scan_failure_rate: 0, notification_failure_rate: 0 });
     expect(health).toMatchObject({ healthy: false, runner_last_seen_at: "2026-07-30T00:00:00.000Z" });
     expect(health.reasons).toContain("Deep Scan runner is degraded.");
+  });
+  it("uses immutable release members instead of mutable release metadata", () => {
+    expect(summarizeReleaseMemberScans([
+      { id: "scan-a", scanned_at: "2026-08-01T00:00:00.000Z" },
+      { id: "scan-b", scanned_at: "2026-08-01T01:00:00.000Z" },
+      { id: "scan-a", scanned_at: "2026-08-01T00:00:00.000Z" },
+    ])).toEqual({ current_report_count: 2, newest_scan_at: "2026-08-01T01:00:00.000Z" });
   });
 });

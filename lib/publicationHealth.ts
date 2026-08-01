@@ -24,6 +24,19 @@ export function evaluatePublicationHealth(input: Omit<PublicationHealth, "health
   return { ...input, healthy: reasons.length === 0, reasons };
 }
 
+type ReleaseMemberScan = { id: string; scanned_at: string | null };
+
+/**
+ * A publication release is an immutable exact-artifact manifest. Its health
+ * must be derived from those members rather than the scan metadata that may
+ * evolve after activation.
+ */
+export function summarizeReleaseMemberScans(rows: ReleaseMemberScan[]): Pick<PublicationHealth, "current_report_count" | "newest_scan_at"> {
+  const unique = new Map(rows.map((row) => [row.id, row]));
+  const scannedAt = [...unique.values()].map((row) => row.scanned_at).filter((value): value is string => Boolean(value)).sort().at(-1) || null;
+  return { current_report_count: unique.size, newest_scan_at: scannedAt };
+}
+
 export async function getPublicationHealth(): Promise<PublicationHealth> {
   const db = serviceDb();
   const releaseResult = await db.from("scan_publication_releases").select("id,policy_version,ruleset_version,score_schema_version,scanner_build,expected_reports,activated_at").eq("active", true).maybeSingle();
@@ -38,9 +51,14 @@ export async function getPublicationHealth(): Promise<PublicationHealth> {
   if (scans.error) throw scans.error;
   let currentReportCount = 0; let newestScanAt: string | null = null;
   if (release) {
-    const scans = await db.from("scans").select("scanned_at", { count: "exact" }).in("scan_purpose", ["public_intelligence", "benchmark"]).eq("analysis_status", "complete").eq("policy_version", release.policy_version).eq("ruleset_version", release.ruleset_version).eq("score_schema_version", release.score_schema_version).eq("scanner_build", release.scanner_build).is("superseded_at", null).order("scanned_at", { ascending: false }).limit(1);
-    if (scans.error) throw scans.error;
-    currentReportCount = scans.count || 0; newestScanAt = scans.data?.[0]?.scanned_at || null;
+    const members = await db.from("scan_publication_release_scans").select("scan_id").eq("release_id", release.id);
+    if (members.error) throw members.error;
+    const scanIds = [...new Set((members.data || []).map((member) => String(member.scan_id)).filter(Boolean))];
+    if (scanIds.length) {
+      const memberScans = await db.from("scans").select("id,scanned_at").in("id", scanIds).in("scan_purpose", ["public_intelligence", "benchmark"]).eq("analysis_status", "complete").is("superseded_at", null);
+      if (memberScans.error) throw memberScans.error;
+      ({ current_report_count: currentReportCount, newest_scan_at: newestScanAt } = summarizeReleaseMemberScans((memberScans.data || []).map((scan) => ({ id: String(scan.id), scanned_at: scan.scanned_at ? String(scan.scanned_at) : null }))));
+    }
   }
   const completed = deliveries.data || [];
   const failures = completed.filter((item) => item.status === "failed").length;
