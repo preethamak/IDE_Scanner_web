@@ -132,7 +132,7 @@ export default function DeepScanButton({ extensionId, version, showReportLink = 
       {signedOut ? <>Create free workspace to Deep Scan <ScanSearch size={16}/></> : health === "checking" ? <><LoaderCircle className="spin" size={16}/> Checking availability</> : unavailable ? "Deep Scan unavailable" : state === "loading" ? <><LoaderCircle className="spin" size={16}/> Queueing</> : state === "queued" ? "Queued" : state === "running" ? <><LoaderCircle className="spin" size={16}/> Analyzing</> : ["complete", "incomplete"].includes(state) ? <>Run a new scan <ScanSearch size={16}/></> : <>Deep Scan <ScanSearch size={16}/></>}
     </button>
     {signedOut ? <span className="actionNotice" role="status">Free workspaces save exact-version reports, monitoring, and your review queue.</span> : null}
-    {showReportLink && reportUrl ? <Link className="deepScanReportLink" href={reportUrl}>Open Deep Scan report</Link> : null}
+    {showReportLink && reportUrl ? <Link className="deepScanReportLink" href={reportUrl}>Open Analysis Report</Link> : null}
     {health === "configuration_unavailable" ? <span className="actionError" role="status">Deep Scan is temporarily unavailable. No scan job was created.</span> : health === "network_unavailable" ? <span className="actionError" role="status">We could not check Deep Scan availability. Please try again.</span> : runnerDelayed && !message ? <span className="actionNotice" role="status">A runner is delayed, but requests are accepted and will start automatically.</span> : message ? <span className={state === "error" ? "actionError" : "actionNotice"} role="status">{message}</span> : null}
   </div>;
 }
