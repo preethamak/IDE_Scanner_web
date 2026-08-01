@@ -1,5 +1,5 @@
-import PublicScanPage from "@/app/PublicScanPage";
+import { permanentRedirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-export default PublicScanPage;
+export default function PublicScanCompatibilityRedirect() {
+  permanentRedirect("/registry");
+}

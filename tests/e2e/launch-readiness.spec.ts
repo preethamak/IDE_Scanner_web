@@ -2,8 +2,7 @@ import { expect, test } from "@playwright/test";
 
 const publicRoutes = [
   ["/", /The security check before you click Install/i],
-  ["/catalog", /Find the extension/i],
-  ["/public-scan", /Scan the registry/i],
+  ["/registry", /Browse completed extension analysis/i],
   ["/benchmark", /Regression evidence with its limits intact/i],
 ] as const;
 

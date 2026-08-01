@@ -1,3 +1,3 @@
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
-export default function InventoryAlias() { redirect("/public-scan"); }
+export default function InventoryAlias() { permanentRedirect("/registry"); }

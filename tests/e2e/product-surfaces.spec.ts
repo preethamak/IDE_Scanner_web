@@ -2,9 +2,8 @@ import { expect, test } from "@playwright/test";
 
 const surfaces = [
   ["/", /The security check before you click Install/i],
-  ["/catalog", /Find the extension/i],
-  ["/public-scan", /Scan the registry/i],
-  ["/scan", /Inspect an extension before installation/i],
+  ["/registry", /Browse completed extension analysis/i],
+  ["/analyze", /Inspect an extension before installation/i],
   ["/cli", /See what is already inside your editor/i],
   ["/workspace", /Turn extension changes into an evidence queue/i],
   ["/monitor", /Watch the release/i],
@@ -21,11 +20,20 @@ for (const [path, heading] of surfaces) {
   });
 }
 
-test("Explore search is the primary public route", async ({ page }) => {
+test("Analyze search is the primary public route", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("textbox", { name: "Search extension intelligence" }).first().fill("vyper guard");
   await page.getByRole("button", { name: /Check extension/i }).first().click({ noWaitAfter: true });
-  await expect(page).toHaveURL(/\/catalog\?q=vyper%20guard/);
+  await expect(page).toHaveURL(/\/analyze\?q=vyper%20guard/);
+});
+
+test("legacy discovery routes preserve the customer journey", async ({ page }) => {
+  await page.goto("/public-scan");
+  await expect(page).toHaveURL(/\/registry$/);
+  await page.goto("/catalog?q=vyper%20guard");
+  await expect(page).toHaveURL(/\/analyze\?q=vyper%20guard/);
+  await page.goto("/scan?mode=upload");
+  await expect(page).toHaveURL(/\/analyze\?mode=upload/);
 });
 
 test("extension profile and report use one current outcome", async ({ page }) => {

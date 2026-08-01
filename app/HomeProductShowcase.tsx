@@ -68,7 +68,7 @@ export function HeroProductScene({ item }: { item: FeedItem }) {
         <span><CircleCheck /> Exact release</span>
         <span><Eye /> Evidence available</span>
       </div>
-      {item ? <Link href={`/extensions/${encodeURIComponent(item.extension_id)}/versions/${encodeURIComponent(item.version)}/scans/${encodeURIComponent(item.scan_id)}`}>Open public report <ArrowUpRight /></Link> : <Link href="/catalog">Browse intelligence <ArrowRight /></Link>}
+      {item ? <Link href={`/extensions/${encodeURIComponent(item.extension_id)}/versions/${encodeURIComponent(item.version)}/scans/${encodeURIComponent(item.scan_id)}`}>Open Analysis Report <ArrowUpRight /></Link> : <Link href="/registry">Open Extension Registry <ArrowRight /></Link>}
     </div>
   </div>;
 }
@@ -186,7 +186,7 @@ function DecisionView({ item }: { item: FeedItem }) {
     <strong>{item ? decisionLabel(item.decision) : "A clearer next step"}</strong>
     <p>{shorten(reason, 155)}</p>
     <div><span><Check /> Release identified</span><span><Check /> Evidence linked</span></div>
-    {item ? <Link href={`/extensions/${encodeURIComponent(item.extension_id)}/versions/${encodeURIComponent(item.version)}/scans/${encodeURIComponent(item.scan_id)}`}>Open report <ArrowUpRight /></Link> : <Link href="/catalog">Explore reports <ArrowRight /></Link>}
+    {item ? <Link href={`/extensions/${encodeURIComponent(item.extension_id)}/versions/${encodeURIComponent(item.version)}/scans/${encodeURIComponent(item.scan_id)}`}>Open Analysis Report <ArrowUpRight /></Link> : <Link href="/registry">Open Extension Registry <ArrowRight /></Link>}
   </div>;
 }
 

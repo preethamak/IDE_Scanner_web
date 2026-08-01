@@ -6,8 +6,8 @@ import { ArrowUpRight, BellRing, BookOpen, Boxes, ChevronDown, FileSearch, Flask
 import { useEffect, useRef, useState } from "react";
 
 const directLinks = [
-  ["/catalog", "Reports", Boxes],
-  ["/scan", "Analyze", ScanSearch],
+  ["/registry", "Extension Registry", Boxes],
+  ["/analyze", "Analyze", ScanSearch],
   ["/cli", "CLI", TerminalSquare],
   ["/monitor", "Monitor", BellRing],
 ] as const;
