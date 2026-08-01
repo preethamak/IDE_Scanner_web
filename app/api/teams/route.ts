@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authenticated } from "@/lib/auth";
+import { authenticated, AuthenticationError } from "@/lib/auth";
 import { serviceDb } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,8 @@ export async function GET(request: Request) {
     if (error) throw error;
     return NextResponse.json({ teams: (data || []).map((row) => ({ ...(Array.isArray(row.teams) ? row.teams[0] : row.teams), role: row.role })).filter((team) => team.id) });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Team lookup failed." }, { status: 401 });
+    if (error instanceof AuthenticationError) return NextResponse.json({ error: error.message }, { status: 401 });
+    return NextResponse.json({ error: "The workspace service is temporarily unavailable. Please try again." }, { status: 503 });
   }
 }
 
@@ -32,6 +33,7 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ ...team, role: "owner" }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Team creation failed." }, { status: 400 });
+    if (error instanceof AuthenticationError) return NextResponse.json({ error: error.message }, { status: 401 });
+    return NextResponse.json({ error: "The workspace could not be created. Please try again." }, { status: 503 });
   }
 }

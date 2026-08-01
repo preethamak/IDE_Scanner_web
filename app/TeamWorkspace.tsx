@@ -1,7 +1,8 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Users } from "lucide-react";
+import Link from "next/link";
+import { Plus, RefreshCw, Trash2, Users } from "lucide-react";
 import { browserDb } from "@/lib/supabase";
 import { trackProductEvent } from "@/lib/analyticsEvents";
 import { groupDecisionQueue, type QueueDecision } from "@/lib/teamDecisionQueue";
@@ -50,13 +51,18 @@ export default function TeamWorkspace({ initialExtension = "", focus = "workspac
     return session?.data.session?.access_token || "";
   }, [db]);
   const load = useCallback(async () => {
-    const accessToken = await token();
-    if (!accessToken) return;
-    const response = await fetch("/api/teams", { headers: { Authorization: `Bearer ${accessToken}` } });
-    const body = await response.json();
-    if (!response.ok) { setError(String(body.error || "Team workspace is unavailable.")); setState("error"); return; }
-    const available = Array.isArray(body.teams) ? body.teams : [];
-    setTeams(available); setActiveTeamId((current) => current || available[0]?.id || ""); setState("ready");
+    setState("loading"); setError("");
+    try {
+      const accessToken = await token();
+      if (!accessToken) throw new Error("Your sign-in session has expired. Sign in again to open your workspace.");
+      const response = await fetch("/api/teams", { headers: { Authorization: `Bearer ${accessToken}` } });
+      const body = await response.json().catch(() => ({})) as { teams?: unknown; error?: unknown };
+      if (!response.ok) throw new Error(typeof body.error === "string" ? body.error : "Your workspace could not be loaded.");
+      const available = Array.isArray(body.teams) ? body.teams as Team[] : [];
+      setTeams(available); setActiveTeamId((current) => current || available[0]?.id || ""); setState("ready");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Your workspace could not be loaded."); setState("error");
+    }
   }, [token]);
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
   async function create(event: FormEvent) {
@@ -198,6 +204,7 @@ export default function TeamWorkspace({ initialExtension = "", focus = "workspac
     const response = await fetch(`/api/teams/${encodeURIComponent(activeTeamId)}/watchlist?extension_id=${encodeURIComponent(extensionId)}`, { method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` } });
     if (response.ok) setWatchItems((current) => current.filter((item) => item.extension_id !== extensionId));
   }
+  if (state === "error") return <section className="workspaceSection teamWorkspace workspaceLoadError" aria-live="polite"><div className="workspaceSectionHead"><div><span>Workspace</span><h2>We couldn’t load your workspace.</h2></div><Users/></div><p className="sectionIntro">{error}</p><div className="workspaceRecoveryActions"><button className="button buttonDark" type="button" onClick={() => void load()}><RefreshCw/> Try again</button><Link className="button buttonQuiet" href="/account?next=/workspace">Sign in again</Link></div></section>;
   const activeTeam = teams.find((team) => team.id === activeTeamId);
   const decisionQueue = groupDecisionQueue(decisions);
   return <section className="workspaceSection teamWorkspace">
