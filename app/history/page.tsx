@@ -25,7 +25,7 @@ export default function HistoryPage() {
           <h1>Imported reports</h1>
           <p className="heroCopy">Report bundles are stored in this browser after explicit import.</p>
         </div>
-        <Link className="heroAction" href="/scan">Import report</Link>
+        <Link className="heroAction" href="/analyze?mode=report">Import report</Link>
       </section>
 
       <section className="historyList">

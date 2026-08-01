@@ -23,7 +23,7 @@ export default function MetricsPage() {
   }), [query, engine]);
 
   return <main className="shell referencePage">
-    <section className="pageHero referenceHero"><div><p className="eyebrow">Detection catalog · ruleset {RULESET_VERSION}</p><h1>Inspect what the scanner can actually detect.</h1><p className="heroCopy">Search the deterministic rules behind report evidence, see which analyzer emits each signal, and understand the artifact surface it covers. A rule match remains evidence—not an automatic vulnerability claim.</p></div><Link className="heroAction" href="/scan">Analyze an artifact</Link></section>
+    <section className="pageHero referenceHero"><div><p className="eyebrow">Detection catalog · ruleset {RULESET_VERSION}</p><h1>Inspect what the scanner can actually detect.</h1><p className="heroCopy">Search the deterministic rules behind report evidence, see which analyzer emits each signal, and understand the artifact surface it covers. A rule match remains evidence—not an automatic vulnerability claim.</p></div><Link className="heroAction" href="/analyze">Analyze an artifact</Link></section>
 
     <section className="referenceStats"><div><strong>{ruleCatalog.length}</strong><span>registered rules</span></div><div><strong>{engines.length - 1}</strong><span>detection engines</span></div><div><strong>{evidenceClasses.length}</strong><span>evidence classes</span></div><div><strong>{RULESET_VERSION}</strong><span>active ruleset</span></div></section>
 

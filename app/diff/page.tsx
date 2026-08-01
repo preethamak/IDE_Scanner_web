@@ -25,7 +25,7 @@ export default function DiffPage() {
           <h1>Diff</h1>
           <p className="heroCopy">Compare the newest scan against the previous completed report to reveal version, dependency, score, and artifact changes.</p>
         </div>
-        <Link className="heroAction primaryAction" href="/scan">Run compare scan</Link>
+        <Link className="heroAction primaryAction" href="/analyze">Run compare scan</Link>
       </section>
 
       <section className="historyList benchmarkList">
