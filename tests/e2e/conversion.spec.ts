@@ -21,12 +21,19 @@ test("public reports expose evidence export and an account-aware monitoring acti
   await expect(page.getByRole("link", { name: /Export evidence/i })).toHaveAttribute("href", /\/api\/extensions\/GitHub\.copilot\/versions\/1\.388\.0\/export/);
 });
 
-test("anonymous Analyze results make workspace creation the primary scan action", async ({ page }) => {
+test("anonymous Analyze results lead with the public profile and preserve the exact-release sign-in target", async ({ page }) => {
   await page.route("**/api/marketplace/search?q=GitHub.copilot", (route) => route.fulfill({ contentType: "application/json", body: JSON.stringify({ query: "GitHub.copilot", exact_match: { extension_id: "GitHub.copilot", version: "1.388.0", display_name: "GitHub Copilot", publisher: "GitHub", publisher_verified: true, registry: "vs-marketplace", match_reason: "exact_identity" }, matching_extensions: [], related_extensions: [] }) }));
   await page.goto("/analyze?q=GitHub.copilot");
-  await page.getByRole("button", { name: "Choose release" }).click();
-  await expect(page.getByText("GitHub.copilot@1.388.0", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Open extension profile/i })).toHaveAttribute("href", "/extensions/GitHub.copilot");
+  await expect(page.getByRole("link", { name: /Sign in to Deep Scan/i })).toHaveAttribute("href", "/account?next=%2Fextensions%2FGitHub.copilot%2Fversions%2F1.388.0");
+});
+
+test("signed-out Deep Scan remains connected to account creation if availability cannot be checked", async ({ page }) => {
+  await page.route("**/api/deep-scans/health", (route) => route.abort("failed"));
+  await page.route("**/api/deep-scans?extension_id=GitHub.copilot&version=1.388.0", (route) => route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ error: "Authentication required" }) }));
+  await page.goto("/extensions/GitHub.copilot/versions/1.388.0");
   await expect(page.getByRole("button", { name: /Create free workspace to Deep Scan/i })).toBeVisible();
+  await expect(page.getByText(/could not check Deep Scan availability/i)).not.toBeVisible();
 });
 
 test("unavailable Deep Scan runner has an explicit non-submitting state", async ({ page }) => {

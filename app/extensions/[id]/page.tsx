@@ -20,6 +20,9 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
   const reportHref = scan?.id
     ? `/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(version)}/scans/${encodeURIComponent(String(scan.id))}`
     : `/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(version)}`;
+  const publisherReadmeHref = product.extension.registry === "openvsx"
+    ? `https://open-vsx.org/extension/${encodeURIComponent(product.extension.publisher)}/${encodeURIComponent(product.extension.name)}`
+    : `https://marketplace.visualstudio.com/items?itemName=${encodeURIComponent(product.extension.id)}`;
   return <main className="productPage">
     <section className="packageHeader">
       <div className="packageIdentity">
@@ -39,7 +42,7 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
       <div><span>Report status</span><strong>{scan ? "Available" : "Not assessed"}</strong></div>
     </section>
 
-    <nav className="packageTabs" aria-label="Extension profile"><a href="#overview">Overview</a><a href="#versions">Versions <b>{product.versions.length}</b></a>{scan ? <Link href={reportHref}>Full report</Link> : null}<a href="#trust">Trust</a></nav>
+    <nav className="packageTabs" aria-label="Extension profile"><a href="#overview">Overview</a><a href="#versions">Versions <b>{product.versions.length}</b></a>{scan ? <Link href={reportHref}>Full report</Link> : null}<a href="#readme">README</a><a href="#trust">Trust</a></nav>
 
     <div className="packageLayout">
       <div className="packageMain">
@@ -47,6 +50,7 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
 
         <section id="versions" className="productSection"><div className="productSectionHead compact"><span>Release history</span><h2>Published versions</h2><p>Each decision belongs to an immutable version and exact artifact hash.</p></div><div className="versionTable"><div className="versionHead"><span>Version</span><span>Decision</span><span/></div>{product.versions.map((item) => { const versionDecision = decisionState(item.decision); return <div className="versionRow" key={String(item.version)}><strong>{String(item.version)}</strong><span className={`scanState decisionState ${versionDecision}`}>{versionDecision === "not-assessed" ? "NOT ANALYZED" : decisionLabel(versionDecision)}</span><Link href={`/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(String(item.version))}`}>Open <ChevronRight size={15}/></Link></div>; })}</div></section>
 
+        <section id="readme" className="productSection"><div className="productSectionHead compact"><span>Publisher documentation</span><h2>README is available without sign-in.</h2><p>Read the publisher’s public documentation before deciding whether to install or request a Deep Scan. This is publisher content, not scanner evidence.</p></div><a className="button buttonQuiet" href={publisherReadmeHref} target="_blank" rel="noreferrer">Open publisher README <ChevronRight size={15}/></a></section>
         <section id="trust" className="productSection"><div className="productSectionHead compact"><span>Trust boundaries</span><h2>What identity can and cannot prove</h2></div><div className="trustRows"><article><BadgeCheck/><div><strong>Publisher identity</strong><p>{product.extension.publisher_verified ? "The registry reports a verified publisher." : "The registry does not report a verified publisher."} Verification does not prove artifact behavior.</p></div></article><article><GitBranch/><div><strong>Version-specific analysis</strong><p>Future releases can add new permissions, dependencies or executable behavior. Reassess every artifact change.</p></div></article><article><Box/><div><strong>Release context</strong><p>Popularity and maintenance help establish context but never override malicious or correlated evidence.</p></div></article></div></section>
       </div>
       <aside className="packageAside" id="about"><div><span>Package</span><dl><dt>Identifier</dt><dd><code>{product.extension.id}</code></dd><dt>Registry</dt><dd>{product.extension.registry}</dd><dt>Rating</dt><dd>{product.extension.rating || "Not reported"}</dd><dt>Repository</dt><dd>{product.extension.repository_url ? <a href={product.extension.repository_url}>Open source</a> : "Not declared"}</dd></dl></div><div><span>Analysis promise</span><p>No extension code is executed. A completed Deep Scan records exact provider coverage and becomes incomplete when a required analyzer fails.</p><Link href="/metrics">Read the methodology <ChevronRight size={14}/></Link></div><div><span>Monitoring</span><p>Watch this extension to review future release changes from your workspace.</p><WatchExtension extensionId={product.extension.id}/></div></aside>

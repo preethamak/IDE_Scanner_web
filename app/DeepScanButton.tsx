@@ -50,12 +50,18 @@ export default function DeepScanButton({ extensionId, version, showReportLink = 
 
   useEffect(() => {
     let active = true;
-    void Promise.all([
+    void Promise.allSettled([
       fetchDeepScanHealth(),
       fetchExistingJob(extensionId, version),
-    ]).then(([runner, job]) => {
+    ]).then(([healthResult, jobResult]) => {
       if (!active) return;
-      setHealth(runner.accepting_requests ? (runner.status === "runner_delayed" ? "runner_delayed" : "ready") : "configuration_unavailable");
+      if (healthResult.status === "fulfilled") {
+        const runner = healthResult.value;
+        setHealth(runner.accepting_requests ? (runner.status === "runner_delayed" ? "runner_delayed" : "ready") : "configuration_unavailable");
+      } else {
+        setHealth("network_unavailable");
+      }
+      const job = jobResult.status === "fulfilled" ? jobResult.value : null;
       if (job?.auth_required) setSignedOut(true);
       else if (job?.report_url) {
         const terminal = job.status === "incomplete" ? "incomplete" : "complete";
@@ -68,7 +74,7 @@ export default function DeepScanButton({ extensionId, version, showReportLink = 
       } else if (job?.status === "failed") {
         setState("error"); setMessage(job.error || "The previous Deep Scan failed. Retry when the runner is available.");
       }
-    }).catch(() => { if (active) setHealth("network_unavailable"); });
+    });
     return () => { active = false; };
   }, [extensionId, version, showReportLink]);
 
@@ -135,6 +141,6 @@ export default function DeepScanButton({ extensionId, version, showReportLink = 
     </button>
     {signedOut ? <span className="actionNotice" role="status">Free workspaces save exact-version reports, monitoring, and your review queue.</span> : null}
     {showReportLink && reportUrl ? <Link className="deepScanReportLink" href={reportUrl}>Open Analysis Report</Link> : null}
-    {health === "configuration_unavailable" ? <span className="actionError" role="status">Deep Scan is temporarily unavailable. No scan job was created.</span> : health === "network_unavailable" ? <span className="actionError" role="status">We could not check Deep Scan availability. Please try again.</span> : runnerDelayed && !message ? <span className="actionNotice" role="status">A runner is delayed, but requests are accepted and will start automatically.</span> : message ? <span className={state === "error" ? "actionError" : "actionNotice"} role="status">{message}</span> : null}
+    {!signedOut && (health === "configuration_unavailable" ? <span className="actionError" role="status">Deep Scan is temporarily unavailable. No scan job was created.</span> : health === "network_unavailable" ? <span className="actionError" role="status">We could not check Deep Scan availability. Please try again.</span> : runnerDelayed && !message ? <span className="actionNotice" role="status">A runner is delayed, but requests are accepted and will start automatically.</span> : message ? <span className={state === "error" ? "actionError" : "actionNotice"} role="status">{message}</span> : null)}
   </div>;
 }
