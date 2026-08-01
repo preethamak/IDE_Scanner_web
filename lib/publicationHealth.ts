@@ -18,7 +18,7 @@ export function evaluatePublicationHealth(input: Omit<PublicationHealth, "health
   if (!input.active_release) reasons.push("No active public classification release.");
   else if (input.current_report_count < input.active_release.expected_reports) reasons.push("Active release is missing published reports.");
   if (!input.newest_scan_at || Date.now() - new Date(input.newest_scan_at).getTime() > 30 * 60 * 60 * 1000) reasons.push("Public scan corpus is older than 30 hours.");
-  if (input.runner_status !== "available") reasons.push(`Deep Scan runner is ${input.runner_status}.`);
+  if (input.runner_status !== "ready") reasons.push(`Deep Scan runner is ${input.runner_status}.`);
   if (input.scan_failure_rate > 0.1) reasons.push("Scan failure rate exceeds 10 percent.");
   if (input.notification_failure_rate > 0.1) reasons.push("Notification failure rate exceeds 10 percent.");
   return { ...input, healthy: reasons.length === 0, reasons };

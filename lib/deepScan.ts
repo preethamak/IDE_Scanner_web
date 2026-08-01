@@ -11,9 +11,9 @@ export class DeepScanUnavailableError extends Error {
 }
 
 export async function queueDeepScan(extensionId: string, requestedVersion: string | undefined, request: Request, requestedBy: string, force = false): Promise<Record<string, unknown>> {
-  const db = serviceDb();
   const health = await getDeepScanHealth();
   if (!health.accepting_requests) throw new DeepScanUnavailableError("Deep Scan is not configured to accept requests.");
+  const db = serviceDb();
 
   const item = await resolveMarketplaceExtension(extensionId);
   const canonicalExtensionId = item.extension_id;

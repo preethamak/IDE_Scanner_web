@@ -9,13 +9,15 @@ type ScanState = "idle" | "loading" | "queued" | "running" | "complete" | "incom
 type Health = { accepting_requests?: boolean; status?: "ready" | "runner_delayed" | "configuration_unavailable" };
 type ExistingJob = { auth_required?: boolean; report_url?: string; status?: string; id?: string; error?: string } | null;
 
-async function fetchJson<T>(url: string, timeoutMs = 2_000): Promise<T> {
+async function fetchDeepScanHealth(): Promise<Health> {
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+  const timeout = window.setTimeout(() => controller.abort(), 2_000);
   try {
-    const response = await fetch(url, { cache: "no-store", signal: controller.signal });
-    if (!response.ok) throw new Error(`Request failed with ${response.status}`);
-    return await response.json() as T;
+    const response = await fetch("/api/deep-scans/health", { cache: "no-store", signal: controller.signal });
+    const body = await response.json().catch(() => null) as Health | null;
+    if (!body || !["ready", "runner_delayed", "configuration_unavailable"].includes(String(body.status))) throw new Error("Invalid Deep Scan health response.");
+    if (!response.ok && body.status !== "configuration_unavailable") throw new Error(`Request failed with ${response.status}`);
+    return body;
   } finally {
     window.clearTimeout(timeout);
   }
@@ -49,7 +51,7 @@ export default function DeepScanButton({ extensionId, version, showReportLink = 
   useEffect(() => {
     let active = true;
     void Promise.all([
-      fetchJson<Health>("/api/deep-scans/health"),
+      fetchDeepScanHealth(),
       fetchExistingJob(extensionId, version),
     ]).then(([runner, job]) => {
       if (!active) return;
