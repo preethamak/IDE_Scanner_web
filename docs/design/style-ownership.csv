@@ -1,0 +1,10 @@
+token_or_selector,current_owner,consumer,final_owner,disposition
+--brand,guardrails.css + visual-refresh.css + accessibility.css,shared controls and accents,design-system.css,remove competing token declarations before stylesheet removal
+--text,guardrails.css + visual-refresh.css,shared typography,design-system.css,remove competing token declarations before stylesheet removal
+--surface and --line,guardrails.css + visual-refresh.css,shared cards and layouts,design-system.css,remove competing token declarations before stylesheet removal
+.buttonDark,guardrails.css + visual-refresh.css,legacy primary actions,design-system.css,replace with one lime primary action class
+.buttonQuiet and .buttonLight,guardrails.css + visual-refresh.css,legacy secondary actions,design-system.css,replace with one white outlined secondary action class
+.inventoryCard,visual-refresh.css,Extension Registry,registry module stylesheet,move after Registry visual tests are in place
+.analysisWorkspace,globals.css,Analyze flow,analyze module stylesheet,move after Analyze visual tests are in place
+.teamWorkspace,visual-refresh.css,Workspace,workspace module stylesheet,move after Workspace visual tests are in place
+.dossierPage and .dossier*,visual-refresh.css,Analysis Report,report module stylesheet,rename visible copy before mechanical selector rename

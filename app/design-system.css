@@ -82,7 +82,19 @@
 .xid-sm .xid-name { font-size: 15px; }
 .xid-md .xid-name { font-size: 20px; }
 .xid-lg .xid-name { font-size: 34px; }
-.xid-verified { flex: 0 0 auto; width: 1em; height: 1em; color: #1685d1; fill: #e9f7ff; stroke-width: 2.6; }
+.xid-verified { flex: 0 0 auto; width: 1em; height: 1em; color: var(--brand-ink); fill: var(--brand-soft); stroke-width: 2.6; }
+
+/* Legacy home visual: retain the existing composition without introducing a
+   second accent family. Lime remains the only non-semantic product accent. */
+.nextHome .heroGlowTwo { background: var(--brand); }
+.nextHome .orbitNode svg { color: var(--brand); }
+.nextHome .bar.blue::after { background: var(--brand); }
+
+/* Overrides the pre-existing legacy `!important` verified icon rule until the
+   Registry and report CSS are moved out of visual-refresh.css. */
+.siteFrame .inventoryCard strong svg,
+.siteFrame .discoveryGroup strong svg,
+.siteFrame .dossierIdentity h1 svg { color: var(--brand-ink) !important; fill: var(--brand-soft) !important; }
 .xid-id { overflow: hidden; color: var(--muted); font: 11px/1.4 var(--mono); text-overflow: ellipsis; white-space: nowrap; }
 .xid-id b { color: var(--ink-2); font-weight: 700; }
 
