@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { Box } from "lucide-react";
-import ExtensionDossier from "@/app/ExtensionDossier";
+import AnalysisReport from "@/app/ExtensionDossier";
 import DeepScanButton from "@/app/DeepScanButton";
 import { getExtensionProduct, getVersionProduct } from "@/lib/productData";
 import { parseExtensionDossierData } from "@/lib/reportContract";
@@ -29,5 +29,5 @@ export default async function VersionPage({ params }: { params: Promise<{ id: st
   if (!data) {
     return <main className="versionProductPage"><section className="emptyVersion"><Box size={34}/><span>Report unavailable</span><h1>This report cannot be verified.</h1><p>The public report is missing required exact-artifact identity or uses an unsupported outcome. It has not been presented as a security decision.</p></section></main>;
   }
-  return <ExtensionDossier data={data} />;
+  return <AnalysisReport data={data} />;
 }

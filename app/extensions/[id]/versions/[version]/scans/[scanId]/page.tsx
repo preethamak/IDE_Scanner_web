@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import ExtensionDossier from "@/app/ExtensionDossier";
+import AnalysisReport from "@/app/ExtensionDossier";
 import { getExtensionProduct, getVersionScanProduct } from "@/lib/productData";
 import { parseExtensionDossierData } from "@/lib/reportContract";
 import { serverDb } from "@/lib/supabaseServer";
@@ -26,5 +26,5 @@ export default async function ImmutableScanPage({ params }: { params: Promise<{ 
   if (!data) {
     return <main className="versionProductPage"><section className="emptyVersion"><span>Report unavailable</span><h1>This immutable report cannot be verified.</h1><p>The report is missing required exact-artifact identity or uses an unsupported outcome. It has not been presented as a security decision.</p></section></main>;
   }
-  return <ExtensionDossier data={data} />;
+  return <AnalysisReport data={data} />;
 }

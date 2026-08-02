@@ -65,7 +65,7 @@ const sections: Array<{ id: Section; label: string; icon: typeof Radar }> = [
   { id: "raw", label: "Raw evidence", icon: Terminal },
 ];
 
-export default function ExtensionDossier({ data }: Props) {
+export default function AnalysisReport({ data }: Props) {
   const { id, version, extension, versions, scan, findings, files, dependencies } = data;
   const [active, setActive] = useState<Section>("overview");
   const decision = displayedDecision(scan);
