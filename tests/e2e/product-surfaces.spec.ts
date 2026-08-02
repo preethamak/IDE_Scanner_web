@@ -46,6 +46,12 @@ test("extension profile and report use one current outcome", async ({ page }) =>
   await expect(page.getByText("Operational action", { exact: true })).toHaveCount(0);
 });
 
+test("Registry cards lead to the public extension profile", async ({ page }) => {
+  await page.goto("/registry");
+  const profile = page.getByRole("link", { name: /Open GitHub Copilot extension profile/i });
+  await expect(profile).toHaveAttribute("href", "/extensions/GitHub.copilot");
+});
+
 test("release comparison discloses and verifies its analysis baseline", async ({ page }) => {
   await page.goto("/extensions/GitHub.copilot/versions/1.388.0#changes");
   await expect(page.getByText("What changed in 1.388.0")).toBeVisible();
