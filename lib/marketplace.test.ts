@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isConcreteVersion, listMarketplaceVersions } from "@/lib/marketplace";
+import { isConcreteVersion, listMarketplaceVersions, searchMarketplace } from "@/lib/marketplace";
 
 describe("listMarketplaceVersions", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -22,5 +22,21 @@ describe("listMarketplaceVersions", () => {
   it("rejects registry channel aliases as exact versions", () => {
     expect(isConcreteVersion("latest")).toBe(false);
     expect(isConcreteVersion("2.1.218")).toBe(true);
+  });
+
+  it("returns an exact Marketplace identity without waiting for Open VSX", async () => {
+    const fetch = vi.fn(async (input: RequestInfo | URL) => {
+      expect(String(input)).toContain("marketplace.visualstudio.com");
+      return {
+        ok: true,
+        json: async () => ({ results: [{ extensions: [{
+          extensionName: "copilot", displayName: "GitHub Copilot", publisher: { publisherName: "GitHub" }, versions: [{ version: "1.0.0" }],
+        }] }] }),
+      };
+    });
+    vi.stubGlobal("fetch", fetch);
+
+    await expect(searchMarketplace("GitHub.copilot")).resolves.toMatchObject([{ extension_id: "GitHub.copilot" }]);
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

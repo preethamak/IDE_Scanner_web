@@ -18,18 +18,24 @@ export async function searchMarketplace(query: string, limit = 20): Promise<Mark
     const exact = await resolveExactExtension(exactId);
     if (exact) return [exact];
   }
-  const [marketplace, openvsx] = await Promise.allSettled([searchVsMarketplace(query, limit), searchOpenVsx(query, limit)]);
-  const combined = [...(marketplace.status === "fulfilled" ? marketplace.value : []), ...(openvsx.status === "fulfilled" ? openvsx.value : [])];
+  // Marketplace is the primary registry for this product. We only ask the
+  // secondary registry when Marketplace cannot answer, so one degraded
+  // provider cannot make every ordinary search wait at the loading state.
+  const marketplace = await Promise.allSettled([searchVsMarketplace(query, limit)]);
+  const primary = marketplace[0];
+  const combined = primary.status === "fulfilled" && primary.value.length
+    ? primary.value
+    : await Promise.allSettled([searchOpenVsx(query, limit)]).then(([secondary]) => secondary.status === "fulfilled" ? secondary.value : []);
   const unique = new Map<string, MarketplaceSearchResult>();
   for (const item of combined) if (!unique.has(item.extension_id.toLowerCase())) unique.set(item.extension_id.toLowerCase(), item);
-  if (marketplace.status === "rejected" && openvsx.status === "rejected") {
+  if (primary.status === "rejected" && !combined.length) {
     throw new Error("Neither VS Marketplace nor Open VSX could be reached.");
   }
   return [...unique.values()].sort((left, right) => relevance(right, query) - relevance(left, query)).slice(0, limit);
 }
 
 async function searchVsMarketplace(query: string, limit: number): Promise<MarketplaceSearchResult[]> {
-  const response = await fetch(GALLERY_URL, {
+  const response = await registryFetch(GALLERY_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json;api-version=7.2-preview.1" },
     body: JSON.stringify({ filters: [{ criteria: [{ filterType: 10, value: query }], pageNumber: 1, pageSize: Math.min(limit, 25), sortBy: 4 }], flags: 914 }),
@@ -41,7 +47,7 @@ async function searchVsMarketplace(query: string, limit: number): Promise<Market
 }
 
 async function searchOpenVsx(query: string, limit: number): Promise<MarketplaceSearchResult[]> {
-  const response = await fetch(`https://open-vsx.org/api/-/search?query=${encodeURIComponent(query)}&size=${Math.min(limit, 25)}`, { cache: "no-store" });
+  const response = await registryFetch(`https://open-vsx.org/api/-/search?query=${encodeURIComponent(query)}&size=${Math.min(limit, 25)}`, { cache: "no-store" });
   if (!response.ok) throw new Error(`Open VSX search returned ${response.status}`);
   const data = await response.json() as { extensions?: OpenVsxExtension[] };
   return (data.extensions || []).map(normalizeOpenVsx);
@@ -62,14 +68,18 @@ export async function resolveMarketplaceExtension(extensionId: string): Promise<
 }
 
 async function resolveExactExtension(extensionId: string): Promise<MarketplaceSearchResult | null> {
-  const [marketplace, openvsx] = await Promise.allSettled([resolveVsMarketplaceExtension(extensionId), resolveOpenVsxExtension(extensionId)]);
-  if (marketplace.status === "fulfilled" && marketplace.value) return marketplace.value;
-  if (openvsx.status === "fulfilled" && openvsx.value) return openvsx.value;
-  return null;
+  // An exact VS Marketplace identity is the primary answer. Waiting for a
+  // secondary registry made a simple extension lookup feel broken whenever
+  // Open VSX was slow, even though the requested extension was already known.
+  try {
+    const marketplace = await resolveVsMarketplaceExtension(extensionId);
+    if (marketplace) return marketplace;
+  } catch { /* Fall through to Open VSX when Marketplace is unavailable. */ }
+  try { return await resolveOpenVsxExtension(extensionId); } catch { return null; }
 }
 
 async function resolveVsMarketplaceExtension(extensionId: string): Promise<MarketplaceSearchResult | null> {
-  const response = await fetch(GALLERY_URL, {
+  const response = await registryFetch(GALLERY_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json;api-version=7.2-preview.1" },
     body: JSON.stringify({ filters: [{ criteria: [{ filterType: 7, value: extensionId }], pageNumber: 1, pageSize: 1 }], flags: 914 }),
@@ -83,7 +93,7 @@ async function resolveVsMarketplaceExtension(extensionId: string): Promise<Marke
 export async function listMarketplaceVersions(extensionId: string): Promise<Array<{ extension_id: string; version: string; registry: "vs-marketplace" | "openvsx"; published_at: string; download_url: string; is_latest: boolean; scan_state: "not_scanned" }>> {
   const normalized = normalizeMarketplaceId(extensionId);
   const [publisher, name] = normalized.split(".", 2);
-  const marketplace = await fetch(GALLERY_URL, {
+  const marketplace = await registryFetch(GALLERY_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json;api-version=7.2-preview.1" },
     body: JSON.stringify({ filters: [{ criteria: [{ filterType: 7, value: normalized }], pageNumber: 1, pageSize: 1 }], flags: 402 }),
@@ -94,7 +104,7 @@ export async function listMarketplaceVersions(extensionId: string): Promise<Arra
   const versions = uniqueVersions.map((item, index) => ({ extension_id: normalized, version: String(item.version), registry: "vs-marketplace" as const, published_at: String(item.lastUpdated || ""), download_url: `https://marketplace.visualstudio.com/_apis/public/gallery/publishers/${encodeURIComponent(publisher)}/vsextensions/${encodeURIComponent(name)}/${encodeURIComponent(String(item.version))}/vspackage`, is_latest: index === 0, scan_state: "not_scanned" as const }));
   if (versions.length) return versions;
 
-  const openvsx = await fetch(`https://open-vsx.org/api/${encodeURIComponent(publisher)}/${encodeURIComponent(name)}`, { cache: "no-store" }).then(async (response) => response.ok ? response.json() as Promise<OpenVsxExtension & { allVersions?: Record<string, string> }> : null).catch(() => null);
+  const openvsx = await registryFetch(`https://open-vsx.org/api/${encodeURIComponent(publisher)}/${encodeURIComponent(name)}`, { cache: "no-store" }).then(async (response) => response.ok ? response.json() as Promise<OpenVsxExtension & { allVersions?: Record<string, string> }> : null).catch(() => null);
   if (!openvsx) return [];
   const all = Object.keys(openvsx.allVersions || {}).filter(isConcreteVersion);
   const versionValues = all.length ? all : openvsx.version ? [openvsx.version] : [];
@@ -179,8 +189,15 @@ function normalizeOpenVsx(raw: OpenVsxExtension): MarketplaceSearchResult {
 
 async function resolveOpenVsxExtension(extensionId: string): Promise<MarketplaceSearchResult | null> {
   const [publisher, name] = extensionId.split(".", 2);
-  const response = await fetch(`https://open-vsx.org/api/${encodeURIComponent(publisher)}/${encodeURIComponent(name)}`, { cache: "no-store" });
+  const response = await registryFetch(`https://open-vsx.org/api/${encodeURIComponent(publisher)}/${encodeURIComponent(name)}`, { cache: "no-store" });
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Open VSX lookup returned ${response.status}`);
   return normalizeOpenVsx(await response.json() as OpenVsxExtension);
+}
+
+const REGISTRY_TIMEOUT_MS = 3_500;
+
+async function registryFetch(input: RequestInfo | URL, init: RequestInit): Promise<Response> {
+  const signal = AbortSignal.timeout(REGISTRY_TIMEOUT_MS);
+  return fetch(input, { ...init, signal });
 }

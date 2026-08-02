@@ -2,8 +2,12 @@
   color: #14202b !important;
 }
 
-.extensionIcon > span {
+.extensionIcon > .extensionIconFallback {
   color: #ffffff !important;
+}
+
+.inventoryCard .extensionIcon > .extensionIconFallback {
+  color: #14202b !important;
 }
 
 .studyStamp span,

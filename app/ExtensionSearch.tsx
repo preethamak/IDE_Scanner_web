@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ExtensionIcon from "@/app/ExtensionIcon";
 import type { DiscoveryResponse, DiscoveryResult } from "@/lib/types";
 
@@ -18,17 +18,25 @@ export default function ExtensionSearch({ initialQuery = "", onSelect, submitLab
   const [data, setData] = useState<DiscoveryResponse | null>(null);
   const [loading, setLoading] = useState(Boolean(initialQuery));
   const [error, setError] = useState("");
+  const request = useRef<AbortController | null>(null);
 
   async function search(value = query) {
-    const clean = value.trim(); if (!clean) return;
-    setLoading(true); setError("");
+    const clean = value.trim();
+    if (!clean) return;
+    request.current?.abort();
+    const controller = new AbortController();
+    request.current = controller;
+    setLoading(true); setError(""); setData(null);
     try {
-      const response = await fetch(`/api/marketplace/search?q=${encodeURIComponent(clean)}`, { cache: "no-store" });
+      const response = await fetch(`/api/marketplace/search?q=${encodeURIComponent(clean)}`, { cache: "no-store", signal: controller.signal });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || "Registry search is unavailable.");
-      setData(body as DiscoveryResponse);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "Registry search is unavailable."); }
-    finally { setLoading(false); }
+      if (!controller.signal.aborted) setData(body as DiscoveryResponse);
+    } catch (cause) {
+      if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : "Registry search is unavailable.");
+    } finally {
+      if (!controller.signal.aborted) setLoading(false);
+    }
   }
   useEffect(() => { if (!initialQuery) return; const timer = window.setTimeout(() => { void search(initialQuery); }, 0); return () => window.clearTimeout(timer); // initial route query is an external navigation input
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -40,6 +48,7 @@ export default function ExtensionSearch({ initialQuery = "", onSelect, submitLab
       <Search size={18}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name, publisher.extension, Marketplace URL, or VS Code URI" aria-label="Find an extension"/>
       <button className="button buttonDark" disabled={loading}>{loading ? "Searching…" : submitLabel}</button>
     </form>
+    {loading ? <p className="discoveryLoading" role="status">Searching the Extension Registry…</p> : null}
     {error ? <p className="discoveryError">{error}</p> : null}
     {data ? <div className="discoveryResults" aria-live="polite">
       {data.exact_match ? <ResultGroup label={data.exact_match.match_reason === "exact_identity" ? "Exact identity match" : "Exact extension name"} items={[data.exact_match]} action={open}/> : <p className="exactMiss">No exact match for <code>{data.query}</code>. Related extensions are shown below; choose a release explicitly.</p>}

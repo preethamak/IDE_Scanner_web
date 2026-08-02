@@ -52,6 +52,32 @@ test("Registry cards lead to the public extension profile", async ({ page }) => 
   await expect(profile).toHaveAttribute("href", "/extensions/GitHub.copilot");
 });
 
+test("Registry search clears old results while a new request is pending", async ({ page }) => {
+  let releaseSecondSearch: (() => void) | undefined;
+  await page.route("**/api/marketplace/search?*", async (route) => {
+    const query = new URL(route.request().url()).searchParams.get("q");
+    const item = (name: string, extension_id: string) => ({ extension_id, display_name: name, publisher: "publisher", publisher_display_name: "Publisher", publisher_verified: false, short_description: "Test extension", version: "1.0.0", last_updated: "", install_count: 0, rating_average: 0, rating_count: 0, icon_url: "", registry: "vs-marketplace", normalized_identity: extension_id, source: "registry", match_reason: "exact_name", icon_state: "fallback" });
+    const respond = (name: string, extension_id: string) => route.fulfill({ json: { query, normalized_query: undefined, exact_match: item(name, extension_id), matching_extensions: [], related_extensions: [], results: [item(name, extension_id)], source: "registry" } });
+    if (query === "second") {
+      await new Promise<void>((resolve) => { releaseSecondSearch = () => { respond("Second result", "publisher.second"); resolve(); }; });
+      return;
+    }
+    await respond("First result", "publisher.first");
+  });
+  await page.goto("/registry");
+  const search = page.getByRole("textbox", { name: "Find an extension" });
+  await search.fill("first");
+  await page.getByRole("button", { name: "Search extensions" }).click();
+  await expect(page.getByRole("link", { name: /Open First result extension profile/i })).toBeVisible();
+
+  await search.fill("second");
+  await page.getByRole("button", { name: "Search extensions" }).click();
+  await expect(page.getByRole("status", { name: "Searching the Extension Registry…" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Open First result extension profile/i })).toHaveCount(0);
+  releaseSecondSearch?.();
+  await expect(page.getByRole("link", { name: /Open Second result extension profile/i })).toBeVisible();
+});
+
 test("phone header keeps brand, navigation, and sign-in on one readable row", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/extensions/GitHub.copilot");
