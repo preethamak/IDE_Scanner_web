@@ -5,6 +5,7 @@ export type ExtensionPageModel = {
   version: string;
   hasPublicReport: boolean;
   reportHref: string;
+  fullAnalysisHref: string;
   decision: "allow" | "review" | "block" | "incomplete" | "not-scanned";
 };
 
@@ -12,11 +13,13 @@ export function extensionPageModel(extensionId: string, version: string, scan: E
   const id = encodeURIComponent(extensionId);
   const release = encodeURIComponent(version);
   const scanId = scan?.id ? String(scan.id) : "";
+  const fullAnalysisHref = scanId ? `/extensions/${id}/versions/${release}/scans/${encodeURIComponent(scanId)}` : `/extensions/${id}/versions/${release}`;
   return {
     extensionId,
     version,
     hasPublicReport: Boolean(scanId),
-    reportHref: scanId ? `/extensions/${id}/versions/${release}/scans/${encodeURIComponent(scanId)}` : `/extensions/${id}/versions/${release}`,
+    reportHref: `/extensions/${id}/versions/${release}`,
+    fullAnalysisHref,
     decision: scanDecision(scan?.decision),
   };
 }

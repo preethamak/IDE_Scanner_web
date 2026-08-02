@@ -7,6 +7,7 @@ describe("extensionPageModel", () => {
       hasPublicReport: false,
       decision: "not-scanned",
       reportHref: "/extensions/GitHub.copilot/versions/1.388.0",
+      fullAnalysisHref: "/extensions/GitHub.copilot/versions/1.388.0",
     });
   });
 
@@ -14,7 +15,8 @@ describe("extensionPageModel", () => {
     expect(extensionPageModel("GitHub.copilot", "1.388.0", { id: "scan/one", decision: "review" })).toMatchObject({
       hasPublicReport: true,
       decision: "review",
-      reportHref: "/extensions/GitHub.copilot/versions/1.388.0/scans/scan%2Fone",
+      reportHref: "/extensions/GitHub.copilot/versions/1.388.0",
+      fullAnalysisHref: "/extensions/GitHub.copilot/versions/1.388.0/scans/scan%2Fone",
     });
   });
 });

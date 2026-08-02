@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import AnalysisReport from "@/app/ExtensionDossier";
 import { getExtensionProduct, getVersionScanProduct } from "@/lib/productData";
 import { parseExtensionDossierData } from "@/lib/reportContract";
@@ -12,6 +12,8 @@ export default async function ImmutableScanPage({ params }: { params: Promise<{ 
   const version = decodeURIComponent(route.version);
   const scanId = decodeURIComponent(route.scanId);
   const db = await serverDb();
+  const claims = await db.auth.getClaims();
+  if (!claims.data?.claims) redirect(`/account?next=${encodeURIComponent(`/extensions/${route.id}/versions/${route.version}/scans/${route.scanId}`)}`);
   const [extensionProduct, versionProduct] = await Promise.all([getExtensionProduct(id, db), getVersionScanProduct(id, version, scanId, db)]);
   if (!extensionProduct || !versionProduct?.scan) notFound();
   let data = null;
