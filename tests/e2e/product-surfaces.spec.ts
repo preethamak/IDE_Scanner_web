@@ -52,6 +52,19 @@ test("Registry cards lead to the public extension profile", async ({ page }) => 
   await expect(profile).toHaveAttribute("href", "/extensions/GitHub.copilot");
 });
 
+test("phone header keeps brand, navigation, and sign-in on one readable row", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/extensions/GitHub.copilot");
+  const navigation = page.getByRole("button", { name: "Open navigation" });
+  const signIn = page.getByRole("link", { name: /Sign in/ });
+  await expect(navigation).toBeVisible();
+  await expect(signIn).toBeVisible();
+  const [navigationBox, signInBox] = await Promise.all([navigation.boundingBox(), signIn.boundingBox()]);
+  expect(navigationBox?.y).toBe(signInBox?.y);
+  expect((navigationBox?.x || 0) + (navigationBox?.width || 0)).toBeLessThan(signInBox?.x || 0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+});
+
 test("release comparison discloses and verifies its analysis baseline", async ({ page }) => {
   await page.goto("/extensions/GitHub.copilot/versions/1.388.0#changes");
   await expect(page.getByText("What changed in 1.388.0")).toBeVisible();

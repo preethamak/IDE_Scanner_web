@@ -1200,15 +1200,6 @@ code, pre { font-family: var(--mono); }
 }
 
 @media (max-width: 760px) {
-  .siteHeader { position: relative; }
-  .headerInner { width: calc(100% - 28px); grid-template-columns: 1fr auto; padding: 12px 0; }
-  .primaryNav { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; overflow-x: auto; }
-  .navMenu { display: none; }
-  .primaryNav a { white-space: nowrap; }
-  .headerCommands { gap: 6px; }
-  .headerAccountSlot { width: 40px; }
-  .headerSignIn { width: 40px; overflow: hidden; font-size: 0; }
-  .headerSignIn::before { content: "Sign in"; font-size: 10px; }
   .homeHero { min-height: auto; padding-top: 48px; }
   .heroCopyBlock h1 { font-size: 49px; }
   .heroCopyBlock > p { font-size: 16px; }
