@@ -8,6 +8,7 @@ import WatchExtension from "@/app/WatchExtension";
 import ExtensionIcon from "@/app/ExtensionIcon";
 import ProfileReadme from "@/app/ProfileReadme";
 import type { ReportFile } from "@/lib/reportContract";
+import { extensionPageModel, scanDecision } from "@/lib/extensionPageModel";
 
 export const dynamic = "force-dynamic";
 
@@ -21,10 +22,9 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
   const versionProduct = version === "unknown" ? null : await getVersionProduct(product.extension.id, version, db);
   const scan = (versionProduct?.scan as Record<string, unknown> | null | undefined) || product.scan;
   const files = (versionProduct?.files || []) as ReportFile[];
-  const decision = decisionState(scan?.decision);
-  const reportHref = scan?.id
-    ? `/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(version)}/scans/${encodeURIComponent(String(scan.id))}`
-    : `/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(version)}`;
+  const pageModel = extensionPageModel(product.extension.id, version, scan);
+  const decision = pageModel.decision;
+  const reportHref = pageModel.reportHref;
   const publisherReadmeHref = product.extension.registry === "openvsx"
     ? `https://open-vsx.org/extension/${encodeURIComponent(product.extension.publisher)}/${encodeURIComponent(product.extension.name)}`
     : `https://marketplace.visualstudio.com/items?itemName=${encodeURIComponent(product.extension.id)}`;
@@ -39,7 +39,7 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
   </main>;
 }
 
-function decisionState(value: unknown): "allow" | "review" | "block" | "incomplete" | "not-assessed" { const decision = String(value || "").toLowerCase(); return ["allow", "review", "block", "incomplete"].includes(decision) ? decision as "allow" | "review" | "block" | "incomplete" : "not-assessed"; }
+function decisionState(value: unknown) { return scanDecision(value); }
 function decisionLabel(value: ReturnType<typeof decisionState>): string { return value === "allow" ? "NO KNOWN CONCERN" : value === "review" ? "REVIEW NEEDED" : value === "block" ? "DO NOT INSTALL" : value === "incomplete" ? "ANALYSIS INCOMPLETE" : "NOT SCANNED"; }
 function decisionHeadline(value: ReturnType<typeof decisionState>): string { return value === "allow" ? "No known concern." : value === "review" ? "Review this version before installing." : value === "block" ? "Do not install this version." : value === "incomplete" ? "The scan needs to finish." : "This version has not been scanned yet."; }
 function formatCount(value: number): string { return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value); }

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { LoaderCircle, ScanSearch } from "lucide-react";
 import Link from "next/link";
 import { trackProductEvent } from "@/lib/analyticsEvents";
+import { extensionPageModel } from "@/lib/extensionPageModel";
 
 type ScanState = "idle" | "loading" | "queued" | "running" | "complete" | "incomplete" | "error";
 type Health = { accepting_requests?: boolean; status?: "ready" | "runner_delayed" | "configuration_unavailable" };
@@ -91,7 +92,7 @@ export default function DeepScanButton({ extensionId, version, showReportLink = 
       if (!response.ok) { setState("error"); setMessage(body.error || "Scan progress is unavailable."); window.clearInterval(timer); return; }
       if (["complete", "incomplete"].includes(String(body.status))) {
         const terminal = body.status === "incomplete" ? "incomplete" : "complete";
-        setState(terminal); setReportUrl(String(body.report_url || `/extensions/${encodeURIComponent(extensionId)}/versions/${encodeURIComponent(version)}`));
+        setState(terminal); setReportUrl(String(body.report_url || extensionPageModel(extensionId, version, null).reportHref));
         setMessage(terminal === "complete" ? "Deep Scan complete. Your Analysis Report is ready." : "Deep Scan is incomplete. Review the missing checks before making a trust decision.");
         window.clearInterval(timer); router.refresh();
       }
@@ -129,7 +130,7 @@ export default function DeepScanButton({ extensionId, version, showReportLink = 
       return;
     }
     if (!response.ok) { setState("error"); setMessage(body.error || "Deep Scan is temporarily unavailable."); return; }
-    if (body.status === "complete") { setState("complete"); setReportUrl(String(body.report_url || `/extensions/${encodeURIComponent(extensionId)}/versions/${encodeURIComponent(version)}`)); setMessage("A completed Deep Scan already exists for this version."); router.refresh(); return; }
+    if (body.status === "complete") { setState("complete"); setReportUrl(String(body.report_url || extensionPageModel(extensionId, version, null).reportHref)); setMessage("A completed Deep Scan already exists for this version."); router.refresh(); return; }
     setJobId(String(body.id || "")); setState(body.status === "running" ? "running" : "queued"); setMessage("Runner started. Preparing the exact published artifact for analysis.");
   }
 

@@ -24,7 +24,10 @@ test("public reports expose evidence export and an account-aware monitoring acti
 test("Registry search leads with the public profile", async ({ page }) => {
   await page.route("**/api/marketplace/search?q=GitHub.copilot", (route) => route.fulfill({ contentType: "application/json", body: JSON.stringify({ query: "GitHub.copilot", exact_match: { extension_id: "GitHub.copilot", version: "1.388.0", display_name: "GitHub Copilot", publisher: "GitHub", publisher_verified: true, registry: "vs-marketplace", match_reason: "exact_identity" }, matching_extensions: [], related_extensions: [] }) }));
   await page.goto("/registry?q=GitHub.copilot");
-  await expect(page.getByRole("link", { name: /Open GitHub Copilot extension profile/i })).toHaveAttribute("href", "/extensions/GitHub.copilot");
+  const profile = page.getByRole("link", { name: /Open GitHub Copilot extension profile/i });
+  await expect(profile).toHaveAttribute("href", "/extensions/GitHub.copilot");
+  await expect(profile).not.toHaveClass(/primary/);
+  await expect(profile).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
 });
 
 test("signed-out Deep Scan remains connected to account creation if availability cannot be checked", async ({ page }) => {
