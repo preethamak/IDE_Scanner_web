@@ -272,6 +272,26 @@
 /* ExtensionIcon `logo` size — matches the legacy .extensionLogo (monitor/workspace
    lists) so those can adopt the shared component and its onError→initials fallback. */
 .extensionIcon-logo { width: 40px; height: 40px; border-radius: 9px; font-size: 10px; }
+
+/* Workspace gateway — public discovery stays separate from team action. */
+.workspaceGateway { display: grid; grid-template-columns: minmax(0, .8fr) minmax(520px, 1.2fr); gap: clamp(44px, 7vw, 96px); align-items: center; min-height: calc(100vh - 58px); }
+.workspaceGatewayIntro { max-width: 570px; }
+.workspaceGatewayIntro > span, .workspaceQueuePreview header > div > span { color: var(--acid-dark); font: 800 10px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.workspaceGatewayIntro h1 { margin: 18px 0; font-size: clamp(42px, 4vw, 58px); line-height: 1.02; letter-spacing: -.045em; }
+.workspaceGatewayIntro p { margin: 0; color: var(--muted); font-size: 17px; line-height: 1.6; }
+.workspaceGatewayActions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.workspaceGatewayIntro small { display: block; margin-top: 18px; color: var(--muted); font-size: 12px; }
+.workspaceQueuePreview { overflow: hidden; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--surface); box-shadow: 0 22px 56px rgba(20,32,43,.1); }
+.workspaceQueuePreview header { display: flex; justify-content: space-between; gap: 24px; padding: 24px; border-bottom: 1px solid var(--line); }
+.workspaceQueuePreview h2 { margin: 7px 0 0; font-size: 24px; }
+.workspaceQueuePreview header > p { max-width: 230px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.workspacePreviewRows article { display: grid; grid-template-columns: 108px minmax(0, 1fr) 145px 72px; gap: 14px; align-items: center; padding: 19px 24px; border-bottom: 1px solid var(--line); }
+.workspacePreviewRows strong { display: block; font-size: 15px; }.workspacePreviewRows code { color: var(--muted); font-size: 11px; }.workspacePreviewRows p { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.previewStatus { width: max-content; border: 1px solid var(--line-strong); border-radius: 3px; padding: 5px 7px; font: 800 9px var(--mono); text-transform: uppercase; }.previewStatus.review { border-color: #c17b00; color: #8a5900; }.previewStatus.allow { border-color: #16726a; color: #16726a; }.previewStatus.watch { color: var(--muted); }
+.previewOwner { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; }.previewOwner svg { width: 14px; color: var(--acid-dark); }.previewDue { color: var(--muted); font: 700 10px var(--mono); text-transform: uppercase; }
+.workspaceQueuePreview footer { display: flex; align-items: center; gap: 9px; padding: 15px 24px; background: var(--surface-2); color: var(--muted); font-size: 12px; }.workspaceQueuePreview footer svg { width: 16px; color: var(--acid-dark); }
+@media (max-width: 900px) { .workspaceGateway { grid-template-columns: 1fr; min-height: auto; padding: 70px 0; }.workspaceGatewayIntro { max-width: 700px; }.workspacePreviewRows article { grid-template-columns: 104px minmax(0, 1fr) 140px; }.previewDue { display: none; } }
+@media (max-width: 620px) { .workspaceGateway { padding: 42px 0 64px; }.workspaceGatewayIntro h1 { font-size: 40px; }.workspaceQueuePreview header { display: grid; }.workspacePreviewRows article { grid-template-columns: 1fr; gap: 9px; }.previewStatus { grid-row: 1; }.workspacePreviewRows article > div { grid-row: 2; }.previewOwner { grid-row: 3; }.workspaceQueuePreview footer { align-items: flex-start; } }
 /* When .alertExtensionIcon just wraps a shared ExtensionIcon, drop its own chrome. */
 .monitorAlert .alertExtensionIcon { display: contents; border: 0; background: none; }
 

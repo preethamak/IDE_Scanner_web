@@ -5,7 +5,7 @@ const surfaces = [
   ["/registry", /Browse completed extension analysis/i],
   ["/analyze", /Check a file you already have/i],
   ["/cli", /See what is already inside your editor/i],
-  ["/workspace", /Turn extension changes into an evidence queue/i],
+  ["/workspace", /Keep risky extension updates from reaching your team unnoticed/i],
   ["/monitor", /Watch the release/i],
   ["/account", /Keep watching after the first scan/i],
   ["/benchmark", /Regression evidence with its limits intact/i],
@@ -25,6 +25,14 @@ test("Registry search is the primary public route", async ({ page }) => {
   await page.getByRole("textbox", { name: "Search extensions" }).first().fill("vyper guard");
   await page.getByRole("button", { name: /Search extensions/i }).first().click({ noWaitAfter: true });
   await expect(page).toHaveURL(/\/registry\?q=vyper(?:%20|\+)guard/);
+});
+
+test("Workspace explains the team decision outcome before sign-in", async ({ page }) => {
+  await page.goto("/workspace");
+  await expect(page.getByRole("heading", { name: "Your team’s next decisions" })).toBeVisible();
+  await expect(page.getByText("GitHub Copilot", { exact: false }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "Create team workspace" })).toHaveAttribute("href", "/account?next=/workspace");
+  await expect(page.getByRole("link", { name: "Explore Extension Registry" })).toHaveAttribute("href", "/registry");
 });
 
 test("legacy discovery routes preserve the customer journey", async ({ page }) => {
