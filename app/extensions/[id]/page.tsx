@@ -1,21 +1,26 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BadgeCheck, Box, ChevronRight, Download, GitBranch, ShieldCheck } from "lucide-react";
-import { getExtensionProduct } from "@/lib/productData";
+import { BadgeCheck, ChevronRight, Download } from "lucide-react";
+import { getExtensionProduct, getVersionProduct } from "@/lib/productData";
 import { serverDb } from "@/lib/supabaseServer";
 import DeepScanButton from "@/app/DeepScanButton";
 import WatchExtension from "@/app/WatchExtension";
 import ExtensionIcon from "@/app/ExtensionIcon";
+import ProfileReadme from "@/app/ProfileReadme";
+import type { ReportFile } from "@/lib/reportContract";
 
 export const dynamic = "force-dynamic";
 
 export default async function ExtensionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const product = await getExtensionProduct(decodeURIComponent(id), await serverDb());
+  const db = await serverDb();
+  const product = await getExtensionProduct(decodeURIComponent(id), db);
   if (!product) notFound();
   const latest = product.versions.find((item) => item.is_latest) || product.versions[0];
   const version = String(latest?.version || product.extension.latest_version || "unknown");
-  const scan = product.scan;
+  const versionProduct = version === "unknown" ? null : await getVersionProduct(product.extension.id, version, db);
+  const scan = (versionProduct?.scan as Record<string, unknown> | null | undefined) || product.scan;
+  const files = (versionProduct?.files || []) as ReportFile[];
   const decision = decisionState(scan?.decision);
   const reportHref = scan?.id
     ? `/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(version)}/scans/${encodeURIComponent(String(scan.id))}`
@@ -23,42 +28,18 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
   const publisherReadmeHref = product.extension.registry === "openvsx"
     ? `https://open-vsx.org/extension/${encodeURIComponent(product.extension.publisher)}/${encodeURIComponent(product.extension.name)}`
     : `https://marketplace.visualstudio.com/items?itemName=${encodeURIComponent(product.extension.id)}`;
-  return <main className="productPage">
-    <section className="packageHeader">
-      <div className="packageIdentity">
-        <ExtensionIcon iconUrl={product.extension.icon_url} publisher={product.extension.publisher} name={product.extension.display_name} size="lg"/>
-        <div><div className="registryLine"><span>{product.extension.registry === "openvsx" ? "Open VSX" : "VS Marketplace"}</span><ChevronRight size={13}/><code>{product.extension.id}</code></div><h1>{product.extension.display_name}</h1><p>{product.extension.description}</p></div>
-      </div>
-      <div className="packageActions">{scan ? <><Link className="button buttonDark" href={reportHref}>Read Analysis Report</Link><DeepScanButton extensionId={product.extension.id} version={version} showReportLink={false}/></> : <DeepScanButton extensionId={product.extension.id} version={version}/>}<a className="button buttonQuiet" href={`vscode:extension/${product.extension.id}`}>Install <Download size={16}/></a></div>
-    </section>
-
-    <section className="packageFacts">
-      <div><span>Security outcome</span><strong className={`decision severityBadge ${decision}`}>{decisionLabel(decision)}</strong></div>
-      <div><span>Latest version</span><strong>{version}</strong></div>
-      <div><span>Publisher</span><strong>{product.extension.publisher}{product.extension.publisher_verified ? <BadgeCheck size={15}/> : null}</strong></div>
-      <div><span>Installs</span><strong>{formatCount(product.extension.installs)}</strong></div>
-      <div><span>Deep Scan</span><strong>{latest?.scan_state === "complete" ? "Complete" : "Available on request"}</strong></div>
-      <div><span>Analysis coverage</span><strong>{scan ? `${Number(scan.coverage_percent ?? 0)}%` : "Not assessed"}</strong></div>
-      <div><span>Report status</span><strong>{scan ? "Available" : "Not assessed"}</strong></div>
-    </section>
-
-    <nav className="packageTabs" aria-label="Extension profile"><a href="#overview">Overview</a><a href="#versions">Versions <b>{product.versions.length}</b></a>{scan ? <Link href={reportHref}>Full report</Link> : null}<a href="#readme">README</a><a href="#trust">Trust</a></nav>
-
-    <div className="packageLayout">
-      <div className="packageMain">
-        <section id="overview" className="productSection"><div className="productSectionHead"><span>Current release</span><h2>{scan ? decisionHeadline(decision) : "Deep analysis has not run for this release."}</h2><p>{scan ? String(scan.decision_reason || "Review the recorded evidence before installation.") : "Publisher, adoption and release information remain available below. Behavior and artifact-level security fields will appear after the exact version completes Deep Scan."}</p></div>{scan ? <div className="overviewDecision"><ShieldCheck size={22}/><div><strong>Analysis applies only to {product.extension.id}@{version}</strong><span>Artifact <code>{String(scan.artifact_sha256 || "hash unavailable").slice(0, 18)}</code> · ruleset {String(scan.ruleset_version || "unknown")}</span></div></div> : <div className="unassessedBand"><Box size={21}/><div><strong>Artifact analysis pending</strong><p>Select Deep Scan to inspect entrypoints, Semgrep paths, YARA indicators, dependencies and artifact integrity without executing extension code.</p></div></div>}</section>
-
-        <section id="versions" className="productSection"><div className="productSectionHead compact"><span>Release history</span><h2>Published versions</h2><p>Each decision belongs to an immutable version and exact artifact hash.</p></div><div className="versionTable"><div className="versionHead"><span>Version</span><span>Decision</span><span/></div>{product.versions.map((item) => { const versionDecision = decisionState(item.decision); return <div className="versionRow" key={String(item.version)}><strong>{String(item.version)}</strong><span className={`scanState decisionState ${versionDecision}`}>{versionDecision === "not-assessed" ? "NOT ANALYZED" : decisionLabel(versionDecision)}</span><Link href={`/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(String(item.version))}`}>Open <ChevronRight size={15}/></Link></div>; })}</div></section>
-
-        <section id="readme" className="productSection"><div className="productSectionHead compact"><span>Publisher documentation</span><h2>README is available without sign-in.</h2><p>Read the publisher’s public documentation before deciding whether to install or request a Deep Scan. This is publisher content, not scanner evidence.</p></div><a className="button buttonQuiet" href={publisherReadmeHref} target="_blank" rel="noreferrer">Open publisher README <ChevronRight size={15}/></a></section>
-        <section id="trust" className="productSection"><div className="productSectionHead compact"><span>Trust boundaries</span><h2>What identity can and cannot prove</h2></div><div className="trustRows"><article><BadgeCheck/><div><strong>Publisher identity</strong><p>{product.extension.publisher_verified ? "The registry reports a verified publisher." : "The registry does not report a verified publisher."} Verification does not prove artifact behavior.</p></div></article><article><GitBranch/><div><strong>Version-specific analysis</strong><p>Future releases can add new permissions, dependencies or executable behavior. Reassess every artifact change.</p></div></article><article><Box/><div><strong>Release context</strong><p>Popularity and maintenance help establish context but never override malicious or correlated evidence.</p></div></article></div></section>
-      </div>
-      <aside className="packageAside" id="about"><div><span>Package</span><dl><dt>Identifier</dt><dd><code>{product.extension.id}</code></dd><dt>Registry</dt><dd>{product.extension.registry}</dd><dt>Rating</dt><dd>{product.extension.rating || "Not reported"}</dd><dt>Repository</dt><dd>{product.extension.repository_url ? <a href={product.extension.repository_url}>Open source</a> : "Not declared"}</dd></dl></div><div><span>Analysis promise</span><p>No extension code is executed. A completed Deep Scan records exact provider coverage and becomes incomplete when a required analyzer fails.</p><Link href="/metrics">Read the methodology <ChevronRight size={14}/></Link></div><div><span>Monitoring</span><p>Watch this extension to review future release changes from your workspace.</p><WatchExtension extensionId={product.extension.id}/></div></aside>
-    </div>
+  return <main className="extensionProfile">
+    <header className="profileHeader"><div className="profileIdentity"><ExtensionIcon iconUrl={product.extension.icon_url} publisher={product.extension.publisher} name={product.extension.display_name} size="lg"/><div><span>{product.extension.registry === "openvsx" ? "Open VSX" : "VS Marketplace"}</span><h1>{product.extension.display_name}</h1><code>{product.extension.id}</code><p>{product.extension.description}</p></div></div><div className="profileActions">{scan ? <Link className="button buttonDark" href={reportHref}>Read Analysis Report</Link> : <DeepScanButton extensionId={product.extension.id} version={version}/>}<a className="button buttonQuiet" href={`vscode:extension/${product.extension.id}`}>Install <Download size={16}/></a></div></header>
+    <div className="profileFacts"><span>Publisher <strong>{product.extension.publisher}{product.extension.publisher_verified ? <BadgeCheck size={15}/> : null}</strong></span><span>Installs <strong>{formatCount(product.extension.installs)}</strong></span><span>Latest version <strong>{version}</strong></span></div>
+    <div className="profileLayout"><div>
+      <section id="overview" className="profileSection"><header><span>Current release</span><h2>{scan ? decisionHeadline(decision) : "This version has not been scanned yet."}</h2></header><p>{scan ? String(scan.decision_reason || "Review the Analysis Report before installing.") : "Read the README and version history, then request a security scan when you are ready."}</p>{scan ? <Link className="profileReportLink" href={reportHref}>Read Analysis Report <ChevronRight size={16}/></Link> : null}</section>
+      <ProfileReadme extensionId={product.extension.id} version={version} scanId={String(scan?.id || "")} files={files} documentationUrl={publisherReadmeHref}/>
+      <section id="versions" className="profileSection"><header><span>Versions</span><h2>Release history</h2></header><div className="versionTable"><div className="versionHead"><span>Version</span><span>Scan status</span><span/></div>{product.versions.map((item) => { const versionDecision = decisionState(item.decision); const itemVersion = String(item.version); return <div className="versionRow" key={itemVersion}><strong>{itemVersion}</strong><span className={`scanState decisionState ${versionDecision}`}>{versionDecision === "not-assessed" ? "NOT SCANNED" : decisionLabel(versionDecision)}</span><Link href={`/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(itemVersion)}`}>{versionDecision === "not-assessed" ? "View version" : "View report"} <ChevronRight size={15}/></Link></div>; })}</div></section>
+    </div><aside className="profileAside"><div><span>Package</span><dl><dt>Registry</dt><dd>{product.extension.registry === "openvsx" ? "Open VSX" : "VS Marketplace"}</dd><dt>Rating</dt><dd>{product.extension.rating || "Not reported"}</dd><dt>Repository</dt><dd>{product.extension.repository_url ? <a href={product.extension.repository_url}>Open source</a> : "Not declared"}</dd></dl></div><div><span>Watch releases</span><p>Get a reminder when this extension publishes a new version.</p><WatchExtension extensionId={product.extension.id}/></div></aside></div>
   </main>;
 }
 
 function decisionState(value: unknown): "allow" | "review" | "block" | "incomplete" | "not-assessed" { const decision = String(value || "").toLowerCase(); return ["allow", "review", "block", "incomplete"].includes(decision) ? decision as "allow" | "review" | "block" | "incomplete" : "not-assessed"; }
-function decisionLabel(value: ReturnType<typeof decisionState>): string { return value === "allow" ? "NO KNOWN CONCERN" : value === "review" ? "REVIEW NEEDED" : value === "block" ? "DO NOT INSTALL" : value === "incomplete" ? "ANALYSIS INCOMPLETE" : "NOT ANALYZED"; }
-function decisionHeadline(value: ReturnType<typeof decisionState>): string { return value === "allow" ? "No evidence currently requires review." : value === "review" ? "Review decision-relevant behavior before installation." : value === "block" ? "This exact artifact should not be installed." : value === "incomplete" ? "Analysis must complete before an approval decision." : "Analysis has not assigned an install decision yet."; }
+function decisionLabel(value: ReturnType<typeof decisionState>): string { return value === "allow" ? "NO KNOWN CONCERN" : value === "review" ? "REVIEW NEEDED" : value === "block" ? "DO NOT INSTALL" : value === "incomplete" ? "ANALYSIS INCOMPLETE" : "NOT SCANNED"; }
+function decisionHeadline(value: ReturnType<typeof decisionState>): string { return value === "allow" ? "No known concern." : value === "review" ? "Review this version before installing." : value === "block" ? "Do not install this version." : value === "incomplete" ? "The scan needs to finish." : "This version has not been scanned yet."; }
 function formatCount(value: number): string { return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value); }

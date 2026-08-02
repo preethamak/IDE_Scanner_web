@@ -539,7 +539,9 @@ code, pre { font-family: var(--mono); }
 
 /* In-place extension dossier */
 .dossierPage { width: min(1320px, calc(100% - 48px)); margin: 0 auto; padding: 28px 0 100px; }
-.dossierMast { display: flex; justify-content: space-between; gap: 40px; align-items: end; border-bottom: 1px solid var(--ink); padding: 18px 0 26px; }
+.dossierMast { display: flex; justify-content: space-between; gap: 40px; align-items: start; border-bottom: 1px solid var(--ink); padding: 18px 0 26px; }
+.dossierBack { display: inline-flex; margin-bottom: 14px; color: var(--muted); font-size: 12px; font-weight: 700; text-decoration: none; }
+.dossierBack:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 .dossierHeaderFacts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; margin: 14px 0; }.dossierHeaderFacts div { min-width: 0; }.dossierHeaderFacts dt { color: var(--muted); font: 700 10px var(--mono); text-transform: uppercase; }.dossierHeaderFacts dd { margin: 3px 0 0; overflow-wrap: anywhere; font-size: 12px; line-height: 1.4; }.dossierHeaderFacts code { font-size: 10px; }
 .dossierIdentity { display: flex; align-items: center; gap: 16px; min-width: 0; }.dossierIdentity > div > span, .dossierHead > span, .dossierMast > div > span { color: var(--acid-dark); font: 800 10px var(--mono); letter-spacing: 0; text-transform: uppercase; }
 .dossierIcon { position: relative; display: grid; flex: 0 0 auto; place-items: center; width: 58px; height: 58px; overflow: hidden; border-radius: 6px; background: var(--ink); color: var(--acid); font: 800 13px var(--mono); }.dossierIcon img { position: absolute; inset: 0; width: 100%; height: 100%; background: white; object-fit: cover; }
@@ -1150,7 +1152,7 @@ code, pre { font-family: var(--mono); }
 .pageHero h1 { margin: 10px 0; font-size: 48px; }
 .eyebrow { color: var(--acid-dark); font-family: var(--mono); font-size: 10px; font-weight: 800; text-transform: uppercase; }
 .heroCopy { max-width: 760px; margin: 0; }
-.heroAction, .primary, .primaryAction, .secondaryAction { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; border: 1px solid var(--ink); border-radius: 5px; background: var(--ink); color: white; padding: 0 14px; font-weight: 680; }
+.heroAction, .primaryAction, .secondaryAction { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; border: 1px solid var(--ink); border-radius: 5px; background: var(--ink); color: white; padding: 0 14px; font-weight: 680; }
 .secondaryAction { background: white; color: var(--ink); }
 
 .intelligenceScores { scroll-margin-top: 110px; padding: 64px 0; border-bottom: 1px solid var(--ink); }
@@ -1274,9 +1276,8 @@ code, pre { font-family: var(--mono); }
 .discoveryGroup article strong { font-size: 12px; }.discoveryGroup article code { margin-top: 2px; color: var(--acid-dark); font-size: 9px; }.discoveryGroup article small { margin-top: 3px; color: var(--faint); font-size: 9px; text-transform: capitalize; }
 .discoveryGroup article > a, .discoveryGroup article > button { display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; color: var(--ink); font-size: 10px; font-weight: 750; }
 .discoveryGroup article > button:hover, .discoveryGroup article > a:hover { color: var(--acid-dark); }
-.discoveryActions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; max-width: 280px; }
-.discoveryActions a { color: var(--muted); font-size: 10px; font-weight: 700; text-decoration: none; }
-.discoveryActions a.primary { display: inline-flex; align-items: center; gap: 4px; color: var(--ink); }
+.discoveryProfileLink { display: inline-flex; align-items: center; gap: 4px; color: var(--ink); font-size: 11px; font-weight: 750; text-decoration: none; }
+.discoveryProfileLink:hover { color: var(--acid-dark); }
 .exactMiss, .discoveryError { margin: 12px 0; border-left: 3px solid var(--amber); background: var(--amber-bg); padding: 10px 12px; color: #6c4b0b; font-size: 11px; line-height: 1.45; }.discoveryError { border-color: var(--red); background: var(--red-bg); color: #7b1e25; }
 .extensionIcon { position: relative; display: grid; place-items: center; overflow: hidden; border: 1px solid var(--line); border-radius: 6px; background: linear-gradient(135deg, #17221d, #33453c); color: var(--acid); font-family: var(--mono); font-size: 9px; font-weight: 800; }.extensionIcon img { width: 100%; height: 100%; object-fit: cover; background: white; }.extensionIcon-sm { width: 36px; height: 36px; }.extensionIcon-md { width: 42px; height: 42px; }.extensionIcon-lg { width: 56px; height: 56px; }
 .rawEvidence { max-height: 620px; overflow: auto; border: 1px solid var(--line); border-radius: 5px; background: #17201b; padding: 18px; color: #d7f4dc; font-size: 11px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -1285,6 +1286,35 @@ code, pre { font-family: var(--mono); }
 @media (max-width: 760px) { .extensionSearch form { grid-template-columns: 20px 1fr; }.extensionSearch form .button { grid-column: 1 / -1; width: 100%; }.discoveryGroup article { grid-template-columns: 36px minmax(0, 1fr); padding: 9px 0; }.discoveryGroup article > a, .discoveryGroup article > button, .discoveryActions { grid-column: 2; justify-self: start; }.discoveryActions { justify-content: flex-start; }.exploreNext, .analysisWorkspace { grid-template-columns: 1fr; }.analysisWorkspace > div { border-right: 0; border-bottom: 1px solid var(--line); }.analysisWorkspace > div, .analysisWorkspace > aside { min-height: auto; padding: 22px; }.headerScan span { display: none; } }
 
 .versionIdentity{display:flex;align-items:flex-start;gap:18px}.versionIcon,.versionIconFallback{width:64px;height:64px;border:1px solid var(--line);border-radius:8px;object-fit:cover;flex:0 0 64px}.versionIconFallback{display:grid;place-items:center;background:var(--wash);font:800 15px var(--mono);color:var(--acid-dark)}
+
+/* Extension Registry profile. These selectors are intentionally scoped to this
+   surface so generic page and button styles cannot alter its hierarchy. */
+.extensionProfile { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 42px 0 110px; color: var(--ink); }
+.profileHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 36px; border-bottom: 1px solid var(--line); padding-bottom: 28px; }
+.profileIdentity { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 16px; max-width: 760px; }
+.profileIdentity > div > span, .profileSection > header > span, .profileAside > div > span { display: block; color: var(--acid-dark); font-family: var(--mono); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.profileIdentity h1 { margin: 6px 0 3px; color: var(--ink); font-size: 32px; line-height: 1.12; }
+.profileIdentity code { color: var(--muted); font-size: 13px; }
+.profileIdentity p { margin: 10px 0 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+.profileActions { display: flex; flex: 0 0 auto; align-items: flex-start; gap: 8px; }
+.profileFacts { display: flex; flex-wrap: wrap; gap: 24px; border-bottom: 1px solid var(--line); padding: 14px 0; color: var(--muted); font-size: 12px; }
+.profileFacts span { display: inline-flex; align-items: center; gap: 6px; }
+.profileFacts strong { color: var(--ink); }
+.profileLayout { display: grid; grid-template-columns: minmax(0, 1fr) 230px; gap: 58px; padding-top: 38px; }
+.profileSection { scroll-margin-top: 110px; border-bottom: 1px solid var(--line); padding-bottom: 46px; margin-bottom: 46px; }
+.profileSection h2 { margin: 9px 0 12px; color: var(--ink); font-size: 26px; line-height: 1.2; }
+.profileSection > p { max-width: 720px; margin: 0; color: var(--muted); font-size: 15px; line-height: 1.6; }
+.profileReportLink { display: inline-flex; align-items: center; gap: 5px; margin-top: 18px; color: var(--ink); font-size: 13px; font-weight: 750; text-decoration: underline; text-underline-offset: 4px; }
+.profileReadme .ds-markdown { max-width: 760px; color: var(--ink); font-size: 15px; line-height: 1.65; }
+.profileReadme .ds-markdown h1, .profileReadme .ds-markdown h2, .profileReadme .ds-markdown h3 { color: var(--ink); }
+.profileReadme .ds-markdown img { max-width: 100%; height: auto; }
+.profileAside { display: grid; align-content: start; gap: 28px; }
+.profileAside > div { border-top: 1px solid var(--ink); padding-top: 12px; }
+.profileAside p { margin: 10px 0 14px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.profileAside dl { margin: 15px 0 0; }
+.profileAside dt { margin-top: 12px; color: var(--faint); font-size: 10px; text-transform: uppercase; }
+.profileAside dd { margin: 4px 0 0; color: var(--ink); font-size: 12px; overflow-wrap: anywhere; }
+@media (max-width: 760px) { .extensionProfile { width: calc(100% - 28px); padding-top: 26px; }.profileHeader, .profileLayout { display: grid; grid-template-columns: 1fr; gap: 24px; }.profileActions { flex-wrap: wrap; }.profileFacts { gap: 12px 20px; }.profileAside { grid-template-columns: 1fr; } }
 
 /* Personal security desk: dashboard answers "what now"; monitor answers
    "what do I follow". Severity colors label evidence, never probability. */

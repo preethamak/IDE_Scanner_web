@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 const surfaces = [
   ["/", /The security check before you click Install/i],
   ["/registry", /Browse completed extension analysis/i],
-  ["/analyze", /Inspect an extension before installation/i],
+  ["/analyze", /Check a file you already have/i],
   ["/cli", /See what is already inside your editor/i],
   ["/workspace", /Turn extension changes into an evidence queue/i],
   ["/monitor", /Watch the release/i],
@@ -20,25 +20,25 @@ for (const [path, heading] of surfaces) {
   });
 }
 
-test("Analyze search is the primary public route", async ({ page }) => {
+test("Registry search is the primary public route", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("textbox", { name: "Search extension intelligence" }).first().fill("vyper guard");
-  await page.getByRole("button", { name: /Check extension/i }).first().click({ noWaitAfter: true });
-  await expect(page).toHaveURL(/\/analyze\?q=vyper(?:%20|\+)guard/);
+  await page.getByRole("textbox", { name: "Search extensions" }).first().fill("vyper guard");
+  await page.getByRole("button", { name: /Search extensions/i }).first().click({ noWaitAfter: true });
+  await expect(page).toHaveURL(/\/registry\?q=vyper(?:%20|\+)guard/);
 });
 
 test("legacy discovery routes preserve the customer journey", async ({ page }) => {
   await page.goto("/public-scan");
   await expect(page).toHaveURL(/\/registry$/);
   await page.goto("/catalog?q=vyper%20guard");
-  await expect(page).toHaveURL(/\/analyze\?q=vyper(?:%20|\+)guard/);
+  await expect(page).toHaveURL(/\/registry\?q=vyper(?:%20|\+)guard/);
   await page.goto("/scan?mode=upload");
   await expect(page).toHaveURL(/\/analyze\?mode=upload/);
 });
 
 test("extension profile and report use one current outcome", async ({ page }) => {
   await page.goto("/extensions/GitHub.copilot");
-  await expect(page.getByText("Security outcome", { exact: true })).toBeVisible();
+  await expect(page.getByText("Scan result", { exact: true })).toBeVisible();
   await expect(page.getByText("REVIEW NEEDED", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("Primary severity", { exact: true })).toHaveCount(0);
   await page.goto("/extensions/GitHub.copilot/versions/1.388.0");

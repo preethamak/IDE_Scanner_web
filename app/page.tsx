@@ -46,7 +46,7 @@ export default async function HomePage() {
         <div className={styles.popularSearches} aria-label="Popular extension searches">
           <span>Popular searches</span>
           <div>
-            {popularSearches.map(([label, query]) => <Link key={query} href={`/analyze?q=${encodeURIComponent(query)}`}>{label}</Link>)}
+            {popularSearches.map(([label, query]) => <Link key={query} href={`/registry?q=${encodeURIComponent(query)}`}>{label}</Link>)}
           </div>
         </div>
       </div>
@@ -162,8 +162,8 @@ export default async function HomePage() {
       <h2>Make every extension a decision—not a guess.</h2>
       <p>Search public extension intelligence before the next install, then keep watching what changes.</p>
       <div className={styles.closingActions}>
-        <Link className={styles.primaryButton} href="/analyze">Check an extension <ArrowRight /></Link>
-        <Link className={styles.secondaryButton} href="/registry">Browse Analysis Reports <ArrowUpRight /></Link>
+        <Link className={styles.primaryButton} href="/registry">Search extensions <ArrowRight /></Link>
+        <Link className={styles.secondaryButton} href="/registry">Browse Extension Registry <ArrowUpRight /></Link>
       </div>
     </section>
   </main>;

@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 
 const directLinks = [
   ["/registry", "Extension Registry", Boxes],
-  ["/analyze", "Analyze", ScanSearch],
+  ["/analyze", "Analyze a file", ScanSearch],
   ["/cli", "CLI", TerminalSquare],
   ["/monitor", "Monitor", BellRing],
 ] as const;

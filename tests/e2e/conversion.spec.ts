@@ -21,11 +21,10 @@ test("public reports expose evidence export and an account-aware monitoring acti
   await expect(page.getByRole("link", { name: /Export evidence/i })).toHaveAttribute("href", /\/api\/extensions\/GitHub\.copilot\/versions\/1\.388\.0\/export/);
 });
 
-test("anonymous Analyze results lead with the public profile and preserve the exact-release sign-in target", async ({ page }) => {
+test("Registry search leads with the public profile", async ({ page }) => {
   await page.route("**/api/marketplace/search?q=GitHub.copilot", (route) => route.fulfill({ contentType: "application/json", body: JSON.stringify({ query: "GitHub.copilot", exact_match: { extension_id: "GitHub.copilot", version: "1.388.0", display_name: "GitHub Copilot", publisher: "GitHub", publisher_verified: true, registry: "vs-marketplace", match_reason: "exact_identity" }, matching_extensions: [], related_extensions: [] }) }));
-  await page.goto("/analyze?q=GitHub.copilot");
-  await expect(page.getByRole("link", { name: /Open extension profile/i })).toHaveAttribute("href", "/extensions/GitHub.copilot");
-  await expect(page.getByRole("link", { name: /Sign in to Deep Scan/i })).toHaveAttribute("href", "/account?next=%2Fextensions%2FGitHub.copilot%2Fversions%2F1.388.0");
+  await page.goto("/registry?q=GitHub.copilot");
+  await expect(page.getByRole("link", { name: /Open GitHub Copilot extension profile/i })).toHaveAttribute("href", "/extensions/GitHub.copilot");
 });
 
 test("signed-out Deep Scan remains connected to account creation if availability cannot be checked", async ({ page }) => {

@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import ExtensionIcon from "@/app/ExtensionIcon";
-import { browserDb } from "@/lib/supabase";
 import type { DiscoveryResponse, DiscoveryResult } from "@/lib/types";
 
 type Props = {
@@ -19,8 +18,6 @@ export default function ExtensionSearch({ initialQuery = "", onSelect, submitLab
   const [data, setData] = useState<DiscoveryResponse | null>(null);
   const [loading, setLoading] = useState(Boolean(initialQuery));
   const [error, setError] = useState("");
-  const db = useMemo(() => browserDb(), []);
-  const [signedIn, setSignedIn] = useState<boolean | null>(null);
 
   async function search(value = query) {
     const clean = value.trim(); if (!clean) return;
@@ -36,13 +33,8 @@ export default function ExtensionSearch({ initialQuery = "", onSelect, submitLab
   useEffect(() => { if (!initialQuery) return; const timer = window.setTimeout(() => { void search(initialQuery); }, 0); return () => window.clearTimeout(timer); // initial route query is an external navigation input
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuery]);
-  useEffect(() => {
-    if (!db) { const timer = window.setTimeout(() => setSignedIn(false), 0); return () => window.clearTimeout(timer); }
-    void db.auth.getUser().then(({ data }) => setSignedIn(Boolean(data.user))).catch(() => setSignedIn(false));
-  }, [db]);
   const profileHref = (item: DiscoveryResult) => `/extensions/${encodeURIComponent(item.extension_id)}`;
-  const exactVersionHref = (item: DiscoveryResult) => `/extensions/${encodeURIComponent(item.extension_id)}/versions/${encodeURIComponent(item.version)}`;
-  const open = (item: DiscoveryResult) => onSelect ? <button type="button" onClick={() => onSelect(item)}>Choose release <ArrowRight size={15}/></button> : <div className="discoveryActions"><Link className="primary" href={profileHref(item)}>Open extension profile <ArrowRight size={15}/></Link><Link href={signedIn === false ? `/account?next=${encodeURIComponent(exactVersionHref(item))}` : exactVersionHref(item)}>{signedIn === false ? "Sign in to Deep Scan" : "Open exact release"}</Link><Link href={`/monitor?extension=${encodeURIComponent(item.extension_id)}`}>Monitor</Link></div>;
+  const open = (item: DiscoveryResult) => onSelect ? <button type="button" onClick={() => onSelect(item)}>Choose release <ArrowRight size={15}/></button> : <Link className="discoveryProfileLink" href={profileHref(item)} aria-label={`Open ${item.display_name} extension profile`}>Open profile <ArrowRight size={15}/></Link>;
   return <div className={`extensionSearch ${compact ? "compact" : ""}`}>
     <form onSubmit={(event) => { event.preventDefault(); void search(); }}>
       <Search size={18}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name, publisher.extension, Marketplace URL, or VS Code URI" aria-label="Find an extension"/>

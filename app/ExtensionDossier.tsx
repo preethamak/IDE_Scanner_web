@@ -105,6 +105,7 @@ export default function ExtensionDossier({ data }: Props) {
   }, []);
   return (
     <main className="dossierPage">
+      <Link className="dossierBack" href={`/extensions/${encodeURIComponent(id)}`}>Back to extension profile</Link>
       <DossierHeader id={id} version={version} extension={extension} scan={scan} />
       {validation ? (
         <Link className="dossierValidated" href="/benchmark">
@@ -125,16 +126,7 @@ export default function ExtensionDossier({ data }: Props) {
           <ChevronRight aria-hidden="true" />
         </Link>
       ) : null}
-      <div className="dossierMeta">
-        <span>{String(extension.publisher || "Not reported")}</span>
-        <span>{String(extension.registry || "Registry not reported")}</span>
-        <span>
-          Artifact{" "}
-          <code>
-            {String(scan.artifact_sha256 || "unavailable").slice(0, 16)}
-          </code>
-        </span>
-      </div>
+      <div className="dossierMeta"><span>{String(extension.publisher || "Not reported")}</span><span>{String(extension.registry || "Registry not reported")}</span><span>Version {version}</span></div>
       <div className="dossierLayout">
         <DossierNavigation items={sections} active={active} count={badgeCount} onSelect={setActive} />
         <section className="dossierContent">

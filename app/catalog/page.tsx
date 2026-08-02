@@ -5,5 +5,5 @@ export default async function CatalogCompatibilityRedirect({ searchParams }: { s
   const query = new URLSearchParams();
   if (q) query.set("q", q);
   if (mode) query.set("mode", mode);
-  permanentRedirect(`/analyze${query.size ? `?${query}` : ""}`);
+  permanentRedirect(`/registry${query.size ? `?${query}` : ""}`);
 }
