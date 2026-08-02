@@ -127,7 +127,7 @@ export default async function HomePage() {
         <div className={styles.recentBody}>
           <div><small>{recent.extension_id}</small><h3>{recent.display_name}</h3><code>@{recent.version}</code></div>
           <p>{recent.decision_reason}</p>
-          <Link href={`/extensions/${encodeURIComponent(recent.extension_id)}/versions/${encodeURIComponent(recent.version)}/scans/${encodeURIComponent(recent.scan_id)}`}>View exact report <ArrowUpRight /></Link>
+          <Link href={`/extensions/${encodeURIComponent(recent.extension_id)}/versions/${encodeURIComponent(recent.version)}`}>View Security Summary <ArrowUpRight /></Link>
         </div>
       </article> : <div className={styles.feedEmpty}>
         <Eye />
@@ -146,7 +146,7 @@ export default async function HomePage() {
       <div className={styles.activityPanel}>
         <header><div><BellRing /><strong>Security feed</strong></div><span><i /> Live public results</span></header>
         <div className={styles.activityList}>
-          {feed.slice(0, 4).map((item) => <Link className={styles.activityRow} href={`/extensions/${encodeURIComponent(item.extension_id)}/versions/${encodeURIComponent(item.version)}/scans/${encodeURIComponent(item.scan_id)}`} key={`${item.scan_id}-${item.extension_id}`}>
+          {feed.slice(0, 4).map((item) => <Link className={styles.activityRow} href={`/extensions/${encodeURIComponent(item.extension_id)}/versions/${encodeURIComponent(item.version)}`} key={`${item.scan_id}-${item.extension_id}`}>
             <span className={styles.activityMark}><PackageSearch /></span>
             <span><strong>{item.display_name}</strong><small>{shorten(item.decision_reason, 82)}</small></span>
             <code>@{item.version}</code>
