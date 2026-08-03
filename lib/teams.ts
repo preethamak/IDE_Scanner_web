@@ -1,4 +1,5 @@
 import { serviceDb } from "@/lib/supabase";
+import { TeamAuthorizationError } from "@/lib/teamApiError";
 
 export const teamRoles = ["owner", "admin", "analyst", "viewer"] as const;
 export const teamDecisions = ["allow", "review", "block", "exception"] as const;
@@ -17,7 +18,7 @@ export async function requireTeamRole(teamId: string, userId: string, allowed: r
   const { data, error } = await serviceDb().from("team_members").select("role").eq("team_id", teamId).eq("user_id", userId).maybeSingle();
   if (error) throw error;
   const role = teamRole(data?.role);
-  if (!role || !allowed.includes(role)) throw new Error("You do not have permission for this team.");
+  if (!role || !allowed.includes(role)) throw new TeamAuthorizationError();
   return role;
 }
 

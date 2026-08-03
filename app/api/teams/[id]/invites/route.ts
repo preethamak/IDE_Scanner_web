@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { authenticated } from "@/lib/auth";
 import { requireTeamRole, teamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
+import { teamApiError } from "@/lib/teamApiError";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -17,7 +18,10 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     const { data, error } = await serviceDb().from("team_invitations").select("id,role,expires_at,accepted_at,created_at").eq("team_id", id).order("created_at", { ascending: false });
     if (error) throw error;
     return NextResponse.json({ invitations: data || [] });
-  } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Invitation lookup failed." }, { status: 403 }); }
+  } catch (error) {
+    const failure = teamApiError(error, "Invitations are temporarily unavailable. Please try again.");
+    return NextResponse.json({ error: failure.error }, { status: failure.status });
+  }
 }
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
@@ -33,7 +37,10 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const { data, error } = await serviceDb().from("team_invitations").insert({ team_id: id, token_hash: tokenHash(token), role, expires_at: new Date(Date.now() + expiresInDays * DAY).toISOString(), created_by: user.id }).select("id,role,expires_at,created_at").single();
     if (error) throw error;
     return NextResponse.json({ invitation: data, invitation_path: `/workspace/invitations/${token}` }, { status: 201 });
-  } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Could not create invitation." }, { status: 400 }); }
+  } catch (error) {
+    const failure = teamApiError(error, "Could not create the invitation. Please try again.");
+    return NextResponse.json({ error: failure.error }, { status: failure.status });
+  }
 }
 
 export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
@@ -46,5 +53,8 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
     if (error) throw error;
     if (!data) return NextResponse.json({ error: "Pending invitation not found." }, { status: 404 });
     return new NextResponse(null, { status: 204 });
-  } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Invitation revocation failed." }, { status: 403 }); }
+  } catch (error) {
+    const failure = teamApiError(error, "Could not revoke the invitation. Please try again.");
+    return NextResponse.json({ error: failure.error }, { status: failure.status });
+  }
 }
