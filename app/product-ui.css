@@ -1,0 +1,162 @@
+/* Product UI ownership: scoped layouts and explicit control states.  This file
+   intentionally comes last so it can retire legacy page-level conflicts without
+   applying global visual patches to unrelated routes. */
+
+.onboardingPage {
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.82fr) !important;
+  align-items: stretch !important;
+  min-height: 0 !important;
+  gap: clamp(32px, 6vw, 96px) !important;
+  padding-block: clamp(52px, 7vw, 96px) !important;
+}
+
+.onboardingPage .onboardingIntro {
+  display: grid;
+  align-content: center;
+  padding-block: 28px;
+}
+
+.onboardingPage .onboardingIntro > span,
+.onboardingFormIntro > span {
+  color: #5d7800 !important;
+  font: 800 11px var(--mono) !important;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.onboardingPage .onboardingIntro h1 {
+  max-width: 610px;
+  margin: 14px 0 18px;
+  font-size: clamp(42px, 5vw, 64px) !important;
+  letter-spacing: -.055em;
+}
+
+.onboardingPage .onboardingIntro p { max-width: 570px; margin: 0; }
+
+.onboardingBenefits {
+  display: grid;
+  gap: 10px;
+  margin: 30px 0 0;
+  padding: 22px 0 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+
+.onboardingBenefits li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+
+.onboardingBenefits li::before {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--brand);
+  content: "";
+}
+
+.onboardingPage .onboardingForm {
+  display: grid;
+  align-content: start;
+  gap: 0;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 14px;
+  background: #fff !important;
+  box-shadow: 0 20px 46px rgba(20, 32, 43, .08);
+  padding: 28px !important;
+}
+
+.onboardingFormIntro { margin-bottom: 28px; }
+.onboardingFormIntro h2 { margin: 8px 0 5px; color: var(--text); font-size: 26px; letter-spacing: -.035em; }
+.onboardingFormIntro p { margin: 0; color: var(--muted); font-size: 14px; }
+.onboardingPage .onboardingForm fieldset { margin-bottom: 24px; }
+.onboardingPage .onboardingForm legend { margin-bottom: 11px; color: var(--text); font-size: 13px; }
+.onboardingPage .onboardingForm fieldset > div { gap: 8px; }
+
+.onboardingPage .onboardingForm fieldset button {
+  min-height: 42px;
+  border-color: var(--line-strong) !important;
+  border-radius: 8px;
+  background: #fff !important;
+  color: var(--text) !important;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.onboardingPage .onboardingForm fieldset button:hover { border-color: #99b95b !important; background: var(--brand-soft) !important; }
+.onboardingPage .onboardingForm fieldset button.selected { border-color: #b4ec2d !important; background: #c9ff45 !important; color: #14202b !important; }
+.onboardingPage .onboardingForm fieldset button:focus-visible { outline: 3px solid rgba(201, 255, 69, .7); outline-offset: 2px; }
+.onboardingPage .onboardingForm > .button { width: 100%; justify-content: center; min-height: 46px; border-radius: 8px; font-size: 14px; }
+
+.dossierPage { padding-top: 34px !important; }
+.dossierPage .dossierMast {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.25fr) minmax(330px, .75fr) !important;
+  gap: clamp(26px, 5vw, 72px) !important;
+  min-height: 0 !important;
+  align-items: stretch !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+  padding: clamp(24px, 3vw, 38px) !important;
+  box-shadow: 0 20px 48px rgba(20, 32, 43, .07);
+}
+
+.dossierIdentityPanel {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  padding-block: 6px;
+}
+
+.dossierPage .dossierIdentityPanel .xid { align-items: flex-start; }
+.dossierPage .dossierIdentityPanel .xid-icon { width: 68px; height: 68px; border-radius: 12px; }
+.dossierPage .dossierIdentityPanel .xid-name { font-size: clamp(28px, 3vw, 42px); line-height: 1.05; }
+.dossierIdentityContext { max-width: 630px; margin: 22px 0 0; color: var(--muted); font-size: 15px; line-height: 1.6; }
+
+.dossierPage .dossierDecision {
+  width: auto !important;
+  min-width: 0;
+  align-self: stretch !important;
+  border: 1px solid var(--line) !important;
+  border-left: 4px solid var(--amber) !important;
+  border-radius: 10px !important;
+  background: var(--surface-2) !important;
+  padding: 24px !important;
+  box-shadow: none !important;
+}
+
+.dossierPage .dossierDecision.allow { border-left-color: var(--green) !important; }
+.dossierPage .dossierDecision.block { border-left-color: var(--red) !important; }
+.dossierPage .dossierDecision.incomplete { border-left-color: var(--violet) !important; }
+.dossierPage .dossierDecision > span { color: #5d7800 !important; font-size: 11px !important; }
+.dossierPage .dossierDecision strong { margin-block: 10px !important; font-size: 28px !important; line-height: 1.1; }
+.dossierPage .dossierDecision p { font-size: 14px !important; line-height: 1.55 !important; }
+.dossierPage .dossierHeaderFacts { display: block; margin: 22px 0 !important; padding-top: 18px; border-top: 1px solid var(--line); }
+.dossierPage .dossierHeaderFacts dt { color: var(--faint); font-size: 10px; }
+.dossierPage .dossierHeaderFacts dd { max-width: 30ch; font-size: 13px; }
+.dossierPage .reportActions { margin-top: 0; }
+.dossierPage .reportActions .button { border-radius: 7px; }
+
+.dossierPage .dossierLayout { gap: clamp(26px, 4vw, 52px) !important; padding-top: 42px !important; }
+
+@media (max-width: 760px) {
+  .onboardingPage { grid-template-columns: 1fr !important; gap: 24px !important; }
+  .onboardingPage .onboardingIntro { padding-block: 0; }
+  .onboardingPage .onboardingIntro h1 { font-size: 42px !important; }
+  .onboardingPage .onboardingForm { padding: 22px !important; }
+  .dossierPage .dossierMast { grid-template-columns: 1fr !important; gap: 24px !important; padding: 22px !important; }
+  .dossierPage .dossierIdentityPanel .xid-name { font-size: 31px; }
+  .dossierPage .dossierDecision { padding: 20px !important; }
+  .dossierPage .dossierLayout { padding-top: 26px !important; }
+}
+
+@media (max-width: 420px) {
+  .onboardingPage .onboardingForm fieldset button { width: 100%; justify-content: flex-start; }
+  .dossierPage .dossierIdentityPanel .xid { gap: 12px; }
+  .dossierPage .dossierIdentityPanel .xid-icon { width: 56px; height: 56px; }
+  .dossierPage .dossierIdentityPanel .xid-name { font-size: 27px; }
+}

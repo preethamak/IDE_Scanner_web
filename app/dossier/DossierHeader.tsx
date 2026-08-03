@@ -10,7 +10,8 @@ export default function DossierHeader({ id, version, extension, scan }: Props) {
   const decision = displayedDecision(scan);
   const nextAction = decision === "allow" ? "Proceed under normal extension controls" : decision === "block" ? "Do not install this version" : decision === "review" ? "Record a team decision before approval" : "Wait for complete analysis";
   return <header className="dossierMast">
-    <ExtensionIdentity
+    <section className="dossierIdentityPanel">
+      <ExtensionIdentity
       size="lg"
       eyebrow="Analysis Report"
       id={id}
@@ -19,8 +20,10 @@ export default function DossierHeader({ id, version, extension, scan }: Props) {
       iconUrl={extension.icon_url}
       publisher={extension.publisher}
       verified={extension.publisher_verified}
-    />
-    <div className={`dossierDecision ${decision}`}>
+      />
+      <p className="dossierIdentityContext">Completed analysis for this exact extension version. Use the summary below to decide what your team should do next.</p>
+    </section>
+    <section className={`dossierDecision ${decision}`} aria-label="Security outcome">
       <span>Scan result</span>
       <strong>{decisionLabel(decision)}</strong>
       <p>{String(scan.decision_reason || decisionExplanation(decision))}</p>
@@ -28,6 +31,6 @@ export default function DossierHeader({ id, version, extension, scan }: Props) {
         <div><dt>Required action</dt><dd>{nextAction}</dd></div>
       </dl>
       <ReportActions extensionId={id} version={version} scanId={scan.id} />
-    </div>
+    </section>
   </header>;
 }
