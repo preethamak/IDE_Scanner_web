@@ -6,13 +6,20 @@ describe("email OTP helpers", () => {
     expect(normalizeEmail("  Person@Example.COM ")).toBe("person@example.com");
   });
 
-  it("keeps only six digits when a code is pasted", () => {
-    expect(normalizeEmailOtp("12 3-4567")).toBe("123456");
+  it("preserves a configured eight-digit code when pasted", () => {
+    expect(normalizeEmailOtp("12 34-5678")).toBe("12345678");
   });
 
-  it("accepts only a complete six-digit code", () => {
+  it("limits pasted input to Supabase's supported maximum", () => {
+    expect(normalizeEmailOtp("12345678901")).toBe("1234567890");
+  });
+
+  it("accepts complete Supabase email OTPs from six through ten digits", () => {
     expect(isEmailOtp("123456")).toBe(true);
+    expect(isEmailOtp("12345678")).toBe(true);
+    expect(isEmailOtp("1234567890")).toBe(true);
     expect(isEmailOtp("12345")).toBe(false);
+    expect(isEmailOtp("12345678901")).toBe(false);
     expect(isEmailOtp("abcdef")).toBe(false);
   });
 });
