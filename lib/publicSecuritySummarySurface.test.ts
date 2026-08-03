@@ -8,4 +8,8 @@ describe("public security summary auth boundary", () => {
     expect(summary).toContain('action.requiresSignIn ? <Link className="button buttonDark"');
     expect(summary).toContain(': <a className="button buttonDark" href={action.href}>');
   });
+
+  it("uses the canonical Deep Scan control for an unscanned exact version", () => {
+    expect(summary).toContain('<DeepScanButton extensionId={extension.id} version={version}/>');
+  });
 });
