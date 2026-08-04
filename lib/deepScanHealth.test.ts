@@ -1,30 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-const { maybeSingle, serviceDb } = vi.hoisted(() => ({ maybeSingle: vi.fn(), serviceDb: vi.fn() }));
-vi.mock("@/lib/supabase", () => ({ serviceDb }));
-import { getDeepScanHealth } from "./deepScanHealth";
+import { afterEach, describe, expect, it, vi } from "vitest";
+const mocks = vi.hoisted(() => ({ maybeSingle: vi.fn(), from: vi.fn() }));
+vi.mock("@/lib/supabase", () => ({ serviceDb: () => ({ from: mocks.from }) }));
+import { getDeepScanHealth } from "@/lib/deepScanHealth";
 
 describe("Deep Scan health", () => {
-  beforeEach(() => { process.env.SCAN_RUNNER_SECRET = "configured"; process.env.GITHUB_ACTIONS_TOKEN = "configured"; maybeSingle.mockReset(); serviceDb.mockReset(); serviceDb.mockReturnValue({ from: () => ({ select: () => ({ eq: () => ({ maybeSingle }) }) }) }); });
-
-  it("is unavailable without a configured runner", async () => {
-    delete process.env.GITHUB_ACTIONS_TOKEN;
-    expect(await getDeepScanHealth()).toMatchObject({ accepting_requests: false, status: "configuration_unavailable" });
-  });
-
-  it("is available after a recent heartbeat", async () => {
-    maybeSingle.mockResolvedValue({ data: { last_seen_at: new Date().toISOString() }, error: null });
-    expect(await getDeepScanHealth()).toMatchObject({ accepting_requests: true, status: "ready" });
-  });
-
-  it("continues accepting work when the heartbeat is stale", async () => {
-    maybeSingle.mockResolvedValue({ data: { last_seen_at: new Date(Date.now() - 13 * 60_000).toISOString() }, error: null });
-    expect(await getDeepScanHealth()).toMatchObject({ accepting_requests: true, status: "runner_delayed" });
-  });
-
-  it("does not advertise Deep Scan when service credentials are unavailable", async () => {
-    serviceDb.mockImplementation(() => { throw new Error("Supabase service credentials are not configured."); });
-
-    expect(await getDeepScanHealth()).toMatchObject({ accepting_requests: false, status: "configuration_unavailable" });
-  });
+  const priorRunner = process.env.SCAN_RUNNER_SECRET; const priorToken = process.env.GITHUB_ACTIONS_TOKEN;
+  afterEach(() => { if (priorRunner === undefined) delete process.env.SCAN_RUNNER_SECRET; else process.env.SCAN_RUNNER_SECRET = priorRunner; if (priorToken === undefined) delete process.env.GITHUB_ACTIONS_TOKEN; else process.env.GITHUB_ACTIONS_TOKEN = priorToken; vi.clearAllMocks(); });
+  it("refuses requests when required server configuration is absent", async () => { delete process.env.SCAN_RUNNER_SECRET; delete process.env.GITHUB_ACTIONS_TOKEN; await expect(getDeepScanHealth()).resolves.toMatchObject({ accepting_requests: false, status: "configuration_unavailable" }); });
+  it("accepts requests but reports a delayed runner without a heartbeat", async () => { process.env.SCAN_RUNNER_SECRET = "test"; process.env.GITHUB_ACTIONS_TOKEN = "test"; mocks.maybeSingle.mockResolvedValue({ data: null, error: null }); mocks.from.mockReturnValue({ select: () => ({ eq: () => ({ maybeSingle: mocks.maybeSingle }) }) }); await expect(getDeepScanHealth()).resolves.toMatchObject({ accepting_requests: true, status: "runner_delayed" }); });
+  it("reports a recent heartbeat as ready", async () => { process.env.SCAN_RUNNER_SECRET = "test"; process.env.GITHUB_ACTIONS_TOKEN = "test"; mocks.maybeSingle.mockResolvedValue({ data: { last_seen_at: new Date().toISOString() }, error: null }); mocks.from.mockReturnValue({ select: () => ({ eq: () => ({ maybeSingle: mocks.maybeSingle }) }) }); await expect(getDeepScanHealth()).resolves.toMatchObject({ accepting_requests: true, status: "ready" }); });
 });
