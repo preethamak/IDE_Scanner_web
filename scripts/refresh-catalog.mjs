@@ -121,18 +121,21 @@ for (const extension of cohort) {
 }
 
 async function notifyWatchersOfRelease(extensionId, version) {
-  const items = await db.from("team_watchlist_items").select("team_id").eq("extension_id", extensionId);
+  const items = await db.from("team_watchlist_items").select("team_id,baseline_scan_id,baseline_version,monitoring_state").eq("extension_id", extensionId).eq("monitoring_state", "monitoring");
   if (items.error) throw items.error;
-  const teamIds = [...new Set((items.data || []).map((item) => item.team_id).filter(Boolean))];
-  if (!teamIds.length) return;
-  const alerts = teamIds.map((teamId) => ({
-    team_id: teamId,
+  const watches = (items.data || []).filter((item) => item.team_id && item.baseline_scan_id && item.baseline_version);
+  if (!watches.length) return;
+  const events = watches.map((watch) => ({ team_id: watch.team_id, extension_id: extensionId, baseline_scan_id: watch.baseline_scan_id, baseline_version: watch.baseline_version, target_version: version, state: "release_detected", materiality: "analysis_unavailable", dedupe_key: `release:${extensionId}@${version}` }));
+  const eventWrite = await db.from("team_release_events").upsert(events, { onConflict: "team_id,dedupe_key", ignoreDuplicates: true });
+  if (eventWrite.error) throw eventWrite.error;
+  const alerts = watches.map((watch) => ({
+    team_id: watch.team_id,
     extension_id: extensionId,
     version,
     kind: "release_detected",
     title: `New release detected: ${extensionId}@${version}`,
     summary: "A watched extension published a new exact artifact. Deep Scan has been queued; the alert will update when evidence is available.",
-    metadata: { scan_queued: true },
+    metadata: { scan_queued: true, baseline_version: watch.baseline_version, release_event: true },
     dedupe_key: `release:${extensionId}@${version}`,
   }));
   if (alerts.length) {
