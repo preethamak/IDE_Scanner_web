@@ -108,9 +108,13 @@ for (const extension of cohort) {
   const known = new Set(existingVersionBatches.flatMap((result) => result.data || []).map((item) => item.version));
   const newlyObserved = rows.filter((item) => !known.has(item.version) && item.is_latest);
   if (rows.length) { const result = await db.from("extension_versions").upsert(rows, { onConflict: "extension_id,version" }); if (result.error) throw result.error; }
-  for (const release of newlyObserved) await notifyWatchersOfRelease(extension.id, release.version);
+  const monitoredReleases = new Set();
+  for (const release of newlyObserved) if (await notifyWatchersOfRelease(extension.id, release.version)) monitoredReleases.add(release.version);
   for (const item of rows.slice(0, 4)) {
-    if (queued >= scanLimit) break;
+    const monitoredRelease = monitoredReleases.has(item.version);
+    // A watched release is a customer promise. It receives capacity even when
+    // the public catalog batch is saturated; ordinary catalog scans wait.
+    if (queued >= scanLimit && !monitoredRelease) break;
     const existing = await db.from("extension_versions").select("scan_state").eq("extension_id", extension.id).eq("version", item.version).single();
     if (["queued", "running"].includes(existing.data?.scan_state)) continue;
     const canonical = await db.from("scans").select("id").eq("extension_id", extension.id).eq("version", item.version).eq("scan_purpose", "public_intelligence").eq("score_schema_version", "2").eq("scanner_build", scannerBuild).eq("analysis_status", "complete").is("superseded_at", null).limit(1).maybeSingle();
@@ -119,6 +123,10 @@ for (const extension of cohort) {
     const job = await db.from("scan_jobs").insert({ extension_id: extension.id, version: item.version, profile: "deep", requester_hash: "catalog-refresh", scan_purpose: "public_intelligence", expected_scanner_build: scannerBuild }).select("id").single();
     if (job.error) continue;
     await db.from("extension_versions").update({ scan_state: "queued" }).eq("extension_id", extension.id).eq("version", item.version);
+    if (monitoredRelease) {
+      const releaseUpdate = await db.from("team_release_events").update({ state: "scan_queued", updated_at: new Date().toISOString() }).eq("extension_id", extension.id).eq("target_version", item.version).eq("state", "release_detected");
+      if (releaseUpdate.error) throw releaseUpdate.error;
+    }
     queued += 1;
     queuedByRegistry[extension.registry] += 1;
   }
@@ -128,7 +136,7 @@ async function notifyWatchersOfRelease(extensionId, version) {
   const items = await db.from("team_watchlist_items").select("team_id,baseline_scan_id,baseline_version,monitoring_state").eq("extension_id", extensionId).eq("monitoring_state", "monitoring");
   if (items.error) throw items.error;
   const watches = (items.data || []).filter((item) => item.team_id && item.baseline_scan_id && item.baseline_version);
-  if (!watches.length) return;
+  if (!watches.length) return false;
   const events = watches.map((watch) => ({ team_id: watch.team_id, extension_id: extensionId, baseline_scan_id: watch.baseline_scan_id, baseline_version: watch.baseline_version, target_version: version, state: "release_detected", materiality: "analysis_unavailable", dedupe_key: `release:${extensionId}@${version}` }));
   const eventWrite = await db.from("team_release_events").upsert(events, { onConflict: "team_id,dedupe_key", ignoreDuplicates: true });
   if (eventWrite.error) throw eventWrite.error;
@@ -138,14 +146,15 @@ async function notifyWatchersOfRelease(extensionId, version) {
     version,
     kind: "release_detected",
     title: `New release detected: ${extensionId}@${version}`,
-    summary: "A watched extension published a new exact artifact. Deep Scan has been queued; the alert will update when evidence is available.",
-    metadata: { scan_queued: true, baseline_version: watch.baseline_version, release_event: true },
+    summary: "A watched extension published a new exact artifact. GuardRails is reserving Deep Scan capacity and will update this alert when evidence is available.",
+    metadata: { scan_queued: false, baseline_version: watch.baseline_version, release_event: true },
     dedupe_key: `release:${extensionId}@${version}`,
   }));
   if (alerts.length) {
     const result = await db.from("team_monitoring_alerts").upsert(alerts, { onConflict: "team_id,dedupe_key", ignoreDuplicates: true });
     if (result.error) throw result.error;
   }
+  return true;
 }
 
 const releasesByRegistry = { "vs-marketplace": 0, openvsx: 0 };

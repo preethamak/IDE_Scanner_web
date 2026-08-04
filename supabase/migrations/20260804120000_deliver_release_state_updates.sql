@@ -58,7 +58,7 @@ declare
   release record;
 begin
   if new.scan_purpose not in ('public_intelligence', 'user_request') then return new; end if;
-  target_state := case when new.analysis_status = 'complete' then 'comparison_ready' when new.analysis_status = 'failed' then 'analysis_failed' else 'analysis_incomplete' end;
+  target_state := case when new.analysis_status = 'complete' and new.coverage_percent >= 100 and new.artifact_sha256 ~ '^[0-9A-Fa-f]{64}$' then 'comparison_ready' when new.analysis_status = 'failed' then 'analysis_failed' else 'analysis_incomplete' end;
   target_materiality := case when new.analysis_status <> 'complete' then 'analysis_unavailable' when new.decision = 'block' or new.severity in ('CRITICAL', 'HIGH') then 'review_required' when new.decision = 'review' then 'review_recommended' else 'informational' end;
   for release in
     update public.team_release_events
