@@ -6,6 +6,7 @@ import { Plus, RefreshCw, Trash2, Users } from "lucide-react";
 import { browserDb } from "@/lib/supabase";
 import { trackProductEvent } from "@/lib/analyticsEvents";
 import { groupDecisionQueue, type QueueDecision } from "@/lib/teamDecisionQueue";
+import ReleaseEventQueue from "@/app/ReleaseEventQueue";
 
 type Team = { id: string; name: string; slug: string; role: string };
 type Delivery = { status: string; attempts: number; delivered_at: string | null; last_error: string | null; next_attempt_at: string | null };
@@ -213,6 +214,7 @@ export default function TeamWorkspace({ initialExtension = "", focus = "workspac
   return <section className="workspaceSection teamWorkspace">
     <div className="workspaceSectionHead"><div><span>{focus === "monitor" ? "Team monitoring" : "Team workspace"}</span><h2>{focus === "monitor" ? "Shared release watches" : "Shared decisions"}</h2></div><Users/></div>
     <p className="sectionIntro">Teams share review ownership and decision history while public reports remain open and exact-artifact evidence stays unchanged.</p>
+    {activeTeamId ? <ReleaseEventQueue teamId={activeTeamId}/> : null}
     <form className="createRow" onSubmit={create}><input value={name} onChange={(event) => setName(event.target.value)} placeholder="New team name" aria-label="New team name" maxLength={80}/><button className="iconButton" type="submit" title="Create team" aria-label="Create team"><Plus/></button></form>
     {state === "loading" ? <p className="workspaceMessage">Loading team workspaces…</p> : null}
     {state === "ready" && !teams.length ? <p className="workspaceMessage">Create a team to share review ownership and an auditable decision queue.</p> : null}
