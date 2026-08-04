@@ -43,4 +43,12 @@ describe("team workspace endpoint", () => {
     expect(response.status).toBe(401);
     expect(mocks.from).not.toHaveBeenCalled();
   });
+
+  it("returns the existing owner workspace when onboarding is retried", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({ data: { role: "owner", teams: { id: "team-1", name: "My developer workspace", slug: "my-developer-workspace", created_at: "2026-08-04T00:00:00.000Z" } }, error: null });
+    mocks.from.mockImplementation((table: string) => table === "team_members" ? { select: () => ({ eq: () => ({ eq: () => ({ order: () => ({ limit: () => ({ maybeSingle }) }) }) }) }) } : { insert: vi.fn() });
+    const response = await POST(new Request("http://localhost/api/teams", { method: "POST", body: JSON.stringify({ name: "My developer workspace", onboarding: true }) }));
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ id: "team-1", reused: true, role: "owner" });
+  });
 });

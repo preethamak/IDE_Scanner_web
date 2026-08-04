@@ -31,7 +31,7 @@ export default function AccountPage() {
     const profileResponse = await fetch("/api/profile", { method: "PATCH", headers: { Authorization: `Bearer ${account.token}`, "Content-Type": "application/json" }, body: JSON.stringify({ role, primary_ide: ide, use_case: useCase }) });
     const profileBody = await profileResponse.json();
     if (!profileResponse.ok) { setOnboardingSaving(false); return setMessage(profileBody.error || "Your setup could not be saved."); }
-    const teamsResponse = await fetch("/api/teams", { method: "POST", headers: { Authorization: `Bearer ${account.token}`, "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
+    const teamsResponse = await fetch("/api/teams", { method: "POST", headers: { Authorization: `Bearer ${account.token}`, "Content-Type": "application/json" }, body: JSON.stringify({ name, onboarding: true }) });
     const teamsBody = await teamsResponse.json().catch(() => ({}));
     if (!teamsResponse.ok) { setOnboardingSaving(false); return setMessage(teamsBody.error || "Your profile was saved, but your workspace could not be created. Try again."); }
     setAccount({ ...account, profile: profileBody.profile }); continueToDestination();
