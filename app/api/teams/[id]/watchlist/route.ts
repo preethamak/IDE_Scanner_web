@@ -18,11 +18,23 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const { user } = await authenticated(request); const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst"]);
     const body = await request.json(); const extensionId = typeof body.extension_id === "string" ? body.extension_id.trim() : "";
+    const baselineScanId = typeof body.baseline_scan_id === "string" ? body.baseline_scan_id.trim() : "";
     if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+$/.test(extensionId)) return NextResponse.json({ error: "A valid extension id is required." }, { status: 400 });
     const db = serviceDb(); const { data: extension, error: extensionError } = await db.from("extensions").select("id").ilike("id", extensionId).maybeSingle();
     if (extensionError) throw extensionError;
     if (!extension) return NextResponse.json({ error: "Add this extension to the registry before monitoring it." }, { status: 404 });
-    const { data, error } = await db.from("team_watchlist_items").upsert({ team_id: id, extension_id: extension.id, created_by: user.id }, { onConflict: "team_id,extension_id" }).select("extension_id,created_at").single();
+    let baseline: { id: string; version: string; artifact_sha256: string | null } | null = null;
+    if (baselineScanId) {
+      if (!/^[0-9a-f-]{36}$/i.test(baselineScanId)) return NextResponse.json({ error: "A valid completed baseline scan is required." }, { status: 400 });
+      const result = await db.from("scans").select("id,version,artifact_sha256").eq("id", baselineScanId).eq("extension_id", extension.id).eq("analysis_status", "complete").maybeSingle();
+      if (result.error) throw result.error;
+      baseline = result.data;
+      if (!baseline?.artifact_sha256) return NextResponse.json({ error: "This report is not a complete exact-artifact baseline yet." }, { status: 400 });
+    }
+    const write = baseline
+      ? db.from("team_watchlist_items").upsert({ team_id: id, extension_id: extension.id, created_by: user.id, baseline_scan_id: baseline.id, baseline_version: baseline.version, baseline_artifact_sha256: baseline.artifact_sha256, monitoring_state: "monitoring", last_observed_version: baseline.version, last_event_at: new Date().toISOString() }, { onConflict: "team_id,extension_id" })
+      : db.from("team_watchlist_items").upsert({ team_id: id, extension_id: extension.id, created_by: user.id }, { onConflict: "team_id,extension_id" });
+    const { data, error } = await write.select("extension_id,created_at,baseline_version,baseline_artifact_sha256,monitoring_state").single();
     if (error) throw error;
     return NextResponse.json(data, { status: 201 });
   } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Team watchlist update failed." }, { status: 403 }); }
