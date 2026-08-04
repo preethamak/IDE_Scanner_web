@@ -8,7 +8,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   try {
     const { user } = await authenticated(request); const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst", "viewer"]);
-    const { data, error } = await serviceDb().from("team_watchlist_items").select("extension_id,created_at,extensions(display_name,icon_url)").eq("team_id", id).order("created_at", { ascending: false });
+    const { data, error } = await serviceDb().from("team_watchlist_items").select("extension_id,created_at,baseline_version,baseline_artifact_sha256,monitoring_state,extensions(display_name,icon_url)").eq("team_id", id).order("created_at", { ascending: false });
     if (error) throw error;
     return NextResponse.json({ items: data || [] });
   } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Team watchlist lookup failed." }, { status: 403 }); }
