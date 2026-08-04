@@ -9,7 +9,7 @@ This checklist records only completed work with reproducible evidence. `Implemen
 - [x] **Implemented** — Workspace onboarding collects use case and workspace name, then creates a workspace. Commit `80df450`.
 - [x] **Implemented** — A completed Analysis Report can establish an exact scan/version/hash baseline for a writable workspace. Commit `ebbb297`.
 - [ ] **Verified** — Apply `20260804090000_add_team_monitoring_baselines.sql` in a disposable Supabase project and prove RLS and baseline constraints.
-- [ ] **Verified** — Run baseline watch API tests to completion and record the final Vitest summary.
+- [x] **Verified** — Baseline watch API suite passes: 4/4 tests (`npx vitest run app/api/teams/[id]/watchlist/route.test.ts --pool=forks --reporter=verbose`).
 - [ ] **Verified** — Render desktop and mobile screenshots of onboarding and the completed-report monitoring action.
 
 ## End-to-end customer path
