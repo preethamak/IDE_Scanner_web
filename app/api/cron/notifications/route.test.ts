@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { queueDecisionDueAlerts } from "@/app/api/cron/notifications/route";
+import { queueDecisionDueAlerts } from "@/lib/decisionDueAlerts";
 
 describe("decision-due notification scheduling", () => {
   it("calls the privileged, idempotent queue function with the scheduler time", async () => {

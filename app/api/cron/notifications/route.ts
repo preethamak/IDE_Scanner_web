@@ -5,6 +5,7 @@ import { serviceDb } from "@/lib/supabase";
 import { genericWebhookMessage } from "@/lib/teamNotificationPayload";
 import { jiraAuthorization, jiraIssuePayload, parseJiraTarget } from "@/lib/jiraNotification";
 import { emailDeliveryConfigured, emailPayload } from "@/lib/emailNotification";
+import { queueDecisionDueAlerts } from "@/lib/decisionDueAlerts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,10 +44,6 @@ type Db = ReturnType<typeof serviceDb>;
 type Row = Record<string, unknown>;
 function one(value: unknown): Row { return (Array.isArray(value) ? value[0] : value || {}) as Row; }
 
-export async function queueDecisionDueAlerts(db: Pick<Db, "rpc">, now: string): Promise<{ queued: number; error: string }> {
-  const { data, error } = await db.rpc("queue_team_decision_due_alerts", { target_now: now });
-  return error ? { queued: 0, error: error.message } : { queued: Number(data || 0), error: "" };
-}
 async function finish(db: Db, id: unknown, status: "sent" | "failed" | "skipped", lastError: string | null, attempts: number) {
   const retryMinutes = Math.min(360, 5 * 2 ** Math.min(attempts, 6));
   await db.from("notification_deliveries").update({ status, last_error: lastError, delivered_at: status === "sent" ? new Date().toISOString() : null, next_attempt_at: status === "failed" ? new Date(Date.now() + retryMinutes * 60_000).toISOString() : new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", id);
