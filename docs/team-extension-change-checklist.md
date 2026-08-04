@@ -19,7 +19,7 @@ This checklist records only completed work with reproducible evidence. `Implemen
 - [ ] Invite a named colleague and accept with a second account.
 - [ ] Select an exact completed report as the monitored baseline.
 - [ ] Discover a new extension release and show `release_detected`.
-- [ ] Complete the target Deep Scan and show an immutable baseline-to-target comparison.
+- [ ] Complete the target Deep Scan and show an immutable baseline-to-target comparison. (Database transition implemented; integration verification pending.)
 - [ ] Record a team decision with owner, rationale, and due date.
 - [ ] Deliver one matching Slack event and one matching email event.
 - [ ] Show delivery status, retry, and terminal failure without claiming delivery succeeded.
