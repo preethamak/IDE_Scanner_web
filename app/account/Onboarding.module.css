@@ -41,6 +41,7 @@
 }
 .formIntro h2 { margin: 8px 0 6px; color: var(--text); font-size: 28px; font-weight: 700; letter-spacing: -.03em; line-height: 36px; }
 .formIntro p { margin: 0; color: var(--muted); font-size: 14px; line-height: 20px; }
+.workspaceName { display: grid; gap: 8px; }.workspaceName > span { color: var(--text); font-size: 14px; font-weight: 700; }.workspaceName input { width: 100%; height: 44px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); padding: 0 12px; color: var(--text); font: 14px var(--sans); outline: none; }.workspaceName input:focus { border-color: var(--brand-strong); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 35%, transparent); }
 .choice { margin: 0; border: 0; padding: 0; }
 .choice legend { margin-bottom: 10px; color: var(--text); font-size: 14px; font-weight: 700; }
 .choiceOptions { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -75,6 +76,7 @@
   font-weight: 750;
 }
 .primaryAction:hover { background: var(--brand-strong); }
+.primaryAction:disabled { cursor: wait; opacity: .65; }
 .primaryAction svg { width: 17px; height: 17px; }
 .message { margin: -8px 0 0; color: var(--block); font-size: 14px; line-height: 20px; }
 
