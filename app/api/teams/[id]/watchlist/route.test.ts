@@ -29,12 +29,20 @@ describe("team watchlist removal", () => {
   it("anchors monitoring to a complete exact-artifact baseline", async () => {
     const single = vi.fn().mockResolvedValue({ data: { extension_id: "GitHub.copilot", baseline_version: "1.2.3", baseline_artifact_sha256: "a".repeat(64), monitoring_state: "monitoring" }, error: null });
     const upsert = vi.fn(() => ({ select: () => ({ single }) }));
-    const scan = { select: () => ({ eq: () => ({ eq: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { id: "11111111-1111-4111-8111-111111111111", version: "1.2.3", artifact_sha256: "a".repeat(64) }, error: null }) }) }) }) }) };
+    const scan = { select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { id: "11111111-1111-4111-8111-111111111111", version: "1.2.3", artifact_sha256: "a".repeat(64), analysis_status: "complete", coverage_percent: 100 }, error: null }) }) }) }) };
     const extension = { select: () => ({ ilike: () => ({ maybeSingle: () => Promise.resolve({ data: { id: "GitHub.copilot" }, error: null }) }) }) };
     mocks.from.mockImplementation((table: string) => table === "extensions" ? extension : table === "scans" ? scan : { upsert });
     const response = await POST(new Request("http://localhost", { method: "POST", body: JSON.stringify({ extension_id: "GitHub.copilot", baseline_scan_id: "11111111-1111-4111-8111-111111111111" }) }), { params: Promise.resolve({ id: "team-1" }) });
     expect(response.status).toBe(201);
     expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ baseline_version: "1.2.3", monitoring_state: "monitoring" }), { onConflict: "team_id,extension_id" });
+  });
+
+  it("rejects an otherwise complete report when evidence coverage is incomplete", async () => {
+    const scan = { select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { id: "11111111-1111-4111-8111-111111111111", version: "1.2.3", artifact_sha256: "a".repeat(64), analysis_status: "complete", coverage_percent: 87 }, error: null }) }) }) }) };
+    const extension = { select: () => ({ ilike: () => ({ maybeSingle: () => Promise.resolve({ data: { id: "GitHub.copilot" }, error: null }) }) }) };
+    mocks.from.mockImplementation((table: string) => table === "extensions" ? extension : table === "scans" ? scan : { upsert: vi.fn() });
+    const response = await POST(new Request("http://localhost", { method: "POST", body: JSON.stringify({ extension_id: "GitHub.copilot", baseline_scan_id: "11111111-1111-4111-8111-111111111111" }) }), { params: Promise.resolve({ id: "team-1" }) });
+    expect(response.status).toBe(400);
   });
 
   it("rejects a malformed baseline scan before looking it up", async () => {

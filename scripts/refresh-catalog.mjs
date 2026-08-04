@@ -63,9 +63,13 @@ const cohort = [...unique.values()].slice(0, 250).map((item, index) => ({ ...ite
 // user can watch a long-tail extension that is never version-detected, scanned, or
 // alerted — the watchlist would silently produce nothing.
 const cohortIds = new Set(cohort.map((item) => item.id.toLowerCase()));
-const watchedRows = await db.from("watchlist_items").select("extension_id");
-if (watchedRows.error) throw watchedRows.error;
-const watchedIds = [...new Set((watchedRows.data || []).map((item) => String(item.extension_id || "")).filter(Boolean))].filter((id) => !cohortIds.has(id.toLowerCase()));
+const [personalWatchedRows, teamWatchedRows] = await Promise.all([
+  db.from("watchlist_items").select("extension_id"),
+  db.from("team_watchlist_items").select("extension_id").eq("monitoring_state", "monitoring"),
+]);
+if (personalWatchedRows.error) throw personalWatchedRows.error;
+if (teamWatchedRows.error) throw teamWatchedRows.error;
+const watchedIds = [...new Set([...(personalWatchedRows.data || []), ...(teamWatchedRows.data || [])].map((item) => String(item.extension_id || "")).filter(Boolean))].filter((id) => !cohortIds.has(id.toLowerCase()));
 for (const batch of chunks(watchedIds, 200)) {
   const result = await db.from("extensions").select("id,name,display_name,publisher,description,registry,publisher_verified,installs,rating,icon_url,last_published_at,catalog_rank").in("id", batch);
   if (result.error) throw result.error;

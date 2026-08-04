@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { authenticated } from "@/lib/auth";
 import { requireTeamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
+import { baselineEligible } from "@/lib/teamMonitoring";
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
@@ -24,12 +25,12 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const db = serviceDb(); const { data: extension, error: extensionError } = await db.from("extensions").select("id").ilike("id", extensionId).maybeSingle();
     if (extensionError) throw extensionError;
     if (!extension) return NextResponse.json({ error: "Add this extension to the registry before monitoring it." }, { status: 404 });
-    let baseline: { id: string; version: string; artifact_sha256: string | null } | null = null;
+    let baseline: { id: string; version: string; artifact_sha256: string | null; analysis_status: string; coverage_percent: number | null } | null = null;
     if (baselineScanId) {
-      const result = await db.from("scans").select("id,version,artifact_sha256").eq("id", baselineScanId).eq("extension_id", extension.id).eq("analysis_status", "complete").maybeSingle();
+      const result = await db.from("scans").select("id,version,artifact_sha256,analysis_status,coverage_percent").eq("id", baselineScanId).eq("extension_id", extension.id).maybeSingle();
       if (result.error) throw result.error;
       baseline = result.data;
-      if (!baseline?.artifact_sha256) return NextResponse.json({ error: "This report is not a complete exact-artifact baseline yet." }, { status: 400 });
+      if (!baselineEligible(baseline || {})) return NextResponse.json({ error: "This report is not a complete exact-artifact baseline yet." }, { status: 400 });
     }
     const write = baseline
       ? db.from("team_watchlist_items").upsert({ team_id: id, extension_id: extension.id, created_by: user.id, baseline_scan_id: baseline.id, baseline_version: baseline.version, baseline_artifact_sha256: baseline.artifact_sha256, monitoring_state: "monitoring", last_observed_version: baseline.version, last_event_at: new Date().toISOString() }, { onConflict: "team_id,extension_id" })
