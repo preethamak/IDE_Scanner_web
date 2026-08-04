@@ -4,6 +4,19 @@ Last updated: 2026-08-04
 
 This checklist records only completed work with reproducible evidence. `Implemented` means code is committed; it does not mean production behavior has been proven.
 
+## Delivery rule
+
+Do not complete a feature as an isolated component. Every customer-visible release-change capability must have all of these checked before it is described as working:
+
+- [ ] Data lifecycle: migration, retention, idempotency, and recovery state are defined.
+- [ ] Scan lifecycle: detection, dispatch, completion, incomplete, failure, retry, and stale-job paths reach a terminal customer-visible state.
+- [ ] Authorization: workspace membership and role checks cover every read and mutation; cross-workspace access is tested.
+- [ ] Product UI: loading, empty, ready, failure, retry, and mobile layouts exist; the primary action is understandable without documentation.
+- [ ] Decision workflow: baseline, exact comparison, owner, rationale, exception, and expiry behavior are explicit.
+- [ ] Delivery: in-product queue remains the source of truth; Slack/email are derived, deduplicated, observable, and never overstate scan status.
+- [ ] Observability: safe event IDs, delivery status, scan state, and actionable errors are available without exposing secrets or source data.
+- [ ] Verification: unit, API, RLS/integration, end-to-end, visual, and production acceptance evidence are recorded.
+
 ## Current release slice
 
 - [x] **Implemented** — Workspace onboarding collects use case and workspace name, then creates a workspace. Commit `80df450`.
