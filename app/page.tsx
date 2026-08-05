@@ -12,7 +12,7 @@ import BrandMark from "@/app/BrandMark";
 import HomeSearch from "@/app/HomeSearch";
 import {
   CredibilityStory,
-  HeroProductScene,
+  ReleaseDecisionScene,
   ProductWalkthrough,
 } from "@/app/HomeProductShowcase";
 import { getPublicSecurityFeed } from "@/lib/productData";
@@ -38,8 +38,8 @@ export default async function HomePage() {
       <div className={styles.heroGlow} aria-hidden="true" />
       <div className={styles.heroCopy}>
         <span className={styles.kicker}><i /> Extension Security</span>
-        <h1>The security check before you click Install.</h1>
-        <p className={styles.heroLead}>Downloads and ratings tell you what&apos;s popular. GuardRails shows you what you&apos;re installing—before it reaches your editor.</p>
+        <h1>Know what changed before it reaches your team.</h1>
+        <p className={styles.heroLead}>GuardRails turns each extension release into a clear team decision—what changed, who owns it, and where the evidence lives.</p>
         <div className={styles.heroSearch}>
           <HomeSearch />
         </div>
@@ -50,7 +50,7 @@ export default async function HomePage() {
           </div>
         </div>
       </div>
-      <HeroProductScene item={recent} />
+      <ReleaseDecisionScene />
     </section>
 
     <CredibilityStory />
@@ -58,8 +58,8 @@ export default async function HomePage() {
     <section className={styles.productSection} id="how-it-works">
       <header className={styles.sectionIntro}>
         <span className={styles.kicker}><i /> See the product</span>
-        <h2>See the extension behind the listing.</h2>
-        <p>GuardRails turns an extension package into a decision you can understand. Start with the answer, then open the evidence when you need it.</p>
+        <h2>One review becomes a release-control loop.</h2>
+        <p>Use the initial report as a baseline, then bring your team back only when a new release creates a decision worth making.</p>
       </header>
       <ProductWalkthrough item={recent} />
     </section>

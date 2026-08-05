@@ -16,6 +16,7 @@ import {
   Search,
   ShieldCheck,
   TerminalSquare,
+  UserRound,
 } from "lucide-react";
 import type { PublicSecurityFeedItem } from "@/lib/productData";
 import styles from "./home.module.css";
@@ -73,6 +74,25 @@ export function HeroProductScene({ item }: { item: FeedItem }) {
   </div>;
 }
 
+/** The homepage sells the recurring team decision, not a pile of scanner UI. */
+export function ReleaseDecisionScene() {
+  return <div className={styles.releaseHeroScene} aria-label="Example GuardRails release-change decision">
+    <div className={styles.releaseHeroDots} aria-hidden="true" />
+    <div className={styles.releaseHeroWindow}>
+      <header><span><i/><i/><i/></span><code>guardrails / team workspace</code><b><Radio/> Monitoring</b></header>
+      <div className={styles.releaseHeroIdentity}><span>G</span><div><small>MONITORED EXTENSION</small><strong>GitHub Copilot</strong><code>Reviewed release 1.388.0</code></div><em>New release</em></div>
+      <div className={styles.releaseHeroDiff}>
+        <div><small>1.388.0</small><strong>Reviewed baseline</strong></div><ArrowRight/>
+        <div><small>1.389.0</small><strong>New artifact</strong></div>
+      </div>
+      <div className={styles.releaseHeroChanges}>
+        <span><b>+ 2</b> New capabilities</span><p><TerminalSquare/> Runs terminal commands <em>New</em></p><p><Radio/> Opens network connections <em>New</em></p>
+      </div>
+      <footer><span><UserRound/> Assigned to Priya</span><Link href="/workspace">Review change <ArrowRight/></Link></footer>
+    </div>
+  </div>;
+}
+
 export function CredibilityStory() {
   const count = 60000;
 
@@ -94,23 +114,23 @@ export function CredibilityStory() {
 const walkthrough = [
   {
     id: "select",
-    label: "01 · Select",
-    title: "Start with the extension you want.",
-    body: "Search by name, publisher ID, or Marketplace link. GuardRails keeps the chosen release in view.",
+    label: "01 · Review",
+    title: "Review one exact release.",
+    body: "Start from a completed report. That exact package becomes the baseline your team reviewed—not a moving marketplace listing.",
     icon: Search,
   },
   {
     id: "inspect",
-    label: "02 · Inspect",
-    title: "See the behavior that matters.",
-    body: "Files, commands, connections, and powerful capabilities become a short explanation—not a wall of scanner output.",
+    label: "02 · Monitor",
+    title: "Watch the next release.",
+    body: "When the publisher ships again, GuardRails scans the new artifact and makes the difference visible to the team.",
     icon: Eye,
   },
   {
     id: "decide",
     label: "03 · Decide",
-    title: "Make the call with evidence.",
-    body: "Open the supporting files and findings when you need detail, or move on with a clear next step.",
+    title: "Route the decision to an owner.",
+    body: "New capabilities and evidence arrive in one queue. Assign the review, record the call, and keep the delivery history.",
     icon: ShieldCheck,
   },
 ] as const;
