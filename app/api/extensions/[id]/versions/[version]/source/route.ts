@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { publicDb } from "@/lib/supabase";
+import { serverDb } from "@/lib/supabaseServer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,8 +11,10 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   const requestedScanId = new URL(request.url).searchParams.get("scan") || "";
   const { id, version } = await context.params;
   if (!path || path.length > 300 || path.includes("\\") || path.split("/").some((part) => !part || part === "." || part === "..") || !TEXT_FILE.test(path)) return NextResponse.json({ error: "This path cannot be previewed safely." }, { status: 400 });
-  const db = publicDb();
-  if (!db) return NextResponse.json({ error: "Source preview is unavailable." }, { status: 503 });
+  // Use the request-bound client: public reports remain public through RLS,
+  // while an authenticated owner can also read the exact private report they
+  // just created. The old anonymous client made every private README fail.
+  const db = await serverDb();
   let scanQuery = db.from("scans").select("id,canonical_report").eq("extension_id", decodeURIComponent(id)).eq("version", decodeURIComponent(version));
   if (requestedScanId) scanQuery = scanQuery.eq("id", requestedScanId);
   else scanQuery = scanQuery.is("superseded_at", null).order("scanned_at", { ascending: false }).limit(1);

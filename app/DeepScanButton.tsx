@@ -135,13 +135,12 @@ export default function DeepScanButton({ extensionId, version, showReportLink = 
   }
 
   const unavailable = health === "configuration_unavailable";
-  const runnerDelayed = health === "runner_delayed";
   return <div className="deepScanAction">
     <button className="button buttonDark" onClick={queue} disabled={(!signedOut && !["ready", "runner_delayed", "network_unavailable"].includes(health)) || ["loading", "queued", "running"].includes(state)}>
       {signedOut ? <>Create free workspace to Deep Scan <ScanSearch size={16}/></> : health === "checking" ? <><LoaderCircle className="spin" size={16}/> Checking availability</> : unavailable ? "Deep Scan unavailable" : state === "loading" ? <><LoaderCircle className="spin" size={16}/> Queueing</> : state === "queued" ? "Queued" : state === "running" ? <><LoaderCircle className="spin" size={16}/> Analyzing</> : ["complete", "incomplete"].includes(state) ? <>Run a new scan <ScanSearch size={16}/></> : <>Deep Scan <ScanSearch size={16}/></>}
     </button>
     {signedOut ? <span className="actionNotice" role="status">Free workspaces save exact-version reports, monitoring, and your review queue.</span> : null}
     {showReportLink && reportUrl ? <Link className="deepScanReportLink" href={reportUrl}>Open Analysis Report</Link> : null}
-    {!signedOut && (health === "configuration_unavailable" ? <span className="actionError" role="status">Deep Scan is temporarily unavailable. No scan job was created.</span> : health === "network_unavailable" && !message ? <span className="actionNotice" role="status">Availability could not be checked. You can still start a Deep Scan.</span> : runnerDelayed && !message ? <span className="actionNotice" role="status">A runner is delayed, but requests are accepted and will start automatically.</span> : message ? <span className={state === "error" ? "actionError" : "actionNotice"} role="status">{message}</span> : null)}
+    {!signedOut && (health === "configuration_unavailable" ? <span className="actionError" role="status">Deep Scan is temporarily unavailable. No scan job was created.</span> : health === "network_unavailable" && !message ? <span className="actionNotice" role="status">Availability could not be checked. You can still start a Deep Scan.</span> : message ? <span className={state === "error" ? "actionError" : "actionNotice"} role="status">{message}</span> : null)}
   </div>;
 }
