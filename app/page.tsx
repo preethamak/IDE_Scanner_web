@@ -139,9 +139,9 @@ export default async function HomePage() {
     <section className={styles.monitorSection}>
       <div className={styles.monitorCopy}>
         <span className={styles.kicker}><i /> Keep watching</span>
-        <h2>The first check is only the beginning.</h2>
-        <p>When a new release changes what an extension can do, GuardRails brings that decision back into view.</p>
-        <Link className={styles.textLink} href="/monitor">Explore monitoring <ArrowRight /></Link>
+        <h2>Review once. Bring every meaningful change back to the team.</h2>
+        <p>Set a completed report as the exact baseline. When the publisher releases again, GuardRails scans the new artifact, shows what changed, and puts the decision in your team&apos;s queue.</p>
+        <Link className={styles.textLink} href="/workspace">See team monitoring <ArrowRight /></Link>
       </div>
       <div className={styles.activityPanel}>
         <header><div><BellRing /><strong>Security feed</strong></div><span><i /> Live public results</span></header>
@@ -159,10 +159,10 @@ export default async function HomePage() {
 
     <section className={styles.closing}>
       <div className={styles.closingBrand}><BrandMark /><strong>GuardRails</strong></div>
-      <h2>Make every extension a decision—not a guess.</h2>
-      <p>Search public extension intelligence before the next install, then keep watching what changes.</p>
+      <h2>Make every extension update a decision—not a surprise.</h2>
+      <p>Start with public evidence. Create a workspace when your team needs owners, release comparisons, and delivery history.</p>
       <div className={styles.closingActions}>
-        <Link className={styles.primaryButton} href="/registry">Search extensions <ArrowRight /></Link>
+        <Link className={styles.primaryButton} href="/workspace">Create team workspace <ArrowRight /></Link>
         <Link className={styles.secondaryButton} href="/registry">Browse Extension Registry <ArrowUpRight /></Link>
       </div>
     </section>
