@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import type { PublicSecurityFeedItem } from "@/lib/productData";
 import styles from "./home.module.css";
+import SpotlightCard from "@/app/components/react-bits/SpotlightCard";
 
 type FeedItem = PublicSecurityFeedItem | null;
 
@@ -78,7 +79,8 @@ export function HeroProductScene({ item }: { item: FeedItem }) {
 export function ReleaseDecisionScene() {
   return <div className={styles.releaseHeroScene} aria-label="Example GuardRails release-change decision">
     <div className={styles.releaseHeroDots} aria-hidden="true" />
-    <div className={styles.releaseHeroWindow}>
+    <div className={styles.releaseHeroPhoto} aria-hidden="true" />
+    <SpotlightCard className={styles.releaseHeroWindow}>
       <header><span><i/><i/><i/></span><code>guardrails / team workspace</code><b><Radio/> Monitoring</b></header>
       <div className={styles.releaseHeroIdentity}><span>G</span><div><small>MONITORED EXTENSION</small><strong>GitHub Copilot</strong><code>Reviewed release 1.388.0</code></div><em>New release</em></div>
       <div className={styles.releaseHeroDiff}>
@@ -89,7 +91,7 @@ export function ReleaseDecisionScene() {
         <span><b>+ 2</b> New capabilities</span><p><TerminalSquare/> Runs terminal commands <em>New</em></p><p><Radio/> Opens network connections <em>New</em></p>
       </div>
       <footer><span><UserRound/> Assigned to Priya</span><Link href="/workspace">Review change <ArrowRight/></Link></footer>
-    </div>
+    </SpotlightCard>
   </div>;
 }
 

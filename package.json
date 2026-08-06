@@ -26,13 +26,13 @@
     "fflate": "^0.8.3",
     "lucide-react": "^1.24.0",
     "marked": "^18.0.6",
+    "motion": "^13.0.0",
     "next": "16.2.10",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "yauzl": "^3.2.0"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.11.1",
     "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "^1.58.2",
     "@types/node": "^20",
