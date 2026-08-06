@@ -1,5 +1,8 @@
 :root {
   color-scheme: light;
+  --font-sans: "IBM Plex Sans Variable";
+  --font-mono: "IBM Plex Mono";
+  --font-brand: "IBM Plex Sans Variable";
   --paper: #f4f5f0;
   --white: #ffffff;
   --ink: #101713;
