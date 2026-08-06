@@ -5,5 +5,5 @@ export default defineConfig({
   timeout: 60_000,
   workers: 1,
   use: { baseURL: "http://127.0.0.1:8765", screenshot: "only-on-failure", trace: "retain-on-failure", launchOptions: { executablePath: "/usr/bin/chromium", args: ["--disable-crashpad", "--disable-crash-reporter", "--noerrdialogs"], env: { ...process.env, HOME: "/tmp/playwright-home" } } },
-  webServer: { command: "npm run dev", url: "http://127.0.0.1:8765", reuseExistingServer: true, timeout: 120_000 },
+  webServer: { command: "npm run dev", url: "http://127.0.0.1:8765/ide", reuseExistingServer: true, timeout: 120_000 },
 });

@@ -1,0 +1,13 @@
+import Link from "next/link";
+import { CheckCircle2, ChevronRight, CircleAlert, Clock3, ScanSearch } from "lucide-react";
+import Badge from "@/app/ui/Badge";
+import styles from "./releaseTimeline.module.css";
+
+type ReleaseRow={version?:unknown;decision?:unknown;scan_state?:unknown;published_at?:unknown;is_latest?:unknown};
+export default function ReleaseTimeline({extensionId,releases}:{extensionId:string;releases:ReleaseRow[]}){
+  const visible=releases.slice(0,6);
+  return <section className={styles.timeline} aria-labelledby="release-timeline-heading"><header><div><span>Release timeline</span><h2 id="release-timeline-heading">Know which updates were checked.</h2><p>Each decision stays with the version that produced it. A newer release never inherits an older result.</p></div><Badge tone="info" icon={<Clock3/>}>{releases.length} published versions</Badge></header><div>{visible.map((release,index)=>{const version=String(release.version||"unknown");const decision=String(release.decision||"");const state=decisionTone(decision);const Icon=decision?decision==="allow"?CheckCircle2:CircleAlert:ScanSearch;return <article key={version}><span className={styles.rail}><i/><b/></span><div className={styles.releaseIdentity}><small>{index===0||release.is_latest?"Latest release":"Earlier release"}</small><strong>{version}</strong><time>{formatDate(release.published_at)}</time></div><div className={styles.releaseStatus}><Icon/><span><strong>{decisionLabel(decision)}</strong><small>{decision?"Result applies only to this version":"No public decision is attached"}</small></span></div><Badge tone={state}>{decision?"Checked":"Not scanned"}</Badge><Link href={`/extensions/${encodeURIComponent(extensionId)}/versions/${encodeURIComponent(version)}`} aria-label={`Open version ${version}`}>Open <ChevronRight/></Link></article>})}</div>{releases.length>visible.length?<footer>{releases.length-visible.length} earlier versions remain available in the full release history.</footer>:null}</section>;
+}
+function decisionLabel(value:string){return value==="allow"?"No known concern":value==="review"?"Review recommended":value==="block"?"Do not install":value==="incomplete"?"Analysis incomplete":"Not analyzed"}
+function decisionTone(value:string):"allow"|"review"|"block"|"neutral"{return value==="allow"?"allow":value==="block"?"block":value?"review":"neutral"}
+function formatDate(value:unknown){if(!value)return "Publish date unavailable";const date=new Date(String(value));return Number.isNaN(date.getTime())?"Publish date unavailable":new Intl.DateTimeFormat("en",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"}).format(date)}
