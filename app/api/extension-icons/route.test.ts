@@ -26,5 +26,11 @@ describe("extension-icons route", () => {
     const response = await get("vyper-guard.png");
     // Either 200 (file exists) or 404 (not found), never a traversal read.
     expect([200, 404]).toContain(response.status);
+    if (response.status === 200) {
+      expect(response.headers.get("cache-control")).toContain("public");
+      expect(response.headers.get("cache-control")).toContain(
+        "stale-while-revalidate",
+      );
+    }
   });
 });

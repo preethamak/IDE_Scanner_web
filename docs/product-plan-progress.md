@@ -4,7 +4,7 @@ This is the repository-owned tracker for the website-wide product and design pla
 
 ## Current focus
 
-**Next milestone:** Exportable workspace audit history, then normalized Permission Passports.
+**Next milestone:** Product-quality remediation for sign-in, CLI, landing, Deep Scan reports and reliability; then exportable workspace audit history and normalized Permission Passports.
 
 ## Completed
 
@@ -21,6 +21,13 @@ This is the repository-owned tracker for the website-wide product and design pla
 - [x] Workspace shell, custom switcher, sign out, overview, and review inbox foundation.
 
 ## In progress / next
+
+- [ ] Modernize sign-in and signed-in account states.
+- [ ] Modernize the CLI product page and installation journey.
+- [ ] Replace the landing hero's weak first visual/copy and add a distinctive light atmospheric background.
+- [ ] Complete a cross-site button contrast and readable-type audit without dark green surfaces.
+- [ ] Modernize the immutable Deep Scan report and fix Deep Scan reliability defects.
+- [ ] Improve extension-logo loading, caching, and resilient fallbacks.
 
 - [x] Dedicated workspace release-review panel with exact-version context.
 - [x] Allow/block/exception decision flow with required rationale.
