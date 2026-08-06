@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
 import { ArrowUpRight } from "lucide-react";
-import { Instrument_Sans, JetBrains_Mono, Marck_Script } from "next/font/google";
 import SiteNav from "./SiteNav";
 import HeaderAccount from "./HeaderAccount";
 import BrandMark from "./BrandMark";
+import "@fontsource-variable/ibm-plex-sans";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/500.css";
+import "@fontsource/marck-script/400.css";
 import "./globals.css";
 import "./guardrails.css";
 import "./visual-refresh.css";
@@ -14,17 +17,13 @@ import "./landing.css";
 import "./accessibility.css";
 import "./product-ui.css";
 
-const instrument = Instrument_Sans({ subsets: ["latin"], variable: "--font-sans" });
-const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
-const brand = Marck_Script({ weight: "400", subsets: ["latin"], variable: "--font-brand" });
-
 export const metadata: Metadata = {
   title: { default: "GuardRails — Extension security intelligence", template: "%s · GuardRails" },
   description: "Inspect, approve, and continuously monitor the exact extensions entering developer environments."
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en" className={`${instrument.variable} ${mono.variable} ${brand.variable}`}><body>
+  return <html lang="en"><body>
     <div className="siteFrame">
       <a className="skipLink" href="#main-content">Skip to content</a>
       <header className="siteHeader">

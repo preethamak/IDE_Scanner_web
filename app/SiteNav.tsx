@@ -6,6 +6,7 @@ import { ArrowUpRight, BellRing, BookOpen, Boxes, ChevronDown, FileSearch, Flask
 import { useEffect, useRef, useState } from "react";
 
 const directLinks = [
+  ["/ide", "GuardRails IDE", ShieldCheck],
   ["/registry", "Extension Registry", Boxes],
   ["/analyze", "Analyze a file", ScanSearch],
   ["/cli", "CLI", TerminalSquare],

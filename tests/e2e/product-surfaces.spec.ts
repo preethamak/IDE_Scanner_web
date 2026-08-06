@@ -5,7 +5,7 @@ const surfaces = [
   ["/registry", /Browse completed extension analysis/i],
   ["/analyze", /Check a file you already have/i],
   ["/cli", /See what is already inside your editor/i],
-  ["/workspace", /Keep risky extension updates from reaching your team unnoticed/i],
+  ["/workspace", /Keep every extension decision in one trusted place/i],
   ["/monitor", /Watch the release/i],
   ["/account", /Keep watching after the first scan/i],
   ["/benchmark", /Regression evidence with its limits intact/i],
@@ -31,7 +31,7 @@ test("Workspace explains the team decision outcome before sign-in", async ({ pag
   await page.goto("/workspace");
   await expect(page.getByRole("heading", { name: "Your team’s next decisions" })).toBeVisible();
   await expect(page.getByText("GitHub Copilot", { exact: false }).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: "Create team workspace" })).toHaveAttribute("href", "/account?next=/workspace");
+  await expect(page.getByRole("link", { name: /Create your workspace/i })).toHaveAttribute("href", "/account?next=/workspace");
   await expect(page.getByRole("link", { name: "Explore Extension Registry" })).toHaveAttribute("href", "/registry");
 });
 
