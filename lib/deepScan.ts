@@ -105,17 +105,27 @@ export async function dispatchDeepScan(jobId: string, minimumIntervalSeconds = 0
   if (reservation.error) throw reservation.error;
   if (reservation.data !== true) return false;
   await db.from("scan_job_events").insert({ job_id: jobId, stage: "dispatching", event_type: "dispatch_requested", detail: { repository: `${owner}/${repository}` } });
-  const response = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/actions/workflows/deep-scan.yml/dispatches`, {
-    method: "POST",
-    headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" },
-    body: JSON.stringify({ ref: "main", inputs: { job_id: jobId } }),
-    cache: "no-store",
-  });
+  const response = await dispatchWorkflow(owner, repository, token, jobId);
   if (!response.ok) throw new Error(`Deep Scan dispatch failed (${response.status}).`);
   const succeededAt = new Date().toISOString();
   await db.from("scan_jobs").update({ lifecycle_stage: "dispatched", dispatch_succeeded_at: succeededAt, updated_at: succeededAt, last_event_at: succeededAt }).eq("id", jobId).eq("status", "queued");
   await db.from("scan_job_events").insert({ job_id: jobId, stage: "dispatched", event_type: "dispatch_accepted", detail: { repository: `${owner}/${repository}` } });
   return true;
+}
+
+async function dispatchWorkflow(owner: string, repository: string, token: string, jobId: string): Promise<Response> {
+  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/actions/workflows/deep-scan.yml/dispatches`;
+  let response: Response | undefined;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    response = await fetch(url, {
+      method: "POST",
+      headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" },
+      body: JSON.stringify({ ref: "main", inputs: { job_id: jobId } }),
+      cache: "no-store",
+    });
+    if (response.ok || response.status < 500 || attempt === 2) return response;
+  }
+  throw new Error("Deep Scan dispatch did not return a response.");
 }
 
 async function subscribeToJob(jobId: string, userId: string): Promise<void> {

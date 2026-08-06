@@ -75,5 +75,19 @@ describe("dispatchDeepScan", () => {
     await expect(dispatchDeepScan("job-1")).rejects.toThrow("503");
     expect(update).not.toHaveBeenCalled();
     expect(insert).toHaveBeenCalledTimes(1);
+    expect(global.fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it("retries a transient GitHub failure before accepting the dispatch", async () => {
+    process.env.GITHUB_ACTIONS_TOKEN = "test-token";
+    const { insert, update } = configureDb(true);
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: false, status: 500 })
+      .mockResolvedValueOnce({ ok: true, status: 204 });
+
+    await expect(dispatchDeepScan("job-1")).resolves.toBe(true);
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ lifecycle_stage: "dispatched" }));
+    expect(insert).toHaveBeenCalledTimes(2);
   });
 });
