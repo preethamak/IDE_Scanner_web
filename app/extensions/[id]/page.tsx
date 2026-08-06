@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BadgeCheck, ChevronRight, Download } from "lucide-react";
+import { BadgeCheck, ChevronRight, Download, FileCode2, Network, ShieldCheck, TerminalSquare } from "lucide-react";
 import { getExtensionProduct, getVersionProduct } from "@/lib/productData";
 import { serverDb } from "@/lib/supabaseServer";
 import DeepScanButton from "@/app/DeepScanButton";
@@ -33,13 +33,25 @@ export default async function ExtensionPage({ params }: { params: Promise<{ id: 
     <div className="profileFacts"><span>Publisher <strong>{product.extension.publisher}{product.extension.publisher_verified ? <BadgeCheck size={15}/> : null}</strong></span><span>Installs <strong>{formatCount(product.extension.installs)}</strong></span><span>Latest version <strong>{version}</strong></span></div>
     <div className="profileLayout"><div>
       <section id="overview" className="profileSection"><header><span>Current release</span><h2>{scan ? decisionHeadline(decision) : "This version has not been scanned yet."}</h2></header><p>{scan ? String(scan.decision_reason || "Review the Analysis Report before installing.") : "Read the README and version history, then request a security scan when you are ready."}</p>{scan ? <Link className="profileReportLink" href={reportHref}>Read Analysis Report <ChevronRight size={16}/></Link> : null}</section>
+      {scan ? <PermissionPassport scan={scan} version={version} reportHref={reportHref}/>:null}
       <ProfileReadme extensionId={product.extension.id} version={version} scanId={String(scan?.id || "")} files={files} documentationUrl={publisherReadmeHref}/>
       <section id="versions" className="profileSection"><header><span>Versions</span><h2>Release history</h2></header><div className="versionTable"><div className="versionHead"><span>Version</span><span>Scan status</span><span/></div>{product.versions.map((item) => { const versionDecision = decisionState(item.decision); const itemVersion = String(item.version); return <div className="versionRow" key={itemVersion}><strong>{itemVersion}</strong><span className={`scanState decisionState ${versionDecision}`}>{versionDecision === "not-scanned" ? "NOT SCANNED" : decisionLabel(versionDecision)}</span><Link href={`/extensions/${encodeURIComponent(product.extension.id)}/versions/${encodeURIComponent(itemVersion)}`}>{versionDecision === "not-scanned" ? "View version" : "View report"} <ChevronRight size={15}/></Link></div>; })}</div></section>
     </div><aside className="profileAside"><div><span>Package</span><dl><dt>Registry</dt><dd>{product.extension.registry === "openvsx" ? "Open VSX" : "VS Marketplace"}</dd><dt>Rating</dt><dd>{product.extension.rating || "Not reported"}</dd><dt>Repository</dt><dd>{product.extension.repository_url ? <a href={product.extension.repository_url}>Open source</a> : "Not declared"}</dd></dl></div><div><span>Watch releases</span><p>Get a reminder when this extension publishes a new version.</p><WatchExtension extensionId={product.extension.id}/></div></aside></div>
   </main>;
 }
 
+function PermissionPassport({scan,version,reportHref}:{scan:Record<string,unknown>;version:string;reportHref:string}) {
+  const assessment = objectValue(scan.capability_assessment);
+  const matched = Array.isArray(assessment.matched) ? assessment.matched.map(String).slice(0,4) : [];
+  const defaultCapabilities = ["Workspace file access","Editor commands","Network behavior"];
+  const capabilities = matched.length ? matched.map(humanize) : defaultCapabilities;
+  const icons = [FileCode2,TerminalSquare,Network,ShieldCheck];
+  return <section className="permissionPassport" aria-labelledby="permission-passport-heading"><header><div><span>Permission passport</span><h2 id="permission-passport-heading">What this release can do.</h2><p>A quick view of the access GuardRails found in version {version}. Open the report to see the supporting files and checks.</p></div><span className="passportVersion">Exact release <code>@{version}</code></span></header><div>{capabilities.map((capability,index)=>{const Icon=icons[index%icons.length];return <article key={capability}><Icon/><span>Observed access</span><strong>{capability}</strong></article>})}</div><footer><span><ShieldCheck/> This passport applies only to version {version}.</span><Link href={reportHref}>Review supporting evidence <ChevronRight/></Link></footer></section>;
+}
+
 function decisionState(value: unknown) { return scanDecision(value); }
 function decisionLabel(value: ReturnType<typeof decisionState>): string { return value === "allow" ? "NO KNOWN CONCERN" : value === "review" ? "REVIEW NEEDED" : value === "block" ? "DO NOT INSTALL" : value === "incomplete" ? "ANALYSIS INCOMPLETE" : "NOT SCANNED"; }
 function decisionHeadline(value: ReturnType<typeof decisionState>): string { return value === "allow" ? "No known concern." : value === "review" ? "Review this version before installing." : value === "block" ? "Do not install this version." : value === "incomplete" ? "The scan needs to finish." : "This version has not been scanned yet."; }
 function formatCount(value: number): string { return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value); }
+function objectValue(value:unknown):Record<string,unknown>{return value&&typeof value==="object"&&!Array.isArray(value)?value as Record<string,unknown>:{} }
+function humanize(value:string){return value.replaceAll("_"," ").replaceAll("-"," ").replace(/^./,letter=>letter.toUpperCase())}

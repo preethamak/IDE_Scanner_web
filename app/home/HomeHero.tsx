@@ -15,12 +15,12 @@ export default function HomeHero() {
     <section className={styles.hero}>
       <div className={styles.heroGrid} aria-hidden="true" />
       <div className={styles.heroCopy}>
-        <span className={styles.eyebrow}><i /> Extension security intelligence</span>
-        <h1>Know what enters<br />your <em>editor.</em></h1>
-        <p>Inspect the exact extension release before installation. See capabilities, evidence, and meaningful changes without digging through a package yourself.</p>
+        <span className={styles.eyebrow}><i /> Before install and after every update</span>
+        <h1>Know what runs<br />in your <em>editor.</em></h1>
+        <p>See what an extension can access before you install it—and know when a new release adds commands, files, or network connections.</p>
         <div className={styles.searchShell}><HomeSearch /></div>
         <div className={styles.popular}><span>Popular</span>{popular.map(([label, query]) => <Link href={`/registry?q=${encodeURIComponent(query)}`} key={query}>{label}</Link>)}</div>
-        <div className={styles.heroProof}><span><Check /> Exact-version reports</span><span><Check /> Evidence-first decisions</span><span><Check /> Release monitoring</span></div>
+        <div className={styles.heroProof}><span><Check /> Check before install</span><span><Check /> Compare every update</span><span><Check /> Review as a team</span></div>
       </div>
 
       <div className={styles.heroProduct} aria-label="GuardRails extension intelligence product preview">
