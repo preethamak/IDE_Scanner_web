@@ -1,179 +1,76 @@
+import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowRight,
-  ArrowUpRight,
-  BellRing,
-  CircleCheck,
-  Eye,
-  PackageSearch,
-  RefreshCw,
-} from "lucide-react";
+import { ArrowRight, BellRing, Check, CircleAlert, Eye, FileSearch, Layers3, ShieldCheck, Waypoints } from "lucide-react";
 import BrandMark from "@/app/BrandMark";
 import HomeSearch from "@/app/HomeSearch";
-import {
-  CredibilityStory,
-  ReleaseDecisionScene,
-  ProductWalkthrough,
-} from "@/app/HomeProductShowcase";
-import { getPublicSecurityFeed } from "@/lib/productData";
+import SpotlightCard from "@/app/components/react-bits/SpotlightCard";
 import styles from "./home.module.css";
 
 export const dynamic = "force-dynamic";
 
-const popularSearches = [
-  ["GitHub Copilot", "GitHub.copilot"],
-  ["Continue", "Continue.continue"],
-  ["Cline", "saoudrizwan.claude-dev"],
-  ["Code Runner", "formulahendry.code-runner"],
-  ["ESLint", "dbaeumer.vscode-eslint"],
-  ["Docker", "ms-azuretools.vscode-docker"],
+const signals = [
+  ["New release", "A version changed"],
+  ["What changed", "Capabilities and files"],
+  ["What to do", "A clear next step"],
 ] as const;
 
-export default async function HomePage() {
-  const feed = await getPublicSecurityFeed(8);
-  const recent = feed[0] || null;
-
-  return <main className={styles.home}>
-    <section className={styles.hero}>
-      <div className={styles.heroGlow} aria-hidden="true" />
-      <div className={styles.heroCopy}>
-        <span className={styles.kicker}><i /> Extension Security</span>
-        <h1>Know your extensions.</h1>
-        <p className={styles.heroLead}>Understand what an extension does before you install it. Stay informed when a new release changes it.</p>
-        <div className={styles.heroSearch}>
-          <HomeSearch />
+export default function HomePage() {
+  return <main className={styles.nextLanding}>
+    <section className={styles.nextHero}>
+      <div className={styles.nextHeroDots} aria-hidden="true" />
+      <div className={styles.nextHeroCopy}>
+        <span className={styles.nextEyebrow}><i /> GuardRails</span>
+        <h1>Know what you install.</h1>
+        <p>GuardRails helps you understand extensions before they enter your editor, then keeps the important changes in view.</p>
+        <div className={styles.nextHeroActions}>
+          <Link href="/registry" className={styles.nextPrimary}>Search extensions <ArrowRight /></Link>
+          <Link href="/workspace" className={styles.nextSecondary}>Open workspace</Link>
         </div>
-        <div className={styles.popularSearches} aria-label="Popular extension searches">
-          <span>Popular searches</span>
-          <div>
-            {popularSearches.map(([label, query]) => <Link key={query} href={`/registry?q=${encodeURIComponent(query)}`}>{label}</Link>)}
-          </div>
-        </div>
+        <div className={styles.nextSearch}><HomeSearch compact /></div>
       </div>
-      <ReleaseDecisionScene />
+      <div className={styles.nextHeroArt} aria-label="GuardRails extension intelligence visual">
+        <Image src="/landing/release-control-room-hero.png" alt="Engineers reviewing software changes" fill priority sizes="(max-width: 800px) 100vw, 58vw" />
+        <div className={styles.nextHeroShade} aria-hidden="true" />
+        <SpotlightCard className={styles.nextHeroSignal} spotlightColor="rgba(198, 255, 65, 0.28)">
+          <span><Waypoints /> Release noticed</span>
+          <strong>A meaningful change, made clear.</strong>
+          <p>See what changed in an extension without digging through the update.</p>
+          <div><i /><i /><i /></div>
+        </SpotlightCard>
+      </div>
     </section>
 
-    <CredibilityStory />
-
-    <section className={styles.productSection} id="how-it-works">
-      <header className={styles.sectionIntro}>
-        <span className={styles.kicker}><i /> See the product</span>
-        <h2>One review becomes a release-control loop.</h2>
-        <p>Use the initial report as a baseline, then bring your team back only when a new release creates a decision worth making.</p>
-      </header>
-      <ProductWalkthrough item={recent} />
+    <section className={styles.nextIntro}>
+      <p>Extensions are powerful software. Treat them that way.</p>
+      <div><span>Before install</span><ArrowRight/><span>After every update</span></div>
     </section>
 
-    <section className={styles.changeSection}>
-      <div className={styles.changeCopy}>
-        <span className={styles.kicker}><i /> Releases change</span>
-        <h2>The name stays the same. The behavior may not.</h2>
-        <p>GuardRails keeps the previous release in view, so a meaningful new capability does not disappear inside an ordinary update notification.</p>
-        <Link className={styles.textLink} href="/compare">Compare extension releases <ArrowRight /></Link>
+    <section className={styles.nextProduct}>
+      <header><span className={styles.nextEyebrow}><i /> A simple loop</span><h2>See the change.<br/>Make the call.</h2><p>No raw scanner maze. Just the context you need, connected to the exact release.</p></header>
+      <div className={styles.nextSignalGrid}>
+        {signals.map(([title, detail], index) => <SpotlightCard key={title} className={styles.nextSignalCard} spotlightColor={index === 1 ? "rgba(255, 184, 77, 0.22)" : "rgba(198, 255, 65, 0.18)"}>
+          <span>0{index + 1}</span><div>{index === 0 ? <BellRing/> : index === 1 ? <FileSearch/> : <ShieldCheck/>}<h3>{title}</h3><p>{detail}</p></div><ArrowRight/>
+        </SpotlightCard>)}
       </div>
-      <div className={styles.releaseCompare} aria-label="Illustration of capabilities changing between extension releases">
-        <div className={styles.compareHeader}>
-          <span>Release comparison</span>
-          <small>Illustrative change view</small>
-        </div>
-        <div className={styles.releaseColumns}>
-          <article>
-            <header><span>Version 1.3</span><small>Previously reviewed</small></header>
-            <ul><li><CircleCheck /> Reads project files</li><li><CircleCheck /> Provides editor commands</li></ul>
-          </article>
-          <div className={styles.changeArrow} aria-hidden="true"><ArrowRight /></div>
-          <article className={styles.latestRelease}>
-            <header><span>Version 1.4</span><small>New release</small></header>
-            <ul><li><CircleCheck /> Reads project files</li><li><RefreshCw /> Runs terminal commands <b>New</b></li><li><RefreshCw /> Opens network connections <b>New</b></li></ul>
-          </article>
+      <div className={styles.nextCanvas}>
+        <div className={styles.nextCanvasHeader}><span><b /> GuardRails</span><small>Extension change</small><em>Ready to review</em></div>
+        <div className={styles.nextCanvasBody}>
+          <div className={styles.nextCanvasTitle}><span>Extension update</span><h3>The difference is the signal.</h3><p>New capabilities, removed files, and the evidence behind them.</p></div>
+          <div className={styles.nextChangeList}><article><span className={styles.nextChangePlus}>+</span><div><strong>Terminal command</strong><small>New capability</small></div><em>Added</em></article><article><span className={styles.nextChangeDot} /><div><strong>Network access</strong><small>New destination found</small></div><em>Review</em></article><article><span className={styles.nextChangeCheck}><Check/></span><div><strong>Project files</strong><small>Existing capability</small></div><em>Unchanged</em></article></div>
         </div>
       </div>
     </section>
 
-    <section className={styles.riskSection}>
-      <div className={styles.riskHeading}>
-        <span className={styles.kicker}><i /> Why check first</span>
-        <h2>The marketplace grew. So did the reasons to look closer.</h2>
-        <p>Most extensions are useful. The scale of the ecosystem simply makes downloads and ratings an incomplete security signal.</p>
-      </div>
-      <div className={styles.detectionStory} aria-label="VS Code malware detections increased from 27 to 105 in the first ten months of 2025">
-        <header><span>VS Code malware detections</span><small>First 10 months of 2025</small></header>
-        <div className={styles.detectionBars}>
-          <div><strong>27</strong><i className={styles.barBefore} /><span>Earlier count</span></div>
-          <div><strong>105</strong><i className={styles.barAfter} /><span>Later count</span></div>
-        </div>
-        <p>Nearly <strong>4×</strong> in ten months</p>
-      </div>
-      <div className={styles.incidentConclusion}>
-        <span>And one incident reached</span>
-        <strong>1.5 million</strong>
-        <p>installs across two AI extensions reported to be silently exfiltrating source code.</p>
-        <div className={styles.sourceLinks}>Sources <a href="https://www.koi.ai/blog/2-6-exposing-malicious-extensions-shocking-statistics-from-the-vs-code-marketplace" target="_blank" rel="noopener noreferrer">Koi Security</a><a href="https://www.reversinglabs.com/blog/malicious-vs-code-fake-image" target="_blank" rel="noopener noreferrer">ReversingLabs</a><a href="https://thehackernews.com/2026/01/malicious-vs-code-ai-extensions-with-15.html" target="_blank" rel="noopener noreferrer">The Hacker News</a></div>
-      </div>
+    <section className={styles.nextSplit}>
+      <div className={styles.nextSplitImage}><Image src="/landing/release-control-room-hero.png" alt="Software team reviewing extension changes" fill sizes="(max-width: 800px) 100vw, 50vw" /></div>
+      <div><span className={styles.nextEyebrow}><i /> Built for the moment after install</span><h2>Updates deserve the same attention as installs.</h2><p>A publisher can change what an extension can access. GuardRails gives you a visible record of the before and after.</p><Link href="/monitor">Explore monitoring <ArrowRight/></Link></div>
     </section>
 
-    <section className={styles.recentSection}>
-      <div className={styles.recentHeading}>
-        <span className={styles.kicker}><i /> From public analysis</span>
-        <h2>A result worth opening.</h2>
-        <p>One current GuardRails result, tied to the analyzed release—not a fictional marketing alert.</p>
-      </div>
-      {recent ? <article className={styles.recentFinding}>
-        <div className={styles.recentMeta}>
-          <span className={styles.findingPulse} aria-hidden="true" />
-          <span>Recent finding</span>
-          <time dateTime={recent.scanned_at}>{formatDate(recent.scanned_at)}</time>
-        </div>
-        <div className={styles.recentBody}>
-          <div><small>{recent.extension_id}</small><h3>{recent.display_name}</h3><code>@{recent.version}</code></div>
-          <p>{recent.decision_reason}</p>
-          <Link href={`/extensions/${encodeURIComponent(recent.extension_id)}/versions/${encodeURIComponent(recent.version)}`}>View Security Summary <ArrowUpRight /></Link>
-        </div>
-      </article> : <div className={styles.feedEmpty}>
-        <Eye />
-        <div><strong>Public analysis is being refreshed.</strong><p>Search an extension above to explore the current intelligence catalog.</p></div>
-        <Link href="/registry">Open Extension Registry <ArrowRight /></Link>
-      </div>}
+    <section className={styles.nextProof}>
+      <div><span className={styles.nextEyebrow}><i /> Made for clarity</span><h2>Evidence without the noise.</h2></div>
+      <div className={styles.nextProofItems}><article><Eye/><strong>See the behavior</strong><p>Understand files, commands, and connections in plain language.</p></article><article><Layers3/><strong>Keep the release</strong><p>Every report stays connected to the version that was checked.</p></article><article><CircleAlert/><strong>Notice the difference</strong><p>Come back when a new release changes something that matters.</p></article></div>
     </section>
 
-    <section className={styles.monitorSection}>
-      <div className={styles.monitorCopy}>
-        <span className={styles.kicker}><i /> Keep watching</span>
-        <h2>Review once. Bring every meaningful change back to the team.</h2>
-        <p>Set a completed report as the exact baseline. When the publisher releases again, GuardRails scans the new artifact, shows what changed, and puts the decision in your team&apos;s queue.</p>
-        <Link className={styles.textLink} href="/workspace">See team monitoring <ArrowRight /></Link>
-      </div>
-      <div className={styles.activityPanel}>
-        <header><div><BellRing /><strong>Security feed</strong></div><span><i /> Live public results</span></header>
-        <div className={styles.activityList}>
-          {feed.slice(0, 4).map((item) => <Link className={styles.activityRow} href={`/extensions/${encodeURIComponent(item.extension_id)}/versions/${encodeURIComponent(item.version)}`} key={`${item.scan_id}-${item.extension_id}`}>
-            <span className={styles.activityMark}><PackageSearch /></span>
-            <span><strong>{item.display_name}</strong><small>{shorten(item.decision_reason, 82)}</small></span>
-            <code>@{item.version}</code>
-            <ArrowUpRight />
-          </Link>)}
-          {!feed.length ? <div className={styles.activityEmpty}>No public review results are available right now.</div> : null}
-        </div>
-      </div>
-    </section>
-
-    <section className={styles.closing}>
-      <div className={styles.closingBrand}><BrandMark /><strong>GuardRails</strong></div>
-      <h2>Make every extension update a decision—not a surprise.</h2>
-      <p>Start with public evidence. Create a workspace when your team needs owners, release comparisons, and delivery history.</p>
-      <div className={styles.closingActions}>
-        <Link className={styles.primaryButton} href="/workspace">Create team workspace <ArrowRight /></Link>
-        <Link className={styles.secondaryButton} href="/registry">Browse Extension Registry <ArrowUpRight /></Link>
-      </div>
-    </section>
+    <section className={styles.nextClosing}><BrandMark/><span>GuardRails</span><h2>A clearer way to trust what runs in your editor.</h2><Link href="/registry" className={styles.nextPrimary}>Search extensions <ArrowRight /></Link></section>
   </main>;
-}
-
-function shorten(value: string, limit: number) {
-  return value.length > limit ? `${value.slice(0, limit - 1)}…` : value;
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "Latest analysis" : new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(date);
 }
