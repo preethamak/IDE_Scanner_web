@@ -77,20 +77,20 @@ export function HeroProductScene({ item }: { item: FeedItem }) {
 
 /** The homepage sells the recurring team decision, not a pile of scanner UI. */
 export function ReleaseDecisionScene() {
-  return <div className={styles.releaseHeroScene} aria-label="Example GuardRails release-change decision">
+  return <div className={styles.releaseHeroScene} aria-label="GuardRails product preview">
     <div className={styles.releaseHeroDots} aria-hidden="true" />
     <div className={styles.releaseHeroPhoto} aria-hidden="true" />
     <SpotlightCard className={styles.releaseHeroWindow}>
-      <header><span><i/><i/><i/></span><code>guardrails / team workspace</code><b><Radio/> Monitoring</b></header>
-      <div className={styles.releaseHeroIdentity}><span>G</span><div><small>MONITORED EXTENSION</small><strong>GitHub Copilot</strong><code>Reviewed release 1.388.0</code></div><em>New release</em></div>
+      <header><span><i/><i/><i/></span><code>guardrails / extension intelligence</code><b><Radio/> Live</b></header>
+      <div className={styles.releaseHeroIdentity}><span><ShieldCheck/></span><div><small>GUARDRAILS</small><strong>Extension intelligence</strong><code>One place for every release</code></div><em>New release</em></div>
       <div className={styles.releaseHeroDiff}>
-        <div><small>1.388.0</small><strong>Reviewed baseline</strong></div><ArrowRight/>
-        <div><small>1.389.0</small><strong>New artifact</strong></div>
+        <div><small>Before</small><strong>Previous release</strong></div><ArrowRight/>
+        <div><small>Now</small><strong>New release</strong></div>
       </div>
       <div className={styles.releaseHeroChanges}>
         <span><b>+ 2</b> New capabilities</span><p><TerminalSquare/> Runs terminal commands <em>New</em></p><p><Radio/> Opens network connections <em>New</em></p>
       </div>
-      <footer><span><UserRound/> Assigned to Priya</span><Link href="/workspace">Review change <ArrowRight/></Link></footer>
+      <footer><span><UserRound/> Clear next steps</span><Link href="/registry">Explore extensions <ArrowRight/></Link></footer>
     </SpotlightCard>
   </div>;
 }

@@ -38,8 +38,8 @@ export default async function HomePage() {
       <div className={styles.heroGlow} aria-hidden="true" />
       <div className={styles.heroCopy}>
         <span className={styles.kicker}><i /> Extension Security</span>
-        <h1>Know what changed before it reaches your team.</h1>
-        <p className={styles.heroLead}>GuardRails turns each extension release into a clear team decision—what changed, who owns it, and where the evidence lives.</p>
+        <h1>Know your extensions.</h1>
+        <p className={styles.heroLead}>Understand what an extension does before you install it. Stay informed when a new release changes it.</p>
         <div className={styles.heroSearch}>
           <HomeSearch />
         </div>
