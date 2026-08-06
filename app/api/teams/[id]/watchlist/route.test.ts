@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({ authenticated: vi.fn(), role: vi.fn(), maybeSi
 vi.mock("@/lib/auth", () => ({ authenticated: mocks.authenticated }));
 vi.mock("@/lib/teams", () => ({ requireTeamRole: mocks.role }));
 vi.mock("@/lib/supabase", () => ({ serviceDb: () => ({ from: mocks.from }) }));
-import { DELETE, POST } from "./route";
+import { DELETE, GET, POST } from "./route";
 
 describe("team watchlist removal", () => {
   beforeEach(() => {
@@ -48,5 +48,16 @@ describe("team watchlist removal", () => {
   it("rejects a malformed baseline scan before looking it up", async () => {
     const response = await POST(new Request("http://localhost", { method: "POST", body: JSON.stringify({ extension_id: "GitHub.copilot", baseline_scan_id: "not-a-uuid" }) }), { params: Promise.resolve({ id: "team-1" }) });
     expect(response.status).toBe(400);
+  });
+
+  it("returns observable registry monitoring health with the watchlist", async () => {
+    const watchOrder=vi.fn().mockResolvedValue({data:[{extension_id:"GitHub.copilot",baseline_version:"1.2.3",monitoring_state:"monitoring",last_event_at:"2026-08-06T12:00:00.000Z"}],error:null});
+    const refreshLimit=vi.fn().mockResolvedValue({data:[{registry:"vs-marketplace",status:"complete",started_at:"2026-08-06T12:00:00.000Z",completed_at:"2026-08-06T12:17:00.000Z",error:null},{registry:"openvsx",status:"complete",started_at:"2026-08-06T12:00:00.000Z",completed_at:"2026-08-06T12:15:00.000Z",error:null}],error:null});
+    mocks.from.mockImplementation((table:string)=>table==="team_watchlist_items"?{select:()=>({eq:()=>({order:watchOrder})})}:{select:()=>({order:()=>({limit:refreshLimit})})});
+    const response=await GET(new Request("http://localhost"),{params:Promise.resolve({id:"team-1"})});
+    expect(response.status).toBe(200);
+    const body=await response.json();
+    expect(body.health).toMatchObject({status:"healthy",last_checked_at:"2026-08-06T12:17:00.000Z",next_check_at:"2026-08-06T18:17:00.000Z",cadence_hours:6});
+    expect(body.items[0].last_event_at).toBe("2026-08-06T12:00:00.000Z");
   });
 });

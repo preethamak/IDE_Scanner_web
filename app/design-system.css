@@ -38,13 +38,40 @@
   --info: #516273;    --info-bg: #eef2f5;    --info-line: #cdd7de;
   --violet: #67519b;  --violet-bg: #ece7f6;
 
+  /* Logo-derived product accents. Structural UI stays neutral, never dark green. */
+  --brand-blue: #2f6fdd;
+  --brand-blue-soft: #e9f1ff;
+  --brand-pink: #ef3d75;
+  --brand-pink-soft: #ffeaf1;
+  --neutral-950: #17191f;
+  --neutral-800: #30343d;
+  --neutral-600: #5d6670;
+  --neutral-400: #929aa4;
+  --neutral-200: #dce1e6;
+  --neutral-100: #f4f6f8;
+
   /* Type + spacing scale */
   --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px;
+  --font-xs: 12px;
+  --font-sm: 14px;
+  --font-base: 16px;
+  --font-lg: 18px;
+  --font-xl: 22px;
+  --font-2xl: 30px;
+  --font-3xl: 40px;
   --radius-sm: 7px; --radius: 12px; --radius-lg: 16px;
   --shadow-sm: 0 2px 8px rgba(20, 32, 43, .06);
   --shadow: 0 16px 32px rgba(20, 32, 43, .10);
   --shadow-lg: 0 24px 64px rgba(20, 32, 43, .12);
 }
+
+.headerProductCta { display:inline-flex;align-items:center;justify-content:center;min-height:38px;border-radius:8px;padding:0 14px;background:var(--neutral-950);color:#fff!important;font-size:13px;text-decoration:none; }
+@media(max-width:900px){.headerProductCta{display:none}}
+
+.permissionPassport{overflow:hidden;margin:0 0 46px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-sm)}
+.permissionPassport>header{display:flex;align-items:flex-start;justify-content:space-between;gap:30px;padding:26px;background:linear-gradient(120deg,var(--brand-blue-soft),#fff 62%)}
+.permissionPassport>header>div{max-width:650px}.permissionPassport header span:first-child{color:var(--brand-blue);font:800 var(--font-xs) var(--mono);letter-spacing:.05em;text-transform:uppercase}.permissionPassport h2{margin:7px 0!important;font-size:var(--font-2xl)!important}.permissionPassport header p{margin:0;color:var(--muted);font-size:var(--font-sm);line-height:1.6}.passportVersion{border:1px solid #bfcfec;border-radius:30px;padding:8px 11px;background:#fff;color:var(--neutral-600);font-size:var(--font-xs);white-space:nowrap}.passportVersion code{color:var(--neutral-950);font-weight:800}.permissionPassport>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line)}.permissionPassport article{display:grid;grid-template-columns:38px 1fr;column-gap:12px;padding:20px;background:#fff}.permissionPassport article svg{grid-row:1/3;width:22px;color:var(--brand-blue)}.permissionPassport article span{color:var(--neutral-600);font-size:var(--font-xs)}.permissionPassport article strong{font-size:var(--font-base)}.permissionPassport>footer{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px 24px;background:var(--neutral-100);font-size:var(--font-sm)}.permissionPassport footer>span,.permissionPassport footer>a{display:flex;align-items:center;gap:7px}.permissionPassport footer svg{width:16px}.permissionPassport footer>a{color:var(--neutral-950);font-weight:800}
+@media(max-width:680px){.permissionPassport>header,.permissionPassport>footer{align-items:flex-start;flex-direction:column}.permissionPassport>div{grid-template-columns:1fr}.passportVersion{white-space:normal}}
 
 /* ============================================================================
    Card — the reusable surface primitive (replaces ad-hoc row layouts)
