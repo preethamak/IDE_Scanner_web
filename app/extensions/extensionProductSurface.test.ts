@@ -15,4 +15,10 @@ describe("extension product profile",()=>{
     expect(design).toContain("var(--font-sm)");
     expect(design).toContain("var(--font-base)");
   });
+  it("shows version-bound review history",()=>{
+    expect(page).toContain("ReleaseTimeline");
+    const timeline=readFileSync(new URL("./ReleaseTimeline.tsx",import.meta.url),"utf8");
+    expect(timeline).toContain("A newer release never inherits an older result.");
+    expect(timeline).toContain("Result applies only to this version");
+  });
 });
