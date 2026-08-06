@@ -29,8 +29,17 @@ describe("GuardRails landing surface", () => {
 
   it("keeps search, evidence, comparison, and decision concepts in the product story", () => {
     const files = [read("./HomeHero.tsx"), read("./SecurityBento.tsx"), read("./ReleaseWorkflow.tsx")].join("\n");
-    for (const phrase of ["Exact-version reports", "Evidence-first decisions", "Release diff", "Record the decision"]) {
+    for (const phrase of ["Check before install", "Compare every update", "Release diff", "Make the team decision"]) {
       expect(files).toContain(phrase);
     }
   });
+  it("includes the interactive permission diff signature", () => {
+    const page = read("../page.tsx");
+    expect(page).toContain("PermissionDiff");
+    const diff = read("./PermissionDiff.tsx");
+    expect(diff).toContain("See the permission change");
+    expect(diff).toContain("Review before rollout");
+    expect(diff).toContain('aria-label="Choose release"');
+  });
+
 });

@@ -12,6 +12,8 @@ describe("Extension Registry product surface",()=>{
     expect(page).toContain("Know what runs");
     expect(page).toContain("Results distinguish exact identities from similar names.");
     expect(page).toContain("Exact-release boundary");
+    expect(page).toContain("The version is the boundary.");
+    expect(page).toContain("Current public signal");
   });
   it("shows useful registry health rather than only internal totals",()=>{
     for(const label of ["Public intelligence","Exact artifacts","Needs attention","Last refreshed"]) expect(page).toContain(label);

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, ArrowUpRight, Eye, PackageSearch } from "lucide-react";
 import HomeHero from "@/app/home/HomeHero";
 import MarketplaceProof from "@/app/home/MarketplaceProof";
+import PermissionDiff from "@/app/home/PermissionDiff";
 import ReleaseWorkflow from "@/app/home/ReleaseWorkflow";
 import SecurityBento from "@/app/home/SecurityBento";
 import { getPublicSecurityFeed } from "@/lib/productData";
@@ -17,6 +18,7 @@ export default async function HomePage() {
     <main className={styles.home}>
       <HomeHero />
       <MarketplaceProof />
+      <PermissionDiff />
       <SecurityBento />
       <ReleaseWorkflow />
 

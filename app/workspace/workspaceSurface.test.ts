@@ -14,6 +14,12 @@ describe("GuardRails workspace product surface", () => {
     }
   });
 
+  it("uses an accessible custom workspace switcher instead of a native overlay select", () => {
+    expect(workspace).toContain('aria-haspopup="listbox"');
+    expect(workspace).toContain('role="option"');
+    expect(workspace).not.toContain('<select aria-label="Switch workspace"');
+  });
+
   it("gives first-time users a guided activation step", () => {
     expect(workspace).toContain("Step 1 of 3");
     expect(workspace).toContain("Build your security workspace.");
