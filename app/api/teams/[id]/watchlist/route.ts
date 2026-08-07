@@ -3,6 +3,7 @@ import { authenticated } from "@/lib/auth";
 import { requireTeamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
 import { baselineEligible } from "@/lib/teamMonitoring";
+import { requireEntitlement } from "@/lib/entitlements";
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
@@ -33,6 +34,9 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const db = serviceDb(); const { data: extension, error: extensionError } = await db.from("extensions").select("id").ilike("id", extensionId).maybeSingle();
     if (extensionError) throw extensionError;
     if (!extension) return NextResponse.json({ error: "Add this extension to the registry before monitoring it." }, { status: 404 });
+    const existing = await db.from("team_watchlist_items").select("extension_id").eq("team_id", id).eq("extension_id", extension.id).maybeSingle();
+    if (existing.error) throw existing.error;
+    if (!existing.data) await requireEntitlement(id, "monitored_extensions", 1);
     let baseline: { id: string; version: string; artifact_sha256: string | null; analysis_status: string; coverage_percent: number | null } | null = null;
     if (baselineScanId) {
       const result = await db.from("scans").select("id,version,artifact_sha256,analysis_status,coverage_percent").eq("id", baselineScanId).eq("extension_id", extension.id).maybeSingle();

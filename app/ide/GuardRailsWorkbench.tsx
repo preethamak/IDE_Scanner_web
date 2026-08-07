@@ -1,250 +1,83 @@
 "use client";
 
-import {
-  Bot,
-  Check,
-  ChevronRight,
-  CircleDot,
-  FileCode2,
-  Files,
-  GitBranch,
-  KeyRound,
-  Network,
-  Play,
-  Search,
-  Settings2,
-  Shield,
-  ShieldAlert,
-  TerminalSquare,
-} from "lucide-react";
 import { useMemo, useState } from "react";
-import {
-  evaluatePolicy,
-  type CapabilityGrant,
-  type CapabilityRequest,
-} from "@/lib/guardrailsPolicy";
+import { ArrowRight, Bot, Check, Clock3, FileCode2, Files, KeyRound, Network, Plus, RotateCcw, Shield, ShieldAlert, TerminalSquare, Trash2 } from "lucide-react";
+import { evaluatePolicy, type Capability, type CapabilityGrant, type CapabilityRequest } from "@/lib/guardrailsPolicy";
 import styles from "./ide.module.css";
 
-const now = "2026-08-06T12:00:00.000Z";
-const principal = "agent:guardrails/reviewer@1";
-const workspace = "guardrails-ide";
-
-const grants: CapabilityGrant[] = [
-  {
-    id: "workspace-source-read",
-    principalId: principal,
-    workspaceId: workspace,
-    capability: "filesystem",
-    actions: ["read"],
-    resourcePattern: "workspace/src/**",
-    effect: "allow",
-    approval: "automatic",
-  },
-  {
-    id: "block-environment-files",
-    principalId: principal,
-    workspaceId: workspace,
-    capability: "filesystem",
-    actions: ["read", "write"],
-    resourcePattern: "workspace/**/.env*",
-    effect: "deny",
-    approval: "automatic",
-  },
-  {
-    id: "review-source-writes",
-    principalId: principal,
-    workspaceId: workspace,
-    capability: "filesystem",
-    actions: ["write"],
-    resourcePattern: "workspace/src/**",
-    effect: "allow",
-    approval: "prompt",
-  },
-  {
-    id: "approved-api-egress",
-    principalId: principal,
-    workspaceId: workspace,
-    capability: "network",
-    actions: ["connect"],
-    resourcePattern: "https://api.openai.com/**",
-    effect: "allow",
-    approval: "automatic",
-  },
-];
-
-const scenarios: Array<{ label: string; request: CapabilityRequest; detail: string }> = [
-  {
-    label: "Read source",
-    detail: "Read workspace/src/policy.ts",
-    request: {
-      id: "req-read-source",
-      principalId: principal,
-      workspaceId: workspace,
-      capability: "filesystem",
-      action: "read",
-      resource: "workspace/src/policy.ts",
-      requestedAt: now,
-    },
-  },
-  {
-    label: "Read .env",
-    detail: "Read workspace/config/.env.local",
-    request: {
-      id: "req-read-env",
-      principalId: principal,
-      workspaceId: workspace,
-      capability: "filesystem",
-      action: "read",
-      resource: "workspace/config/.env.local",
-      requestedAt: now,
-    },
-  },
-  {
-    label: "Write patch",
-    detail: "Write workspace/src/broker.ts",
-    request: {
-      id: "req-write-source",
-      principalId: principal,
-      workspaceId: workspace,
-      capability: "filesystem",
-      action: "write",
-      resource: "workspace/src/broker.ts",
-      requestedAt: now,
-    },
-  },
-  {
-    label: "Unknown egress",
-    detail: "Connect https://unknown.example/upload",
-    request: {
-      id: "req-unknown-egress",
-      principalId: principal,
-      workspaceId: workspace,
-      capability: "network",
-      action: "connect",
-      resource: "https://unknown.example/upload",
-      requestedAt: now,
-    },
-  },
-];
-
-const tree = [
-  ["src", "folder"],
-  ["  broker.ts", "file"],
-  ["  policy.ts", "active"],
-  ["  secrets.ts", "file"],
-  ["tests", "folder"],
-  ["  policy.test.ts", "file"],
-  [".env.local", "locked"],
+const workspaceId = "workspace:guardrails-demo";
+const principalOptions = [
+  { id: "agent:guardrails/reviewer@1", label: "Review agent", kind: "Agent", icon: Bot },
+  { id: "extension:acme/typescript-tools@sha256:42", label: "TypeScript tools", kind: "Extension", icon: FileCode2 },
+  { id: "tool:mcp/github-review@sha256:91", label: "GitHub review tool", kind: "Tool", icon: TerminalSquare },
 ] as const;
+const requestTemplates: Array<{ id: string; label: string; capability: Capability; action: string; resource: string; icon: typeof Files }> = [
+  { id: "source", label: "Read source file", capability: "filesystem", action: "read", resource: "workspace/src/policy.ts", icon: Files },
+  { id: "secret", label: "Read environment file", capability: "filesystem", action: "read", resource: "workspace/config/.env.local", icon: KeyRound },
+  { id: "network", label: "Connect to package API", capability: "network", action: "connect", resource: "https://registry.npmjs.org/lodash", icon: Network },
+  { id: "command", label: "Run test command", capability: "process", action: "execute", resource: "npm:test", icon: TerminalSquare },
+];
+type Scope = "once" | "session" | "workspace";
+type AuditEvent = { id: number; principal: string; request: string; outcome: string; reason: string; time: string };
+
+const denyEnv: CapabilityGrant = { id: "protected-environment-files", principalId: "*", workspaceId, capability: "filesystem", actions: ["read", "write"], resourcePattern: "workspace/**/.env*", effect: "deny", approval: "automatic" };
 
 export default function GuardRailsWorkbench() {
-  const [scenarioIndex, setScenarioIndex] = useState(1);
-  const scenario = scenarios[scenarioIndex];
-  const decision = useMemo(() => evaluatePolicy(scenario.request, grants), [scenario]);
+  const [principalId, setPrincipalId] = useState(principalOptions[0].id as string);
+  const [requestId, setRequestId] = useState("source");
+  const [scope, setScope] = useState<Scope>("session");
+  const [minutes, setMinutes] = useState("30");
+  const [grants, setGrants] = useState<CapabilityGrant[]>([]);
+  const [audit, setAudit] = useState<AuditEvent[]>([]);
+  const selected = requestTemplates.find((item) => item.id === requestId) || requestTemplates[0];
+  const principal = principalOptions.find((item) => item.id === principalId) || principalOptions[0];
+  const normalizedDeny = { ...denyEnv, principalId };
+  const request: CapabilityRequest = useMemo(() => ({ id: `request-${requestId}`, principalId, workspaceId, capability: selected.capability, action: selected.action, resource: selected.resource, requestedAt: new Date().toISOString() }), [principalId, requestId, selected]);
+  const decision = evaluatePolicy(request, [normalizedDeny, ...grants]);
 
-  return (
-    <main className={styles.shell}>
-      <section className={styles.intro}>
-        <div>
-          <span className={styles.eyebrow}><Shield size={14} /> GuardRails IDE / control plane preview</span>
-          <h1>Code with agents.<br /><em>Keep authority contained.</em></h1>
-        </div>
-        <p>Every extension, agent, command, file, secret, and network request crosses an explicit capability boundary. No ambient access. No inherited secrets.</p>
-      </section>
+  function addGrant() {
+    const expiresAt = scope === "workspace" ? undefined : new Date(Date.now() + (scope === "once" ? 2 : Math.max(1, Number(minutes))) * 60_000).toISOString();
+    const grant: CapabilityGrant = { id: `${scope}-${selected.id}-${Date.now()}`, principalId, workspaceId, capability: selected.capability, actions: [selected.action], resourcePattern: selected.resource, effect: "allow", approval: selected.capability === "process" ? "prompt" : "automatic", expiresAt };
+    setGrants((current) => [...current.filter((item) => !(item.principalId === principalId && item.capability === grant.capability && item.resourcePattern === grant.resourcePattern)), grant]);
+  }
+  function simulate() {
+    const result = evaluatePolicy({ ...request, requestedAt: new Date().toISOString() }, [normalizedDeny, ...grants]);
+    setAudit((current) => [{ id: Date.now(), principal: principal.label, request: selected.label, outcome: result.outcome, reason: result.reason.replaceAll("_", " ").toLowerCase(), time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) }, ...current].slice(0, 6));
+    if (scope === "once" && result.outcome !== "deny") setGrants((current) => current.filter((item) => item.principalId !== principalId || item.resourcePattern !== selected.resource));
+  }
 
-      <section className={styles.ideWindow} aria-label="GuardRails IDE security control plane">
-        <div className={styles.titleBar}>
-          <div className={styles.trafficLights}><i /><i /><i /></div>
-          <span>GuardRails-IDE — secure-workspace</span>
-          <span className={styles.secure}><Shield size={12} /> Sandbox policy active</span>
-        </div>
+  return <main className={styles.shell}>
+    <section className={styles.hero}>
+      <div><span className={styles.eyebrow}><Shield/> GuardRails IDE control plane</span><h1>Give every tool<br/><em>only what it needs.</em></h1><p>Select a principal, describe an action in plain language, choose how long authority lasts, and see the policy decision before a native broker exists.</p></div>
+      <aside><ShieldAlert/><strong>Browser prototype—not an OS sandbox</strong><p>This page demonstrates the permission contract. It does not isolate local processes, files, credentials, or network traffic.</p></aside>
+    </section>
 
-        <div className={styles.workbench}>
-          <aside className={styles.activityBar} aria-label="Activity bar">
-            <button className={styles.activityActive} aria-label="Explorer"><Files /></button>
-            <button aria-label="Search"><Search /></button>
-            <button aria-label="Source control"><GitBranch /></button>
-            <button aria-label="Run"><Play /></button>
-            <button aria-label="Agent security"><Shield /></button>
-            <button className={styles.activitySettings} aria-label="Settings"><Settings2 /></button>
-          </aside>
+    <section className={styles.controlPlane} aria-label="Interactive IDE permission control plane">
+      <header><div><span>Permission center</span><strong>{workspaceId}</strong></div><div className={styles.policyState}><i/> Default deny · policy v13</div></header>
+      <div className={styles.builder}>
+        <section className={styles.editorPanel}>
+          <div className={styles.step}><span>01</span><div><h2>Who is asking?</h2><p>Authority follows the exact agent, extension, or delegated tool identity.</p></div></div>
+          <div className={styles.principals}>{principalOptions.map((option) => <button key={option.id} className={principalId === option.id ? styles.selected : ""} onClick={() => setPrincipalId(option.id)}><option.icon/><span><strong>{option.label}</strong><small>{option.kind}</small></span>{principalId === option.id ? <Check/> : null}</button>)}</div>
 
-          <aside className={styles.explorer}>
-            <div className={styles.panelTitle}><span>Explorer</span><small>•••</small></div>
-            <strong className={styles.workspaceTitle}><ChevronRight size={13} /> GUARDRAILS-IDE</strong>
-            <div className={styles.fileTree}>
-              {tree.map(([name, type]) => (
-                <div className={type === "active" ? styles.fileActive : ""} key={name}>
-                  {type === "folder" ? <ChevronRight /> : type === "locked" ? <KeyRound /> : <FileCode2 />}
-                  <span>{name}</span>{type === "locked" && <small>blocked</small>}
-                </div>
-              ))}
-            </div>
-            <div className={styles.agentCard}>
-              <span><Bot size={15} /> Active principal</span>
-              <strong>GuardRails Reviewer</strong>
-              <code>agent:guardrails/reviewer@1</code>
-            </div>
-          </aside>
+          <div className={styles.step}><span>02</span><div><h2>What may it do?</h2><p>Choose a normalized request. Sensitive environment files remain explicitly denied.</p></div></div>
+          <div className={styles.requests}>{requestTemplates.map((item) => <button key={item.id} className={requestId === item.id ? styles.selected : ""} onClick={() => setRequestId(item.id)}><item.icon/><span><strong>{item.label}</strong><small>{item.resource}</small></span></button>)}</div>
 
-          <section className={styles.editor}>
-            <div className={styles.tabs}><div><FileCode2 /> policy.ts <span>×</span></div></div>
-            <div className={styles.breadcrumbs}>src <ChevronRight /> policy.ts <ChevronRight /> <span>defaultWorkspacePolicy</span></div>
-            <pre className={styles.code} aria-label="Policy code example"><code>
-              <span><b>1</b><i>export const</i> defaultWorkspacePolicy = {'{'}</span>
-              <span><b>2</b>  principal: <q>&quot;agent:guardrails/reviewer@1&quot;</q>,</span>
-              <span><b>3</b>  defaults: <q>&quot;deny&quot;</q>,</span>
-              <span><b>4</b>  capabilities: {'{'}</span>
-              <span><b>5</b>    filesystem: {'{'}</span>
-              <span><b>6</b>      read: [<q>&quot;workspace/src/**&quot;</q>],</span>
-              <span className={styles.codeDanger}><b>7</b>      deny: [<q>&quot;workspace/**/.env*&quot;</q>],</span>
-              <span><b>8</b>      write: <i>reviewRequired</i>(<q>&quot;workspace/src/**&quot;</q>),</span>
-              <span><b>9</b>    {'}'},</span>
-              <span><b>10</b>   network: allowlist(<q>&quot;api.openai.com&quot;</q>),</span>
-              <span><b>11</b>   secrets: <i>opaqueHandlesOnly</i>,</span>
-              <span><b>12</b> {'}'}</span>
-              <span><b>13</b>{'}'} <i>satisfies</i> WorkspacePolicy;</span>
-            </code></pre>
-            <div className={styles.terminal}>
-              <div className={styles.terminalTabs}><strong>Security events</strong><span>Terminal</span><span>Output</span><small>Policy v12</small></div>
-              <div className={styles.eventLine}><CircleDot /><time>12:00:04</time><code>{scenario.request.principalId}</code><span>{scenario.detail}</span></div>
-              <div className={`${styles.eventResult} ${styles[decision.outcome]}`}>
-                {decision.outcome === "allow" ? <Check /> : <ShieldAlert />}
-                <strong>{decision.outcome.toUpperCase()}</strong>
-                <span>{decision.reason.replaceAll("_", " ").toLowerCase()}</span>
-                <code>{decision.matchingGrantId ?? "default-deny"}</code>
-              </div>
-            </div>
-          </section>
+          <div className={styles.step}><span>03</span><div><h2>How long should access last?</h2><p>Once-only grants are consumed after use. Session grants expire automatically.</p></div></div>
+          <div className={styles.scopeRow}>{(["once", "session", "workspace"] as Scope[]).map((item) => <button key={item} className={scope === item ? styles.scopeActive : ""} onClick={() => setScope(item)}>{item === "once" ? "Once" : item === "session" ? "This session" : "Workspace"}</button>)}{scope === "session" ? <label><Clock3/> Expires in <input aria-label="Session grant duration in minutes" type="number" min="1" max="480" value={minutes} onChange={(event) => setMinutes(event.target.value)}/> min</label> : null}</div>
+          <button className={styles.addGrant} onClick={addGrant}><Plus/> Add scoped grant</button>
+        </section>
 
-          <aside className={styles.securityPanel}>
-            <div className={styles.securityHead}><span><Shield /> Security</span><small>LIVE</small></div>
-            <div className={styles.posture}>
-              <div className={styles.postureRing}><strong>4</strong><small>grants</small></div>
-              <div><strong>Contained</strong><span>Default deny is active</span></div>
-            </div>
-            <div className={styles.boundaries}>
-              <h2>Active boundaries</h2>
-              <div><Files /><span><strong>Filesystem</strong><small>1 read · writes reviewed</small></span><i /></div>
-              <div><Network /><span><strong>Network</strong><small>1 destination allowed</small></span><i /></div>
-              <div><TerminalSquare /><span><strong>Processes</strong><small>No grants</small></span><i className={styles.off} /></div>
-              <div><KeyRound /><span><strong>Secrets</strong><small>Opaque handles only</small></span><i /></div>
-            </div>
-            <div className={styles.scenarios}>
-              <h2>Simulate a request</h2>
-              {scenarios.map((item, index) => <button className={scenarioIndex === index ? styles.selectedScenario : ""} onClick={() => setScenarioIndex(index)} key={item.label}><span>{item.label}</span><small>{item.request.action}</small></button>)}
-            </div>
-            <p className={styles.prototypeNote}>Policy-layer prototype. Production enforcement also requires native OS sandboxing and brokered I/O.</p>
-          </aside>
-        </div>
-        <div className={styles.statusBar}><span><Shield size={12} /> GuardRails protected</span><span>0 inherited env vars</span><span>Network: brokered</span><span>Policy v12</span></div>
-      </section>
+        <aside className={styles.decisionPanel}>
+          <span className={styles.panelLabel}>Decision preview</span>
+          <div className={`${styles.decision} ${styles[decision.outcome]}`}><div>{decision.outcome === "allow" ? <Check/> : <ShieldAlert/>}<strong>{decision.outcome}</strong></div><p>{decision.reason.replaceAll("_", " ").toLowerCase()}</p><code>{decision.matchingGrantId || "default-deny"}</code></div>
+          <dl><div><dt>Principal</dt><dd>{principal.label}</dd></div><div><dt>Capability</dt><dd>{selected.capability} · {selected.action}</dd></div><div><dt>Resource</dt><dd>{selected.resource}</dd></div><div><dt>Delegation</dt><dd>User → {principal.kind} → broker request</dd></div></dl>
+          <button className={styles.simulate} onClick={simulate}>Simulate request <ArrowRight/></button>
+          <div className={styles.activeGrants}><header><strong>Active grants</strong><span>{grants.length}</span></header>{grants.length ? grants.map((grant) => <article key={grant.id}><div><strong>{grant.capability} · {grant.actions[0]}</strong><small>{grant.resourcePattern}</small><time>{grant.expiresAt ? `Expires ${new Date(grant.expiresAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Workspace grant"}</time></div><button aria-label={`Revoke ${grant.capability} grant`} onClick={() => setGrants((current) => current.filter((item) => item.id !== grant.id))}><Trash2/></button></article>) : <p>No ambient authority. Add a grant to change the decision.</p>}</div>
+        </aside>
+      </div>
+      <section className={styles.audit}><header><div><span>Audit timeline</span><h2>Every simulation leaves a reason.</h2></div><button disabled={!audit.length} onClick={() => setAudit([])}><RotateCcw/> Clear timeline</button></header>{audit.length ? <div>{audit.map((event) => <article key={event.id}><time>{event.time}</time><span className={styles[event.outcome]}>{event.outcome}</span><div><strong>{event.request}</strong><small>{event.principal} · {event.reason}</small></div></article>)}</div> : <p>Simulate a request to record its principal, outcome, and stable policy reason.</p>}</section>
+    </section>
 
-      <section className={styles.promise}>
-        <div><small>01 / isolate</small><h2>Separate identity<br />for every principal.</h2><p>Extensions and agents run outside the trusted editor process with their own resource limits and broker-only IPC.</p></div>
-        <div><small>02 / broker</small><h2>Credentials used,<br />never revealed.</h2><p>Opaque handles let an approved request use a short-lived credential without placing it in model context or extension memory.</p></div>
-        <div><small>03 / verify</small><h2>Every action leaves<br />an explanation.</h2><p>Stable reason codes and append-only events make allows, denials, prompts, delegation, and revocation reviewable.</p></div>
-      </section>
-    </main>
-  );
+    <section className={styles.roadmap}><article><small>Shipped in this preview</small><h2>Human-readable grants</h2><p>Principal selection, once/session/workspace scope, expiration, revocation, delegation context, and an audit timeline.</p></article><article><small>Next native milestone</small><h2>Enforcement outside the process</h2><p>A native supervisor, filesystem broker, structured-command runner, egress proxy, and opaque credential handles.</p></article><article><small>Release boundary</small><h2>Conformance before compatibility</h2><p>No broad extension compatibility claim until the Linux isolation suite proves that undeclared access fails closed.</p></article></section>
+  </main>;
 }

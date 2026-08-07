@@ -12,6 +12,7 @@ vi.mock("@/lib/teams", () => ({
   requireTeamRole: mocks.requireTeamRole,
 }));
 vi.mock("@/lib/supabase", () => ({ serviceDb: mocks.serviceDb }));
+vi.mock("@/lib/entitlements", () => ({ requireEntitlement: vi.fn(), EntitlementError: class EntitlementError extends Error {} }));
 
 import { GET } from "./route";
 

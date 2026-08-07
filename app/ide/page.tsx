@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import GuardRailsWorkbench from "./GuardRailsWorkbench";
 
 export const metadata: Metadata = {
-  title: "GuardRails IDE security control plane",
-  description: "Preview capability-isolated extensions and AI agents in GuardRails IDE.",
+  title: "GuardRails IDE permission control plane",
+  description: "Explore explicit, expiring authority for extensions, agents, and tools without mistaking a browser prototype for an OS sandbox.",
 };
 
 export default function GuardRailsIdePage() {

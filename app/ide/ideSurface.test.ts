@@ -1,0 +1,23 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+
+const read = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8");
+const workbench = read("./GuardRailsWorkbench.tsx");
+const navigation = read("../SiteNav.tsx");
+
+describe("GuardRails IDE control plane", () => {
+  it("keeps the browser/native enforcement boundary explicit", () => {
+    expect(workbench).toContain("Browser prototype—not an OS sandbox");
+    expect(workbench).toContain("does not isolate local processes");
+    expect(workbench).not.toContain("Sandbox policy active");
+    expect(workbench).not.toContain("GuardRails protected");
+  });
+
+  it("offers principal, resource, duration, revocation, and audit controls", () => {
+    for (const phrase of ["Review agent", "TypeScript tools", "GitHub review tool", "Once", "This session", "Workspace", "Add scoped grant", "Simulate request", "Revoke", "Audit timeline"]) expect(workbench).toContain(phrase);
+  });
+
+  it("groups the public information architecture around products and outcomes", () => {
+    for (const phrase of ["Product", "Solutions", "Resources", "Extension Registry", "Engineering teams", "AI-agent security", "Data boundaries"]) expect(navigation).toContain(phrase);
+  });
+});

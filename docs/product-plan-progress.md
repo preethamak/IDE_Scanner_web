@@ -6,6 +6,8 @@ This is the repository-owned tracker for the website-wide product and design pla
 
 **Next milestone:** Finish billing and entitlement enforcement, then complete the browser IDE control-plane experience. The complete GuardRails roadmap remains active.
 
+Billing foundation now shipped: canonical server-owned plans, workspace subscription and usage records, fail-closed entitlement evaluation, concurrency-safe database limits for monitoring, membership acceptance, and notification channels, API-gated audit export, plus signed retry-safe Stripe reconciliation and workspace usage visibility. Production purchase availability still depends on configured Stripe products and credentials; the broader pricing milestone remains open until deployment validation covers the complete lifecycle.
+
 ## Completed
 
 - [x] Website typography tokens and readable global baseline.
@@ -71,9 +73,9 @@ This is the repository-owned tracker for the website-wide product and design pla
 
 ### Secure IDE
 
-- [ ] Human-readable permission editor.
-- [ ] Interactive agent and extension selection.
-- [ ] Session-scoped permissions and expiration.
+- [x] Human-readable permission editor with explicit resource and action previews.
+- [x] Interactive agent, extension, and delegated-tool selection.
+- [x] Once-only, session, and workspace permission scopes with session expiration and revocation.
 - [ ] Secret, network, and command broker demonstrations.
 - [ ] Audit timeline and policy templates.
 - [ ] Native sandbox/runtime implementation beyond the browser preview.
