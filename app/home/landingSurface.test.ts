@@ -21,6 +21,9 @@ describe("GuardRails landing surface", () => {
     expect(hero).toContain("GuardRails release review");
     expect(css).toContain("/* Light signal-led hero */");
     expect(css).toContain(".heroAtmosphere");
+    expect(css).toContain("Warm, daylight homepage palette");
+    expect(css).not.toContain("#2f6fdd");
+    expect(css).not.toContain("release-control-room-hero.png");
   });
 
   it("keeps marketplace proof points visible", () => {

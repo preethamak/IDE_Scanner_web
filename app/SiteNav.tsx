@@ -14,6 +14,7 @@ import {
   ScanSearch,
   ScrollText,
   ShieldCheck,
+  Tags,
   TerminalSquare,
   X,
 } from "lucide-react";
@@ -23,6 +24,7 @@ const directLinks = [
   ["/registry", "Extension Registry", Boxes],
   ["/monitor", "Release Monitoring", BellRing],
   ["/ide", "GuardRails IDE", ShieldCheck],
+  ["/pricing", "Pricing", Tags],
 ] as const;
 const documentationLinks = [
   [

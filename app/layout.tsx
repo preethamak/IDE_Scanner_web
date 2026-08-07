@@ -82,6 +82,7 @@ export default function RootLayout({
                   <Link href="/monitor">Release Monitoring</Link>
                   <Link href="/workspace">Team Workspace</Link>
                   <Link href="/ide">GuardRails IDE</Link>
+                  <Link href="/pricing">Pricing</Link>
                 </div>
                 <div>
                   <strong>Resources</strong>
@@ -89,6 +90,8 @@ export default function RootLayout({
                   <Link href="/cli">Local CLI</Link>
                   <Link href="/research">How analysis works</Link>
                   <Link href="/benchmark">Validation and limits</Link>
+                  <Link href="/solutions/developers">For developers</Link>
+                  <Link href="/solutions/engineering-teams">For teams</Link>
                 </div>
                 <div>
                   <strong>Company</strong>

@@ -4,7 +4,7 @@ This is the repository-owned tracker for the website-wide product and design pla
 
 ## Current focus
 
-**Next milestone:** Add pricing and packaging, followed by role-specific solution pages and a live product status surface. The complete GuardRails roadmap remains active.
+**Next milestone:** Finish billing and entitlement enforcement, then add a live product status surface. The complete GuardRails roadmap remains active.
 
 ## Completed
 
@@ -35,6 +35,8 @@ This is the repository-owned tracker for the website-wide product and design pla
 - [x] Modernize Settings into a clear analysis-boundaries map.
 - [x] Modernize Research into an evidence-bound editorial library.
 - [x] Modernize Benchmark without weakening its exact-evidence publication gate.
+- [x] Replace the homepage's dominant blue and dark panels with a warm, light evidence-led treatment.
+- [x] Publish honest packaging definitions without presenting unfinished billing as available.
 
 - [x] Dedicated workspace release-review panel with exact-version context.
 - [x] Allow/block/exception decision flow with required rationale.
@@ -64,7 +66,7 @@ This is the repository-owned tracker for the website-wide product and design pla
 
 - [x] Migrate Analyze, CLI, Monitor, Account, Reports, Research, Benchmark, Security, Privacy, and Settings copy.
 - [ ] Add pricing and packaging.
-- [ ] Add developer, engineering-team, security-team, and AI-agent solution pages.
+- [x] Add developer, engineering-team, security-team, and AI-agent solution pages.
 - [ ] Add product status page.
 
 ### Secure IDE
