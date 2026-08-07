@@ -26,7 +26,7 @@ test("launch conversion gates preserve public reports and expose the next action
   await expect(page.getByRole("button", { name: /Create free workspace to Deep Scan/i })).toBeVisible();
 
   await page.goto("/workspace");
-  await expect(page.getByRole("link", { name: /Create free workspace/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Create your workspace/i })).toBeVisible();
   await page.goto("/monitor?extension=GitHub.copilot");
   await expect(page.getByRole("link", { name: /Create free workspace/i })).toBeVisible();
 });

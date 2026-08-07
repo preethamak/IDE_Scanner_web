@@ -1,44 +1,49 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, BadgeCheck, Filter, Radar, Search, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, BadgeCheck, CalendarClock, CheckCircle2, Search, ShieldAlert, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
-import type { PublicInventory } from "@/lib/productData";
 import ExtensionIcon from "@/app/ExtensionIcon";
+import type { PublicInventory, PublicInventoryItem } from "@/lib/productData";
+import styles from "@/app/registry/registry.module.css";
 
-const filters = ["all", "critical", "high", "medium", "low", "info"] as const;
-const decisions = ["all", "allow", "review", "block", "incomplete"] as const;
-const decisionLabel = { allow: "No known concern", review: "Review", block: "Do not install", incomplete: "Incomplete" } as const;
+const outcomes = ["all", "allow", "review", "block", "incomplete"] as const;
+const severities = ["all", "critical", "high", "medium", "low", "info"] as const;
+const labels = { allow: "No known concern", review: "Review recommended", block: "Do not install", incomplete: "Incomplete" } as const;
 
 export default function InventoryClient({ inventory }: { inventory: PublicInventory }) {
-  const [query, setQuery] = useState(""); const [filter, setFilter] = useState<(typeof filters)[number]>("all");
-  const [decision, setDecision] = useState<(typeof decisions)[number]>("all");
+  const [query, setQuery] = useState("");
+  const [outcome, setOutcome] = useState<(typeof outcomes)[number]>("all");
+  const [severity, setSeverity] = useState<(typeof severities)[number]>("all");
+  const [sort, setSort] = useState<"recent"|"severity"|"name">("recent");
   const rows = useMemo(() => inventory.items.filter((item) => {
-    const haystack = `${item.display_name} ${item.extension_id} ${item.publisher}`.toLowerCase();
-    return (!query || haystack.includes(query.toLowerCase()))
-      && (filter === "all" || item.severity.toLowerCase() === filter)
-      && (decision === "all" || item.decision === decision);
-  }), [decision, filter, inventory.items, query]);
-  const distribution = useMemo(() => {
-    const total = inventory.items.length || 1;
-    const bucket = (decision: string) => inventory.items.filter((item) => item.decision === decision).length;
-    return [
-      { key: "allow", label: "No known concern", count: bucket("allow"), pct: (bucket("allow") / total) * 100 },
-      { key: "review", label: "Review", count: bucket("review"), pct: (bucket("review") / total) * 100 },
-      { key: "block", label: "Do not install", count: bucket("block"), pct: (bucket("block") / total) * 100 },
-      { key: "incomplete", label: "Incomplete", count: bucket("incomplete"), pct: (bucket("incomplete") / total) * 100 },
-    ].filter((band) => band.count);
-  }, [inventory.items]);
+    const matchesText = `${item.display_name} ${item.extension_id} ${item.publisher}`.toLowerCase().includes(query.trim().toLowerCase());
+    return matchesText && (outcome === "all" || item.decision === outcome) && (severity === "all" || item.severity.toLowerCase() === severity);
+  }).sort((a,b) => sort === "name" ? a.display_name.localeCompare(b.display_name) : sort === "severity" ? severityRank(b.severity) - severityRank(a.severity) : b.scanned_at.localeCompare(a.scanned_at)), [inventory.items,outcome,query,severity,sort]);
+  const activeFilters = Number(outcome !== "all") + Number(severity !== "all") + Number(Boolean(query));
+
   return <>
-    <div className="inventoryDistribution" aria-label="Decision distribution across the registry">
-      <span className="inventoryDistributionLabel"><Radar/> Registry outcomes at a glance</span>
-      <div className="inventoryDistributionBar" role="img" aria-label={distribution.map((b) => `${b.count} ${b.label}`).join(", ")}>{distribution.map((band) => <i key={band.key} className={`dist-${band.key}`} style={{ width: `${band.pct}%` }} title={`${band.label}: ${band.count}`}/>)}</div>
-      <div className="inventoryDistributionKey">{distribution.map((band) => <span key={band.key}><i className={`dist-${band.key}`}/>{band.label} <b>{band.count}</b></span>)}</div>
+    <div className={styles.controls}>
+      <label className={styles.filterSearch}><Search/><input value={query} onChange={(event)=>setQuery(event.target.value)} placeholder="Filter these public reports" aria-label="Filter public extension reports"/></label>
+      <div className={styles.selects}><label><span>Outcome</span><select value={outcome} onChange={(event)=>setOutcome(event.target.value as typeof outcome)}>{outcomes.map(value=><option key={value} value={value}>{value === "all" ? "All outcomes" : labels[value]}</option>)}</select></label><label><span>Severity</span><select value={severity} onChange={(event)=>setSeverity(event.target.value as typeof severity)}>{severities.map(value=><option key={value} value={value}>{value === "all" ? "All severities" : title(value)}</option>)}</select></label><label><span>Sort</span><select value={sort} onChange={(event)=>setSort(event.target.value as typeof sort)}><option value="recent">Recently analyzed</option><option value="severity">Highest severity</option><option value="name">Extension name</option></select></label></div>
     </div>
-    <div className="inventoryControls"><label><Search/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search scanned extensions" aria-label="Search scanned extensions"/></label><div role="group" aria-label="Filter public scans by decision and severity">{decisions.map((value) => <button type="button" className={decision === value ? "active" : ""} key={`decision-${value}`} onClick={() => setDecision(value)}><Filter/>{value === "all" ? "All decisions" : decisionLabel[value]}</button>)}{filters.map((value) => <button type="button" className={filter === value ? "active" : ""} key={`severity-${value}`} onClick={() => setFilter(value)}><Filter/>{value === "all" ? "All severities" : value}</button>)}</div></div>
-    <div className="inventoryCards" aria-live="polite">{rows.map((item) => { const risk = Math.max(0, Math.min(100, Math.max(item.risk_score, item.malware_score))); return <Link className="inventoryCard" key={item.scan_id} href={`/extensions/${encodeURIComponent(item.extension_id)}`} aria-label={`Open ${item.display_name} extension profile`}><ExtensionIcon iconUrl={item.icon_url} publisher={item.publisher} name={item.display_name}/><b className={`inventorySeverity severity-${item.severity.toLowerCase()}`}>{item.severity === "INFO" ? "Informational" : item.severity}</b><div><strong>{item.display_name}{item.publisher_verified ? <BadgeCheck aria-label="Verified Marketplace publisher"/> : null}</strong><code>{item.extension_id}@{item.version}</code><span className={`inventoryDecision ${item.decision}`}>{decisionLabel[item.decision]}</span><p>{item.description || item.publisher}</p><span className="inventoryRiskMeter" aria-label={`Risk index ${risk} of 100`}><i className={riskTone(risk)} style={{ width: `${risk}%` }}/></span></div><span className="inventoryCardGo">Open profile <ArrowUpRight/></span></Link>; })}</div>
-    {!rows.length ? <div className="inventoryEmpty"><ShieldCheck/><h2>No public scan matches this view.</h2><p>Try another search or outcome filter.</p></div> : null}
+    <div className={styles.resultMeta}><span><SlidersHorizontal/> {rows.length} of {inventory.items.length} reports</span>{activeFilters ? <button onClick={()=>{setQuery("");setOutcome("all");setSeverity("all")}}>Clear {activeFilters} filter{activeFilters===1?"":"s"}</button>:<span>Latest completed public result per exact artifact</span>}</div>
+    <div className={styles.cards} aria-live="polite">{rows.map(item=><RegistryCard item={item} key={item.scan_id}/>)}</div>
+    {!rows.length ? <div className={styles.empty}><ShieldAlert/><h3>No reports match this view.</h3><p>Clear the active filters, or search the registry above to find an extension that has not been analyzed yet.</p><button onClick={()=>{setQuery("");setOutcome("all");setSeverity("all")}}>Clear filters</button></div>:null}
   </>;
 }
 
-function riskTone(value: number) { return value >= 66 ? "risk-high" : value >= 33 ? "risk-mid" : "risk-low"; }
+function RegistryCard({item}:{item:PublicInventoryItem}) {
+  const decision = labels[item.decision];
+  return <Link className={styles.card} href={`/extensions/${encodeURIComponent(item.extension_id)}`} aria-label={`Open ${item.display_name} extension profile`}>
+    <header><ExtensionIcon iconUrl={item.icon_url} publisher={item.publisher} name={item.display_name}/><div><strong>{item.display_name}{item.publisher_verified?<BadgeCheck aria-label="Verified publisher"/>:null}</strong><span>{item.publisher} · {item.extension_id}</span></div><ArrowUpRight/></header>
+    <div className={`${styles.outcome} ${styles[item.decision]}`}><span>{item.decision === "allow" ? <CheckCircle2/> : <ShieldAlert/>}{decision}</span><small>{title(item.severity)} severity</small></div>
+    <p>{item.decision_reason || item.description}</p>
+    <div className={styles.cardFacts}><span><CalendarClock/> Analyzed {shortDate(item.scanned_at)}</span><span><b>{item.coverage_percent}%</b> evidence coverage</span></div>
+    <footer><span>Exact release <code>@{item.version}</code></span><strong>Open security profile <ArrowUpRight/></strong></footer>
+  </Link>;
+}
+
+function title(value:string){return value.toLowerCase().replace(/^./,letter=>letter.toUpperCase())}
+function shortDate(value:string){return new Intl.DateTimeFormat("en",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"}).format(new Date(value))}
+function severityRank(value:string){return ({CRITICAL:5,HIGH:4,MEDIUM:3,LOW:2,INFO:1}[value]||0)}

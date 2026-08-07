@@ -228,7 +228,7 @@
 .lp .lpAlertIcon.block { background: var(--lp-block-bg); color: var(--lp-block); }
 .lp .lpAlertRow strong { font-size: 14px; font-weight: 700; }
 .lp .lpAlertRow small { display: block; margin-top: 2px; color: var(--lp-muted); font-size: 12.5px; }
-.lp .lpAlertRow code { color: var(--lp-faint); font: 11px var(--lp-mono); }
+.lp .lpAlertRow code { color: var(--lp-faint); font: 12px var(--lp-mono); }
 
 /* ============================================================================
    CLOSING CTA — lime band
