@@ -2,31 +2,199 @@
 
 import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { ArrowRight, Bell, Check, MessageSquare, ShieldCheck } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import {
+  ArrowRight,
+  BellRing,
+  CheckCircle2,
+  LoaderCircle,
+  Radar,
+  RefreshCw,
+  ScanSearch,
+  ShieldCheck,
+} from "lucide-react";
 import TeamWorkspace from "@/app/TeamWorkspace";
 import { browserDb } from "@/lib/supabase";
+import styles from "./monitor.module.css";
 
 export default function MonitorPage() {
-  return <Suspense fallback={<main className="workspacePage"><div className="workspaceMessage">Loading monitoring…</div></main>}><MonitorPageContent /></Suspense>;
+  return (
+    <Suspense fallback={<MonitorLoading />}>
+      <MonitorPageContent />
+    </Suspense>
+  );
 }
 
 function MonitorPageContent() {
   const db = useMemo(() => browserDb(), []);
-  const [state, setState] = useState<"loading" | "ready" | "signed-out" | "error">("loading");
-  const [extension, setExtension] = useState("");
+  const searchParams = useSearchParams();
+  const extension = searchParams.get("extension") || "";
+  const [state, setState] = useState<
+    "loading" | "ready" | "signed-out" | "error"
+  >("loading");
+
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const timer = window.setTimeout(() => setExtension(params.get("extension") || ""), 0);
-    return () => window.clearTimeout(timer);
-  }, []);
-  useEffect(() => {
-    if (!db) { const timer = window.setTimeout(() => setState("error"), 0); return () => window.clearTimeout(timer); }
-    void db.auth.getUser().then(({ data }) => setState(data.user ? "ready" : "signed-out")).catch(() => setState("error"));
+    if (!db) {
+      queueMicrotask(() => setState("error"));
+      return;
+    }
+    let active = true;
+    void db.auth
+      .getUser()
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) setState("error");
+        else setState(data.user ? "ready" : "signed-out");
+      })
+      .catch(() => active && setState("error"));
+    return () => {
+      active = false;
+    };
   }, [db]);
 
-  if (state === "signed-out") return <Gate />;
-  if (state === "error") return <main className="workspacePage"><section className="workspaceSignedOut"><Bell/><span>Monitor</span><h1>Monitoring is temporarily unavailable.</h1><p>Please refresh shortly. Public reports are unaffected.</p></section></main>;
-  return <main className="workspacePage monitorPage"><section className="workspaceHead"><div><span>Monitor releases</span><h1>Follow extensions after approval.</h1><p>When an extension publishes a new version, your team can review the update and decide what to do next.</p></div><div className="workspaceActions"><Link className="button buttonDark" href="/registry">Find an extension <ArrowRight/></Link><Link className="button buttonQuiet" href="/workspace">Open dashboard</Link></div></section>{state === "loading" ? <div className="workspaceMessage">Loading monitoring…</div> : <><section className="monitorHow"><span>How monitoring works</span><ol><li><strong>Detect</strong><p>We notice a newly published version.</p></li><li><strong>Check</strong><p>A security scan reviews that version.</p></li><li><strong>Decide</strong><p>Your team gets the report and decides what to do next.</p></li></ol></section><TeamWorkspace initialExtension={extension} focus="monitor" /></>}</main>;
+  if (state === "loading") return <MonitorLoading />;
+  if (state === "signed-out") return <MonitorGate extension={extension} />;
+  if (state === "error") return <MonitorError />;
+  return <TeamWorkspace initialExtension={extension} focus="monitor" />;
 }
 
-function Gate() { return <main className="workspacePage gatePage"><section className="workspaceSignedOut"><Bell/><span>Monitor · release tracking</span><h1>Watch the release. We do the next scan.</h1><p>Free sign-in unlocks shared release watches, exact-version analysis, a private evidence queue, and optional Slack delivery. Public reports remain open to everyone.</p><Link className="button buttonDark" href="/account?next=/monitor">Create free workspace <ArrowRight/></Link></section><section className="gatePreview monitorGatePreview" aria-label="Monitoring workflow preview"><header><span>Release monitor</span><strong>A return loop with an observable state</strong></header><div><article><i>WATCHING</i><Check/><strong>Registry polling active</strong><p>Marketplace and Open VSX releases are checked on schedule.</p></article><article><i>QUEUED</i><ShieldCheck/><strong>Deep Scan follows change</strong><p>The new version gets its own artifact hash and report.</p></article><article><i>DELIVERED</i><MessageSquare/><strong>Dashboard + Slack</strong><p>Only evidence meeting the team threshold leaves the product.</p></article></div></section></main>; }
+function MonitorLoading() {
+  return (
+    <main className={styles.statePage}>
+      <span className={styles.stateIcon}>
+        <LoaderCircle className={styles.spin} />
+      </span>
+      <strong>Opening release monitoring…</strong>
+      <p>Checking your workspace and monitored extension baselines.</p>
+    </main>
+  );
+}
+
+function MonitorError() {
+  return (
+    <main className={styles.statePage}>
+      <span className={styles.stateIcon}>
+        <Radar />
+      </span>
+      <strong>Monitoring could not be opened.</strong>
+      <p>
+        Your public reports are unaffected. Retry the workspace connection or
+        return to the registry.
+      </p>
+      <div className={styles.stateActions}>
+        <button onClick={() => window.location.reload()}>
+          <RefreshCw /> Try again
+        </button>
+        <Link href="/registry">Open registry</Link>
+      </div>
+    </main>
+  );
+}
+
+function MonitorGate({ extension }: { extension: string }) {
+  const destination = extension
+    ? `/monitor?extension=${encodeURIComponent(extension)}`
+    : "/monitor";
+  return (
+    <main className={styles.gate}>
+      <div className={styles.atmosphere} aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </div>
+      <section className={styles.gateHero}>
+        <div>
+          <span className={styles.eyebrow}>
+            <BellRing /> Release monitoring
+          </span>
+          <h1>
+            Approve once.
+            <br />
+            <em>Return only when it changes.</em>
+          </h1>
+          <p>
+            GuardRails watches the exact extension release your team reviewed.
+            When a new package appears, it creates a new evidence record and
+            shows the permission difference before anyone approves the update.
+          </p>
+          {extension ? (
+            <div className={styles.resume}>
+              <CheckCircle2 />
+              <span>
+                <small>Ready to monitor</small>
+                <strong>{extension}</strong>
+              </span>
+            </div>
+          ) : null}
+          <div className={styles.heroActions}>
+            <Link href={`/account?next=${encodeURIComponent(destination)}`}>
+              Create free workspace <ArrowRight />
+            </Link>
+            <Link href="/registry">Choose an extension</Link>
+          </div>
+          <small className={styles.publicNote}>
+            Public extension reports remain available without an account.
+          </small>
+        </div>
+
+        <div className={styles.loop} aria-label="Release monitoring workflow">
+          <header>
+            <span>
+              <Radar /> Monitoring loop
+            </span>
+            <b>Exact releases</b>
+          </header>
+          <article>
+            <i>01</i>
+            <span>
+              <small>Baseline</small>
+              <strong>Version 3.18.2 approved</strong>
+              <p>Artifact and decision remain attached.</p>
+            </span>
+            <CheckCircle2 />
+          </article>
+          <article className={styles.active}>
+            <i>02</i>
+            <span>
+              <small>New release</small>
+              <strong>Version 3.19.0 detected</strong>
+              <p>A separate Deep Scan begins.</p>
+            </span>
+            <ScanSearch />
+          </article>
+          <article>
+            <i>03</i>
+            <span>
+              <small>Review</small>
+              <strong>2 new permissions</strong>
+              <p>Terminal and network need attention.</p>
+            </span>
+            <ShieldCheck />
+          </article>
+          <footer>
+            <BellRing />
+            <span>
+              <strong>One useful notification</strong>
+              <small>Not another generic activity feed</small>
+            </span>
+          </footer>
+        </div>
+      </section>
+
+      <section className={styles.promise}>
+        <article>
+          <strong>Version-bound baseline</strong>
+          <p>The approved artifact never silently moves to “latest.”</p>
+        </article>
+        <article>
+          <strong>Meaningful-change alerts</strong>
+          <p>Return for permission, provenance, or coverage changes.</p>
+        </article>
+        <article>
+          <strong>Decision history</strong>
+          <p>Keep who approved each release and why.</p>
+        </article>
+      </section>
+    </main>
+  );
+}

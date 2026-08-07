@@ -1,5 +1,15 @@
 import Link from "next/link";
-import { ArrowRight, Check, CircleDot, FileCode2, Network, ShieldCheck, TerminalSquare } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  CircleCheck,
+  FileCode2,
+  Fingerprint,
+  GitCompareArrows,
+  Network,
+  ShieldCheck,
+  TerminalSquare,
+} from "lucide-react";
 import HomeSearch from "@/app/HomeSearch";
 import styles from "./landing.module.css";
 
@@ -12,36 +22,126 @@ const popular = [
 
 export default function HomeHero() {
   return (
-    <section className={styles.hero}>
-      <div className={styles.heroGrid} aria-hidden="true" />
-      <div className={styles.heroCopy}>
-        <span className={styles.eyebrow}><i /> Before install and after every update</span>
-        <h1>Know what runs<br />in your <em>editor.</em></h1>
-        <p>See what an extension can access before you install it—and know when a new release adds commands, files, or network connections.</p>
-        <div className={styles.searchShell}><HomeSearch /></div>
-        <div className={styles.popular}><span>Popular</span>{popular.map(([label, query]) => <Link href={`/registry?q=${encodeURIComponent(query)}`} key={query}>{label}</Link>)}</div>
-        <div className={styles.heroProof}><span><Check /> Check before install</span><span><Check /> Compare every update</span><span><Check /> Review as a team</span></div>
+    <section className={styles.signalHero}>
+      <div className={styles.heroAtmosphere} aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </div>
+      <div className={styles.signalCopy}>
+        <span className={styles.eyebrow}>
+          <i /> Extension trust is release-specific
+        </span>
+        <h1>
+          The update is small.
+          <br />
+          <em>The permission change isn’t.</em>
+        </h1>
+        <p>
+          GuardRails shows what an editor extension can reach, what changed in
+          the new package, and the exact evidence behind the decision.
+        </p>
+        <div className={styles.searchShell}>
+          <HomeSearch />
+        </div>
+        <div className={styles.popular}>
+          <span>Try an extension</span>
+          {popular.map(([label, query]) => (
+            <Link href={`/registry?q=${encodeURIComponent(query)}`} key={query}>
+              {label}
+            </Link>
+          ))}
+        </div>
+        <div className={styles.heroProof}>
+          <span>
+            <Check /> Check before install
+          </span>
+          <span>
+            <Check /> Compare every update
+          </span>
+          <span>
+            <Check /> Review as a team
+          </span>
+        </div>
       </div>
 
-      <div className={styles.heroProduct} aria-label="GuardRails extension intelligence product preview">
-        <div className={styles.productGlow} aria-hidden="true" />
-        <div className={styles.appWindow}>
-          <header><span><i /><i /><i /></span><code>guardrails / extension / release</code><b><CircleDot /> Live</b></header>
-          <div className={styles.appBody}>
-            <aside><ShieldCheck /><span>Overview</span><FileCode2 /><TerminalSquare /><Network /></aside>
-            <div className={styles.report}>
-              <div className={styles.reportTop}><div className={styles.extensionMark}>E</div><div><small>EXACT RELEASE</small><strong>Example Extension</strong><code>@1.4.0</code></div><span>Review</span></div>
-              <div className={styles.scoreRow}><div><small>DECISION</small><strong>Review changes</strong></div><div className={styles.score}><b>82</b><small>% coverage</small></div></div>
-              <div className={styles.capabilityGrid}>
-                <article><FileCode2 /><span>Project files</span><strong>Read + write</strong><small>4 evidence items</small></article>
-                <article className={styles.newCapability}><TerminalSquare /><span>Commands</span><strong>Runs tools</strong><small>New in 1.4.0</small></article>
-                <article className={styles.newCapability}><Network /><span>Network</span><strong>3 hosts</strong><small>New in 1.4.0</small></article>
-              </div>
-            </div>
-          </div>
-          <footer><span><ShieldCheck /> Artifact verified</span><span>12 evidence items</span><button type="button">Open report <ArrowRight /></button></footer>
+      <div
+        className={styles.decisionCanvas}
+        aria-label="GuardRails release decision preview"
+      >
+        <div className={styles.canvasTop}>
+          <span>
+            <ShieldCheck /> GuardRails release review
+          </span>
+          <b>Exact package</b>
         </div>
-        <div className={styles.floatingAlert}><span><TerminalSquare /></span><div><small>RELEASE CHANGE</small><strong>New command capability</strong></div><b>Review</b></div>
+        <div className={styles.releaseIdentity}>
+          <span className={styles.releaseGlyph}>CL</span>
+          <div>
+            <small>saoudrizwan.claude-dev</small>
+            <strong>Cline</strong>
+            <code>3.18.2 → 3.19.0</code>
+          </div>
+          <em>Review</em>
+        </div>
+        <div className={styles.decisionQuestion}>
+          <span>What changed?</span>
+          <h2>Two new powers appeared in this update.</h2>
+          <p>
+            The extension can now run terminal commands and reach one additional
+            network destination.
+          </p>
+        </div>
+        <div className={styles.signalRows}>
+          <article>
+            <span>
+              <FileCode2 />
+            </span>
+            <div>
+              <small>Files</small>
+              <strong>Workspace read + write</strong>
+            </div>
+            <b>
+              <CircleCheck /> Unchanged
+            </b>
+          </article>
+          <article className={styles.signalNew}>
+            <span>
+              <TerminalSquare />
+            </span>
+            <div>
+              <small>Terminal</small>
+              <strong>Runs shell commands</strong>
+            </div>
+            <b>New</b>
+          </article>
+          <article className={styles.signalNew}>
+            <span>
+              <Network />
+            </span>
+            <div>
+              <small>Network</small>
+              <strong>3 destinations observed</strong>
+            </div>
+            <b>+1 host</b>
+          </article>
+        </div>
+        <div className={styles.canvasDecision}>
+          <div>
+            <Fingerprint />
+            <span>
+              <strong>Artifact verified</strong>
+              <small>94% evidence coverage · exact version</small>
+            </span>
+          </div>
+          <Link href="/registry?q=saoudrizwan.claude-dev">
+            Review the evidence <ArrowRight />
+          </Link>
+        </div>
+        <div className={styles.changeOrbit} aria-hidden="true">
+          <GitCompareArrows />
+          <span>Permission diff</span>
+        </div>
       </div>
     </section>
   );

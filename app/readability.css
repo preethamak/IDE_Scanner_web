@@ -17,7 +17,7 @@ body { color: var(--text); font-size: var(--font-base); font-weight: 500; line-h
 .siteFrame :where(.navPopover small, .headerAccountMenu span, .headerAccountMenu strong) { font-size: 12px; }
 
 /* Dense product illustrations are still readable, but remain visually compact. */
-.siteFrame :where([class*="appWindow"], [class*="ideWindow"], [class*="signalCard"]) :where(small, code, button) { font-size: 11px; }
+.siteFrame :where([class*="appWindow"], [class*="ideWindow"], [class*="signalCard"]) :where(small, code, button) { font-size: 12px; }
 .siteFrame :where([class*="appWindow"], [class*="ideWindow"], [class*="signalCard"]) :where(p, span) { line-height: 1.45; }
 
 @media (max-width: 760px) {
@@ -27,4 +27,17 @@ body { color: var(--text); font-size: var(--font-base); font-weight: 500; line-h
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+/* Interactive contrast contract: labels never inherit a matching surface color. */
+.siteFrame :where(button, a)[class*="primary" i],
+.siteFrame :where(button, a)[class*="action" i] {
+  text-decoration-thickness: 2px;
+}
+.siteFrame :where(button, a):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--brand-blue) 35%, transparent);
+  outline-offset: 3px;
+}
+.siteFrame :where(button:disabled, [aria-disabled="true"]) {
+  opacity: .62;
 }

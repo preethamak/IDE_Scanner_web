@@ -4,7 +4,7 @@ This is the repository-owned tracker for the website-wide product and design pla
 
 ## Current focus
 
-**Next milestone:** Exportable workspace audit history, then normalized Permission Passports.
+**Next milestone:** Add pricing and packaging, followed by role-specific solution pages and a live product status surface. The complete GuardRails roadmap remains active.
 
 ## Completed
 
@@ -22,6 +22,20 @@ This is the repository-owned tracker for the website-wide product and design pla
 
 ## In progress / next
 
+- [x] Modernize sign-in and signed-in account states.
+- [x] Modernize the CLI product page and installation journey.
+- [x] Replace the landing hero's weak first visual/copy and add a distinctive light atmospheric background.
+- [x] Complete a cross-site button contrast and readable-type audit without dark green surfaces.
+- [x] Modernize the immutable Deep Scan report and fix Deep Scan reliability defects.
+- [x] Improve extension-logo loading, caching, and resilient fallbacks.
+- [x] Modernize the browser-local Reports library with portable-evidence language and safe deletion.
+- [x] Modernize Analyze around honest Registry, CLI, and local-report boundaries.
+- [x] Modernize Monitor and open authenticated users directly in release monitoring.
+- [x] Modernize Security and Privacy into an explicit public trust center.
+- [x] Modernize Settings into a clear analysis-boundaries map.
+- [x] Modernize Research into an evidence-bound editorial library.
+- [x] Modernize Benchmark without weakening its exact-evidence publication gate.
+
 - [x] Dedicated workspace release-review panel with exact-version context.
 - [x] Allow/block/exception decision flow with required rationale.
 - [x] Review audit receipt and richer retry recovery with preserved rationale.
@@ -33,10 +47,10 @@ This is the repository-owned tracker for the website-wide product and design pla
 
 ### Extension workflow
 
-- [ ] Normalize Permission Passport into files, terminal, network, secrets, editor, and agents.
-- [ ] Reuse Permission Diff on extension and workspace review routes.
-- [ ] Add latest-versus-analyzed freshness status.
-- [ ] Add exportable/shareable Permission Passport.
+- [x] Normalize Permission Passport into files, terminal, network, secrets, editor, and agents.
+- [x] Reuse Permission Diff on extension and workspace review routes.
+- [x] Add latest-versus-analyzed freshness status.
+- [x] Add exportable/shareable Permission Passport.
 
 ### Workspace and retention
 
@@ -44,11 +58,11 @@ This is the repository-owned tracker for the website-wide product and design pla
 - [x] Notification center and integration test-delivery flows with channel health.
 - [x] Weekly email/Slack security digest with idempotent scheduling and delivery history.
 - [x] Personal assigned-review queue and persistent saved filters.
-- [ ] Audit export.
+- [x] Unified audit timeline with role-aware CSV/JSON export and integrity hash.
 
 ### Public product
 
-- [ ] Migrate Analyze, CLI, Monitor, Account, Reports, Research, Benchmark, Security, Privacy, and Settings copy.
+- [x] Migrate Analyze, CLI, Monitor, Account, Reports, Research, Benchmark, Security, Privacy, and Settings copy.
 - [ ] Add pricing and packaging.
 - [ ] Add developer, engineering-team, security-team, and AI-agent solution pages.
 - [ ] Add product status page.
@@ -65,7 +79,7 @@ This is the repository-owned tracker for the website-wide product and design pla
 ### Design-system migration
 
 - [ ] Migrate canonical routes to shared primitives.
-- [ ] Reduce the legacy sub-11px typography budget from 627 to zero.
+- [x] Reduce the legacy sub-11px typography budget from 627 to zero.
 - [ ] Consolidate legacy global stylesheets into tokens, primitives, and route-scoped modules.
 - [ ] Add screenshot-based visual regression when a browser is available in CI.
 

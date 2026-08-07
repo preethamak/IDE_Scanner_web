@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
+const read = (path: string) =>
+  readFileSync(new URL(path, import.meta.url), "utf8");
 
 describe("GuardRails landing surface", () => {
   it("composes the homepage from focused product sections", () => {
@@ -10,6 +11,16 @@ describe("GuardRails landing surface", () => {
     expect(page).toContain("<MarketplaceProof />");
     expect(page).toContain("<SecurityBento />");
     expect(page).toContain("<ReleaseWorkflow />");
+  });
+
+  it("uses a light, signal-led hero instead of the old dark product mockup", () => {
+    const hero = read("./HomeHero.tsx");
+    const css = read("./landing.module.css");
+    expect(hero).toContain("The update is small.");
+    expect(hero).toContain("Two new powers appeared in this update.");
+    expect(hero).toContain("GuardRails release review");
+    expect(css).toContain("/* Light signal-led hero */");
+    expect(css).toContain(".heroAtmosphere");
   });
 
   it("keeps marketplace proof points visible", () => {
@@ -28,8 +39,17 @@ describe("GuardRails landing surface", () => {
   });
 
   it("keeps search, evidence, comparison, and decision concepts in the product story", () => {
-    const files = [read("./HomeHero.tsx"), read("./SecurityBento.tsx"), read("./ReleaseWorkflow.tsx")].join("\n");
-    for (const phrase of ["Check before install", "Compare every update", "Release diff", "Make the team decision"]) {
+    const files = [
+      read("./HomeHero.tsx"),
+      read("./SecurityBento.tsx"),
+      read("./ReleaseWorkflow.tsx"),
+    ].join("\n");
+    for (const phrase of [
+      "Check before install",
+      "Compare every update",
+      "Release diff",
+      "Make the team decision",
+    ]) {
       expect(files).toContain(phrase);
     }
   });
@@ -41,5 +61,4 @@ describe("GuardRails landing surface", () => {
     expect(diff).toContain("Review before rollout");
     expect(diff).toContain('aria-label="Choose release"');
   });
-
 });

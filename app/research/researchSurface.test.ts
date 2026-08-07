@@ -1,0 +1,29 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+
+const page = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
+const styles = readFileSync(
+  new URL("./research.module.css", import.meta.url),
+  "utf8",
+);
+
+describe("research index surface", () => {
+  it("states the editorial evidence boundary", () => {
+    expect(page).toContain("decisions you can defend");
+    expect(page).toContain("Exact artifact before reputation");
+    expect(page).toContain("Evidence before interpretation");
+    expect(page).toContain("Limitations beside every conclusion");
+  });
+
+  it("links research to reproducible benchmark evidence", () => {
+    expect(page).toContain('href="/benchmark"');
+    expect(page).toContain("No latest-version substitutions");
+    expect(page).toContain('href="/registry"');
+  });
+
+  it("uses a light responsive and motion-safe surface", () => {
+    expect(styles).toContain("#dce9ff");
+    expect(styles).toContain("#ffe6ef");
+    expect(styles).toContain("prefers-reduced-motion");
+  });
+});

@@ -17,7 +17,9 @@ export async function GET(
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst", "viewer"]);
     const { data, error } = await serviceDb()
       .from("team_decisions")
-      .select("*,team_decision_events(*)")
+      .select(
+        "*,team_decision_events(*),scans(capabilities,capability_assessment,analysis_status,scanned_at,artifact_sha256)",
+      )
       .eq("team_id", id)
       .order("updated_at", { ascending: false });
     if (error) throw error;
@@ -137,28 +139,26 @@ export async function POST(
       .select("id")
       .single();
     if (event.error) throw event.error;
-    const alert = await db
-      .from("team_monitoring_alerts")
-      .upsert(
-        {
-          team_id: id,
-          extension_id: scan.extension_id,
-          version: scan.version,
-          scan_id: scanId,
-          kind: "decision_changed",
-          severity: null,
-          title: `Team decision ${decision}: ${scan.extension_id}@${scan.version}`,
-          summary: `A team member ${eventKind === "assigned" ? "changed ownership" : "updated the recorded decision"}.`,
-          metadata: {
-            decision,
-            assigned_to: assignedTo,
-            due_at: after.due_at,
-            decision_event_id: event.data.id,
-          },
-          dedupe_key: `decision:${event.data.id}`,
+    const alert = await db.from("team_monitoring_alerts").upsert(
+      {
+        team_id: id,
+        extension_id: scan.extension_id,
+        version: scan.version,
+        scan_id: scanId,
+        kind: "decision_changed",
+        severity: null,
+        title: `Team decision ${decision}: ${scan.extension_id}@${scan.version}`,
+        summary: `A team member ${eventKind === "assigned" ? "changed ownership" : "updated the recorded decision"}.`,
+        metadata: {
+          decision,
+          assigned_to: assignedTo,
+          due_at: after.due_at,
+          decision_event_id: event.data.id,
         },
-        { onConflict: "team_id,dedupe_key", ignoreDuplicates: true },
-      );
+        dedupe_key: `decision:${event.data.id}`,
+      },
+      { onConflict: "team_id,dedupe_key", ignoreDuplicates: true },
+    );
     if (alert.error) throw alert.error;
     return NextResponse.json(
       {

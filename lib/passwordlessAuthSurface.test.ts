@@ -5,7 +5,9 @@ const accountPage = readFileSync(new URL("../app/account/page.tsx", import.meta.
 
 describe("passwordless account surface", () => {
   it("only exposes passwordless providers and preserves the email callback", () => {
-    expect(accountPage).toContain('signInWithOtp({ email: address, options: { shouldCreateUser: true, emailRedirectTo: callbackUrl() } })');
+    expect(accountPage).toMatch(
+      /signInWithOtp\(\{\s*email:\s*address,\s*options:\s*\{\s*shouldCreateUser:\s*true,\s*emailRedirectTo:\s*callbackUrl\(\)\s*\},?\s*\}\)/,
+    );
     expect(accountPage).toContain('oauth("github")');
     expect(accountPage).toContain('oauth("google")');
     expect(accountPage).not.toMatch(/signInWithPassword\s*\(/);
