@@ -13,6 +13,7 @@ import { teamApiError } from "@/lib/teamApiError";
 import { requireTeamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
 import { isSafeWebhookUrl } from "@/lib/teamNotificationPayload";
+import { requireEntitlement } from "@/lib/entitlements";
 
 const severities = new Set([
   "CRITICAL",
@@ -80,6 +81,7 @@ export async function POST(request: Request, context: Context) {
     const { user } = await authenticated(request);
     const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin"]);
+    await requireEntitlement(id, "notification_channels", 1);
     if (!outboundNotificationsConfigured())
       return NextResponse.json(
         {

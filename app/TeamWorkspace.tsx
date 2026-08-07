@@ -42,6 +42,7 @@ import NotificationSettings, {
   type NotificationDelivery,
   type NotificationPreferences,
 } from "@/app/workspace/NotificationSettings";
+import BillingPanel from "@/app/workspace/BillingPanel";
 import { browserDb } from "@/lib/supabase";
 import {
   groupDecisionQueue,
@@ -942,6 +943,7 @@ export default function TeamWorkspace(
               currentUserId={userId}
               onMutateMember={mutateMember}
               onCreateInvite={createMemberInvite}
+              getToken={token}
               notificationSettings={
                 <NotificationSettings
                   configured={notificationsConfigured}
@@ -2913,6 +2915,7 @@ function SettingsView({
   onMutateMember,
   onCreateInvite,
   notificationSettings,
+  getToken,
 }: {
   team: Team;
   members: Member[];
@@ -2925,6 +2928,7 @@ function SettingsView({
     role: string,
   ) => Promise<{ ok: true; url: string } | { ok: false; error: string }>;
   notificationSettings: React.ReactNode;
+  getToken: () => Promise<string>;
 }) {
   const [section, setSection] = useState<
     "general" | "members" | "notifications"
@@ -3054,6 +3058,7 @@ function SettingsView({
                   <input value={roleName(team.role)} readOnly />
                 </label>
               </div>
+              <BillingPanel teamId={team.id} getToken={getToken} />
               <div className={styles.settingBlock}>
                 <span>Access model</span>
                 <h2>Clear responsibility at every level</h2>

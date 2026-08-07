@@ -6,6 +6,8 @@ This is the repository-owned tracker for the website-wide product and design pla
 
 **Next milestone:** Finish billing and entitlement enforcement, then complete the browser IDE control-plane experience. The complete GuardRails roadmap remains active.
 
+Billing foundation now shipped: canonical server-owned plans, workspace subscription and usage records, fail-closed entitlement evaluation, API-boundary limits for monitoring, membership acceptance, notification channels, and audit export, plus signed idempotent Stripe reconciliation and workspace usage visibility. Production purchase availability still depends on configured Stripe products and credentials; the broader pricing milestone remains open until deployment validation covers the complete lifecycle.
+
 ## Completed
 
 - [x] Website typography tokens and readable global baseline.
