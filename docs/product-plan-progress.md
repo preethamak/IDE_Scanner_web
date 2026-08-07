@@ -73,9 +73,9 @@ Billing foundation now shipped: canonical server-owned plans, workspace subscrip
 
 ### Secure IDE
 
-- [ ] Human-readable permission editor.
-- [ ] Interactive agent and extension selection.
-- [ ] Session-scoped permissions and expiration.
+- [x] Human-readable permission editor with explicit resource and action previews.
+- [x] Interactive agent, extension, and delegated-tool selection.
+- [x] Once-only, session, and workspace permission scopes with session expiration and revocation.
 - [ ] Secret, network, and command broker demonstrations.
 - [ ] Audit timeline and policy templates.
 - [ ] Native sandbox/runtime implementation beyond the browser preview.
