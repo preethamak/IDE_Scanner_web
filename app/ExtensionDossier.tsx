@@ -10,6 +10,9 @@ import {
   Fingerprint,
   FolderTree,
   GitCompareArrows,
+  Download,
+  Link2,
+  LockKeyhole,
   Package,
   Radar,
   ShieldCheck,
@@ -20,7 +23,9 @@ import {
 import DossierHeader from "@/app/dossier/DossierHeader";
 import DossierNavigation from "@/app/dossier/DossierNavigation";
 import DependenciesSection from "@/app/dossier/DependenciesSection";
-import CapabilitiesSection, { normalizeCapabilities } from "@/app/dossier/CapabilitiesSection";
+import CapabilitiesSection, {
+  normalizeCapabilities,
+} from "@/app/dossier/CapabilitiesSection";
 import FilesSection from "@/app/dossier/FilesSection";
 import PublisherSection from "@/app/dossier/PublisherSection";
 import VersionsSection from "@/app/dossier/VersionsSection";
@@ -32,8 +37,16 @@ import AlertsSection from "@/app/dossier/AlertsSection";
 import ChangesSection from "@/app/dossier/ChangesSection";
 import OverviewSection from "@/app/dossier/OverviewSection";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
-import { displayedDecision, requiresReview } from "@/lib/classificationContract";
-import type { ExtensionDossierData, ReportFinding, ReportObject } from "@/lib/reportContract";
+import {
+  displayedDecision,
+  requiresReview,
+} from "@/lib/classificationContract";
+import type {
+  ExtensionDossierData,
+  ReportFinding,
+  ReportObject,
+} from "@/lib/reportContract";
+import immutableStyles from "@/app/dossier/immutableReport.module.css";
 
 type Section =
   | "overview"
@@ -66,8 +79,18 @@ const sections: Array<{ id: Section; label: string; icon: typeof Radar }> = [
 ];
 
 export default function AnalysisReport({ data }: Props) {
-  const { id, version, extension, versions, scan, findings, files, dependencies } = data;
+  const {
+    id,
+    version,
+    extension,
+    versions,
+    scan,
+    findings,
+    files,
+    dependencies,
+  } = data;
   const [active, setActive] = useState<Section>("overview");
+  const [copied, setCopied] = useState(false);
   const decision = displayedDecision(scan);
   const capabilities = normalizeCapabilities(scan.capabilities);
   const grouped = useMemo(() => groupFindings(findings), [findings]);
@@ -105,8 +128,68 @@ export default function AnalysisReport({ data }: Props) {
   }, []);
   return (
     <main className="dossierPage">
-      <Link className="dossierBack" href={`/extensions/${encodeURIComponent(id)}`}>Back to extension profile</Link>
-      <DossierHeader id={id} version={version} extension={extension} scan={scan} />
+      <Link
+        className="dossierBack"
+        href={`/extensions/${encodeURIComponent(id)}`}
+      >
+        Back to extension profile
+      </Link>
+      <section
+        className={immutableStyles.immutableBar}
+        aria-label="Immutable report identity"
+      >
+        <span className={immutableStyles.lock}>
+          <LockKeyhole aria-hidden="true" />
+        </span>
+        <div>
+          <span>Immutable Deep Scan report</span>
+          <strong>Evidence is locked to this exact artifact and scan.</strong>
+          <p>
+            Future scans cannot replace the findings, coverage, ruleset, or
+            artifact hash shown on this URL.
+          </p>
+        </div>
+        <dl>
+          <div>
+            <dt>Scan</dt>
+            <dd>
+              <code>{String(scan.id || "Not reported")}</code>
+            </dd>
+          </div>
+          <div>
+            <dt>Artifact</dt>
+            <dd>
+              <code>
+                {shortHash(String(scan.artifact_sha256 || "Not reported"))}
+              </code>
+            </dd>
+          </div>
+        </dl>
+        <div className={immutableStyles.actions}>
+          <button
+            type="button"
+            onClick={async () => {
+              await navigator.clipboard.writeText(window.location.href);
+              setCopied(true);
+              window.setTimeout(() => setCopied(false), 1800);
+            }}
+          >
+            <Link2 aria-hidden="true" />{" "}
+            {copied ? "Link copied" : "Copy report link"}
+          </button>
+          <a
+            href={`/api/extensions/${encodeURIComponent(id)}/versions/${encodeURIComponent(version)}/scans/${encodeURIComponent(String(scan.id || ""))}/export`}
+          >
+            <Download aria-hidden="true" /> Export evidence
+          </a>
+        </div>
+      </section>
+      <DossierHeader
+        id={id}
+        version={version}
+        extension={extension}
+        scan={scan}
+      />
       {validation ? (
         <Link className="dossierValidated" href="/benchmark">
           <span className="dossierValidatedMark">
@@ -126,9 +209,18 @@ export default function AnalysisReport({ data }: Props) {
           <ChevronRight aria-hidden="true" />
         </Link>
       ) : null}
-      <div className="dossierMeta"><span>{String(extension.publisher || "Not reported")}</span><span>{String(extension.registry || "Registry not reported")}</span><span>Version {version}</span></div>
+      <div className="dossierMeta">
+        <span>{String(extension.publisher || "Not reported")}</span>
+        <span>{String(extension.registry || "Registry not reported")}</span>
+        <span>Version {version}</span>
+      </div>
       <div className="dossierLayout">
-        <DossierNavigation items={sections} active={active} count={badgeCount} onSelect={setActive} />
+        <DossierNavigation
+          items={sections}
+          active={active}
+          count={badgeCount}
+          onSelect={setActive}
+        />
         <section className="dossierContent">
           {active === "overview" ? (
             <OverviewSection
@@ -164,7 +256,9 @@ export default function AnalysisReport({ data }: Props) {
           {active === "capabilities" ? (
             <CapabilitiesSection capabilities={capabilities} />
           ) : null}
-          {active === "dependencies" ? <DependenciesSection dependencies={dependencies} /> : null}
+          {active === "dependencies" ? (
+            <DependenciesSection dependencies={dependencies} />
+          ) : null}
           {active === "files" ? (
             <FilesSection
               id={id}
@@ -181,11 +275,17 @@ export default function AnalysisReport({ data }: Props) {
           ) : null}
           {active === "provenance" ? <ProvenanceSection scan={scan} /> : null}
           {active === "coverage" ? <CoverageSection scan={scan} /> : null}
-          {active === "raw" ? <RawEvidenceSection scan={scan} findings={findings} /> : null}
+          {active === "raw" ? (
+            <RawEvidenceSection scan={scan} findings={findings} />
+          ) : null}
         </section>
       </div>
     </main>
   );
+}
+
+function shortHash(value: string) {
+  return value.length > 22 ? `${value.slice(0, 12)}…${value.slice(-8)}` : value;
 }
 
 type Group = {
