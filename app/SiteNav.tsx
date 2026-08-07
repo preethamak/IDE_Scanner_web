@@ -15,6 +15,7 @@ import {
   ScrollText,
   ShieldCheck,
   Tags,
+  Activity,
   TerminalSquare,
   X,
 } from "lucide-react";
@@ -25,6 +26,7 @@ const directLinks = [
   ["/monitor", "Release Monitoring", BellRing],
   ["/ide", "GuardRails IDE", ShieldCheck],
   ["/pricing", "Pricing", Tags],
+  ["/status", "Status", Activity],
 ] as const;
 const documentationLinks = [
   [

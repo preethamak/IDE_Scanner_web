@@ -4,7 +4,7 @@ This is the repository-owned tracker for the website-wide product and design pla
 
 ## Current focus
 
-**Next milestone:** Finish billing and entitlement enforcement, then add a live product status surface. The complete GuardRails roadmap remains active.
+**Next milestone:** Finish billing and entitlement enforcement, then complete the browser IDE control-plane experience. The complete GuardRails roadmap remains active.
 
 ## Completed
 
@@ -67,7 +67,7 @@ This is the repository-owned tracker for the website-wide product and design pla
 - [x] Migrate Analyze, CLI, Monitor, Account, Reports, Research, Benchmark, Security, Privacy, and Settings copy.
 - [ ] Add pricing and packaging.
 - [x] Add developer, engineering-team, security-team, and AI-agent solution pages.
-- [ ] Add product status page.
+- [x] Add a live product status page with public JSON, honest unknown states, and incident history.
 
 ### Secure IDE
 

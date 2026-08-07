@@ -83,6 +83,7 @@ export default function RootLayout({
                   <Link href="/workspace">Team Workspace</Link>
                   <Link href="/ide">GuardRails IDE</Link>
                   <Link href="/pricing">Pricing</Link>
+                  <Link href="/status">Product Status</Link>
                 </div>
                 <div>
                   <strong>Resources</strong>
