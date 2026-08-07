@@ -1,7 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
+import {
+  extensionIconCandidates,
+  extensionInitials,
+} from "@/lib/extensionIconUrl";
 
 type Props = {
   iconUrl?: string | null;
@@ -10,12 +14,42 @@ type Props = {
   size?: "sm" | "md" | "lg" | "logo";
 };
 
-export default function ExtensionIcon({ iconUrl, publisher, name = "", size = "md" }: Props) {
-  const [failedIcon, setFailedIcon] = useState<string | null>(null);
-  const [loadedIcon, setLoadedIcon] = useState<string | null>(null);
-  const initials = (publisher || name || "EX").replace(/[^a-z0-9]/gi, "").slice(0, 2).toUpperCase() || "EX";
-  return <span className={`extensionIcon extensionIcon-${size}`} aria-hidden="true">
-    <span className="extensionIconFallback">{initials}</span>
-    {iconUrl && failedIcon !== iconUrl ? <Image key={iconUrl} className={loadedIcon === iconUrl ? "isLoaded" : ""} src={iconUrl} alt="" fill sizes="56px" unoptimized onLoad={() => setLoadedIcon(iconUrl)} onError={() => setFailedIcon(iconUrl)} /> : null}
-  </span>;
+export default function ExtensionIcon({
+  iconUrl,
+  publisher,
+  name = "",
+  size = "md",
+}: Props) {
+  const candidates = useMemo(() => extensionIconCandidates(iconUrl), [iconUrl]);
+  const [failedSources, setFailedSources] = useState<string[]>([]);
+  const [loadedSource, setLoadedSource] = useState("");
+  const initials = extensionInitials(publisher, name);
+  const source = candidates.find(
+    (candidate) => !failedSources.includes(candidate),
+  );
+  return (
+    <span className={`extensionIcon extensionIcon-${size}`} aria-hidden="true">
+      <span className="extensionIconFallback">{initials}</span>
+      {source ? (
+        <Image
+          key={source}
+          className={loadedSource === source ? "isLoaded" : ""}
+          src={source}
+          alt=""
+          fill
+          sizes={size === "lg" ? "80px" : "56px"}
+          preload={size === "logo"}
+          unoptimized
+          decoding="async"
+          onLoad={() => setLoadedSource(source)}
+          onError={() => {
+            setLoadedSource("");
+            setFailedSources((current) =>
+              current.includes(source) ? current : [...current, source],
+            );
+          }}
+        />
+      ) : null}
+    </span>
+  );
 }

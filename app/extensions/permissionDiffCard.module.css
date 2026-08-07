@@ -1,0 +1,127 @@
+.diff {
+  overflow: hidden;
+  margin: 0 0 32px;
+  border: 1px solid #d8dfe6;
+  border-radius: 17px;
+  background: #fff;
+}
+.diff > header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 22px;
+  border-bottom: 1px solid #e1e6eb;
+  padding: 20px 22px;
+  background: #f8fafc;
+}
+.diff header > div {
+  display: grid;
+  gap: 5px;
+}
+.diff header span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #2f6fdd;
+  font: 800 12px var(--mono);
+  text-transform: uppercase;
+}
+.diff header span svg {
+  width: 15px;
+}
+.diff h3 {
+  margin: 0;
+  font-size: 21px;
+}
+.diff label {
+  display: grid;
+  gap: 5px;
+  color: #606b76;
+  font-size: 12px;
+  font-weight: 800;
+}
+.diff select {
+  min-height: 38px;
+  border: 1px solid #c9d2da;
+  border-radius: 8px;
+  padding: 0 10px;
+  background: #fff;
+  color: #20262d;
+  font: 700 13px var(--sans);
+}
+.state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 24px;
+  color: #616d78;
+  font-size: 13px;
+}
+.state svg {
+  width: 17px;
+  color: #b06923;
+}
+.changeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: #e1e6eb;
+}
+.changeGrid article {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-height: 155px;
+  padding: 20px;
+  background: #fff;
+}
+.changeGrid article.changed {
+  box-shadow: inset 3px 0 #2f6fdd;
+  background: #f7faff;
+}
+.changeGrid span {
+  color: #66727d;
+  font-size: 12px;
+}
+.changeGrid strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+}
+.changeGrid strong svg {
+  width: 16px;
+  color: #659d2d;
+}
+.changeGrid p {
+  margin: 0;
+  color: #5e6a75;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.compact {
+  margin: 18px 0;
+}
+.compact > header {
+  padding: 16px 18px;
+}
+.compact h3 {
+  font-size: 18px;
+}
+.compact .changeGrid article {
+  min-height: 130px;
+  padding: 16px;
+}
+@media (max-width: 760px) {
+  .diff > header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .changeGrid {
+    grid-template-columns: 1fr;
+  }
+  .changeGrid article {
+    min-height: 0;
+  }
+}

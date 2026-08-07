@@ -1,0 +1,4 @@
+import { readFileSync } from "node:fs";
+import { describe,expect,it } from "vitest";
+const read=(file:string)=>readFileSync(new URL(file,import.meta.url),"utf8");
+describe("shared GuardRails primitives",()=>{it("provides actions, badges, selects, and product states",()=>{for(const file of ["../ui/Button.tsx","../ui/Badge.tsx","../ui/SelectField.tsx","../ui/StatePanel.tsx"])expect(read(file).length).toBeGreaterThan(100)});it("keeps controls on readable shared typography",()=>{const css=read("../ui/primitives.module.css");expect(css).toContain("var(--font-xs)");expect(css).toContain("var(--font-sm)");expect(css).not.toMatch(/font(?:-size)?:[^;}]*\b(?:[0-9]|10)px\b/)});it("renders a component gallery for visual review",()=>{const page=read("./page.tsx");expect(page).toContain("GuardRails interface system.");expect(page).toContain("No releases need review")})});

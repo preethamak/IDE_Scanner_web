@@ -1,0 +1,43 @@
+/* Website-wide legibility contract. Route modules can scale up, never below this baseline. */
+html { font-size: 16px; }
+body { color: var(--text); font-size: var(--font-base); font-weight: 500; line-height: 1.55; text-rendering: optimizeLegibility; }
+
+.siteFrame :where(button, input, select, textarea) { font-family: var(--sans); font-size: var(--font-sm); }
+.siteFrame :where(button, a) { font-weight: 700; }
+.siteFrame :where(p) { color: var(--muted); font-size: var(--font-base); line-height: 1.65; }
+.siteFrame :where(small) { font-size: var(--font-xs); line-height: 1.45; }
+.siteFrame :where(code, kbd) { font-size: var(--font-xs); }
+.siteFrame :where(.kicker, .eyebrow, .sectionKicker, .systemLabel, .panelNumber) {
+  font-size: var(--font-xs) !important;
+  font-weight: 800 !important;
+  letter-spacing: .06em !important;
+}
+.siteFrame :where(.button, [class*="Button"], [class*="Action"]) { min-height: 42px; font-size: 13px; font-weight: 750; }
+.siteFrame :where(.primaryNav a, .primaryNav button, .siteFooter a) { font-size: 14px; }
+.siteFrame :where(.navPopover small, .headerAccountMenu span, .headerAccountMenu strong) { font-size: 12px; }
+
+/* Dense product illustrations are still readable, but remain visually compact. */
+.siteFrame :where([class*="appWindow"], [class*="ideWindow"], [class*="signalCard"]) :where(small, code, button) { font-size: 12px; }
+.siteFrame :where([class*="appWindow"], [class*="ideWindow"], [class*="signalCard"]) :where(p, span) { line-height: 1.45; }
+
+@media (max-width: 760px) {
+  .siteFrame :where(p) { font-size: 15px; }
+  .siteFrame :where(button, input, select, textarea) { font-size: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+/* Interactive contrast contract: labels never inherit a matching surface color. */
+.siteFrame :where(button, a)[class*="primary" i],
+.siteFrame :where(button, a)[class*="action" i] {
+  text-decoration-thickness: 2px;
+}
+.siteFrame :where(button, a):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--brand-blue) 35%, transparent);
+  outline-offset: 3px;
+}
+.siteFrame :where(button:disabled, [aria-disabled="true"]) {
+  opacity: .62;
+}
