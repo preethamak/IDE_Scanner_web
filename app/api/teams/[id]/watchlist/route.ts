@@ -8,9 +8,17 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   try {
     const { user } = await authenticated(request); const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst", "viewer"]);
-    const { data, error } = await serviceDb().from("team_watchlist_items").select("extension_id,created_at,baseline_version,baseline_artifact_sha256,monitoring_state,extensions(display_name,icon_url)").eq("team_id", id).order("created_at", { ascending: false });
+    const db=serviceDb();
+    const [{ data, error }, refreshResult] = await Promise.all([
+      db.from("team_watchlist_items").select("extension_id,created_at,baseline_version,baseline_artifact_sha256,monitoring_state,last_observed_version,last_event_at,extensions(display_name,icon_url)").eq("team_id", id).order("created_at", { ascending: false }),
+      db.from("registry_refreshes").select("registry,status,started_at,completed_at,error").order("started_at", { ascending: false }).limit(6),
+    ]);
     if (error) throw error;
-    return NextResponse.json({ items: data || [] });
+    const latest=new Map<string,Record<string,unknown>>();
+    for(const row of (refreshResult.data||[]) as Array<Record<string,unknown>>){const registry=String(row.registry||"");if(registry&&!latest.has(registry))latest.set(registry,row)}
+    const refreshes=[...latest.values()]; const completed=refreshes.map((row)=>String(row.completed_at||"")).filter(Boolean).sort().at(-1)||null;
+    const failed=refreshes.find((row)=>String(row.status)==="failed"); const next=completed?new Date(new Date(completed).getTime()+6*60*60*1000).toISOString():null;
+    return NextResponse.json({ items: data || [], health:{status:failed?"degraded":completed?"healthy":"unknown",last_checked_at:completed,next_check_at:next,cadence_hours:6,error:failed?String(failed.error||"A registry refresh failed."):null} });
   } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Team watchlist lookup failed." }, { status: 403 }); }
 }
 

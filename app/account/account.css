@@ -1,0 +1,315 @@
+.accountModern {
+  position: relative;
+  isolation: isolate;
+  width: min(1260px, calc(100% - 40px)) !important;
+  min-height: calc(100vh - 72px);
+  grid-template-columns: minmax(0, 1.08fr) minmax(390px, 0.72fr) !important;
+  gap: clamp(45px, 7vw, 100px) !important;
+  align-items: center !important;
+  padding: 76px 0 105px !important;
+}
+.accountModern:before,
+.accountModern:after {
+  position: absolute;
+  z-index: -1;
+  border-radius: 999px;
+  content: "";
+  filter: blur(2px);
+  pointer-events: none;
+}
+.accountModern:before {
+  top: 4%;
+  left: -13%;
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, #dce9ff 0, #edf4ff 42%, transparent 72%);
+}
+.accountModern:after {
+  right: -14%;
+  bottom: 2%;
+  width: 470px;
+  height: 470px;
+  background: radial-gradient(circle, #f8ddec 0, #fff1f7 38%, transparent 72%);
+}
+.accountModern .authValue {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #d9e0e7 !important;
+  border-radius: 26px !important;
+  padding: clamp(30px, 5vw, 62px) !important;
+  background: linear-gradient(
+    145deg,
+    #fff 0,
+    #fbfcff 64%,
+    #f2f7ff 100%
+  ) !important;
+  box-shadow: 0 28px 90px #24324a14 !important;
+}
+.accountModern .authValue:after {
+  position: absolute;
+  right: -55px;
+  top: -55px;
+  width: 180px;
+  height: 180px;
+  border: 38px solid #c9ff45;
+  border-radius: 50%;
+  content: "";
+  opacity: 0.58;
+}
+.accountModern .authValue > div > span {
+  display: inline-flex;
+  border: 1px solid #bad0f4;
+  border-radius: 30px;
+  padding: 7px 10px;
+  background: #f1f6ff;
+  color: #2f6fdd !important;
+  font: 800 12px var(--mono) !important;
+  letter-spacing: 0.03em;
+}
+.accountModern .authValue h1 {
+  max-width: 720px;
+  margin: 24px 0 18px !important;
+  color: #18212c !important;
+  font-size: clamp(46px, 5.8vw, 76px) !important;
+  line-height: 0.95 !important;
+  letter-spacing: -0.055em;
+}
+.accountModern .authValue > div > p {
+  max-width: 620px;
+  color: #566474 !important;
+  font-size: 17px !important;
+  line-height: 1.65;
+}
+.accountModern .authValue ul {
+  grid-template-columns: 1fr 1fr;
+  gap: 12px !important;
+  margin-top: 34px !important;
+}
+.accountModern .authValue li {
+  min-height: 58px;
+  border: 1px solid #e0e5ea;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+  color: #384451 !important;
+  font-size: 13px !important;
+  font-weight: 700;
+}
+.accountModern .authValue li svg {
+  width: 18px;
+  color: #2f6fdd !important;
+}
+.accountModern .authValue aside {
+  margin-top: 38px !important;
+  border: 0 !important;
+  border-radius: 13px;
+  padding: 16px !important;
+  background: #f1f6ff;
+}
+.accountModern .authValue aside svg {
+  color: #2f6fdd !important;
+}
+.accountModern .authValue aside strong {
+  color: #222c37 !important;
+  font-size: 13px;
+}
+.accountModern .authValue aside p {
+  color: #5c6875 !important;
+  font-size: 12px !important;
+  line-height: 1.5;
+}
+.accountModern .oauthPanel {
+  position: relative;
+  border: 1px solid #d4dbe2 !important;
+  border-radius: 22px !important;
+  padding: 30px !important;
+  background: #fff !important;
+  box-shadow: 0 30px 75px #2230471c !important;
+}
+.accountModern .oauthPanel:before {
+  display: block;
+  width: 46px;
+  height: 5px;
+  margin-bottom: 24px;
+  border-radius: 10px;
+  background: linear-gradient(
+    90deg,
+    #2f6fdd 0 34%,
+    #ef4d91 34% 67%,
+    #c9ff45 67%
+  );
+  content: "";
+}
+.accountModern .oauthPanel > div:first-child > span {
+  color: #2f6fdd !important;
+  font: 800 12px var(--mono) !important;
+  letter-spacing: 0.04em;
+}
+.accountModern .oauthPanel h2 {
+  margin: 9px 0 26px !important;
+  color: #1d2732 !important;
+  font-size: 30px !important;
+  line-height: 1.14;
+}
+.accountModern .oauthButton {
+  min-height: 48px;
+  border: 1px solid #ccd4dc !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  color: #202a35 !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+}
+.accountModern .oauthButton:hover {
+  border-color: #94a8bd !important;
+  background: #f7f9fb !important;
+}
+.accountModern .authDivider {
+  color: #6a7580;
+  font-size: 12px;
+}
+.accountModern .emailOtp label {
+  min-height: 50px;
+  border-color: #c5cfd8 !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+}
+.accountModern .emailOtp input {
+  font-size: 14px !important;
+}
+.accountModern .emailOtp > button,
+.accountModern .emailOtpActions > button:first-child {
+  min-height: 48px;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: #c9ff45 !important;
+  color: #18212c !important;
+  font-size: 14px !important;
+  font-weight: 850 !important;
+}
+.accountModern .emailOtp .textAction {
+  color: #2f5fa8 !important;
+  font-size: 12px !important;
+}
+.accountModern .authMessage {
+  border-radius: 9px;
+  padding: 11px;
+  background: #fff2ee;
+  color: #93392c !important;
+  font-size: 13px !important;
+}
+.accountModern .oauthPanel > small {
+  color: #64717d !important;
+  font-size: 12px !important;
+  line-height: 1.55;
+}
+.accountModern .signedInProduct {
+  grid-column: 1/-1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 230px;
+  border: 1px solid #d7dee5 !important;
+  border-radius: 24px !important;
+  padding: 42px !important;
+  background:
+    radial-gradient(circle at 90% 0, #dce9ff, transparent 35%), #fff !important;
+  color: #202a35 !important;
+  box-shadow: 0 28px 80px #22304714 !important;
+}
+.accountModern .signedInProduct span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #2f6fdd;
+  font: 800 12px var(--mono);
+}
+.accountModern .signedInProduct h1 {
+  margin: 14px 0 8px !important;
+  font-size: clamp(38px, 5vw, 62px) !important;
+}
+.accountModern .signedInProduct p {
+  color: #5e6b77;
+  font-size: 15px;
+}
+.accountModern .signedInProduct button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  border: 1px solid #cbd3da !important;
+  border-radius: 9px !important;
+  padding: 0 14px;
+  background: #fff !important;
+  color: #252f39 !important;
+  font-size: 13px !important;
+  font-weight: 800;
+}
+.accountModern .accountNextSteps {
+  grid-column: 1/-1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.accountModern .accountNextSteps > a {
+  display: grid;
+  grid-template-columns: 44px 1fr 18px;
+  align-items: center;
+  gap: 14px;
+  min-height: 145px;
+  border: 1px solid #d9e0e6 !important;
+  border-radius: 16px !important;
+  padding: 22px !important;
+  background: #fff !important;
+  color: #202a35 !important;
+  box-shadow: 0 14px 40px #24324a0d !important;
+}
+.accountModern .accountNextSteps > a > svg {
+  width: 22px;
+  color: #2f6fdd;
+}
+.accountModern .accountNextSteps div {
+  display: grid;
+  gap: 5px;
+}
+.accountModern .accountNextSteps span {
+  color: #2f6fdd;
+  font: 800 12px var(--mono);
+}
+.accountModern .accountNextSteps strong {
+  font-size: 17px;
+}
+.accountModern .accountNextSteps p {
+  margin: 0;
+  color: #64717d !important;
+  font-size: 13px !important;
+}
+@media (max-width: 900px) {
+  .accountModern {
+    grid-template-columns: 1fr !important;
+    padding-top: 35px !important;
+  }
+  .accountModern .authValue ul {
+    grid-template-columns: 1fr;
+  }
+  .accountModern .accountNextSteps {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 560px) {
+  .accountModern {
+    width: calc(100% - 24px) !important;
+  }
+  .accountModern .authValue,
+  .accountModern .oauthPanel {
+    padding: 24px !important;
+  }
+  .accountModern .authValue h1 {
+    font-size: 44px !important;
+  }
+  .accountModern .signedInProduct {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 28px !important;
+  }
+}
