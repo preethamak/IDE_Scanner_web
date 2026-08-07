@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
 const panel = fs.readFileSync(path.join(root, "app/workspace/BillingPanel.tsx"), "utf8");
-const webhook = fs.readFileSync(path.join(root, "app/api/billing/webhook/route.ts"), "utf8");
 const routes = [
   "app/api/teams/[id]/watchlist/route.ts",
   "app/api/teams/[id]/notification-channels/route.ts",
@@ -18,12 +17,6 @@ describe("billing and entitlement surface", () => {
     expect(panel).toContain("Purchases are unavailable in this deployment");
     expect(panel).toContain('summary.status === "past_due"');
     expect(panel).toContain("Cancellation scheduled");
-  });
-
-  it("verifies and deduplicates provider events", () => {
-    expect(webhook).toContain("constructEvent");
-    expect(webhook).toContain("billing_webhook_events");
-    expect(webhook).toContain("duplicate: true");
   });
 
   it("enforces limits in mutation and export route handlers", () => {

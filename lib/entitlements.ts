@@ -23,7 +23,10 @@ export function effectivePlan(input: { plan_id?: unknown; status?: unknown; tria
   const requested = planId(input.plan_id);
   const status = subscriptionStatus(input.status);
   if (!paidStatuses.has(status)) return "free";
-  if (status === "trialing" && (!input.trial_ends_at || new Date(input.trial_ends_at) <= now)) return "free";
+  if (status === "trialing") {
+    const trialEnd = input.trial_ends_at ? new Date(input.trial_ends_at) : null;
+    if (!trialEnd || !Number.isFinite(trialEnd.getTime()) || trialEnd <= now) return "free";
+  }
   return requested;
 }
 

@@ -16,17 +16,27 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid webhook signature." }, { status: 400 });
   }
+  const db = serviceDb();
+  const eventCreatedAt = new Date(event.created * 1000).toISOString();
   try {
-    const db = serviceDb();
-    const existing = await db.from("billing_webhook_events").select("provider_event_id").eq("provider_event_id", event.id).maybeSingle();
-    if (existing.error) throw existing.error;
-    if (existing.data) return NextResponse.json({ received: true, duplicate: true });
-    if (event.type.startsWith("customer.subscription.")) await reconcileSubscription(event.data.object as Stripe.Subscription);
+    const claim = await db.rpc("claim_billing_webhook_event", {
+      event_id: event.id,
+      event_name: event.type,
+      event_created_at: eventCreatedAt,
+    });
+    if (claim.error) throw claim.error;
+    if (claim.data !== true) return NextResponse.json({ received: true, duplicate: true });
+    if (event.type.startsWith("customer.subscription.")) await reconcileSubscription(event.data.object as Stripe.Subscription, eventCreatedAt);
     if (event.type === "checkout.session.completed") await reconcileCheckout(event.data.object as Stripe.Checkout.Session);
-    const stored = await db.from("billing_webhook_events").insert({ provider_event_id: event.id, event_type: event.type, provider_created_at: new Date(event.created * 1000).toISOString() });
-    if (stored.error && stored.error.code !== "23505") throw stored.error;
-    return NextResponse.json({ received: true, duplicate: stored.error?.code === "23505" });
-  } catch {
+    const finished = await db.rpc("finish_billing_webhook_event", { event_id: event.id, succeeded: true, failure_message: null });
+    if (finished.error) throw finished.error;
+    return NextResponse.json({ received: true, duplicate: false });
+  } catch (error) {
+    await db.rpc("finish_billing_webhook_event", {
+      event_id: event.id,
+      succeeded: false,
+      failure_message: error instanceof Error ? error.message : "Billing reconciliation failed.",
+    });
     return NextResponse.json({ error: "Billing event could not be reconciled." }, { status: 500 });
   }
 }
@@ -38,7 +48,7 @@ async function reconcileCheckout(session: Stripe.Checkout.Session) {
   if (error) throw error;
 }
 
-async function reconcileSubscription(subscription: Stripe.Subscription) {
+async function reconcileSubscription(subscription: Stripe.Subscription, eventCreatedAt: string) {
   const stripe = stripeClient();
   const customer = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
   let teamId = subscription.metadata.team_id;
@@ -52,6 +62,9 @@ async function reconcileSubscription(subscription: Stripe.Subscription) {
     if (!customerRecord.deleted) teamId = customerRecord.metadata.team_id;
   }
   if (!teamId) throw new Error("Subscription is not bound to a workspace.");
+  const current = await serviceDb().from("workspace_subscriptions").select("provider_updated_at").eq("team_id", teamId).maybeSingle();
+  if (current.error) throw current.error;
+  if (current.data?.provider_updated_at && new Date(current.data.provider_updated_at) >= new Date(eventCreatedAt)) return;
   const item = subscription.items.data[0];
   const status = normalizeStatus(subscription.status);
   const periodStart = item?.current_period_start;
@@ -66,7 +79,7 @@ async function reconcileSubscription(subscription: Stripe.Subscription) {
     current_period_starts_at: periodStart ? new Date(periodStart * 1000).toISOString() : null,
     current_period_ends_at: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
     cancel_at_period_end: subscription.cancel_at_period_end,
-    provider_updated_at: new Date().toISOString(),
+    provider_updated_at: eventCreatedAt,
     updated_at: new Date().toISOString(),
   }, { onConflict: "team_id" });
   if (error) throw error;

@@ -70,7 +70,7 @@ export async function GET(request: Request, context: Context) {
       "Notification channels are temporarily unavailable.",
     );
     return NextResponse.json(
-      { error: failure.error },
+      { error: failure.error, ...(failure.code ? { code: failure.code } : {}) },
       { status: failure.status },
     );
   }
@@ -159,7 +159,7 @@ export async function POST(request: Request, context: Context) {
       "The notification channel could not be connected.",
     );
     return NextResponse.json(
-      { error: failure.error },
+      { error: failure.error, ...(failure.code ? { code: failure.code } : {}) },
       { status: failure.status },
     );
   }
@@ -196,7 +196,7 @@ export async function DELETE(request: Request, context: Context) {
       "The notification channel could not be removed.",
     );
     return NextResponse.json(
-      { error: failure.error },
+      { error: failure.error, ...(failure.code ? { code: failure.code } : {}) },
       { status: failure.status },
     );
   }

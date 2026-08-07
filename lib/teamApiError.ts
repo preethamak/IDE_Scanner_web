@@ -12,5 +12,8 @@ export function teamApiError(error: unknown, fallback: string) {
   if (error instanceof AuthenticationError) return { status: 401, error: error.message };
   if (error instanceof TeamAuthorizationError) return { status: 403, error: error.message };
   if (error instanceof EntitlementError) return { status: error.status, error: error.message, code: error.code };
+  if (error instanceof Error && error.message.includes("WORKSPACE_PLAN_LIMIT_REACHED")) {
+    return { status: 403, error: "This workspace has reached its plan limit. Remove an existing item or upgrade before adding another.", code: "PLAN_LIMIT_REACHED" };
+  }
   return { status: 503, error: fallback };
 }

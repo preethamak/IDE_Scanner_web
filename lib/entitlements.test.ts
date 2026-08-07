@@ -10,6 +10,7 @@ describe("workspace entitlement contract", () => {
   it("falls back to free for stale, failed, and expired paid state", () => {
     expect(effectivePlan({ plan_id: "team", status: "past_due" })).toBe("free");
     expect(effectivePlan({ plan_id: "team", status: "trialing", trial_ends_at: "2026-01-01T00:00:00Z" }, new Date("2026-08-07T00:00:00Z"))).toBe("free");
+    expect(effectivePlan({ plan_id: "team", status: "trialing", trial_ends_at: "not-a-date" }, new Date("2026-08-07T00:00:00Z"))).toBe("free");
     expect(effectivePlan({ plan_id: "team", status: "active" })).toBe("team");
   });
 
