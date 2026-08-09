@@ -9,6 +9,7 @@ import {
 import { teamApiError } from "@/lib/teamApiError";
 import { requireTeamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
+import { requireEntitlement } from "@/lib/entitlements";
 
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
@@ -34,6 +35,7 @@ export async function GET(request: Request, context: Context) {
         { status: 403 },
       );
     }
+    if (wantsDownload) await requireEntitlement(id, "audit_export");
 
     const db = serviceDb();
     const [decisions, alerts, deliveries, digests, domainEvents] =
