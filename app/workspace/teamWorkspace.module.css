@@ -12,7 +12,7 @@
 }
 .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 21px; }
 .brand > svg { width: 25px; color: #f7f8f8; }
-.brand strong { font-size: 17px; letter-spacing: -.03em; color: #f7f8f8; }
+.brand strong, .loadingBrand strong, .onboarding > header div strong, .setup > header div strong { font-family: var(--font-brand), "Marck Script", cursive; font-size: 26px; font-weight: 400; letter-spacing: 0; color: #f7f8f8; }
 .brand > button { display: none; margin-left: auto; }
 .switcher {
   position: relative; display: grid; grid-template-columns: 34px 1fr 15px;
