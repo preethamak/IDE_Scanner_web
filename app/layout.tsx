@@ -12,11 +12,13 @@ import "@fontsource/marck-script/400.css";
 import "./globals.css";
 import "./guardrails.css";
 import "./visual-refresh.css";
+import "./dark-override.css";
 import "./design-system.css";
 import "./landing.css";
 import "./accessibility.css";
 import "./product-ui.css";
 import "./readability.css";
+import "./linear-theme.css";
 
 export const metadata: Metadata = {
   title: {

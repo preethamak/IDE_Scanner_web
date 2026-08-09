@@ -1,131 +1,51 @@
+/* immutableReport.module.css — Linear dark theme */
 .immutableBar {
-  display: grid;
-  grid-template-columns: 34px minmax(250px, 1fr) minmax(230px, 0.65fr) auto;
-  align-items: center;
-  gap: 18px;
-  margin: 0 0 12px;
-  border: 1px solid #e4d9dd;
-  border-radius: 13px;
-  padding: 10px 12px;
-  background: linear-gradient(115deg, #fff8fa, #fff 62%, #f7faea);
+  display: grid; grid-template-columns: 32px minmax(250px, 1fr) minmax(220px, 0.65fr) auto;
+  align-items: center; gap: 16px; margin: 0 0 10px;
+  border: 1px solid #252530; border-radius: 12px; padding: 10px 12px;
+  background: #111116;
 }
 .lock {
-  display: grid;
-  width: 32px;
-  height: 32px;
-  place-content: center;
-  border-radius: 9px;
-  background: #f3e2e8;
-  color: #8e4765;
+  display: grid; width: 30px; height: 30px; place-content: center;
+  border-radius: 8px; border: 1px solid #252530; background: #202028; color: #636375;
 }
-.lock svg {
-  width: 16px;
-}
-.immutableBar > div:nth-child(2) {
-  display: grid;
-  gap: 3px;
-}
-.immutableBar > div:nth-child(2) > span {
-  color: #8e4765;
-  font: 800 12px var(--mono);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-.immutableBar strong {
-  font-size: 15px;
-}
-.immutableBar p {
-  margin: 0;
-  color: #596878;
-  font-size: 12px;
-  line-height: 1.45;
-}
-.immutableBar details{margin-top:2px}.immutableBar summary{width:max-content;color:#71666d;font-size:12px;font-weight:750;cursor:pointer}.immutableBar details p{margin-top:5px}
-.immutableBar dl {
-  display: grid;
-  gap: 6px;
-  margin: 0;
-}
-.immutableBar dl > div {
-  display: grid;
-  grid-template-columns: 55px minmax(0, 1fr);
-  gap: 7px;
-}
-.immutableBar dt {
-  color: #697684;
-  font-size: 12px;
-  font-weight: 800;
-}
-.immutableBar dd {
-  min-width: 0;
-  margin: 0;
-}
-.immutableBar code {
-  display: block;
-  overflow: hidden;
-  color: #303b47;
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
+.lock svg { width: 15px; }
+.immutableBar > div:nth-child(2) { display: grid; gap: 3px; }
+.immutableBar > div:nth-child(2) > span { color: #636375; font: 700 11px var(--mono); letter-spacing: 0.04em; text-transform: uppercase; }
+.immutableBar strong { font-size: 14px; color: #f7f8f8; }
+.immutableBar p { margin: 0; color: #636375; font-size: 12px; line-height: 1.45; }
+.immutableBar details { margin-top: 2px; }
+.immutableBar summary { width: max-content; color: #636375; font-size: 12px; font-weight: 700; cursor: pointer; }
+.immutableBar details p { margin-top: 4px; }
+.immutableBar dl { display: grid; gap: 5px; margin: 0; }
+.immutableBar dl > div { display: grid; grid-template-columns: 55px minmax(0, 1fr); gap: 6px; }
+.immutableBar dt { color: #636375; font-size: 12px; font-weight: 700; }
+.immutableBar dd { min-width: 0; margin: 0; }
+.immutableBar code { display: block; overflow: hidden; color: #a5a5b8; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+
+.actions { display: flex; align-items: center; gap: 7px; }
 .actions button,
 .actions a {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  min-height: 36px;
-  border: 1px solid #bbc8d6;
-  border-radius: 20px;
-  padding: 0 12px;
-  background: #fff;
-  color: #24313e;
-  font: 800 12px var(--sans);
-  white-space: nowrap;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  min-height: 34px; border: 1px solid #343442; border-radius: 999px; padding: 0 12px;
+  background: #1a1a22; color: #f7f8f8; font: 700 12px var(--sans);
+  white-space: nowrap; text-decoration: none; cursor: pointer;
+  transition: border-color 150ms, background 150ms;
 }
-.actions a {
-  border-color: #9a496d;
-  background: #9a496d;
-  color: #fff;
-  text-decoration: none;
-}
-.actions svg {
-  width: 15px;
-}
+.actions button:hover { border-color: #636375; background: #202028; }
+.actions a { border-color: #f7f8f8; background: #f7f8f8; color: #08090a; }
+.actions a:hover { background: #e2e2e8; }
+.actions svg { width: 14px; }
 .actions button:focus-visible,
-.actions a:focus-visible {
-  outline: 3px solid #2f6fdd3d;
-  outline-offset: 2px;
-}
+.actions a:focus-visible { outline: 2px solid #636375; outline-offset: 2px; }
+
 @media (max-width: 1050px) {
-  .immutableBar {
-    grid-template-columns: 44px 1fr;
-  }
-  .immutableBar dl,
-  .actions {
-    grid-column: 2;
-  }
+  .immutableBar { grid-template-columns: 40px 1fr; }
+  .immutableBar dl, .actions { grid-column: 2; }
 }
 @media (max-width: 620px) {
-  .immutableBar {
-    grid-template-columns: 1fr;
-  }
-  .lock,
-  .immutableBar dl,
-  .actions {
-    grid-column: 1;
-  }
-  .actions {
-    align-items: stretch;
-    flex-direction: column;
-  }
-  .actions button,
-  .actions a {
-    width: 100%;
-  }
+  .immutableBar { grid-template-columns: 1fr; }
+  .lock, .immutableBar dl, .actions { grid-column: 1; }
+  .actions { align-items: stretch; flex-direction: column; }
+  .actions button, .actions a { width: 100%; }
 }
