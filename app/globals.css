@@ -1139,8 +1139,9 @@ code, pre { font-family: var(--mono); }
 .systemMap, .modeGrid, .productionPlan, .agentCommand, .twoColumnDocs { display: grid; gap: 12px; }.systemMap { grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; }.systemMap article, .modeCard, .productionPlan, .agentCommand, .twoColumnDocs > div { border: 1px solid var(--line); border-radius: 5px; background: white; padding: 17px; }.systemMap p, .modeCard p, .productionPlan p, .agentCommand p { font-size: 12px; }.modeGrid { grid-template-columns: repeat(3, 1fr); margin: 12px 0; }.productionPlan, .agentCommand { grid-template-columns: .8fr 1.2fr; margin: 12px 0; }.pipeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }.pipeline span { display: grid; place-items: center; min-height: 55px; border: 1px solid var(--line); background: var(--wash); padding: 6px; text-align: center; font-size: 12px; }.twoColumnDocs { grid-template-columns: repeat(2, 1fr); }.docDetail { border-bottom: 1px solid var(--line); }.docDetail summary { display: grid; grid-template-columns: 140px 1fr; gap: 10px; padding: 12px 0; cursor: pointer; }.docDetail p { font-size: 12px; }
 
 .siteFooter { display: grid; grid-template-columns: .9fr 1.1fr; gap: 80px; background: var(--ink); color: white; padding: 70px max(24px, calc((100vw - 1400px) / 2)) 25px; }
-.footerWordmark strong { color: white; }
-.footerWordmark > span { background: var(--acid); color: var(--ink); }
+.footerWordmark strong { color: white; font-family: var(--font-brand), "Marck Script", cursive !important; }
+.footerWordmark > span,
+.footerWordmark .guardrailsBrand { background: transparent !important; border: 0 !important; border-radius: 0 !important; }
 .footerLead p { max-width: 440px; margin-top: 20px; color: #9eaaa3; }
 .footerLinks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
 .footerLinks div { display: grid; align-content: start; gap: 10px; }
