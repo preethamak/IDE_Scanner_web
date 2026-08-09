@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ authenticated: vi.fn(), rpc: vi.fn() }));
+const mocks = vi.hoisted(() => ({ authenticated: vi.fn(), rpc: vi.fn(), from: vi.fn(), entitlement: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ authenticated: mocks.authenticated }));
-vi.mock("@/lib/supabase", () => ({ serviceDb: () => ({ rpc: mocks.rpc }) }));
+vi.mock("@/lib/supabase", () => ({ serviceDb: () => ({ rpc: mocks.rpc, from: mocks.from }) }));
+vi.mock("@/lib/entitlements", () => ({ requireEntitlement: mocks.entitlement }));
 import { POST } from "./route";
 
 describe("team invitation acceptance", () => {
@@ -10,6 +11,8 @@ describe("team invitation acceptance", () => {
   beforeEach(() => {
     mocks.authenticated.mockResolvedValue({ user: { id: "22222222-2222-4222-8222-222222222222" } });
     mocks.rpc.mockReset();
+    mocks.entitlement.mockResolvedValue({ allowed: true });
+    mocks.from.mockReturnValue({ select: () => ({ eq: () => ({ is: () => ({ gt: () => ({ maybeSingle: () => Promise.resolve({ data: { team_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" }, error: null }) }) }) }) }) });
   });
 
   it("does not call the database for malformed invitation tokens", async () => {

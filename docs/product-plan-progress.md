@@ -4,7 +4,15 @@ This is the repository-owned tracker for the website-wide product and design pla
 
 ## Current focus
 
-**Next milestone:** Finish billing and entitlement enforcement, then complete the browser IDE control-plane experience. The complete GuardRails roadmap remains active.
+**Next milestone:** Validate billing end to end in a configured deployment, including Checkout, Portal, subscription changes, cancellation, failed payment, trial behavior, and applied-database authorization tests. Native runtime expansion is paused until this commercial milestone is complete.
+
+Billing foundation now shipped: canonical server-owned plans, workspace subscription and usage records, fail-closed entitlement evaluation, concurrency-safe database limits for monitoring, membership acceptance, and notification channels, API-gated audit export, plus signed Stripe reconciliation with duplicate suppression, retryable failures, live processing leases, abandoned-worker recovery, and workspace usage visibility. Production purchase availability still depends on configured Stripe products and credentials; the broader pricing milestone remains open until deployment validation covers the complete lifecycle.
+
+The public landing route is now deliberately shorter—hero, proof, interactive release diff, and one closing action—while the workspace opens as a warm editorial release room with a floating navigation rail and decision-first signal canvas rather than a generic metric dashboard.
+
+Registry discovery now separates exact publisher identities from extension matches, exposes verified publisher catalog pages, and shows Marketplace install/rating signals as popularity context—not security conclusions.
+
+Exact-release reports now use a compact immutable strip, unified identity/outcome masthead, first-viewport evidence snapshot, inspectable decision trace, and sticky horizontal section navigation. The new shell removes the previous empty hero region while preserving every evidence section and exact-artifact boundary.
 
 ## Completed
 
@@ -19,6 +27,7 @@ This is the repository-owned tracker for the website-wide product and design pla
 - [x] Version-bound extension release timeline.
 - [x] Registry product refresh and exact-release signal.
 - [x] Workspace shell, custom switcher, sign out, overview, and review inbox foundation.
+- [x] Distinctive decision-first workspace overview and concise, product-led landing composition.
 
 ## In progress / next
 
@@ -71,12 +80,14 @@ This is the repository-owned tracker for the website-wide product and design pla
 
 ### Secure IDE
 
-- [ ] Human-readable permission editor.
-- [ ] Interactive agent and extension selection.
-- [ ] Session-scoped permissions and expiration.
-- [ ] Secret, network, and command broker demonstrations.
-- [ ] Audit timeline and policy templates.
+- [x] Human-readable permission editor with explicit resource and action previews.
+- [x] Interactive agent, extension, and delegated-tool selection.
+- [x] Once-only, session, and workspace permission scopes with session expiration and revocation.
+- [x] Secret, network, command, and filesystem broker contract demonstrations with secret-safe receipts.
+- [x] Browser-local audit timeline, policy templates, and policy-version comparison.
 - [ ] Native sandbox/runtime implementation beyond the browser preview.
+
+Phase 1 now includes a separated Rust supervisor with IPC v1, stable principals, fail-closed exact matching, chained audit records, and a Linux `openat2` read-broker spike that rejects traversal and symlink escapes while binding reads to audited allow decisions. The native-runtime checkbox remains open: write and sensitive-file policy, isolated untrusted processes, and the full Linux conformance suite are not complete.
 
 ### Design-system migration
 

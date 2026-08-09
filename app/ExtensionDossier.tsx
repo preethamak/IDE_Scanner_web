@@ -10,8 +10,6 @@ import {
   Fingerprint,
   FolderTree,
   GitCompareArrows,
-  Download,
-  Link2,
   LockKeyhole,
   Package,
   Radar,
@@ -38,6 +36,7 @@ import ChangesSection from "@/app/dossier/ChangesSection";
 import OverviewSection from "@/app/dossier/OverviewSection";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
 import {
+  coveragePresentation,
   displayedDecision,
   requiresReview,
 } from "@/lib/classificationContract";
@@ -47,6 +46,7 @@ import type {
   ReportObject,
 } from "@/lib/reportContract";
 import immutableStyles from "@/app/dossier/immutableReport.module.css";
+import reportStyles from "@/app/dossier/reportShell.module.css";
 
 type Section =
   | "overview"
@@ -90,7 +90,6 @@ export default function AnalysisReport({ data }: Props) {
     dependencies,
   } = data;
   const [active, setActive] = useState<Section>("overview");
-  const [copied, setCopied] = useState(false);
   const decision = displayedDecision(scan);
   const capabilities = normalizeCapabilities(scan.capabilities);
   const grouped = useMemo(() => groupFindings(findings), [findings]);
@@ -105,6 +104,7 @@ export default function AnalysisReport({ data }: Props) {
     scan.scan_purpose === "benchmark"
       ? benchmarkValidation(id, version, String(scan.artifact_sha256 || ""))
       : null;
+  const coverage = coveragePresentation(scan);
   const badgeCount = (section: Section) =>
     section === "alerts"
       ? actionableGroups.length + lowGroups.length
@@ -127,9 +127,9 @@ export default function AnalysisReport({ data }: Props) {
     return () => window.removeEventListener("hashchange", selectHash);
   }, []);
   return (
-    <main className="dossierPage">
+    <main className={`dossierPage ${reportStyles.shell}`}>
       <Link
-        className="dossierBack"
+        className={`dossierBack ${reportStyles.back}`}
         href={`/extensions/${encodeURIComponent(id)}`}
       >
         Back to extension profile
@@ -144,10 +144,7 @@ export default function AnalysisReport({ data }: Props) {
         <div>
           <span>Immutable Deep Scan report</span>
           <strong>Evidence is locked to this exact artifact and scan.</strong>
-          <p>
-            Future scans cannot replace the findings, coverage, ruleset, or
-            artifact hash shown on this URL.
-          </p>
+          <details><summary>About immutable reports</summary><p>Future scans cannot replace the findings, coverage, ruleset, or artifact hash shown on this URL.</p></details>
         </div>
         <dl>
           <div>
@@ -165,31 +162,20 @@ export default function AnalysisReport({ data }: Props) {
             </dd>
           </div>
         </dl>
-        <div className={immutableStyles.actions}>
-          <button
-            type="button"
-            onClick={async () => {
-              await navigator.clipboard.writeText(window.location.href);
-              setCopied(true);
-              window.setTimeout(() => setCopied(false), 1800);
-            }}
-          >
-            <Link2 aria-hidden="true" />{" "}
-            {copied ? "Link copied" : "Copy report link"}
-          </button>
-          <a
-            href={`/api/extensions/${encodeURIComponent(id)}/versions/${encodeURIComponent(version)}/scans/${encodeURIComponent(String(scan.id || ""))}/export`}
-          >
-            <Download aria-hidden="true" /> Export evidence
-          </a>
-        </div>
       </section>
-      <DossierHeader
-        id={id}
-        version={version}
-        extension={extension}
-        scan={scan}
-      />
+      <div className={reportStyles.mast}><DossierHeader
+          id={id}
+          version={version}
+          extension={extension}
+          scan={scan}
+        /></div>
+      <section className={reportStyles.pulse} aria-label="Report evidence snapshot">
+        <article><span>Decision now</span><strong>{String(scan.decision_reason || "Evidence is scoped to this exact release.")}</strong><small>Exact artifact only</small></article>
+        <article><span>Actionable evidence</span><strong>{actionableGroups.length}</strong><small>{lowGroups.length + contextualGroups.length} contextual notes</small></article>
+        <article><span>Capabilities</span><strong>{Object.keys(capabilities).length}</strong><small>Observed powers, not intent</small></article>
+        <article><span>Coverage</span><strong>{coverage.percent}%</strong><small>{coverage.label}</small></article>
+        <article><span>Package scope</span><strong>{files.length}</strong><small>{dependencies.length} dependencies</small></article>
+      </section>
       {validation ? (
         <Link className="dossierValidated" href="/benchmark">
           <span className="dossierValidatedMark">
@@ -209,12 +195,12 @@ export default function AnalysisReport({ data }: Props) {
           <ChevronRight aria-hidden="true" />
         </Link>
       ) : null}
-      <div className="dossierMeta">
+      <div className={`dossierMeta ${reportStyles.meta}`}>
         <span>{String(extension.publisher || "Not reported")}</span>
         <span>{String(extension.registry || "Registry not reported")}</span>
         <span>Version {version}</span>
       </div>
-      <div className="dossierLayout">
+      <div className={`dossierLayout ${reportStyles.layout}`}>
         <DossierNavigation
           items={sections}
           active={active}

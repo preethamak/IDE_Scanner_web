@@ -22,4 +22,9 @@ describe("discovery normalization and ranking", () => {
     expect(result.exact_match?.extension_id).toBe("vyperguard.vyper-guard");
     expect(result.exact_match?.match_reason).toBe("exact_name");
   });
+  it("surfaces an exact publisher separately from extension matches", () => {
+    const result = buildDiscoveryResponse("tintinweb", [vyper]);
+    expect(result.matching_publishers).toEqual([expect.objectContaining({ publisher: "tintinweb", matched_extensions: 1 })]);
+    expect(result.exact_match).toBeNull();
+  });
 });

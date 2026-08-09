@@ -246,6 +246,14 @@ export type MarketplaceSearchResult = {
 
 export type DiscoveryMatchReason = "exact_identity" | "exact_name" | "matching" | "related";
 
+export type PublisherDiscoveryResult = {
+  publisher: string;
+  display_name: string;
+  verified: boolean;
+  registry: "vs-marketplace" | "openvsx";
+  matched_extensions: number;
+};
+
 /**
  * Additive discovery contract. `results` remains available on the marketplace
  * endpoint for older clients; new clients use these explicit groups so a fuzzy
@@ -264,6 +272,7 @@ export type DiscoveryResponse = {
   exact_match: DiscoveryResult | null;
   matching_extensions: DiscoveryResult[];
   related_extensions: DiscoveryResult[];
+  matching_publishers: PublisherDiscoveryResult[];
   results: MarketplaceSearchResult[];
   source: "registry" | "registry-cache";
   cached?: boolean;

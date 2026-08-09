@@ -9,14 +9,15 @@ describe("GuardRails landing surface", () => {
     const page = read("../page.tsx");
     expect(page).toContain("<HomeHero />");
     expect(page).toContain("<MarketplaceProof />");
-    expect(page).toContain("<SecurityBento />");
-    expect(page).toContain("<ReleaseWorkflow />");
+    expect(page).toContain("<PermissionDiff />");
+    expect(page).not.toContain("<SecurityBento />");
+    expect(page).not.toContain("<ReleaseWorkflow />");
   });
 
   it("uses a light, signal-led hero instead of the old dark product mockup", () => {
     const hero = read("./HomeHero.tsx");
     const css = read("./landing.module.css");
-    expect(hero).toContain("The update is small.");
+    expect(hero).toContain("Know what changed.");
     expect(hero).toContain("Two new powers appeared in this update.");
     expect(hero).toContain("GuardRails release review");
     expect(css).toContain("/* Light signal-led hero */");
@@ -42,16 +43,12 @@ describe("GuardRails landing surface", () => {
   });
 
   it("keeps search, evidence, comparison, and decision concepts in the product story", () => {
-    const files = [
-      read("./HomeHero.tsx"),
-      read("./SecurityBento.tsx"),
-      read("./ReleaseWorkflow.tsx"),
-    ].join("\n");
+    const files = [read("./HomeHero.tsx"), read("./PermissionDiff.tsx")].join("\n");
     for (const phrase of [
       "Check before install",
       "Compare every update",
-      "Release diff",
-      "Make the team decision",
+      "See the permission change",
+      "Review before rollout",
     ]) {
       expect(files).toContain(phrase);
     }
