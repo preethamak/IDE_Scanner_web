@@ -17,6 +17,10 @@ describe("GuardRails IDE control plane", () => {
     for (const phrase of ["Review agent", "TypeScript tools", "GitHub review tool", "Once", "This session", "Workspace", "Add scoped grant", "Simulate request", "Revoke", "Audit timeline"]) expect(workbench).toContain(phrase);
   });
 
+  it("demonstrates secret-safe broker receipts and versioned policy templates", () => {
+    for (const phrase of ["Filesystem broker", "Network broker", "Command broker", "Credential broker", "Opaque handle + destination binding", "Read-only workspace", "Patch review", "Package audit", "Policy templates"]) expect(workbench).toContain(phrase);
+  });
+
   it("groups the public information architecture around products and outcomes", () => {
     for (const phrase of ["Product", "Solutions", "Resources", "Extension Registry", "Engineering teams", "AI-agent security", "Data boundaries"]) expect(navigation).toContain(phrase);
   });

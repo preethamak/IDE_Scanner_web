@@ -23,6 +23,7 @@
 # production
 /build
 /.ide-scanner-reports
+/native/**/target/
 
 # misc
 .DS_Store
