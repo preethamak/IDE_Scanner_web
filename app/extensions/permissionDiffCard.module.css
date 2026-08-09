@@ -1,127 +1,49 @@
-.diff {
-  overflow: hidden;
-  margin: 0 0 32px;
-  border: 1px solid #d8dfe6;
-  border-radius: 17px;
-  background: #fff;
-}
+/* permissionDiffCard.module.css — Linear dark theme */
+.diff { overflow: hidden; margin: 0 0 28px; border: 1px solid #252530; border-radius: 14px; background: #111116; }
 .diff > header {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 22px;
-  border-bottom: 1px solid #e1e6eb;
-  padding: 20px 22px;
-  background: #f8fafc;
+  display: flex; align-items: end; justify-content: space-between; gap: 20px;
+  border-bottom: 1px solid #252530; padding: 18px 20px; background: #1a1a22;
 }
-.diff header > div {
-  display: grid;
-  gap: 5px;
-}
+.diff header > div { display: grid; gap: 4px; }
 .diff header span {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: #2f6fdd;
-  font: 800 12px var(--mono);
-  text-transform: uppercase;
+  display: flex; align-items: center; gap: 7px;
+  color: #636375; font: 700 11px var(--mono); letter-spacing: 0.07em; text-transform: uppercase;
 }
-.diff header span svg {
-  width: 15px;
-}
-.diff h3 {
-  margin: 0;
-  font-size: 21px;
-}
-.diff label {
-  display: grid;
-  gap: 5px;
-  color: #606b76;
-  font-size: 12px;
-  font-weight: 800;
-}
+.diff header span svg { width: 14px; }
+.diff h3 { margin: 0; font-size: 20px; font-weight: 720; color: #f7f8f8; letter-spacing: -0.02em; }
+.diff label { display: grid; gap: 4px; color: #636375; font-size: 12px; font-weight: 700; }
 .diff select {
-  min-height: 38px;
-  border: 1px solid #c9d2da;
-  border-radius: 8px;
-  padding: 0 10px;
-  background: #fff;
-  color: #20262d;
-  font: 700 13px var(--sans);
+  min-height: 36px; border: 1px solid #252530; border-radius: 8px; padding: 0 10px;
+  background: #202028; color: #f7f8f8; font: 700 12px var(--sans);
+  transition: border-color 150ms;
 }
+.diff select:focus { border-color: #636375; outline: none; }
+
 .state {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  padding: 24px;
-  color: #616d78;
-  font-size: 13px;
+  display: flex; align-items: center; gap: 8px; margin: 0;
+  padding: 22px; color: #636375; font-size: 13px;
 }
-.state svg {
-  width: 17px;
-  color: #b06923;
-}
-.changeGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-  background: #e1e6eb;
-}
+.state svg { width: 16px; color: #636375; }
+
+.changeGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #252530; }
 .changeGrid article {
-  display: grid;
-  align-content: start;
-  gap: 7px;
-  min-height: 155px;
-  padding: 20px;
-  background: #fff;
+  display: grid; align-content: start; gap: 6px; min-height: 148px;
+  padding: 18px; background: #111116; transition: background 150ms;
 }
-.changeGrid article.changed {
-  box-shadow: inset 3px 0 #2f6fdd;
-  background: #f7faff;
-}
-.changeGrid span {
-  color: #66727d;
-  font-size: 12px;
-}
-.changeGrid strong {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 16px;
-}
-.changeGrid strong svg {
-  width: 16px;
-  color: #659d2d;
-}
-.changeGrid p {
-  margin: 0;
-  color: #5e6a75;
-  font-size: 12px;
-  line-height: 1.55;
-}
-.compact {
-  margin: 18px 0;
-}
-.compact > header {
-  padding: 16px 18px;
-}
-.compact h3 {
-  font-size: 18px;
-}
-.compact .changeGrid article {
-  min-height: 130px;
-  padding: 16px;
-}
+.changeGrid article:hover { background: #1a1a22; }
+.changeGrid article.changed { box-shadow: inset 3px 0 #a5a5b8; background: #1a1a22; }
+.changeGrid span   { color: #636375; font-size: 12px; }
+.changeGrid strong { display: flex; align-items: center; gap: 6px; font-size: 15px; color: #f7f8f8; }
+.changeGrid strong svg { width: 15px; color: #636375; }
+.changeGrid p { margin: 0; color: #636375; font-size: 12px; line-height: 1.55; }
+
+.compact { margin: 16px 0; }
+.compact > header { padding: 14px 16px; }
+.compact h3 { font-size: 17px; }
+.compact .changeGrid article { min-height: 120px; padding: 14px; }
+
 @media (max-width: 760px) {
-  .diff > header {
-    align-items: stretch;
-    flex-direction: column;
-  }
-  .changeGrid {
-    grid-template-columns: 1fr;
-  }
-  .changeGrid article {
-    min-height: 0;
-  }
+  .diff > header { align-items: stretch; flex-direction: column; }
+  .changeGrid { grid-template-columns: 1fr; }
+  .changeGrid article { min-height: 0; }
 }

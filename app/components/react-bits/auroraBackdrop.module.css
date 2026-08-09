@@ -1,3 +1,16 @@
-.aurora{position:absolute;z-index:-1;inset:0;overflow:hidden;pointer-events:none;background:#fffdf9}.aurora>span{position:absolute;display:block}.rose{top:-28%;left:18%;width:70%;height:70%;border-radius:50%;background:radial-gradient(ellipse,#f3c8d9cc 0,#f8e5ec88 36%,transparent 70%);filter:blur(28px);animation:floatRose 15s ease-in-out infinite alternate}.peach{right:-18%;bottom:-24%;width:68%;height:72%;border-radius:50%;background:radial-gradient(ellipse,#f7d3b9b8 0,#fff0df7a 42%,transparent 72%);filter:blur(25px);animation:floatPeach 18s ease-in-out infinite alternate}.lime{bottom:4%;left:-10%;width:48%;height:55%;border-radius:50%;background:radial-gradient(ellipse,#dff2a8a6 0,#eff7d272 40%,transparent 72%);filter:blur(30px);animation:floatLime 20s ease-in-out infinite alternate}.grid{inset:0;background-image:linear-gradient(#5c445008 1px,transparent 1px),linear-gradient(90deg,#5c445008 1px,transparent 1px);background-size:52px 52px;mask-image:linear-gradient(to bottom,#000 0,transparent 78%)}.noise{inset:0;opacity:.19;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E")}
-@keyframes floatRose{to{transform:translate(-10%,18%) rotate(7deg) scale(1.12)}}@keyframes floatPeach{to{transform:translate(-16%,-12%) rotate(-8deg) scale(.92)}}@keyframes floatLime{to{transform:translate(18%,-9%) scale(1.08)}}
-@media(prefers-reduced-motion:reduce){.rose,.peach,.lime{animation:none}}
+/* auroraBackdrop.module.css — all glow effects removed, plain dark canvas only */
+.aurora {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: #08090a;
+}
+/* Hide all effect spans — no glows, no grid, no noise */
+.aurora > span { display: none; }
+.rose  { display: none; }
+.peach { display: none; }
+.lime  { display: none; }
+.grid  { display: none; }
+.noise { display: none; }

@@ -1,1 +1,42 @@
-.panel,.state{border:1px solid #e5d6da;border-radius:18px;background:linear-gradient(145deg,#fff 0%,#fff8f4 100%);padding:24px;color:#302a30}.panel header{display:flex;justify-content:space-between;gap:24px}.panel header>svg{width:42px;height:42px;border-radius:12px;background:#f5dfe7;padding:10px;color:#8c3f60}.panel span,.state p,.panel p{color:#746970;font-size:13px}.panel h2{margin:5px 0;font-size:30px}.usage{display:grid;gap:16px;margin:24px 0}.usage article>div{display:flex;justify-content:space-between;gap:18px;margin-bottom:7px}.usage strong{font-size:13px}.usage progress{width:100%;height:8px;accent-color:#9a496d}.entitlements{display:flex;flex-wrap:wrap;gap:8px}.entitlements span{border-radius:999px;background:#f5efe7;padding:7px 10px;color:#594e54}.panel footer{margin-top:20px}.panel button,.state button{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:10px;background:#9a496d;padding:11px 15px;color:#fff;font-weight:700}.panel button svg,.state button svg{width:16px}.panel button:disabled{opacity:.65}.error{margin-top:16px;color:#8b304e!important}.state{display:grid;justify-items:start;gap:8px}.state>svg{color:#9a496d}.spin{animation:billing-spin 1s linear infinite}@keyframes billing-spin{to{transform:rotate(360deg)}}@media(max-width:640px){.panel,.state{padding:18px}.usage article>div{align-items:flex-start;flex-direction:column;gap:3px}}@media(prefers-reduced-motion:reduce){.spin{animation:none}}
+/* billingPanel.module.css — Linear dark theme */
+.panel, .state {
+  border: 1px solid #252530; border-radius: 14px;
+  background: #111116; padding: 22px; color: #f7f8f8;
+}
+.panel header { display: flex; justify-content: space-between; gap: 22px; }
+.panel header > svg {
+  width: 40px; height: 40px; border-radius: 10px;
+  border: 1px solid #252530; background: #202028; padding: 9px; color: #636375;
+}
+.panel span, .state p, .panel p { color: #636375; font-size: 13px; }
+.panel h2 { margin: 4px 0; font-size: 28px; font-weight: 720; letter-spacing: -.03em; color: #f7f8f8; }
+.usage { display: grid; gap: 14px; margin: 20px 0; }
+.usage article > div { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 6px; }
+.usage strong { font-size: 13px; color: #f7f8f8; }
+.usage progress { width: 100%; height: 6px; accent-color: #a5a5b8; border-radius: 3px; }
+.entitlements { display: flex; flex-wrap: wrap; gap: 7px; }
+.entitlements span {
+  border: 1px solid #252530; border-radius: 999px;
+  background: #1a1a22; padding: 6px 10px; color: #a5a5b8; font-size: 12px;
+}
+.panel footer { margin-top: 18px; }
+.panel button, .state button {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid #f7f8f8; border-radius: 9px;
+  background: #f7f8f8; padding: 10px 14px;
+  color: #08090a; font-weight: 700; cursor: pointer;
+  transition: background 150ms, transform 150ms;
+}
+.panel button:hover, .state button:hover { background: #e2e2e8; transform: translateY(-1px); }
+.panel button svg, .state button svg { width: 15px; }
+.panel button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+.error { margin-top: 14px; color: #e5534b !important; font-size: 12px; }
+.state { display: grid; justify-items: start; gap: 7px; }
+.state > svg { color: #636375; }
+.spin { animation: billing-spin 1s linear infinite; }
+@keyframes billing-spin { to { transform: rotate(360deg); } }
+@media (max-width: 640px) {
+  .panel, .state { padding: 16px; }
+  .usage article > div { align-items: flex-start; flex-direction: column; gap: 2px; }
+}
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
