@@ -432,3 +432,7 @@
   .cliStartActions .cliInstallCommand { width: 100%; }
   .cliTrustStrip { grid-template-columns: 1fr; }
 }
+
+/* Light product experience */
+/* Surface palette reference — #dce9ff #f8ddec */
+.cliTerminalBody { background: #0d0e10; }

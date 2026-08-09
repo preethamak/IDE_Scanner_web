@@ -356,3 +356,7 @@
   .cta > a { grid-column: 1; width: 100%; justify-content: center; }
   .cta > svg { display: none; }
 }
+
+/* Surface palette reference — #dce9ff #efffd2 */
+.tableWrap { overflow-x: auto; }
+@media (prefers-reduced-motion: reduce) { html:has(.page) { scroll-behavior: auto; } }

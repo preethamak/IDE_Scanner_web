@@ -202,3 +202,8 @@
   .shell :global(.reportTrace li) { min-height: auto; }
   .mast :global(.reportActions) { display: grid; grid-template-columns: 1fr 1fr; }
 }
+
+/* sticky rail — compact: position:sticky top:72px */
+/* reportTrace anchor — position:sticky nav rail */
+.reportTrace { scroll-margin-top: 80px; }
+@media(max-width:620px){.shell{width:min(100% - 24px,1380px)}}

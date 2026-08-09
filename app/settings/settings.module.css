@@ -310,3 +310,6 @@
 @media (prefers-reduced-motion: reduce) {
   .diagram { transform: none; }
 }
+
+/* Surface palette reference — #dce9ff #ffe5ef #efffcf */
+@media (prefers-reduced-motion: reduce) { .diagram { transform: none; } }

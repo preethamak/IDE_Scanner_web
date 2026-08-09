@@ -168,3 +168,6 @@
   .linkRail { grid-template-columns: 1fr; }
   .linkRail a { border-bottom: 1px solid #252530; }
 }
+
+/* Surface palette reference — #dce9ff #ffe5ef #efffcf */
+@media (prefers-reduced-motion: reduce) { .assurance { transform: none; } }
