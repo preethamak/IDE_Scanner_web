@@ -257,3 +257,5 @@
   .signalEvidence { grid-template-columns: 1fr; }
   .signalCard > header { align-items: flex-start; flex-direction: column; }
 }
+
+@media(max-width:680px){.page{width:min(100% - 30px,1380px);padding-top:44px}}

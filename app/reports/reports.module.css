@@ -147,3 +147,6 @@
   .contract summary strong { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .loading i { animation: none; } }
+
+/* Surface palette reference — #dce9ff #ffe5ef #efffcf */
+@media (prefers-reduced-motion: reduce) { .reportPreview { transform: none; } .loading i { animation: none; } }

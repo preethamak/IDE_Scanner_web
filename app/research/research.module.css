@@ -266,3 +266,6 @@
   .feature > a, .library > div > a { transition: none; }
   .feature > a:hover { transform: none; }
 }
+
+/* Surface palette reference — #dce9ff #ffe6ef */
+@media (prefers-reduced-motion: reduce) { .feature > a, .library > div > a { transition: none; } .feature > a:hover { transform: none; } }

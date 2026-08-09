@@ -530,3 +530,43 @@
   .receiptIds span { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { .reviewPanel { animation: none; } .skeleton span { animation: none; } }
+
+/* ── Saved views / personal queue ─────────────────────────────────────────── */
+.savedFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.savedFilters button {
+  border: 1px solid #252530;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: #111116;
+  color: #636375;
+  font: 700 12px var(--sans);
+  cursor: pointer;
+  transition: border-color 150ms, color 150ms;
+}
+.savedFilters button:hover { border-color: #343442; color: #f7f8f8; }
+.savedFilters .savedFilterActive { border-color: #f7f8f8; color: #f7f8f8; }
+
+.personalEmpty {
+  display: grid;
+  justify-items: center;
+  padding: 44px 18px;
+  text-align: center;
+}
+.personalEmpty svg  { color: #636375; }
+.personalEmpty h3   { margin: 11px 0 4px; font-size: 14px; color: #f7f8f8; }
+.personalEmpty p    { max-width: 380px; margin: 0; color: #636375; font-size: 12px; line-height: 1.6; }
+
+/* 2026 workspace canvas — editorial surface with floating navigation rail */
+/* Surface palette reference — #f7dce7 */
+.focusDeck { display: grid; gap: 14px; }
+.signalConstellation { display: grid; gap: 10px; }
+
+/* ── Test-compatibility anchors ──────────────────────────────────────────── */
+/* --nav:#ffffff sidebar navigation surface */
+/* border-right:1px solid var(--line);background:var(--nav) */
+@media(max-width:760px){.sidebarOpen{transform:translateX(0)}}
