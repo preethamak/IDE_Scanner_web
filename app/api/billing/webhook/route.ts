@@ -19,13 +19,20 @@ export async function POST(request: Request) {
   const db = serviceDb();
   const eventCreatedAt = new Date(event.created * 1000).toISOString();
   try {
-    const claim = await db.rpc("claim_billing_webhook_event", {
+    const claim = await db.rpc("claim_billing_webhook_event_v2", {
       event_id: event.id,
       event_name: event.type,
       event_created_at: eventCreatedAt,
     });
     if (claim.error) throw claim.error;
-    if (claim.data !== true) return NextResponse.json({ received: true, duplicate: true });
+    if (claim.data === "processed") return NextResponse.json({ received: true, duplicate: true });
+    if (claim.data === "busy") {
+      return NextResponse.json(
+        { error: "Billing event is already being reconciled." },
+        { status: 503, headers: { "Retry-After": "30" } },
+      );
+    }
+    if (claim.data !== "claimed") throw new Error("Billing event claim returned an invalid state.");
     if (event.type.startsWith("customer.subscription.")) await reconcileSubscription(event.data.object as Stripe.Subscription, eventCreatedAt);
     if (event.type === "checkout.session.completed") await reconcileCheckout(event.data.object as Stripe.Checkout.Session);
     const finished = await db.rpc("finish_billing_webhook_event", { event_id: event.id, succeeded: true, failure_message: null });

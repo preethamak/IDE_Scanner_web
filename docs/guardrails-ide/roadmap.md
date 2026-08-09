@@ -21,7 +21,7 @@
 - Permission center with once/session/workspace grants and exact-action approvals.
 - Agent plan/review/apply workflow with patch-only writes by default.
 
-The first native spike now lives in `native/guardrails-supervisor`. It defines IPC v1, stable principals, exact request/grant matching, deny-overrides behavior, and SHA-256-chained audit records. It intentionally launches no untrusted process and makes no sandbox claim; Linux isolation and broker conformance remain the next gate.
+The native spike in `native/guardrails-supervisor` defines IPC v1, stable principals, exact request/grant matching, deny-overrides behavior, and SHA-256-chained audit records. Its first Linux filesystem-broker slice uses `openat2` to bind an authorized, audited read beneath a pinned workspace descriptor and covers traversal, absolute-path, symlink-escape, request-mismatch, denial, unaudited, and oversized-read failures. It intentionally launches no untrusted process and makes no sandbox claim; write/sensitive-file policy, process isolation, and in-sandbox conformance remain the next gate.
 
 **Exit:** red-team suite cannot read host secrets, escape workspace mounts, make undeclared network calls, or execute unapproved commands.
 

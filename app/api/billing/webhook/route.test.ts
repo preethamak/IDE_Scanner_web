@@ -24,28 +24,38 @@ describe("Stripe webhook reconciliation", () => {
 
   it("claims and finishes a verified event exactly once", async () => {
     mocks.constructEvent.mockReturnValue(checkoutEvent);
-    mocks.rpc.mockResolvedValueOnce({ data: true, error: null }).mockResolvedValueOnce({ data: null, error: null });
+    mocks.rpc.mockResolvedValueOnce({ data: "claimed", error: null }).mockResolvedValueOnce({ data: null, error: null });
     const upsert = vi.fn().mockResolvedValue({ error: null });
     mocks.from.mockReturnValue({ upsert });
     const response = await POST(request());
     expect(response.status).toBe(200);
     expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ team_id: "team-1", provider_customer_id: "cus_1" }), { onConflict: "team_id" });
-    expect(mocks.rpc).toHaveBeenNthCalledWith(1, "claim_billing_webhook_event", expect.objectContaining({ event_id: "evt_checkout" }));
+    expect(mocks.rpc).toHaveBeenNthCalledWith(1, "claim_billing_webhook_event_v2", expect.objectContaining({ event_id: "evt_checkout" }));
     expect(mocks.rpc).toHaveBeenNthCalledWith(2, "finish_billing_webhook_event", expect.objectContaining({ succeeded: true }));
   });
 
   it("acknowledges a duplicate without replaying reconciliation", async () => {
     mocks.constructEvent.mockReturnValue(checkoutEvent);
-    mocks.rpc.mockResolvedValueOnce({ data: false, error: null });
+    mocks.rpc.mockResolvedValueOnce({ data: "processed", error: null });
     const response = await POST(request());
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ received: true, duplicate: true });
     expect(mocks.from).not.toHaveBeenCalled();
   });
 
+  it("asks Stripe to retry while another worker holds the event lease", async () => {
+    mocks.constructEvent.mockReturnValue(checkoutEvent);
+    mocks.rpc.mockResolvedValueOnce({ data: "busy", error: null });
+    const response = await POST(request());
+    expect(response.status).toBe(503);
+    expect(response.headers.get("retry-after")).toBe("30");
+    expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
+  });
+
   it("marks a claimed event failed so Stripe can retry it", async () => {
     mocks.constructEvent.mockReturnValue(checkoutEvent);
-    mocks.rpc.mockResolvedValueOnce({ data: true, error: null }).mockResolvedValueOnce({ data: null, error: null });
+    mocks.rpc.mockResolvedValueOnce({ data: "claimed", error: null }).mockResolvedValueOnce({ data: null, error: null });
     mocks.from.mockReturnValue({ upsert: vi.fn().mockResolvedValue({ error: new Error("database unavailable") }) });
     const response = await POST(request());
     expect(response.status).toBe(500);

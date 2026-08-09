@@ -37,4 +37,4 @@ This is intentionally not presented as an OS sandbox. The policy engine is one l
 
 ## Native supervisor spike
 
-Phase 1 has started in `native/guardrails-supervisor` with a small Rust process that accepts versioned line-delimited IPC, validates stable principal identities, denies unmatched requests, and writes SHA-256-chained audit records. The crate is a protocol and audit foundation only: it does not yet launch or isolate extensions, agents, commands, or brokers.
+Phase 1 has started in `native/guardrails-supervisor` with a small Rust process that accepts versioned line-delimited IPC, validates stable principal identities, denies unmatched requests, and writes SHA-256-chained audit records. A Linux-only read broker now proves kernel-atomic workspace-beneath resolution and rejects traversal and symlink escapes. It is not connected to the binary IPC and does not launch or isolate extensions, agents, or commands, so this remains a broker conformance spike rather than a sandbox.
