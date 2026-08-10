@@ -9,6 +9,7 @@ import {
 import { teamApiError } from "@/lib/teamApiError";
 import { requireTeamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
+import { auditRetentionCutoff, requireEntitlement, workspaceEntitlements } from "@/lib/entitlements";
 
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
@@ -34,6 +35,10 @@ export async function GET(request: Request, context: Context) {
         { status: 403 },
       );
     }
+    if (wantsDownload) await requireEntitlement(id, "audit_export");
+    const entitlements = await workspaceEntitlements(id);
+    const retentionDays = entitlements.limits.audit_retention_days;
+    const retainedSince = auditRetentionCutoff(retentionDays);
 
     const db = serviceDb();
     const [decisions, alerts, deliveries, digests, domainEvents] =
@@ -44,6 +49,7 @@ export async function GET(request: Request, context: Context) {
             "id,extension_id,version,rationale,team_decision_events(id,actor_id,kind,before_value,after_value,created_at)",
           )
           .eq("team_id", id)
+          .gte("team_decision_events.created_at", retainedSince)
           .limit(500),
         db
           .from("team_monitoring_alerts")
@@ -51,6 +57,7 @@ export async function GET(request: Request, context: Context) {
             "id,kind,title,extension_id,version,severity,state,metadata,created_at,resolved_at",
           )
           .eq("team_id", id)
+          .gte("created_at", retainedSince)
           .order("created_at", { ascending: false })
           .limit(500),
         db
@@ -59,6 +66,7 @@ export async function GET(request: Request, context: Context) {
             "id,status,attempts,delivered_at,last_error,created_at,team_monitoring_alerts(extension_id,version,severity)",
           )
           .eq("team_id", id)
+          .gte("created_at", retainedSince)
           .order("created_at", { ascending: false })
           .limit(500),
         db
@@ -67,6 +75,7 @@ export async function GET(request: Request, context: Context) {
             "id,status,attempts,delivered_at,last_error,period_start,period_end,created_at,snapshot",
           )
           .eq("team_id", id)
+          .gte("created_at", retainedSince)
           .order("created_at", { ascending: false })
           .limit(250),
         db
@@ -75,6 +84,7 @@ export async function GET(request: Request, context: Context) {
             "id,actor_id,action,object_type,object_id,extension_id,version,previous_state,resulting_state,rationale,risk_level,created_at",
           )
           .eq("team_id", id)
+          .gte("created_at", retainedSince)
           .order("created_at", { ascending: false })
           .limit(500),
       ]);
@@ -122,7 +132,11 @@ export async function GET(request: Request, context: Context) {
       });
     }
     return NextResponse.json(
-      { manifest, events: visibleEvents },
+      {
+        manifest,
+        events: visibleEvents,
+        retention: { days: retentionDays, retained_since: retainedSince },
+      },
       {
         headers: wantsDownload
           ? {

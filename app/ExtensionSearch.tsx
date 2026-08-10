@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, Search } from "lucide-react";
+import { ArrowRight, BadgeCheck, Search, Star, UsersRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import ExtensionIcon from "@/app/ExtensionIcon";
 import type { DiscoveryResponse, DiscoveryResult } from "@/lib/types";
@@ -51,6 +51,7 @@ export default function ExtensionSearch({ initialQuery = "", onSelect, submitLab
     {loading ? <p className="discoveryLoading" role="status">Searching the Extension Registry…</p> : null}
     {error ? <p className="discoveryError">{error}</p> : null}
     {data ? <div className="discoveryResults" aria-live="polite">
+      {data.matching_publishers?.length ? <section className="publisherMatches"><span>Publisher</span>{data.matching_publishers.map((publisher) => <Link key={`${publisher.registry}-${publisher.publisher}`} href={`/publishers/${encodeURIComponent(publisher.publisher)}`}><UsersRound/><div><strong>{publisher.display_name}{publisher.verified ? <BadgeCheck aria-label="Verified Marketplace publisher"/> : null}</strong><small>@{publisher.publisher} · View published extensions</small></div><ArrowRight/></Link>)}</section> : null}
       {data.exact_match ? <ResultGroup label={data.exact_match.match_reason === "exact_identity" ? "Exact identity match" : "Exact extension name"} items={[data.exact_match]} action={open}/> : <p className="exactMiss">No exact match for <code>{data.query}</code>. Related extensions are shown below; choose a release explicitly.</p>}
       {data.matching_extensions.length ? <ResultGroup label="Matching extensions" items={data.matching_extensions} action={open}/> : null}
       {data.related_extensions.length ? <ResultGroup label="Related extensions" items={data.related_extensions} action={open}/> : null}
@@ -60,5 +61,9 @@ export default function ExtensionSearch({ initialQuery = "", onSelect, submitLab
 }
 
 function ResultGroup({ label, items, action }: { label: string; items: DiscoveryResult[]; action: (item: DiscoveryResult) => React.ReactNode }) {
-  return <section className="discoveryGroup"><span>{label}</span>{items.slice(0, 8).map((item) => <article key={`${item.registry}-${item.extension_id}`}><ExtensionIcon iconUrl={item.icon_url} publisher={item.publisher} name={item.display_name}/><div><strong>{item.display_name}{item.publisher_verified ? <BadgeCheck aria-label="Verified Marketplace publisher"/> : null}</strong><code>{item.extension_id} · {item.version}</code><small>{item.registry === "openvsx" ? "Open VSX" : "VS Marketplace"} · {item.match_reason.replaceAll("_", " ")}</small></div>{action(item)}</article>)}</section>;
+  return <section className="discoveryGroup"><span>{label}</span>{items.slice(0, 8).map((item) => <article key={`${item.registry}-${item.extension_id}`}><ExtensionIcon iconUrl={item.icon_url} publisher={item.publisher} name={item.display_name}/><div><strong>{item.display_name}{item.publisher_verified ? <BadgeCheck aria-label="Verified Marketplace publisher"/> : null}</strong><code>{item.extension_id} · {item.version}</code><small>{item.registry === "openvsx" ? "Open VSX" : "VS Marketplace"} · {formatInstalls(item.install_count)} installs{item.rating_count ? <> · <Star/> {item.rating_average.toFixed(1)} ({formatInstalls(item.rating_count)})</> : ""}</small></div>{action(item)}</article>)}</section>;
+}
+
+function formatInstalls(value: number) {
+  return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value);
 }

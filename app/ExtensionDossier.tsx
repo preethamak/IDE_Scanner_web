@@ -6,13 +6,7 @@ import {
   AlertTriangle,
   BadgeCheck,
   ChevronRight,
-  FileText,
-  Fingerprint,
-  FolderTree,
   GitCompareArrows,
-  Download,
-  Link2,
-  LockKeyhole,
   Package,
   Radar,
   ShieldCheck,
@@ -20,8 +14,8 @@ import {
   UserRound,
   Waypoints,
 } from "lucide-react";
-import DossierHeader from "@/app/dossier/DossierHeader";
-import DossierNavigation from "@/app/dossier/DossierNavigation";
+import ReportHero from "@/app/dossier/ReportHero";
+import ReportSidebar, { type ReportSection } from "@/app/dossier/ReportSidebar";
 import DependenciesSection from "@/app/dossier/DependenciesSection";
 import CapabilitiesSection, {
   normalizeCapabilities,
@@ -38,6 +32,7 @@ import ChangesSection from "@/app/dossier/ChangesSection";
 import OverviewSection from "@/app/dossier/OverviewSection";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
 import {
+  coveragePresentation,
   displayedDecision,
   requiresReview,
 } from "@/lib/classificationContract";
@@ -46,36 +41,19 @@ import type {
   ReportFinding,
   ReportObject,
 } from "@/lib/reportContract";
-import immutableStyles from "@/app/dossier/immutableReport.module.css";
+import reportStyles from "@/app/dossier/reportShell.module.css";
 
-type Section =
-  | "overview"
-  | "readme"
-  | "changes"
-  | "alerts"
-  | "capabilities"
-  | "dependencies"
-  | "files"
-  | "versions"
-  | "publisher"
-  | "provenance"
-  | "coverage"
-  | "raw";
 type Props = { data: ExtensionDossierData };
 
-const sections: Array<{ id: Section; label: string; icon: typeof Radar }> = [
-  { id: "overview", label: "Overview", icon: Radar },
-  { id: "readme", label: "README", icon: FileText },
+const sections: Array<{ id: ReportSection; label: string; icon: typeof Radar }> = [
+  { id: "summary", label: "Summary", icon: Radar },
   { id: "changes", label: "What changed", icon: GitCompareArrows },
-  { id: "alerts", label: "Evidence", icon: AlertTriangle },
+  { id: "evidence", label: "Evidence", icon: AlertTriangle },
   { id: "capabilities", label: "Capabilities", icon: Waypoints },
-  { id: "dependencies", label: "Dependencies", icon: Package },
-  { id: "files", label: "Files", icon: FolderTree },
-  { id: "versions", label: "Versions", icon: GitCompareArrows },
+  { id: "package", label: "Package", icon: Package },
   { id: "publisher", label: "Publisher", icon: UserRound },
-  { id: "provenance", label: "Provenance", icon: Fingerprint },
   { id: "coverage", label: "Coverage", icon: ShieldCheck },
-  { id: "raw", label: "Raw evidence", icon: Terminal },
+  { id: "technical", label: "Technical", icon: Terminal },
 ];
 
 export default function AnalysisReport({ data }: Props) {
@@ -89,8 +67,7 @@ export default function AnalysisReport({ data }: Props) {
     files,
     dependencies,
   } = data;
-  const [active, setActive] = useState<Section>("overview");
-  const [copied, setCopied] = useState(false);
+  const [active, setActive] = useState<ReportSection>("summary");
   const decision = displayedDecision(scan);
   const capabilities = normalizeCapabilities(scan.capabilities);
   const grouped = useMemo(() => groupFindings(findings), [findings]);
@@ -105,21 +82,17 @@ export default function AnalysisReport({ data }: Props) {
     scan.scan_purpose === "benchmark"
       ? benchmarkValidation(id, version, String(scan.artifact_sha256 || ""))
       : null;
-  const badgeCount = (section: Section) =>
-    section === "alerts"
+  const coverage = coveragePresentation(scan);
+  const sectionItems = sections.map((section) => ({
+    ...section,
+    count: section.id === "evidence"
       ? actionableGroups.length + lowGroups.length
-      : section === "capabilities"
-        ? Object.keys(capabilities).length
-        : section === "dependencies"
-          ? dependencies.length
-          : section === "files"
-            ? files.length
-            : section === "versions"
-              ? versions.length
-              : 0;
+      : section.id === "capabilities"
+        ? Object.keys(capabilities).length : section.id === "package" ? files.length : undefined,
+  }));
   useEffect(() => {
     const selectHash = () => {
-      const section = window.location.hash.slice(1) as Section;
+      const section = window.location.hash.slice(1) as ReportSection;
       if (sections.some((item) => item.id === section)) setActive(section);
     };
     selectHash();
@@ -127,69 +100,8 @@ export default function AnalysisReport({ data }: Props) {
     return () => window.removeEventListener("hashchange", selectHash);
   }, []);
   return (
-    <main className="dossierPage">
-      <Link
-        className="dossierBack"
-        href={`/extensions/${encodeURIComponent(id)}`}
-      >
-        Back to extension profile
-      </Link>
-      <section
-        className={immutableStyles.immutableBar}
-        aria-label="Immutable report identity"
-      >
-        <span className={immutableStyles.lock}>
-          <LockKeyhole aria-hidden="true" />
-        </span>
-        <div>
-          <span>Immutable Deep Scan report</span>
-          <strong>Evidence is locked to this exact artifact and scan.</strong>
-          <p>
-            Future scans cannot replace the findings, coverage, ruleset, or
-            artifact hash shown on this URL.
-          </p>
-        </div>
-        <dl>
-          <div>
-            <dt>Scan</dt>
-            <dd>
-              <code>{String(scan.id || "Not reported")}</code>
-            </dd>
-          </div>
-          <div>
-            <dt>Artifact</dt>
-            <dd>
-              <code>
-                {shortHash(String(scan.artifact_sha256 || "Not reported"))}
-              </code>
-            </dd>
-          </div>
-        </dl>
-        <div className={immutableStyles.actions}>
-          <button
-            type="button"
-            onClick={async () => {
-              await navigator.clipboard.writeText(window.location.href);
-              setCopied(true);
-              window.setTimeout(() => setCopied(false), 1800);
-            }}
-          >
-            <Link2 aria-hidden="true" />{" "}
-            {copied ? "Link copied" : "Copy report link"}
-          </button>
-          <a
-            href={`/api/extensions/${encodeURIComponent(id)}/versions/${encodeURIComponent(version)}/scans/${encodeURIComponent(String(scan.id || ""))}/export`}
-          >
-            <Download aria-hidden="true" /> Export evidence
-          </a>
-        </div>
-      </section>
-      <DossierHeader
-        id={id}
-        version={version}
-        extension={extension}
-        scan={scan}
-      />
+    <main className={`dossierPage ${reportStyles.shell}`}>
+      <ReportHero id={id} version={version} extension={extension} scan={scan} files={files} dependencies={dependencies} decision={decision} actionable={actionableGroups.length} contextual={lowGroups.length + contextualGroups.length} capabilities={Object.keys(capabilities).length} coverage={coverage.percent} coverageLabel={coverage.label}/>
       {validation ? (
         <Link className="dossierValidated" href="/benchmark">
           <span className="dossierValidatedMark">
@@ -209,20 +121,14 @@ export default function AnalysisReport({ data }: Props) {
           <ChevronRight aria-hidden="true" />
         </Link>
       ) : null}
-      <div className="dossierMeta">
-        <span>{String(extension.publisher || "Not reported")}</span>
-        <span>{String(extension.registry || "Registry not reported")}</span>
-        <span>Version {version}</span>
-      </div>
-      <div className="dossierLayout">
-        <DossierNavigation
-          items={sections}
+      <div className={`dossierLayout ${reportStyles.layout}`}>
+        <ReportSidebar
+          items={sectionItems}
           active={active}
-          count={badgeCount}
-          onSelect={setActive}
+          onSelect={(section) => { setActive(section); window.history.pushState(null, "", `#${section}`); }}
         />
         <section className="dossierContent">
-          {active === "overview" ? (
+          {active === "summary" ? (
             <OverviewSection
               decision={decision}
               scan={scan}
@@ -230,23 +136,15 @@ export default function AnalysisReport({ data }: Props) {
               noteGroups={[...lowGroups, ...contextualGroups]}
               capabilities={capabilities}
               onOpenAlerts={() => {
-                setActive("alerts");
-                window.history.pushState(null, "", "#alerts");
+                setActive("evidence");
+                window.history.pushState(null, "", "#evidence");
               }}
             />
           ) : null}
-          {active === "readme" ? (
-            <ReadmeSection
-              id={id}
-              version={version}
-              scanId={String(scan.id || "")}
-              files={files}
-            />
-          ) : null}
           {active === "changes" ? (
-            <ChangesSection id={id} current={version} versions={versions} />
+            <><ChangesSection id={id} current={version} versions={versions} /><VersionsSection versions={versions} current={version} /></>
           ) : null}
-          {active === "alerts" ? (
+          {active === "evidence" ? (
             <AlertsSection
               actionableGroups={actionableGroups}
               lowGroups={lowGroups}
@@ -256,36 +154,25 @@ export default function AnalysisReport({ data }: Props) {
           {active === "capabilities" ? (
             <CapabilitiesSection capabilities={capabilities} />
           ) : null}
-          {active === "dependencies" ? (
-            <DependenciesSection dependencies={dependencies} />
-          ) : null}
-          {active === "files" ? (
-            <FilesSection
+          {active === "package" ? (
+            <><ReadmeSection id={id} version={version} scanId={String(scan.id || "")} files={files}/><DependenciesSection dependencies={dependencies}/><FilesSection
               id={id}
               version={version}
               scanId={String(scan.id || "")}
               files={files}
-            />
-          ) : null}
-          {active === "versions" ? (
-            <VersionsSection versions={versions} current={version} />
+            /></>
           ) : null}
           {active === "publisher" ? (
             <PublisherSection extension={extension} files={files} />
           ) : null}
-          {active === "provenance" ? <ProvenanceSection scan={scan} /> : null}
-          {active === "coverage" ? <CoverageSection scan={scan} /> : null}
-          {active === "raw" ? (
+          {active === "coverage" ? <><CoverageSection scan={scan}/><ProvenanceSection scan={scan}/></> : null}
+          {active === "technical" ? (
             <RawEvidenceSection scan={scan} findings={findings} />
           ) : null}
         </section>
       </div>
     </main>
   );
-}
-
-function shortHash(value: string) {
-  return value.length > 22 ? `${value.slice(0, 12)}…${value.slice(-8)}` : value;
 }
 
 type Group = {

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isConcreteVersion, listMarketplaceVersions, searchMarketplace } from "@/lib/marketplace";
+import { isConcreteVersion, listMarketplaceVersions, listPublisherExtensions, searchMarketplace } from "@/lib/marketplace";
 
 describe("listMarketplaceVersions", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -38,5 +38,23 @@ describe("listMarketplaceVersions", () => {
 
     await expect(searchMarketplace("GitHub.copilot")).resolves.toMatchObject([{ extension_id: "GitHub.copilot" }]);
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("lists and ranks only extensions from the exact publisher", async () => {
+    const extension = (publisher: string, name: string, installs: number) => ({
+      extensionName: name,
+      displayName: name,
+      publisher: { publisherName: publisher, displayName: publisher, isDomainVerified: true },
+      versions: [{ version: "1.0.0" }],
+      statistics: [{ statisticName: "install", value: installs }],
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ results: [{ extensions: [extension("GitHub", "second", 20), extension("Other", "noise", 999), extension("GitHub", "first", 50)] }] }),
+    }));
+    const results = await listPublisherExtensions("GitHub");
+    expect(results.map((item) => item.extension_id)).toEqual(["GitHub.first", "GitHub.second"]);
+    const body = JSON.parse(String((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body));
+    expect(body.filters[0].criteria).toEqual([{ filterType: 2, value: "GitHub" }]);
   });
 });

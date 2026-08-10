@@ -34,3 +34,7 @@ The first slice includes:
 - unit tests for default denial, scoped grants, expiration, principal isolation, and explicit deny rules.
 
 This is intentionally not presented as an OS sandbox. The policy engine is one layer; production isolation additionally requires separate operating-system processes, restricted identities, filesystem mounts, syscall controls, and a network proxy.
+
+## Native supervisor spike
+
+Phase 1 has started in `native/guardrails-supervisor` with a small Rust process that accepts versioned line-delimited IPC, validates stable principal identities, denies unmatched requests, and writes SHA-256-chained audit records. A Linux-only read broker now proves kernel-atomic workspace-beneath resolution and rejects traversal and symlink escapes. It is not connected to the binary IPC and does not launch or isolate extensions, agents, or commands, so this remains a broker conformance spike rather than a sandbox.

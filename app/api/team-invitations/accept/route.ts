@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { authenticated } from "@/lib/auth";
 import { serviceDb } from "@/lib/supabase";
+import { requireEntitlement } from "@/lib/entitlements";
 
 export async function POST(request: Request) {
   try {
@@ -10,6 +11,10 @@ export async function POST(request: Request) {
     const token = typeof body.token === "string" ? body.token : "";
     if (!/^[A-Za-z0-9_-]{43}$/.test(token)) return NextResponse.json({ error: "Invitation is invalid." }, { status: 400 });
     const tokenHash = createHash("sha256").update(token).digest("hex");
+    const invitation = await serviceDb().from("team_invitations").select("team_id").eq("token_hash", tokenHash).is("accepted_at", null).gt("expires_at", new Date().toISOString()).maybeSingle();
+    if (invitation.error) throw invitation.error;
+    if (!invitation.data) return NextResponse.json({ error: "Invitation is invalid or expired." }, { status: 400 });
+    await requireEntitlement(invitation.data.team_id, "team_members", 1);
     const { data, error } = await serviceDb().rpc("accept_team_invitation", { p_token_hash: tokenHash, p_user_id: user.id }).single();
     if (error) throw error;
     if (!data || typeof data !== "object" || Array.isArray(data)) {

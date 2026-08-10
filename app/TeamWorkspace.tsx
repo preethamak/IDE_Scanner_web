@@ -42,6 +42,7 @@ import NotificationSettings, {
   type NotificationDelivery,
   type NotificationPreferences,
 } from "@/app/workspace/NotificationSettings";
+import BillingPanel from "@/app/workspace/BillingPanel";
 import { browserDb } from "@/lib/supabase";
 import {
   groupDecisionQueue,
@@ -942,6 +943,7 @@ export default function TeamWorkspace(
               currentUserId={userId}
               onMutateMember={mutateMember}
               onCreateInvite={createMemberInvite}
+              getToken={token}
               notificationSettings={
                 <NotificationSettings
                   configured={notificationsConfigured}
@@ -1678,34 +1680,40 @@ function Overview({
           <button onClick={() => onSample(false)}>Exit sample</button>
         </div>
       ) : null}
-      <PageTitle
-        eyebrow="Workspace overview"
-        title={`Good ${greeting()}, ${team.name}.`}
-        copy={
-          decisions.length
-            ? `${decisions.length} release ${decisions.length === 1 ? "decision needs" : "decisions need"} your team’s attention.`
-            : "Everything important is in view. Your review queue is clear."
-        }
-        action={
-          <div className={styles.overviewActions}>
-            {!sampleMode && !decisions.length && !watches.length ? (
+      <section className={styles.focusDeck}>
+        <div className={styles.focusGlow} aria-hidden="true"><i /><i /><i /></div>
+        <PageTitle
+          eyebrow="Release pulse"
+          title={decisions.length ? `${decisions.length} ${decisions.length === 1 ? "release needs" : "releases need"} a decision.` : "Nothing urgent. Keep shipping."}
+          copy={`Good ${greeting()}, ${team.name}. Exact releases stay attached to every call.`}
+          action={
+            <div className={styles.overviewActions}>
+              {!sampleMode && !decisions.length && !watches.length ? (
+                <button
+                  className={styles.sampleButton}
+                  onClick={() => onSample(true)}
+                >
+                  <Sparkles /> Preview sample workspace
+                </button>
+              ) : null}
               <button
-                className={styles.sampleButton}
-                onClick={() => onSample(true)}
+                className={styles.refresh}
+                onClick={() => window.location.reload()}
               >
-                <Sparkles /> Preview sample workspace
+                <RefreshCw /> Refresh
               </button>
-            ) : null}
-            <button
-              className={styles.refresh}
-              onClick={() => window.location.reload()}
-            >
-              <RefreshCw /> Refresh
-            </button>
-          </div>
-        }
-      />
-      <section className={styles.metrics}>
+            </div>
+          }
+        />
+        <div className={styles.signalConstellation} aria-label="Workspace signal summary">
+          <span><Radar /><b>{watches.length}</b><small>watched</small></span>
+          <i />
+          <span><ClipboardCheck /><b>{decisions.length}</b><small>to decide</small></span>
+          <i />
+          <span><ShieldCheck /><b>{failed ? "Check" : "Clear"}</b><small>delivery</small></span>
+        </div>
+      </section>
+      <section className={styles.metrics} aria-label="Workspace measurements">
         <Metric
           label="Needs review"
           value={decisions.length}
@@ -2913,6 +2921,7 @@ function SettingsView({
   onMutateMember,
   onCreateInvite,
   notificationSettings,
+  getToken,
 }: {
   team: Team;
   members: Member[];
@@ -2925,6 +2934,7 @@ function SettingsView({
     role: string,
   ) => Promise<{ ok: true; url: string } | { ok: false; error: string }>;
   notificationSettings: React.ReactNode;
+  getToken: () => Promise<string>;
 }) {
   const [section, setSection] = useState<
     "general" | "members" | "notifications"
@@ -3054,6 +3064,7 @@ function SettingsView({
                   <input value={roleName(team.role)} readOnly />
                 </label>
               </div>
+              <BillingPanel teamId={team.id} getToken={getToken} />
               <div className={styles.settingBlock}>
                 <span>Access model</span>
                 <h2>Clear responsibility at every level</h2>

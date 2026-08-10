@@ -11,6 +11,7 @@ import {
   TerminalSquare,
 } from "lucide-react";
 import HomeSearch from "@/app/HomeSearch";
+import VantaFog from "@/app/components/VantaFog";
 import styles from "./landing.module.css";
 
 const popular = [
@@ -23,23 +24,18 @@ const popular = [
 export default function HomeHero() {
   return (
     <section className={styles.signalHero}>
-      <div className={styles.heroAtmosphere} aria-hidden="true">
-        <i />
-        <i />
-        <i />
-      </div>
+      <VantaFog className={styles.heroAtmosphere} />
       <div className={styles.signalCopy}>
         <span className={styles.eyebrow}>
-          <i /> Extension trust is release-specific
+          <i /> Release intelligence for editor extensions
         </span>
         <h1>
-          The update is small.
+          Know what changed.
           <br />
-          <em>The permission change isn’t.</em>
+          <em>Trust the exact release.</em>
         </h1>
         <p>
-          GuardRails shows what an editor extension can reach, what changed in
-          the new package, and the exact evidence behind the decision.
+          Search an extension. See new powers. Make the call.
         </p>
         <div className={styles.searchShell}>
           <HomeSearch />

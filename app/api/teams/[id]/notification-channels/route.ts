@@ -13,6 +13,7 @@ import { teamApiError } from "@/lib/teamApiError";
 import { requireTeamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
 import { isSafeWebhookUrl } from "@/lib/teamNotificationPayload";
+import { requireEntitlement } from "@/lib/entitlements";
 
 const severities = new Set([
   "CRITICAL",
@@ -69,7 +70,7 @@ export async function GET(request: Request, context: Context) {
       "Notification channels are temporarily unavailable.",
     );
     return NextResponse.json(
-      { error: failure.error },
+      { error: failure.error, ...(failure.code ? { code: failure.code } : {}) },
       { status: failure.status },
     );
   }
@@ -80,6 +81,7 @@ export async function POST(request: Request, context: Context) {
     const { user } = await authenticated(request);
     const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin"]);
+    await requireEntitlement(id, "notification_channels", 1);
     if (!outboundNotificationsConfigured())
       return NextResponse.json(
         {
@@ -157,7 +159,7 @@ export async function POST(request: Request, context: Context) {
       "The notification channel could not be connected.",
     );
     return NextResponse.json(
-      { error: failure.error },
+      { error: failure.error, ...(failure.code ? { code: failure.code } : {}) },
       { status: failure.status },
     );
   }
@@ -194,7 +196,7 @@ export async function DELETE(request: Request, context: Context) {
       "The notification channel could not be removed.",
     );
     return NextResponse.json(
-      { error: failure.error },
+      { error: failure.error, ...(failure.code ? { code: failure.code } : {}) },
       { status: failure.status },
     );
   }

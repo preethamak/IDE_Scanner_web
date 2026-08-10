@@ -46,6 +46,30 @@ async function searchVsMarketplace(query: string, limit: number): Promise<Market
   return (data.results?.[0]?.extensions || []).map(normalizeExtension).filter((item): item is MarketplaceSearchResult => Boolean(item));
 }
 
+export async function listPublisherExtensions(
+  publisher: string,
+  limit = 100,
+): Promise<MarketplaceSearchResult[]> {
+  const clean = publisher.trim();
+  if (!/^[\w-]{1,128}$/.test(clean)) throw new Error("Publisher identity is invalid.");
+  const response = await registryFetch(GALLERY_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json;api-version=7.2-preview.1" },
+    body: JSON.stringify({
+      filters: [{ criteria: [{ filterType: 2, value: clean }], pageNumber: 1, pageSize: Math.min(limit, 100), sortBy: 4 }],
+      flags: 914,
+    }),
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error(`VS Marketplace publisher lookup returned ${response.status}`);
+  const data = await response.json() as { results?: Array<{ extensions?: GalleryExtension[] }> };
+  return (data.results?.[0]?.extensions || [])
+    .map(normalizeExtension)
+    .filter((item): item is MarketplaceSearchResult => Boolean(item))
+    .filter((item) => item.publisher.toLocaleLowerCase() === clean.toLocaleLowerCase())
+    .sort((left, right) => right.install_count - left.install_count);
+}
+
 async function searchOpenVsx(query: string, limit: number): Promise<MarketplaceSearchResult[]> {
   const response = await registryFetch(`https://open-vsx.org/api/-/search?query=${encodeURIComponent(query)}&size=${Math.min(limit, 25)}`, { cache: "no-store" });
   if (!response.ok) throw new Error(`Open VSX search returned ${response.status}`);
@@ -152,7 +176,11 @@ function relevance(item: MarketplaceSearchResult, query: string): number {
     if (id.includes(term)) score += 55;
     if (description.includes(term)) score += 10;
   }
-  return score + Math.min(item.install_count / 100000, 10);
+  if (item.publisher.toLowerCase() === needle || item.publisher_display_name.toLowerCase() === needle) score += 500;
+  if (item.publisher_verified) score += 4;
+  const popularity = Math.min(Math.log10(Math.max(1, item.install_count)), 8);
+  const ratingConfidence = item.rating_count > 0 ? Math.min(item.rating_count / 1000, 2) : 0;
+  return score + popularity + ratingConfidence;
 }
 
 function normalizeExtension(raw: GalleryExtension): MarketplaceSearchResult | null {

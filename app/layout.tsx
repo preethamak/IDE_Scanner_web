@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { ArrowUpRight } from "lucide-react";
 import SiteNav from "./SiteNav";
 import HeaderAccount from "./HeaderAccount";
 import BrandMark from "./BrandMark";
+import ThemeToggle from "./ThemeToggle";
 import "@fontsource-variable/ibm-plex-sans";
 import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/500.css";
@@ -17,6 +19,7 @@ import "./landing.css";
 import "./accessibility.css";
 import "./product-ui.css";
 import "./readability.css";
+import "./theme.css";
 
 export const metadata: Metadata = {
   title: {
@@ -31,7 +34,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head><Script src="/theme-init.js" strategy="beforeInteractive" /></head>
       <body>
         <div className="siteFrame">
           <a className="skipLink" href="#main-content">
@@ -48,6 +52,7 @@ export default function RootLayout({
                 <Link className="headerProductCta" href="/registry">
                   Check an extension
                 </Link>
+                <ThemeToggle />
                 <HeaderAccount />
               </div>
             </div>

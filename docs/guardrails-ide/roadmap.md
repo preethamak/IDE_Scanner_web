@@ -1,6 +1,6 @@
 # Delivery roadmap
 
-## Phase 0 — Security contract and prototype (current)
+## Phase 0 — Security contract and prototype (complete)
 
 **Goal:** make the product promise testable before building an editor shell.
 
@@ -11,7 +11,7 @@
 
 **Exit:** all Phase 0 acceptance tests pass; UI never labels the prototype as an OS sandbox.
 
-## Phase 1 — Local secure workspace MVP
+## Phase 1 — Local secure workspace MVP (current spike)
 
 **Goal:** edit a repository while one sample extension and one agent operate through brokers.
 
@@ -20,6 +20,8 @@
 - Filesystem, structured-command, egress, credential, and audit brokers.
 - Permission center with once/session/workspace grants and exact-action approvals.
 - Agent plan/review/apply workflow with patch-only writes by default.
+
+The native spike in `native/guardrails-supervisor` defines IPC v1, stable principals, exact request/grant matching, deny-overrides behavior, and SHA-256-chained audit records. Its first Linux filesystem-broker slice uses `openat2` to bind an authorized, audited read beneath a pinned workspace descriptor and covers traversal, absolute-path, symlink-escape, request-mismatch, denial, unaudited, and oversized-read failures. It intentionally launches no untrusted process and makes no sandbox claim; write/sensitive-file policy, process isolation, and in-sandbox conformance remain the next gate.
 
 **Exit:** red-team suite cannot read host secrets, escape workspace mounts, make undeclared network calls, or execute unapproved commands.
 

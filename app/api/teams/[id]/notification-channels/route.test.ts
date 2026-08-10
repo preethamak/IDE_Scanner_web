@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   emailConfigured: vi.fn(),
   single: vi.fn(),
   from: vi.fn(),
+  entitlement: vi.fn(),
 }));
 vi.mock("@/lib/auth", () => ({ authenticated: mocks.authenticated }));
 vi.mock("@/lib/teams", () => ({ requireTeamRole: mocks.role }));
@@ -20,12 +21,14 @@ vi.mock("@/lib/emailNotification", () => ({
   isNotificationEmail: (value: string) => value === "security@example.com",
 }));
 vi.mock("@/lib/supabase", () => ({ serviceDb: () => ({ from: mocks.from }) }));
+vi.mock("@/lib/entitlements", () => ({ requireEntitlement: mocks.entitlement, EntitlementError: class EntitlementError extends Error {} }));
 import { GET, POST } from "./route";
 
 describe("team notification channel configuration", () => {
   beforeEach(() => {
     mocks.authenticated.mockResolvedValue({ user: { id: "owner" } });
     mocks.role.mockResolvedValue("owner");
+    mocks.entitlement.mockResolvedValue({ allowed: true });
     mocks.configured.mockReturnValue(true);
     mocks.emailConfigured.mockReturnValue(true);
     mocks.encrypt.mockReturnValue("encrypted");
