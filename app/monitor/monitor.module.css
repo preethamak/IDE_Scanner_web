@@ -1,118 +1,94 @@
+/* monitor.module.css — Linear dark theme, no blue/purple/glow */
+
 .gate,
 .statePage {
   position: relative;
   isolation: isolate;
-  min-height: calc(100vh - 72px);
+  min-height: calc(100vh - 56px);
   overflow: hidden;
-  background: linear-gradient(180deg, #fff, #fbfcff 70%, #fff);
-  color: #17212c;
+  background: #08090a;
+  color: #f7f8f8;
 }
 .gate {
-  padding: 78px max(24px, calc((100vw - 1320px) / 2)) 100px;
+  padding: 72px max(24px, calc((100vw - 1320px) / 2)) 100px;
 }
-.atmosphere {
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  pointer-events: none;
-}
-.atmosphere i {
-  position: absolute;
-  border-radius: 50%;
-}
-.atmosphere i:first-child {
-  right: -170px;
-  top: -230px;
-  width: 680px;
-  height: 680px;
-  background: radial-gradient(circle, #dce9ff, transparent 69%);
-}
-.atmosphere i:nth-child(2) {
-  left: -210px;
-  bottom: -230px;
-  width: 540px;
-  height: 540px;
-  background: radial-gradient(circle, #ffe5ef, transparent 70%);
-}
-.atmosphere i:last-child {
-  right: 34%;
-  top: 250px;
-  width: 250px;
-  height: 250px;
-  background: radial-gradient(circle, #efffcf, transparent 70%);
-}
+
+/* No atmosphere glows — hidden */
+.atmosphere { display: none; }
+
+/* ── Gate hero layout ──────────────────────────────────────────────────── */
 .gateHero {
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(430px, 0.72fr);
+  grid-template-columns: minmax(0, 1.08fr) minmax(420px, 0.72fr);
   align-items: center;
-  gap: 90px;
-  min-height: 610px;
+  gap: 80px;
+  min-height: 580px;
 }
+
+/* Eyebrow */
 .eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid #bdd0ef;
-  border-radius: 30px;
-  padding: 7px 10px;
-  background: #f1f6ff;
-  color: #2f6fdd;
-  font: 800 12px var(--mono);
+  border: 1px solid #343442;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: #1a1a22;
+  color: #a5a5b8;
+  font: 700 11px var(--mono);
+  letter-spacing: 0.07em;
   text-transform: uppercase;
 }
-.eyebrow svg {
-  width: 15px;
-}
+.eyebrow svg { width: 14px; color: #636375; }
+
+/* Headline */
 .gateHero h1 {
-  max-width: 850px;
-  margin: 23px 0 20px;
-  font-size: clamp(55px, 6.4vw, 87px);
-  line-height: 0.92;
-  letter-spacing: -0.068em;
+  max-width: 820px;
+  margin: 22px 0 18px;
+  font-size: clamp(52px, 6vw, 82px);
+  font-weight: 720;
+  line-height: 0.94;
+  letter-spacing: -0.055em;
+  color: #f7f8f8;
 }
 .gateHero h1 em {
-  color: #2f6fdd;
+  color: #a5a5b8;
   font-style: normal;
+  font-weight: 400;
 }
 .gateHero > div:first-child > p {
-  max-width: 700px;
+  max-width: 660px;
   margin: 0;
-  color: #566575;
-  font-size: 18px;
+  color: #a5a5b8;
+  font-size: 17px;
   line-height: 1.65;
 }
+
+/* Resume pill */
 .resume {
   display: flex;
   align-items: center;
   gap: 10px;
   width: max-content;
   max-width: 100%;
-  margin-top: 23px;
-  border: 1px solid #c4d6ee;
-  border-radius: 11px;
-  padding: 10px 12px;
-  background: #f2f6ff;
-  color: #2f6fdd;
+  margin-top: 22px;
+  border: 1px solid #252530;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: #111116;
+  color: #a5a5b8;
 }
-.resume > svg {
-  width: 18px;
-}
-.resume span {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-.resume small {
-  font-size: 12px;
-  font-weight: 800;
-  text-transform: uppercase;
-}
+.resume > svg { width: 17px; color: #636375; }
+.resume span  { display: grid; gap: 2px; min-width: 0; }
+.resume small { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #636375; }
 .resume strong {
   overflow: hidden;
-  color: #283847;
+  color: #f7f8f8;
   font: 13px var(--mono);
   text-overflow: ellipsis;
 }
+
+/* CTA actions */
 .heroActions {
   display: flex;
   align-items: center;
@@ -124,196 +100,186 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 46px;
-  border: 1px solid #bdc8d3;
+  min-height: 44px;
+  border: 1px solid #343442;
   border-radius: 9px;
-  padding: 0 16px;
-  background: #fff;
-  color: #263440;
+  padding: 0 18px;
+  background: #1a1a22;
+  color: #f7f8f8;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
+  text-decoration: none;
+  transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+}
+.heroActions a:hover {
+  border-color: #636375;
+  background: #202028;
+  transform: translateY(-1px);
 }
 .heroActions a:first-child {
-  border-color: #2f6fdd;
-  background: #2f6fdd;
-  color: #fff;
+  border-color: #636375;
+  background: #f7f8f8;
+  color: #08090a;
 }
-.heroActions svg {
-  width: 16px;
+.heroActions a:first-child:hover {
+  background: #e2e2e8;
+  transform: translateY(-1px);
 }
+.heroActions svg { width: 15px; }
+
 .publicNote {
   display: block;
   margin-top: 13px;
-  color: #6c7884;
+  color: #636375;
   font-size: 12px;
 }
+
+/* ── Monitoring loop card ───────────────────────────────────────────────── */
 .loop {
   overflow: hidden;
-  border: 1px solid #cbd4dd;
-  border-radius: 21px;
-  background: #fff;
-  box-shadow: 0 34px 90px #25364e1c;
-  transform: rotate(1deg);
+  border: 1px solid #252530;
+  border-radius: 16px;
+  background: #111116;
+  box-shadow: 0 20px 60px rgba(0,0,0,.55);
 }
 .loop header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #e0e5e9;
-  padding: 17px 19px;
-  background: #f7f9fb;
+  border-bottom: 1px solid #252530;
+  padding: 16px 20px;
+  background: #1a1a22;
 }
 .loop header span {
   display: flex;
   align-items: center;
   gap: 7px;
+  color: #a5a5b8;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
-.loop header svg {
-  width: 16px;
-  color: #2f6fdd;
-}
+.loop header svg { width: 15px; color: #636375; }
 .loop header b {
-  border-radius: 18px;
-  padding: 5px 8px;
-  background: #efffd0;
-  color: #536e16;
-  font: 800 12px var(--mono);
+  border: 1px solid #343442;
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: #202028;
+  color: #a5a5b8;
+  font: 700 11px var(--mono);
+  text-transform: uppercase;
 }
 .loop article {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) 24px;
+  grid-template-columns: 34px minmax(0, 1fr) 22px;
   align-items: center;
   gap: 13px;
-  min-height: 104px;
-  border-bottom: 1px solid #e5e9ec;
+  min-height: 100px;
+  border-bottom: 1px solid #252530;
   padding: 16px 20px;
+  transition: background 120ms ease;
 }
+.loop article:hover { background: #1a1a22; }
 .loop article > i {
   display: grid;
-  width: 33px;
-  height: 33px;
+  width: 32px;
+  height: 32px;
   place-content: center;
-  border-radius: 10px;
-  background: #eef1f4;
-  color: #63707c;
-  font: 800 12px var(--mono);
+  border-radius: 8px;
+  background: #202028;
+  border: 1px solid #343442;
+  color: #636375;
+  font: 700 11px var(--mono);
   font-style: normal;
 }
-.loop article > span {
-  display: grid;
-  gap: 3px;
-}
-.loop article small {
-  color: #6d7984;
-  font-size: 12px;
-}
-.loop article strong {
-  font-size: 14px;
-}
-.loop article p {
-  margin: 0;
-  color: #77828c;
-  font-size: 12px;
-}
-.loop article > svg {
-  width: 19px;
-  color: #6e9e34;
-}
+.loop article > span { display: grid; gap: 3px; }
+.loop article small  { color: #636375; font-size: 12px; }
+.loop article strong { color: #f7f8f8; font-size: 14px; }
+.loop article p      { margin: 0; color: #636375; font-size: 12px; line-height: 1.5; }
+.loop article > svg  { width: 18px; color: #636375; }
+
+/* Active step — white accent, no colour */
 .loop .active {
-  margin: 7px;
-  border: 1px solid #bcd0ed;
-  border-radius: 12px;
-  background: #f2f6ff;
-  box-shadow: inset 3px 0 #2f6fdd;
+  margin: 6px;
+  border: 1px solid #636375;
+  border-radius: 10px;
+  background: #202028;
+  box-shadow: inset 3px 0 #a5a5b8;
 }
-.loop .active + article {
-  border-top: 1px solid #e5e9ec;
-}
+.loop .active + article { border-top: 1px solid #252530; }
 .loop .active > i {
-  background: #dfeaff;
-  color: #2f6fdd;
+  background: #252530;
+  border-color: #636375;
+  color: #f7f8f8;
 }
-.loop .active > svg {
-  color: #2f6fdd;
-}
+.loop .active > svg { color: #f7f8f8; }
+
 .loop footer {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 17px 20px;
-  background: #f7f9fb;
+  padding: 16px 20px;
+  background: #1a1a22;
+  border-top: 1px solid #252530;
 }
-.loop footer > svg {
-  width: 19px;
-  color: #2f6fdd;
-}
-.loop footer span {
-  display: grid;
-  gap: 2px;
-}
-.loop footer strong {
-  font-size: 12px;
-}
-.loop footer small {
-  color: #737f89;
-  font-size: 12px;
-}
+.loop footer > svg     { width: 18px; color: #636375; }
+.loop footer span      { display: grid; gap: 2px; }
+.loop footer strong    { color: #f7f8f8; font-size: 12px; }
+.loop footer small     { color: #636375; font-size: 12px; }
+
+/* ── Promise strip ─────────────────────────────────────────────────────── */
 .promise {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   overflow: hidden;
-  margin-top: 25px;
-  border: 1px solid #d9e0e6;
-  border-radius: 15px;
-  background: #fff;
+  margin-top: 20px;
+  border: 1px solid #252530;
+  border-radius: 12px;
+  background: #252530;
+  gap: 1px;
 }
 .promise article {
-  padding: 22px 25px;
-  border-right: 1px solid #e1e6ea;
+  padding: 22px 24px;
+  background: #111116;
+  transition: background 120ms ease;
 }
-.promise article:last-child {
-  border: 0;
-}
-.promise strong {
-  font-size: 14px;
-}
+.promise article:hover { background: #1a1a22; }
+.promise strong { color: #f7f8f8; font-size: 14px; font-weight: 700; }
 .promise p {
-  margin: 5px 0 0;
-  color: #64717e;
+  margin: 6px 0 0;
+  color: #636375;
   font-size: 12px;
   line-height: 1.55;
 }
+
+/* ── State pages (loading / error) ─────────────────────────────────────── */
 .statePage {
   display: grid;
   justify-items: center;
   place-content: center;
-  padding: 30px;
+  padding: 40px;
   text-align: center;
+  background: #08090a;
 }
 .stateIcon {
   display: grid;
-  width: 54px;
-  height: 54px;
+  width: 52px;
+  height: 52px;
   place-content: center;
-  border-radius: 16px;
-  background: #e9f1ff;
-  color: #2f6fdd;
+  border-radius: 14px;
+  border: 1px solid #252530;
+  background: #111116;
+  color: #a5a5b8;
 }
-.stateIcon svg {
-  width: 24px;
-}
-.statePage > strong {
-  margin-top: 18px;
-  font-size: 20px;
-}
+.stateIcon svg { width: 24px; }
+.statePage > strong { margin-top: 18px; font-size: 20px; color: #f7f8f8; }
 .statePage > p {
-  max-width: 480px;
-  margin: 7px 0 0;
-  color: #63717e;
+  max-width: 460px;
+  margin: 8px 0 0;
+  color: #636375;
   font-size: 14px;
+  line-height: 1.6;
 }
+
 .stateActions {
   display: flex;
   gap: 8px;
@@ -325,66 +291,45 @@
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-height: 42px;
-  border: 1px solid #bdc8d3;
+  min-height: 40px;
+  border: 1px solid #343442;
   border-radius: 8px;
-  padding: 0 13px;
-  background: #fff;
-  color: #273440;
+  padding: 0 14px;
+  background: #1a1a22;
+  color: #f7f8f8;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
+  text-decoration: none;
+  transition: border-color 150ms, background 150ms;
+}
+.stateActions button:hover,
+.stateActions a:hover {
+  border-color: #636375;
+  background: #202028;
 }
 .stateActions button {
-  border-color: #2f6fdd;
-  background: #2f6fdd;
-  color: #fff;
+  background: #f7f8f8;
+  border-color: #f7f8f8;
+  color: #08090a;
 }
-.stateActions svg {
-  width: 15px;
-}
-.spin {
-  animation: spin 1s linear infinite;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+.stateActions button:hover { background: #e2e2e8; }
+.stateActions svg { width: 14px; }
+
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 1000px) {
-  .gateHero {
-    grid-template-columns: 1fr;
-    gap: 55px;
-  }
-  .loop {
-    width: min(680px, 100%);
-    transform: none;
-  }
+  .gateHero { grid-template-columns: 1fr; gap: 50px; }
+  .loop { width: min(660px, 100%); }
 }
 @media (max-width: 650px) {
-  .gate {
-    padding-top: 55px;
-  }
-  .gateHero h1 {
-    font-size: 50px;
-  }
+  .gate { padding-top: 52px; }
+  .gateHero h1 { font-size: 48px; }
   .heroActions,
-  .stateActions {
-    align-items: stretch;
-    flex-direction: column;
-  }
-  .promise {
-    grid-template-columns: 1fr;
-  }
-  .promise article {
-    border-right: 0;
-    border-bottom: 1px solid #e1e6ea;
-  }
+  .stateActions { align-items: stretch; flex-direction: column; }
+  .promise { grid-template-columns: 1fr; gap: 1px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .loop {
-    transform: none;
-  }
-  .spin {
-    animation: none;
-  }
+  .spin { animation: none; }
 }

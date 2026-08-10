@@ -1,0 +1,16 @@
+/* auroraBackdrop.module.css — all glow effects removed, plain dark canvas only */
+.aurora {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: #08090a;
+}
+/* Hide all effect spans — no glows, no grid, no noise */
+.aurora > span { display: none; }
+.rose  { display: none; }
+.peach { display: none; }
+.lime  { display: none; }
+.grid  { display: none; }
+.noise { display: none; }

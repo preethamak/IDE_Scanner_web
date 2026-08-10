@@ -1,0 +1,152 @@
+/* dark-override.css
+   Loaded immediately after visual-refresh.css to cancel all its
+   light-mode !important declarations with equivalent dark values.
+   This is the only reliable way to beat !important rules from an
+   earlier layer without editing the compressed source file. */
+
+/* ── 1. Root tokens — override visual-refresh.css :root ─────────────────── */
+:root {
+  color-scheme: dark !important;
+  --bg:          #08090a !important;
+  --surface:     #111116 !important;
+  --surface-2:   #1a1a22 !important;
+  --surface-3:   #202028 !important;
+  --line:        #252530 !important;
+  --line-strong: #343442 !important;
+  --text:        #f7f8f8 !important;
+  --muted:       #a5a5b8 !important;
+  --faint:       #636375 !important;
+  --brand:       #252530 !important;
+  --brand-soft:  rgba(99,99,117,.12) !important;
+  --blue:        #252530 !important;
+  --acid:        #252530 !important;
+  --acid-dark:   #636375 !important;
+  --green:       #2da44e !important;
+  --green-bg:    #0c2217 !important;
+  --amber:       #d29922 !important;
+  --amber-bg:    #271c08 !important;
+  --red:         #e5534b !important;
+  --red-bg:      #260d0c !important;
+  --night:       #08090a !important;
+}
+
+/* ── 2. html / body — must match the !important from visual-refresh.css ──── */
+html {
+  background: #08090a !important;
+  color-scheme: dark !important;
+}
+body {
+  background: #08090a !important;
+  color: #f7f8f8 !important;
+}
+
+/* ── 3. Site frame ──────────────────────────────────────────────────────── */
+.siteFrame,
+.pageContent {
+  background: #08090a !important;
+  color: #f7f8f8 !important;
+}
+
+/* ── 4. Header — cancel the rgba(255,255,255) from visual-refresh ────────── */
+.siteHeader {
+  background: rgba(8, 9, 10, 0.88) !important;
+  box-shadow: 0 1px 0 rgba(37, 37, 48, 0.8) !important;
+  border-bottom: 1px solid #252530 !important;
+}
+
+/* ── 5. Nav links — cancel the green #3f4a3f color ─────────────────────── */
+.wordmark strong { color: #f7f8f8 !important; }
+.desktopNav > a,
+.navMenu > button,
+.headerSignIn,
+.headerAccount { color: #a5a5b8 !important; }
+.desktopNav > a:hover,
+.navMenu > button:hover,
+.desktopNav .active,
+.navMenu > button.active { background: #1a1a22 !important; color: #f7f8f8 !important; }
+
+/* ── 6. Buttons — cancel brand (dark green) bg + white text ─────────────── */
+.headerAnalyze,
+.productSearch button,
+.buttonDark,
+.workflowQuestion a,
+.trustInfoAction > a {
+  background: #252530 !important;
+  border-color: #343442 !important;
+  color: #f7f8f8 !important;
+}
+.headerAnalyze:hover,
+.productSearch button:hover,
+.buttonDark:hover,
+.workflowQuestion a:hover {
+  background: #343442 !important;
+  color: #f7f8f8 !important;
+}
+
+/* ── 7. Nav popover ──────────────────────────────────────────────────────── */
+.navPopover { background: #1a1a22 !important; box-shadow: 0 20px 56px rgba(0,0,0,.7) !important; }
+.navPopover > div > a { color: #a5a5b8 !important; }
+.navPopover > div > a:hover { background: #202028 !important; color: #f7f8f8 !important; }
+.navPopover strong { color: #f7f8f8 !important; }
+
+/* ── 8. Product home sections — cancel all the #fff backgrounds ─────────── */
+.productHome,
+.productHero,
+.productNarrative,
+.monitorShowcase,
+.evidenceSectionHome,
+.productClosing { background: #08090a !important; }
+.heroIntro h1,
+.productNarrative > header h2,
+.monitorShowcase > header h2,
+.evidenceCopy h2 { color: #f7f8f8 !important; }
+.heroIntro > p { color: #a5a5b8 !important; }
+.heroIntro .productSearch,
+.productClosing .productSearch {
+  background: #111116 !important;
+  border-color: #252530 !important;
+  box-shadow: 0 14px 36px rgba(0,0,0,.5) !important;
+}
+.productSearch input { color: #f7f8f8 !important; }
+.productSearch input::placeholder { color: #636375 !important; }
+
+/* ── 9. Footer ───────────────────────────────────────────────────────────── */
+.siteFooter { background: #111116 !important; }
+.footerLinks strong,
+.footerBottom { color: #636375 !important; }
+.footerCta { color: #a5a5b8 !important; }
+
+/* ── 10. Inventory controls — cancel #fff background on label ────────────── */
+.inventoryControls label { background: #111116 !important; border-color: #252530 !important; }
+.inventoryControls button { background: #111116 !important; border-color: #252530 !important; color: #a5a5b8 !important; }
+.inventoryControls button.active { background: #252530 !important; border-color: #636375 !important; color: #f7f8f8 !important; }
+.inventoryIcon { background: #1a1a22 !important; border-color: #252530 !important; }
+.inventoryList > header { background: #1a1a22 !important; }
+
+/* ── 11. Dossier — cancel #fff!important backgrounds ────────────────────── */
+.dossierPage { background: #08090a !important; }
+.dossierDecision,
+.dossierMast { background: #111116 !important; border-color: #252530 !important; }
+.dossierDecision { box-shadow: none !important; }
+
+/* ── 12. Console rail active states ─────────────────────────────────────── */
+.consoleRail > a:hover,
+.consoleRail > a.selected { background: #1a1a22 !important; color: #f7f8f8 !important; }
+.consoleTopbar nav span.active { border-color: #636375 !important; color: #f7f8f8 !important; }
+
+/* ── 13. Alert/monitor highlight ─────────────────────────────────────────── */
+.alertLime,
+.alertBlue { background: #252530 !important; color: #f7f8f8 !important; }
+
+/* ── 14. Inventory decisions — cancel light backgrounds ─────────────────── */
+.inventoryDecision.review    { background: #271c08 !important; color: #d29922 !important; }
+.inventoryDecision.allow     { background: #0c2217 !important; color: #2da44e !important; }
+.inventoryDecision.block     { background: #260d0c !important; color: #e5534b !important; }
+.inventoryDecision.incomplete { background: #1a1a22 !important; color: #636375 !important; }
+
+/* ── 15. Inventory severity — cancel light backgrounds ───────────────────── */
+.inventorySeverity.severity-critical,
+.inventorySeverity.severity-high   { background: #260d0c !important; color: #e5534b !important; }
+.inventorySeverity.severity-medium { background: #271c08 !important; color: #d29922 !important; }
+.inventorySeverity.severity-low    { background: #0c2217 !important; color: #2da44e !important; }
+.inventorySeverity.severity-info   { background: #1a1a22 !important; color: #636375 !important; }
