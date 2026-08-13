@@ -1,144 +1,84 @@
 import Link from "next/link";
 import {
-  ArrowRight,
-  Check,
-  CircleCheck,
-  FileCode2,
-  Fingerprint,
-  GitCompareArrows,
-  Network,
-  ShieldCheck,
-  TerminalSquare,
+  ArrowRight, Bell, Boxes, Check, ChevronRight, CircleCheck, FileCode2,
+  Fingerprint, GitCompareArrows, History, LayoutDashboard, Network,
+  Search, ShieldCheck, TerminalSquare, UsersRound,
 } from "lucide-react";
 import HomeSearch from "@/app/HomeSearch";
-import AuroraBackdrop from "@/app/components/react-bits/AuroraBackdrop";
+import FogBackdrop from "./FogBackdrop";
 import styles from "./landing.module.css";
 
 const popular = [
-  ["GitHub Copilot", "GitHub.copilot"],
-  ["Cline", "saoudrizwan.claude-dev"],
-  ["ESLint", "dbaeumer.vscode-eslint"],
-  ["Docker", "ms-azuretools.vscode-docker"],
+  ["GitHub Copilot", "GitHub.copilot"], ["Cline", "saoudrizwan.claude-dev"],
+  ["ESLint", "dbaeumer.vscode-eslint"], ["Docker", "ms-azuretools.vscode-docker"],
 ] as const;
 
 export default function HomeHero() {
   return (
-    <section className={styles.signalHero}>
-      <AuroraBackdrop className={styles.heroAtmosphere} />
-      <div className={styles.signalCopy}>
-        <span className={styles.eyebrow}>
-          <i /> Release intelligence for editor extensions
-        </span>
-        <h1>
-          Know what changed.
-          <br />
-          <em>Trust the exact release.</em>
-        </h1>
-        <p>
-          Search an extension. See new powers. Make the call.
-        </p>
-        <div className={styles.searchShell}>
-          <HomeSearch />
-        </div>
-        <div className={styles.popular}>
-          <span>Try an extension</span>
-          {popular.map(([label, query]) => (
-            <Link href={`/registry?q=${encodeURIComponent(query)}`} key={query}>
-              {label}
-            </Link>
-          ))}
-        </div>
-        <div className={styles.heroProof}>
-          <span>
-            <Check /> Check before install
-          </span>
-          <span>
-            <Check /> Compare every update
-          </span>
-          <span>
-            <Check /> Review as a team
-          </span>
-        </div>
+    <section className={styles.productHero}>
+      <FogBackdrop className={styles.fogBackdrop} />
+      <Link href="/research/artifact-is-the-boundary" className={styles.announcement}>
+        <span>NEW</span><b>Decision Receipts are live</b>
+        <em>See how evidence follows every approval</em><ArrowRight />
+      </Link>
+
+      <div className={styles.heroStatement}>
+        <span className={styles.eyebrow}><i /> Release intelligence for editor extensions</span>
+        <h1>Ship extensions with<br /><em>your eyes open.</em></h1>
+        <p>GuardRails turns every editor-extension release into evidence your team can inspect, compare, approve, and remember.</p>
+        <div className={styles.searchShell}><HomeSearch /></div>
+        <div className={styles.popular}><span>Try a live report</span>{popular.map(([label, query]) => <Link href={`/registry?q=${encodeURIComponent(query)}`} key={query}>{label}</Link>)}</div>
       </div>
 
-      <div
-        className={styles.decisionCanvas}
-        aria-label="GuardRails release decision preview"
-      >
-        <div className={styles.canvasTop}>
-          <span>
-            <ShieldCheck /> GuardRails release review
-          </span>
-          <b>Exact package</b>
+      <div className={styles.productStage} aria-label="GuardRails product showing a Cline release review">
+        <div className={styles.productChrome}>
+          <span><i /><i /><i /></span><code>app.guardrails.dev / releases / Cline / 3.19.0</code>
+          <div><Search /><Bell /><span>PS</span></div>
         </div>
-        <div className={styles.releaseIdentity}>
-          <span className={styles.releaseGlyph}>CL</span>
-          <div>
-            <small>saoudrizwan.claude-dev</small>
-            <strong>Cline</strong>
-            <code>3.18.2 → 3.19.0</code>
-          </div>
-          <em>Review</em>
-        </div>
-        <div className={styles.decisionQuestion}>
-          <span>What changed?</span>
-          <h2>Two new powers appeared in this update.</h2>
-          <p>
-            The extension can now run terminal commands and reach one additional
-            network destination.
-          </p>
-        </div>
-        <div className={styles.signalRows}>
-          <article>
-            <span>
-              <FileCode2 />
-            </span>
-            <div>
-              <small>Files</small>
-              <strong>Workspace read + write</strong>
+        <div className={styles.productBody}>
+          <aside>
+            <b><ShieldCheck /> GuardRails</b>
+            <nav aria-label="Product preview navigation">
+              <span><LayoutDashboard /> Overview</span><span className={styles.navActive}><GitCompareArrows /> Release review</span>
+              <span><Boxes /> Inventory <small>148</small></span><span><History /> Activity</span><span><UsersRound /> Team</span>
+            </nav>
+            <div><small>WORKSPACE</small><strong>Platform Security</strong><span>Production policy</span></div>
+          </aside>
+          <main>
+            <header className={styles.reportHeader}>
+              <div className={styles.reportBreadcrumb}>Extensions <ChevronRight /> Cline <ChevronRight /> <strong>3.19.0</strong></div>
+              <button>Export evidence</button>
+            </header>
+            <div className={styles.reportTitle}>
+              <span className={styles.releaseGlyph}>CL</span>
+              <div><small>SAOUDRIZWAN.CLAUDE-DEV</small><h2>Cline <code>3.19.0</code></h2><p>Compared with team baseline 3.18.2</p></div>
+              <div className={styles.reviewState}><i /> Needs review</div>
             </div>
-            <b>
-              <CircleCheck /> Unchanged
-            </b>
-          </article>
-          <article className={styles.signalNew}>
-            <span>
-              <TerminalSquare />
-            </span>
-            <div>
-              <small>Terminal</small>
-              <strong>Runs shell commands</strong>
+            <div className={styles.reportTabs}><b>Release summary</b><span>Capabilities <em>12</em></span><span>Evidence</span><span>Files</span><span>Dependencies</span></div>
+            <div className={styles.reportGrid}>
+              <section className={styles.changeSummary}>
+                <div><span>RELEASE VERDICT</span><b>2 changes need a human decision</b></div>
+                <p>This release adds terminal execution and a new network destination. No publisher, dependency, or obfuscation changes were detected.</p>
+                <div className={styles.summaryStats}><span><strong>2</strong>New capabilities</span><span><strong>94%</strong>Evidence coverage</span><span><strong>1</strong>New host</span></div>
+              </section>
+              <aside className={styles.artifactCard}>
+                <span><Fingerprint /> ARTIFACT IDENTITY</span><b>Verified exact package</b><code>sha256:8b45118a…19e2</code><small><CircleCheck /> Publisher signature valid</small>
+              </aside>
+              <section className={styles.capabilityTable}>
+                <header><b>Capability changes</b><span>Showing changes only</span></header>
+                <article><span><TerminalSquare /></span><div><small>TERMINAL</small><b>Execute shell commands</b><p>Declared command and process APIs</p></div><em>NEW</em></article>
+                <article><span><Network /></span><div><small>NETWORK</small><b>api.anthropic.com</b><p>Additional observed destination</p></div><em>+1 HOST</em></article>
+                <article><span><FileCode2 /></span><div><small>FILES</small><b>Workspace read + write</b><p>Matches approved baseline</p></div><strong><Check /> UNCHANGED</strong></article>
+              </section>
+              <aside className={styles.decisionPanel}>
+                <span>TEAM DECISION</span><h3>Review before rollout</h3><p>Attach a reason to this exact release and create the next comparison baseline.</p>
+                <button>Approve release <ArrowRight /></button><Link href="/registry?q=saoudrizwan.claude-dev">Open full public report</Link>
+              </aside>
             </div>
-            <b>New</b>
-          </article>
-          <article className={styles.signalNew}>
-            <span>
-              <Network />
-            </span>
-            <div>
-              <small>Network</small>
-              <strong>3 destinations observed</strong>
-            </div>
-            <b>+1 host</b>
-          </article>
-        </div>
-        <div className={styles.canvasDecision}>
-          <div>
-            <Fingerprint />
-            <span>
-              <strong>Artifact verified</strong>
-              <small>94% evidence coverage · exact version</small>
-            </span>
-          </div>
-          <Link href="/registry?q=saoudrizwan.claude-dev">
-            Review the evidence <ArrowRight />
-          </Link>
-        </div>
-        <div className={styles.changeOrbit} aria-hidden="true">
-          <GitCompareArrows />
-          <span>Permission diff</span>
+          </main>
         </div>
       </div>
+      <div className={styles.heroProof}><span><Check /> Check before install</span><span><Check /> Compare every update</span><span><Check /> Review history that lasts</span></div>
     </section>
   );
 }

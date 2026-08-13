@@ -10,18 +10,30 @@ describe("GuardRails landing surface", () => {
     expect(page).toContain("<HomeHero />");
     expect(page).toContain("<MarketplaceProof />");
     expect(page).toContain("<PermissionDiff />");
+    expect(page).toContain("<DecisionReceipt />");
     expect(page).not.toContain("<SecurityBento />");
     expect(page).not.toContain("<ReleaseWorkflow />");
   });
+  it("introduces decision receipts as a distinctive, durable product outcome", () => {
+    const page = read("../page.tsx");
+    const receipt = read("./DecisionReceipt.tsx");
+    expect(page).toContain("DecisionReceipt");
+    expect(receipt).toContain("A GuardRails original");
+    expect(receipt).toContain("Turn every approval into a decision receipt.");
+    expect(receipt).toContain("Human rationale beside machine evidence");
+    expect(receipt).toContain("Baseline locked");
+  });
 
-  it("uses a light, signal-led hero instead of the old dark product mockup", () => {
+  it("uses a full product-first hero with an announcement and live fog", () => {
     const hero = read("./HomeHero.tsx");
     const css = read("./landing.module.css");
-    expect(hero).toContain("Know what changed.");
-    expect(hero).toContain("Two new powers appeared in this update.");
-    expect(hero).toContain("GuardRails release review");
-    expect(css).toContain("/* Light signal-led hero */");
-    expect(css).toContain(".heroAtmosphere");
+    expect(hero).toContain("Decision Receipts are live");
+    expect(hero).toContain("Ship extensions with");
+    expect(hero).toContain("Capability changes");
+    expect(hero).toContain("Export evidence");
+    expect(hero).toContain("FogBackdrop");
+    expect(css).toContain("/* Product-first hero");
+    expect(css).toContain(".productStage");
     expect(css).toContain("Warm, daylight homepage palette");
     expect(css).not.toContain("#2f6fdd");
     expect(css).not.toContain("release-control-room-hero.png");
