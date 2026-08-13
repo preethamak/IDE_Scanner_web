@@ -26,12 +26,16 @@ describe("GuardRails landing surface", () => {
 
   it("uses a full product-first hero with an announcement and live fog", () => {
     const hero = read("./HomeHero.tsx");
+    const fog = read("./FogBackdrop.tsx");
     const css = read("./landing.module.css");
     expect(hero).toContain("Decision Receipts are live");
     expect(hero).toContain("Ship extensions with");
     expect(hero).toContain("Capability changes");
     expect(hero).toContain("Export evidence");
     expect(hero).toContain("FogBackdrop");
+    for (const setting of ["0xfc17ee", "0x0e00ff", "0x00e1ff", "0xffebeb", "blurFactor: 0.6", "speed: 1", "zoom: 1"]) {
+      expect(fog).toContain(setting);
+    }
     expect(css).toContain("/* Product-first hero");
     expect(css).toContain(".productStage");
     expect(css).toContain("Warm, daylight homepage palette");
