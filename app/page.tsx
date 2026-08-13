@@ -3,6 +3,7 @@ import { ArrowRight, ArrowUpRight } from "lucide-react";
 import HomeHero from "@/app/home/HomeHero";
 import MarketplaceProof from "@/app/home/MarketplaceProof";
 import PermissionDiff from "@/app/home/PermissionDiff";
+import DecisionReceipt from "@/app/home/DecisionReceipt";
 import styles from "@/app/home/landing.module.css";
 
 export default function HomePage() {
@@ -11,6 +12,7 @@ export default function HomePage() {
       <HomeHero />
       <MarketplaceProof />
       <PermissionDiff />
+      <DecisionReceipt />
 
       <section className={styles.finalCta}>
         <div>
