@@ -28,8 +28,15 @@ describe("GuardRails landing surface", () => {
     const hero = read("./HomeHero.tsx");
     const fog = read("./FogBackdrop.tsx");
     const css = read("./landing.module.css");
-    expect(hero).toContain("Decision Receipts are live");
-    expect(hero).toContain("Ship extensions with");
+    expect(hero).toContain("DECISION RECEIPTS");
+    expect(hero).toContain("Review every");
+    expect(hero).toContain("One review queue across your editors.");
+    expect(hero).toContain("VS Code");
+    expect(hero).toContain("Cursor");
+    expect(hero).toContain("Windsurf");
+    expect(hero).toContain("not affiliated with or endorsed");
+    expect(hero).not.toContain("148 extensions");
+    expect(hero).not.toContain("5 editors");
     expect(hero).toContain("Capability changes");
     expect(hero).toContain("Export evidence");
     expect(hero).toContain("FogBackdrop");

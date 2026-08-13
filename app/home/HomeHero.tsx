@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   ArrowRight, Bell, Boxes, Check, ChevronRight, CircleCheck, FileCode2,
-  Fingerprint, GitCompareArrows, History, LayoutDashboard, Network,
+  Fingerprint, GitCompareArrows, History, LayoutDashboard, MonitorCog, Network,
   Search, ShieldCheck, TerminalSquare, UsersRound,
 } from "lucide-react";
 import HomeSearch from "@/app/HomeSearch";
@@ -17,17 +17,20 @@ export default function HomeHero() {
   return (
     <section className={styles.productHero}>
       <FogBackdrop className={styles.fogBackdrop} />
-      <Link href="/research/artifact-is-the-boundary" className={styles.announcement}>
-        <span>NEW</span><b>Decision Receipts are live</b>
-        <em>See how evidence follows every approval</em><ArrowRight />
-      </Link>
-
-      <div className={styles.heroStatement}>
-        <span className={styles.eyebrow}><i /> Release intelligence for editor extensions</span>
-        <h1>Ship extensions with<br /><em>your eyes open.</em></h1>
-        <p>GuardRails turns every editor-extension release into evidence your team can inspect, compare, approve, and remember.</p>
-        <div className={styles.searchShell}><HomeSearch /></div>
-        <div className={styles.popular}><span>Try a live report</span>{popular.map(([label, query]) => <Link href={`/registry?q=${encodeURIComponent(query)}`} key={query}>{label}</Link>)}</div>
+      <div className={styles.heroLead}>
+        <div className={styles.heroStatement}>
+          <span className={styles.eyebrow}><i /> Extension release security</span>
+          <h1>Review every<br /><em>extension release.</em></h1>
+          <p>Inspect the package, compare its capabilities, and record the decision before it reaches your editors.</p>
+          <div className={styles.searchShell}><HomeSearch /></div>
+          <div className={styles.popular}><span>Open a report</span>{popular.map(([label, query]) => <Link href={`/registry?q=${encodeURIComponent(query)}`} key={query}>{label}</Link>)}</div>
+        </div>
+        <aside className={styles.heroActivity} aria-label="Latest GuardRails announcement">
+          <header><span><i /> Product update</span><time>New</time></header>
+          <div><ShieldCheck /><span><small>DECISION RECEIPTS</small><strong>Evidence now follows the approval.</strong></span></div>
+          <p>Keep the artifact, release changes, reviewer, and rationale together as the next baseline.</p>
+          <Link href="/research/artifact-is-the-boundary">Read the announcement <ArrowRight /></Link>
+        </aside>
       </div>
 
       <div className={styles.productStage} aria-label="GuardRails product showing a Cline release review">
@@ -40,7 +43,7 @@ export default function HomeHero() {
             <b><ShieldCheck /> GuardRails</b>
             <nav aria-label="Product preview navigation">
               <span><LayoutDashboard /> Overview</span><span className={styles.navActive}><GitCompareArrows /> Release review</span>
-              <span><Boxes /> Inventory <small>148</small></span><span><History /> Activity</span><span><UsersRound /> Team</span>
+              <span><Boxes /> Inventory</span><span><History /> Activity</span><span><UsersRound /> Team</span>
             </nav>
             <div><small>WORKSPACE</small><strong>Platform Security</strong><span>Production policy</span></div>
           </aside>
@@ -79,6 +82,18 @@ export default function HomeHero() {
         </div>
       </div>
       <div className={styles.heroProof}><span><Check /> Check before install</span><span><Check /> Compare every update</span><span><Check /> Review history that lasts</span></div>
+
+      <section className={styles.editorSupport} aria-labelledby="editor-support-heading">
+        <div><span className={styles.eyebrow}><i /> Local inventory</span><h2 id="editor-support-heading">One review queue across your editors.</h2></div>
+        <div className={styles.editorList}>
+          {[
+            ["VS", "VS Code"], ["CU", "Cursor"], ["WS", "Windsurf"],
+            ["VC", "VSCodium"], ["IN", "Insiders"],
+          ].map(([mark, name]) => <span key={name}><i>{mark}</i><b>{name}</b></span>)}
+        </div>
+        <Link href="/cli"><MonitorCog /> Collect installed extensions <ArrowRight /></Link>
+        <small>Independent compatibility support. GuardRails is not affiliated with or endorsed by the editor vendors listed.</small>
+      </section>
     </section>
   );
 }
