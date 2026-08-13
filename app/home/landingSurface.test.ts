@@ -28,7 +28,10 @@ describe("GuardRails landing surface", () => {
     const hero = read("./HomeHero.tsx");
     const fog = read("./FogBackdrop.tsx");
     const css = read("./landing.module.css");
-    expect(hero).toContain("DECISION RECEIPTS");
+    expect(hero).toContain("Decision Receipts");
+    expect(hero).toContain("Vyper Guard");
+    expect(hero).toContain("/extensions/vyper-guard.png");
+    expect(hero).not.toContain("Cline");
     expect(hero).toContain("Review every");
     expect(hero).toContain("One review queue across your editors.");
     expect(hero).toContain("VS Code");

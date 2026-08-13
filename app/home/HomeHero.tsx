@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight, Bell, Boxes, Check, ChevronRight, CircleCheck, FileCode2,
   Fingerprint, GitCompareArrows, History, LayoutDashboard, MonitorCog, Network,
@@ -9,7 +10,7 @@ import FogBackdrop from "./FogBackdrop";
 import styles from "./landing.module.css";
 
 const popular = [
-  ["GitHub Copilot", "GitHub.copilot"], ["Cline", "saoudrizwan.claude-dev"],
+  ["GitHub Copilot", "GitHub.copilot"], ["Vyper Guard", "vyperguard.vyper-guard"],
   ["ESLint", "dbaeumer.vscode-eslint"], ["Docker", "ms-azuretools.vscode-docker"],
 ] as const;
 
@@ -17,6 +18,9 @@ export default function HomeHero() {
   return (
     <section className={styles.productHero}>
       <FogBackdrop className={styles.fogBackdrop} />
+      <Link href="/research/artifact-is-the-boundary" className={styles.updateRail}>
+        <span>New</span><b>Decision Receipts</b><em>Artifact, reviewer, and rationale now travel together.</em><ArrowRight />
+      </Link>
       <div className={styles.heroLead}>
         <div className={styles.heroStatement}>
           <span className={styles.eyebrow}><i /> Extension release security</span>
@@ -25,17 +29,17 @@ export default function HomeHero() {
           <div className={styles.searchShell}><HomeSearch /></div>
           <div className={styles.popular}><span>Open a report</span>{popular.map(([label, query]) => <Link href={`/registry?q=${encodeURIComponent(query)}`} key={query}>{label}</Link>)}</div>
         </div>
-        <aside className={styles.heroActivity} aria-label="Latest GuardRails announcement">
-          <header><span><i /> Product update</span><time>New</time></header>
-          <div><ShieldCheck /><span><small>DECISION RECEIPTS</small><strong>Evidence now follows the approval.</strong></span></div>
-          <p>Keep the artifact, release changes, reviewer, and rationale together as the next baseline.</p>
-          <Link href="/research/artifact-is-the-boundary">Read the announcement <ArrowRight /></Link>
+        <aside className={styles.heroActivity} aria-label="Release review snapshot">
+          <header><span><i /> Review queue</span><time>Live</time></header>
+          <div><ShieldCheck /><span><small>LATEST RELEASE</small><strong>Vyper Guard 0.2.0</strong></span></div>
+          <p>New command and network capabilities are ready for a team decision.</p>
+          <Link href="/registry?q=vyperguard.vyper-guard">Open the release <ArrowRight /></Link>
         </aside>
       </div>
 
-      <div className={styles.productStage} aria-label="GuardRails product showing a Cline release review">
+      <div className={styles.productStage} aria-label="GuardRails product showing a Vyper Guard release review">
         <div className={styles.productChrome}>
-          <span><i /><i /><i /></span><code>app.guardrails.dev / releases / Cline / 3.19.0</code>
+          <span><i /><i /><i /></span><code>app.guardrails.dev / releases / Vyper Guard / 0.2.0</code>
           <div><Search /><Bell /><span>PS</span></div>
         </div>
         <div className={styles.productBody}>
@@ -49,12 +53,12 @@ export default function HomeHero() {
           </aside>
           <main>
             <header className={styles.reportHeader}>
-              <div className={styles.reportBreadcrumb}>Extensions <ChevronRight /> Cline <ChevronRight /> <strong>3.19.0</strong></div>
+              <div className={styles.reportBreadcrumb}>Extensions <ChevronRight /> Vyper Guard <ChevronRight /> <strong>0.2.0</strong></div>
               <button>Export evidence</button>
             </header>
             <div className={styles.reportTitle}>
-              <span className={styles.releaseGlyph}>CL</span>
-              <div><small>SAOUDRIZWAN.CLAUDE-DEV</small><h2>Cline <code>3.19.0</code></h2><p>Compared with team baseline 3.18.2</p></div>
+              <span className={styles.releaseGlyph}><Image src="/extensions/vyper-guard.png" alt="" width={52} height={52} /></span>
+              <div><small>VYPERGUARD.VYPER-GUARD</small><h2>Vyper Guard <code>0.2.0</code></h2><p>Compared with team baseline 0.1.0</p></div>
               <div className={styles.reviewState}><i /> Needs review</div>
             </div>
             <div className={styles.reportTabs}><b>Release summary</b><span>Capabilities <em>12</em></span><span>Evidence</span><span>Files</span><span>Dependencies</span></div>
@@ -75,7 +79,7 @@ export default function HomeHero() {
               </section>
               <aside className={styles.decisionPanel}>
                 <span>TEAM DECISION</span><h3>Review before rollout</h3><p>Attach a reason to this exact release and create the next comparison baseline.</p>
-                <button>Approve release <ArrowRight /></button><Link href="/registry?q=saoudrizwan.claude-dev">Open full public report</Link>
+                <button>Approve release <ArrowRight /></button><Link href="/registry?q=vyperguard.vyper-guard">Open full public report</Link>
               </aside>
             </div>
           </main>
@@ -89,7 +93,7 @@ export default function HomeHero() {
           {[
             ["VS", "VS Code"], ["CU", "Cursor"], ["WS", "Windsurf"],
             ["VC", "VSCodium"], ["IN", "Insiders"],
-          ].map(([mark, name]) => <span key={name}><i>{mark}</i><b>{name}</b></span>)}
+          ].map(([, name]) => <span key={name}><i aria-hidden="true" /><b>{name}</b></span>)}
         </div>
         <Link href="/cli"><MonitorCog /> Collect installed extensions <ArrowRight /></Link>
         <small>Independent compatibility support. GuardRails is not affiliated with or endorsed by the editor vendors listed.</small>
