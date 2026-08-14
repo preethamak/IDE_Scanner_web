@@ -59,3 +59,7 @@
 .heroLead{display:block;min-height:0;padding:42px 0 48px}.heroStatement{max-width:940px}.heroStatement>p{max-width:620px}.heroStatement .searchShell{margin-left:clamp(0px,5vw,72px)}.heroStatement .popular{margin-left:clamp(0px,5vw,72px)}
 .productStage{margin-left:clamp(24px,7vw,104px);margin-right:0}
 @media(max-width:700px){.fogBackdrop{left:0;width:100%;height:650px;border-radius:0}.heroLead{padding:38px 0 42px}.heroStatement .searchShell,.heroStatement .popular{margin-left:0}.productStage{margin-inline:0}}
+
+/* Quiet neutral hero; color belongs to the message, not the background. */
+.productHero{background:#fffdfb}.productHero:after{display:none}.fogBackdrop{display:none}
+.heroStatement h1 em{background:linear-gradient(102deg,#7b284f 3%,#a94f67 48%,#d28368 96%);background-clip:text;-webkit-background-clip:text;color:transparent;text-shadow:none}
