@@ -40,11 +40,20 @@ This checklist defines the first production-shaped team inventory slice. A check
 
 ## Verification
 
-- [ ] Focused database/API/UI tests pass.
-- [ ] Full unit suite and lint pass.
-- [ ] Production build passes.
-- [ ] Browser readiness is run or an environment blocker is recorded precisely.
-- [ ] Local `main` remains clean apart from the intentionally untracked `extension-ecosystem-paper/` directory.
+- [x] Focused database/API/UI tests pass.
+- [x] Full unit suite and lint pass.
+- [x] Production build passes.
+- [x] Browser readiness is run or an environment blocker is recorded precisely.
+- [x] Local `main` remains clean apart from the intentionally untracked `extension-ecosystem-paper/` directory.
+
+Verification on 2026-08-20:
+
+- `psql ... -v ON_ERROR_STOP=1 -f supabase/tests/team_inventory_rls.sql` passed against the fully migrated local Supabase database.
+- `supabase db lint --local --level warning` reported no schema errors.
+- `vitest` passed 98 files and 360 tests.
+- `eslint` passed.
+- `next build` passed and emitted `/api/teams/[id]/inventory`.
+- Browser readiness was attempted. The repository Playwright configuration expects `/usr/bin/chromium`, which is absent in this environment; this is an environment blocker rather than a recorded application assertion failure.
 
 ## Deferred follow-up
 
