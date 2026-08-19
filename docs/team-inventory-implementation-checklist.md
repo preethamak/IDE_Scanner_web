@@ -22,12 +22,12 @@ This checklist defines the first production-shaped team inventory slice. A check
 
 ## API
 
-- [ ] Add `GET /api/teams/[id]/inventory` with summary and device/install rows.
-- [ ] Add bounded `POST /api/teams/[id]/inventory` import validation.
-- [ ] Reject malformed identifiers, versions, device metadata, duplicate rows, and oversized imports.
-- [ ] Upsert one device snapshot atomically enough to prevent stale installations from remaining current.
-- [ ] Return actionable authentication, authorization, validation, and service errors.
-- [ ] Cover happy path, invalid input, and authorization with unit tests.
+- [x] Add `GET /api/teams/[id]/inventory` with summary and device/install rows.
+- [x] Add bounded `POST /api/teams/[id]/inventory` import validation.
+- [x] Reject malformed identifiers, versions, device metadata, duplicate rows, and oversized imports.
+- [x] Upsert one device snapshot transactionally so stale installations do not remain current.
+- [x] Return actionable authentication, authorization, validation, and service errors.
+- [x] Cover happy path, invalid input, and authorization with unit tests.
 
 ## Workspace
 
