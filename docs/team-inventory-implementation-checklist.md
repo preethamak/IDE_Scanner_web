@@ -14,11 +14,11 @@ This checklist defines the first production-shaped team inventory slice. A check
 
 ## Database and authorization
 
-- [ ] Add constrained `team_inventory_devices`, `team_inventory_imports`, and `team_inventory_installations` tables.
-- [ ] Index every foreign key and the team/status access paths.
-- [ ] Enable RLS and revoke anonymous access.
-- [ ] Add member-read and analyst-write policies with both `USING` and `WITH CHECK` where required.
-- [ ] Add database tests for cross-team isolation and viewer write denial.
+- [x] Add constrained `team_inventory_devices`, `team_inventory_imports`, and `team_inventory_installations` tables.
+- [x] Index every foreign key and the team/status access paths.
+- [x] Enable RLS and revoke anonymous access.
+- [x] Add member-read and analyst-write policies with both `USING` and `WITH CHECK` where required.
+- [x] Add database tests for cross-team isolation and viewer write denial.
 
 ## API
 
