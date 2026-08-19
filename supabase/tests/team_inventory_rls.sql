@@ -16,6 +16,34 @@ insert into public.team_members(team_id, user_id, role) values
   ('a1a1a1a1-a1a1-41a1-81a1-a1a1a1a1a1a1', '53535353-5353-4353-8353-535353535353', 'viewer'),
   ('b2b2b2b2-b2b2-42b2-82b2-b2b2b2b2b2b2', '52525252-5252-4252-8252-525252525252', 'owner');
 
+do $$
+declare
+  snapshot_device uuid;
+begin
+  perform public.replace_team_inventory_snapshot(
+    'a1a1a1a1-a1a1-41a1-81a1-a1a1a1a1a1a1',
+    '51515151-5151-4151-8151-515151515151',
+    'transaction-test', 'Transaction test', 'linux', 'json', now(),
+    '[{"extension_id":"GitHub.copilot","version":"1.0.0","registry":"vs-marketplace"},{"extension_id":"redhat.java","version":"2.0.0","registry":"openvsx"}]'::jsonb
+  );
+  select id into snapshot_device from public.team_inventory_devices where external_id = 'transaction-test';
+  perform public.replace_team_inventory_snapshot(
+    'a1a1a1a1-a1a1-41a1-81a1-a1a1a1a1a1a1',
+    '51515151-5151-4151-8151-515151515151',
+    'transaction-test', 'Renamed transaction test', 'linux', 'json', now(),
+    '[{"extension_id":"GitHub.copilot","version":"1.1.0","registry":"vs-marketplace"}]'::jsonb
+  );
+  if (select count(*) from public.team_inventory_installations where device_id = snapshot_device) <> 1 then
+    raise exception 'snapshot replacement retained stale installations';
+  end if;
+  if not exists (
+    select 1 from public.team_inventory_installations
+    where device_id = snapshot_device and extension_id = 'GitHub.copilot' and version = '1.1.0'
+  ) then raise exception 'snapshot replacement did not persist the current exact version'; end if;
+  delete from public.team_inventory_devices where id = snapshot_device;
+end;
+$$;
+
 set local role authenticated;
 set local request.jwt.claim.sub = '51515151-5151-4151-8151-515151515151';
 
