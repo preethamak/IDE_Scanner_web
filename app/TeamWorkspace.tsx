@@ -15,6 +15,7 @@ import {
   Command,
   Inbox,
   LayoutDashboard,
+  Laptop,
   LogOut,
   Menu,
   Plus,
@@ -43,6 +44,7 @@ import NotificationSettings, {
   type NotificationPreferences,
 } from "@/app/workspace/NotificationSettings";
 import BillingPanel from "@/app/workspace/BillingPanel";
+import TeamInventoryPanel from "@/app/workspace/TeamInventoryPanel";
 import { browserDb } from "@/lib/supabase";
 import {
   groupDecisionQueue,
@@ -111,6 +113,7 @@ type DecisionSaveResult =
   | { ok: false; error: string };
 type View =
   | "overview"
+  | "inventory"
   | "inbox"
   | "extensions"
   | "decisions"
@@ -119,6 +122,7 @@ type View =
 
 const nav = [
   ["overview", "Overview", LayoutDashboard],
+  ["inventory", "Inventory", Laptop],
   ["inbox", "Review inbox", Inbox],
   ["extensions", "Extensions", Blocks],
   ["decisions", "Decisions", ShieldCheck],
@@ -914,6 +918,14 @@ export default function TeamWorkspace(
               canDecide={canDecide}
               saveState={saveState}
               onSave={saveDecision}
+            />
+          ) : null}
+          {view === "inventory" ? (
+            <TeamInventoryPanel
+              key={activeTeam.id}
+              teamId={activeTeam.id}
+              role={activeTeam.role}
+              getToken={token}
             />
           ) : null}
           {view === "extensions" ? (

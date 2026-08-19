@@ -17,6 +17,7 @@ describe("GuardRails workspace product surface", () => {
   it("provides a persistent product navigation and account controls", () => {
     for (const label of [
       "Overview",
+      "Inventory",
       "Review inbox",
       "Extensions",
       "Decisions",

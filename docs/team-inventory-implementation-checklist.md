@@ -4,13 +4,13 @@ This checklist defines the first production-shaped team inventory slice. A check
 
 ## Scope
 
-- [ ] Import a bounded JSON inventory exported by the GuardRails CLI or compatible tooling.
-- [ ] Store team-scoped devices, immutable import runs, and current installed extension versions.
-- [ ] Deduplicate devices by a caller-provided stable identifier without storing host secrets.
-- [ ] Show scanned, monitored, unknown, and review-required coverage for the active workspace.
-- [ ] Allow owners, admins, and analysts to import inventory and add discovered registry extensions to monitoring.
-- [ ] Allow every workspace member to read inventory; viewers cannot mutate it.
-- [ ] Preserve exact extension IDs and versions as reported by the source.
+- [x] Import a bounded JSON inventory exported by the GuardRails CLI or compatible tooling.
+- [x] Store team-scoped devices, immutable import runs, and current installed extension versions.
+- [x] Deduplicate devices by a caller-provided stable identifier without storing host secrets.
+- [x] Show scanned, monitored, unknown, and review-required coverage for the active workspace.
+- [x] Allow owners, admins, and analysts to import inventory and add discovered registry extensions to monitoring.
+- [x] Allow every workspace member to read inventory; viewers cannot mutate it.
+- [x] Preserve exact extension IDs and versions as reported by the source.
 
 ## Database and authorization
 
@@ -31,12 +31,12 @@ This checklist defines the first production-shaped team inventory slice. A check
 
 ## Workspace
 
-- [ ] Add Inventory to workspace navigation.
-- [ ] Add empty, loading, ready, partial/error, and import states.
-- [ ] Provide a documented JSON example and file picker.
-- [ ] Display coverage totals and per-installation scan/monitoring state.
-- [ ] Support bulk monitoring for registry-known extensions.
-- [ ] Add focused UI contract tests and responsive styles.
+- [x] Add Inventory to workspace navigation.
+- [x] Add empty, loading, ready, error/retry, and import states.
+- [x] Provide a documented JSON example and file picker.
+- [x] Display coverage totals and per-installation scan/monitoring state.
+- [x] Support bulk monitoring for registry-known extensions.
+- [x] Add focused UI contract tests and responsive styles.
 
 ## Verification
 
