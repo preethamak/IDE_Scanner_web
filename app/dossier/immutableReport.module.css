@@ -9,6 +9,7 @@
   padding: 10px 12px;
   background: linear-gradient(115deg, #fff8fa, #fff 62%, #f7faea);
 }
+.immutableBar{border-color:#e3e3ed;background:linear-gradient(115deg,#f4f0ff,#fff 62%,#edfbf7)}.lock{background:#e9e2ff;color:#654ec0}.immutableBar>div:nth-child(2)>span{color:#6b52c4}.actions a{border-color:#292b3c;background:#292b3c;border-radius:11px}
 .lock {
   display: grid;
   width: 32px;
