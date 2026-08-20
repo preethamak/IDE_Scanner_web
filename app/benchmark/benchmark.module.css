@@ -7,6 +7,7 @@
   background: linear-gradient(180deg, #fff, #fbfcff 64%, #fff);
   color: #17212c;
 }
+.page{background:#fbfbff;color:#20212e}.atmosphere i:first-child{background:radial-gradient(circle,#e4d8ff,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#c8f0e8,transparent 70%)}
 .atmosphere {
   position: absolute;
   z-index: -1;
