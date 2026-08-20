@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "corpus_directory": "20260731-full",
+  "archive_count": 146,
+  "valid_manifest_count": 146,
+  "invalid_or_unreadable_count": 0,
+  "analysis_failures": [],
+  "total_compressed_bytes": 500990340,
+  "boolean_metrics": {
+    "license_declared": {
+      "count": 90,
+      "percent": 61.6
+    },
+    "repository_declared": {
+      "count": 125,
+      "percent": 85.6
+    },
+    "main_entrypoint": {
+      "count": 124,
+      "percent": 84.9
+    },
+    "browser_entrypoint": {
+      "count": 10,
+      "percent": 6.8
+    },
+    "wildcard_activation": {
+      "count": 12,
+      "percent": 8.2
+    },
+    "untrusted_workspace_limited": {
+      "count": 14,
+      "percent": 9.6
+    },
+    "virtual_workspace_limited": {
+      "count": 4,
+      "percent": 2.7
+    }
+  },
+  "count_metrics": {
+    "activation_event_count": {
+      "median": 1.0,
+      "maximum": 21,
+      "nonzero_count": 111,
+      "nonzero_percent": 76.0
+    },
+    "commands": {
+      "median": 2.0,
+      "maximum": 172,
+      "nonzero_count": 108,
+      "nonzero_percent": 74.0
+    },
+    "languages": {
+      "median": 0.0,
+      "maximum": 16,
+      "nonzero_count": 27,
+      "nonzero_percent": 18.5
+    },
+    "debuggers": {
+      "median": 0.0,
+      "maximum": 1,
+      "nonzero_count": 6,
+      "nonzero_percent": 4.1
+    },
+    "task_definitions": {
+      "median": 0.0,
+      "maximum": 1,
+      "nonzero_count": 1,
+      "nonzero_percent": 0.7
+    },
+    "custom_editors": {
+      "median": 0.0,
+      "maximum": 2,
+      "nonzero_count": 6,
+      "nonzero_percent": 4.1
+    },
+    "webview_views": {
+      "median": 0.0,
+      "maximum": 19,
+      "nonzero_count": 40,
+      "nonzero_percent": 27.4
+    },
+    "authentication": {
+      "median": 0.0,
+      "maximum": 1,
+      "nonzero_count": 1,
+      "nonzero_percent": 0.7
+    },
+    "terminal_profiles": {
+      "median": 0.0,
+      "maximum": 0,
+      "nonzero_count": 0,
+      "nonzero_percent": 0.0
+    },
+    "dependency_count": {
+      "median": 0.0,
+      "maximum": 89,
+      "nonzero_count": 72,
+      "nonzero_percent": 49.3
+    },
+    "dev_dependency_count": {
+      "median": 9.0,
+      "maximum": 73,
+      "nonzero_count": 123,
+      "nonzero_percent": 84.2
+    },
+    "category_count": {
+      "median": 1.0,
+      "maximum": 6,
+      "nonzero_count": 142,
+      "nonzero_percent": 97.3
+    }
+  },
+  "top_vscode_engine_constraints": [
+    [
+      "^1.85.0",
+      13
+    ],
+    [
+      "^1.65.0",
+      8
+    ],
+    [
+      "^1.80.0",
+      7
+    ],
+    [
+      "^1.74.0",
+      6
+    ],
+    [
+      "^1.99.0",
+      5
+    ],
+    [
+      "^1.100.0",
+      4
+    ],
+    [
+      "^1.75.0",
+      4
+    ],
+    [
+      "^1.60.0",
+      4
+    ],
+    [
+      "^1.90.0",
+      4
+    ],
+    [
+      "^1.52.0",
+      3
+    ]
+  ]
+}
