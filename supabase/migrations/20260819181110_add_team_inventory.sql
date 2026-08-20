@@ -123,7 +123,7 @@ create or replace function public.replace_team_inventory_snapshot(
 )
 returns jsonb
 language plpgsql
-security definer
+security invoker
 set search_path = ''
 as $$
 declare
