@@ -1,0 +1,58 @@
+/* Authority Ledger: the shared public-site visual language. */
+:root {
+  --ledger-paper: #f5f0e8;
+  --ledger-white: #fffdf9;
+  --ledger-ink: #161514;
+  --ledger-muted: #6b665f;
+  --ledger-line: #d9d0c4;
+  --ledger-signal: #df5938;
+  --ledger-signal-soft: #fde4dd;
+  --ledger-amber: #b67215;
+  --ledger-night: #1d1d1b;
+  --paper: var(--ledger-paper);
+  --white: var(--ledger-white);
+  --ink: var(--ledger-ink);
+  --ink-2: #37342f;
+  --muted: var(--ledger-muted);
+  --line: var(--ledger-line);
+  --wash: #eee7dc;
+  --acid: #ec7657;
+  --acid-dark: #a43e27;
+  --green: #42785c;
+}
+
+body { background: var(--ledger-paper); color: var(--ledger-ink); }
+::selection { background: var(--ledger-signal); color: white; }
+h1, h2, h3 { letter-spacing: -.055em; }
+
+.siteHeader { border-bottom-color: color-mix(in srgb, var(--ledger-ink) 12%, transparent); background: color-mix(in srgb, var(--ledger-paper) 88%, transparent); }
+.headerInner { max-width: 1520px; }
+.wordmark > span { border-radius: 50%; background: var(--ledger-ink); color: var(--ledger-signal); }
+.wordmark strong { letter-spacing: -.035em; }
+.primaryNav > a, .navMenu > button { border-radius: 999px; color: #514b44; font-size: 13px; }
+.primaryNav > a:hover, .primaryNav > a.active, .navMenu > button:hover, .navMenu > button.active { background: #ebe1d5; color: var(--ledger-ink); }
+.headerProductCta { border-radius: 999px !important; background: var(--ledger-ink) !important; color: #fffdf9 !important; box-shadow: none !important; }
+.headerProductCta:hover { background: var(--ledger-signal) !important; }
+.navPopover, .headerAccountMenu { border-color: var(--ledger-line); border-radius: 14px; box-shadow: 0 24px 70px rgba(53, 38, 26, .16); }
+.navPopover aside { background: var(--ledger-night); }
+
+.siteFooter { background: var(--ledger-night); padding-top: 92px; }
+.footerWordmark > span { background: var(--ledger-signal); color: white; }
+.footerLead h2 { max-width: 440px; font-size: clamp(40px, 4vw, 62px); line-height: .92; }
+.footerCta { border-radius: 999px; background: var(--ledger-signal); color: white; }
+.footerLinks a:hover, .footerScan { color: #ff9b80; }
+
+/* Pages keep their domain-specific content but gain a consistent editorial frame. */
+.pageWrap, .shell { max-width: 1360px; }
+.pageHero, .catalogHero, .scannerIntro, .reportMast, .reportBottomLine { border-color: var(--ledger-line); }
+.pageHero h1, .catalogHero h1, .scannerIntro h1, .reportMast h1 { font-weight: 610; }
+.button, .primaryAction, .heroAction { border-radius: 999px; }
+.buttonDark, .primaryAction, .heroAction { border-color: var(--ledger-ink); background: var(--ledger-ink); }
+.buttonDark:hover, .primaryAction:hover, .heroAction:hover { background: var(--ledger-signal); border-color: var(--ledger-signal); }
+.secondaryAction, .buttonLight { border-color: var(--ledger-line); background: var(--ledger-white); }
+.decision { border-radius: 999px; letter-spacing: .06em; }
+.decision.review { background: #fff1d8; color: #986219; }
+.decision.block { background: var(--ledger-signal-soft); color: #aa3d28; }
+.decision.allow { background: #e2f0e5; color: #387152; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }

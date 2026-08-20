@@ -17,6 +17,7 @@ import "./landing.css";
 import "./accessibility.css";
 import "./product-ui.css";
 import "./readability.css";
+import "./authority.css";
 
 export const metadata: Metadata = {
   title: {
