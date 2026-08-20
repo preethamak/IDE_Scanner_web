@@ -10,7 +10,7 @@ function ReleaseReviewMotion() {
       <div className={styles.notice}><CircleAlert /> This update asks for new access <span>2 changes</span></div>
       <div className={styles.rows}>
         <article><Terminal /><div><small>TERMINAL</small><strong>Execute shell commands</strong></div><b>NEW</b></article>
-        <article><Network /><div><small>NETWORK</small><strong>api.anthropic.com</strong></div><b>+ 1 host</b></article>
+        <article><Network /><div><small>NETWORK</small><strong>New external connection</strong></div><b>+ 1 host</b></article>
         <article><Code2 /><div><small>WORKSPACE FILES</small><strong>Read and write files</strong></div><i>Unchanged</i></article>
       </div>
       <div className={styles.review}><div><span className={styles.avatar}>PS</span><p><small>TEAM DECISION</small><strong>Review before rollout</strong></p></div><button>Approve <Check /></button></div>
