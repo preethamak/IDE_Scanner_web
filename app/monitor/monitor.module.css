@@ -7,6 +7,7 @@
   background: linear-gradient(180deg, #fff, #fbfcff 70%, #fff);
   color: #17212c;
 }
+.gate,.statePage{background:var(--ledger-paper);color:var(--ledger-ink)}.atmosphere i:first-child{background:radial-gradient(circle,#f7c9bd,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#eadfce,transparent 70%)}.atmosphere i:last-child{background:radial-gradient(circle,#f6d97a55,transparent 70%)}.eyebrow{border:0;border-radius:0;background:transparent;padding:0;color:var(--ledger-signal)}.gateHero h1 em{color:var(--ledger-signal)}.gateHero>div:first-child>p,.resume strong{color:var(--ledger-muted)}.resume,.gatePreview,.metric,.event,.watchlist article{border-color:var(--ledger-line)!important;background:var(--ledger-white)!important}.heroActions a:first-child{border-radius:999px;background:var(--ledger-ink)!important;color:#fff!important}
 .gate {
   padding: 78px max(24px, calc((100vw - 1320px) / 2)) 100px;
 }

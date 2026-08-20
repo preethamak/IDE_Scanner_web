@@ -7,6 +7,7 @@
   background: linear-gradient(155deg, #fffdfb, #fff8f2 52%, #fafbed);
   color: #292329;
 }
+.page{background:var(--ledger-paper);color:var(--ledger-ink)}.glow{background:radial-gradient(circle,#f7c9bd,transparent 70%)}.hero{border-bottom-color:var(--ledger-line)}.hero>div>span,.services header span,.incidents header span{color:var(--ledger-signal)}.hero h1 em{color:var(--ledger-signal)}.hero>div>p{color:var(--ledger-muted)}.hero aside,.services article,.incidents article{border-color:var(--ledger-line)!important;background:var(--ledger-white)!important}
 .glow {
   position: absolute;
   z-index: -1;

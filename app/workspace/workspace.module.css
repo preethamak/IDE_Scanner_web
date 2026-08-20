@@ -1,4 +1,4 @@
-:global(body.guardrails-workspace-mode) { background:#f5f6f2; }
+:global(body.guardrails-workspace-mode) { background:var(--ledger-paper); }
 :global(body.guardrails-workspace-mode .siteHeader),:global(body.guardrails-workspace-mode .siteFooter){display:none}
 :global(body.guardrails-workspace-mode .pageContent){padding:0;max-width:none}
 .spinner{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
