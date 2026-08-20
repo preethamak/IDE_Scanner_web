@@ -1,38 +1,44 @@
 import Link from "next/link";
-import { ArrowRight, Check, CircleAlert, Fingerprint, Network, Terminal, UserRoundCheck } from "lucide-react";
+import { ArrowRight, Check, ChevronRight, CircleAlert, Code2, Network, Terminal } from "lucide-react";
 import styles from "./authorityLanding.module.css";
 
-const evidence = [
-  ["01", "Artifact", "Vyper Guard 0.2.0", "sha256: 8b45118a…19e2", Fingerprint],
-  ["02", "Authority added", "Terminal execution", "Declared command APIs", Terminal],
-  ["03", "Authority added", "api.anthropic.com", "New network destination", Network],
-] as const;
+function ReleaseReviewMotion() {
+  return <div className={styles.productMotion} aria-label="An extension release is reviewed before installation">
+    <div className={styles.windowBar}><span /><span /><span /><p>GuardRails · Release review</p><small>LIVE</small></div>
+    <div className={styles.motionBody}>
+      <div className={styles.motionTitle}><div className={styles.appIcon}>VG</div><div><small>VYPERGUARD.VYPER-GUARD</small><strong>Vyper Guard <em>0.2.0</em></strong></div><button>Install</button></div>
+      <div className={styles.notice}><CircleAlert /> This update asks for new access <span>2 changes</span></div>
+      <div className={styles.rows}>
+        <article><Terminal /><div><small>TERMINAL</small><strong>Execute shell commands</strong></div><b>NEW</b></article>
+        <article><Network /><div><small>NETWORK</small><strong>api.anthropic.com</strong></div><b>+ 1 host</b></article>
+        <article><Code2 /><div><small>WORKSPACE FILES</small><strong>Read and write files</strong></div><i>Unchanged</i></article>
+      </div>
+      <div className={styles.review}><div><span className={styles.avatar}>PS</span><p><small>TEAM DECISION</small><strong>Review before rollout</strong></p></div><button>Approve <Check /></button></div>
+      <div className={styles.cursor} aria-hidden="true"><i /></div>
+    </div>
+  </div>;
+}
 
 export default function AuthorityLanding() {
   return <main className={styles.page}>
     <section className={styles.hero}>
       <div className={styles.heroCopy}>
-        <p className={styles.kicker}><i /> GuardRails / Authority ledger</p>
-        <h1>Know what gets<br /><em>authority</em> before<br />the click.</h1>
-        <p className={styles.lead}>GuardRails turns an extension, agent, or MCP tool into a decision your team can trust.</p>
-        <div className={styles.actions}><Link href="/registry">Check an extension <ArrowRight /></Link><Link href="#story">See how it works</Link></div>
+        <p className={styles.eyebrow}><i /> Extension release security</p>
+        <h1>See what changed<br />before it <em>ships.</em></h1>
+        <p>GuardRails turns every extension update into a clear, reviewable decision—before it reaches your editors.</p>
+        <div className={styles.actions}><Link href="/registry">Check an extension <ArrowRight /></Link><Link href="#how">See it in action <ChevronRight /></Link></div>
+        <div className={styles.trust}><span><b>60k+</b> marketplace extensions</span><span><b>Before install</b> and every update</span></div>
       </div>
-      <div className={styles.installScene} aria-label="GuardRails reviews an extension before installation">
-        <div className={styles.browser}><span /><span /><span /><code>Extensions / Vyper Guard</code></div>
-        <div className={styles.installTop}><span className={styles.package}>VG</span><div><small>VYPERGUARD.VYPER-GUARD</small><strong>Vyper Guard <code>0.2.0</code></strong></div><button>Install</button></div>
-        <div className={styles.freeze}><span /> Install paused · new authority detected</div>
-        <div className={styles.evidence}>{evidence.map(([n,label,title,detail,Icon])=><article key={n}><span>{n}</span><Icon/><div><small>{label}</small><strong>{title}</strong><p>{detail}</p></div></article>)}</div>
-        <div className={styles.verdict}><div><CircleAlert/><span><small>POLICY OUTCOME</small><strong>Review required</strong></span></div><b>2 changes</b></div>
-      </div>
+      <ReleaseReviewMotion />
     </section>
 
-    <section id="story" className={styles.story}>
-      <header><p className={styles.kicker}><i /> Every decision has a trail</p><h2>From package to permission,<br />nothing stays implicit.</h2></header>
-      <div className={styles.ledger}>{evidence.map(([n,label,title,detail,Icon])=><article key={n}><span>{n}</span><Icon/><small>{label}</small><h3>{title}</h3><p>{detail}</p></article>)}<article className={styles.seal}><UserRoundCheck/><small>04 · HUMAN DECISION</small><h3>Decision receipt</h3><p>Evidence, reviewer, and rationale remain attached to this release.</p><b><Check/> Signed</b></article></div>
+    <section id="how" className={styles.steps}>
+      <header><p className={styles.eyebrow}><i /> One calm workflow</p><h2>From a new release<br />to a confident yes.</h2></header>
+      <div><article><span>01</span><h3>Spot the change</h3><p>Compare the exact new package with the version your team already reviewed.</p></article><article><span>02</span><h3>See the access</h3><p>Commands, files, network destinations, and behavior—shown in plain language.</p></article><article><span>03</span><h3>Keep the reason</h3><p>Approve with context, so the next update starts from a real decision.</p></article></div>
     </section>
 
-    <section className={styles.monitor}><div><p className={styles.kicker}><i /> Quiet by default</p><h2>Only the changes<br />that matter arrive.</h2><p>Monitor approved tools. Route meaningful changes to the right reviewer. Keep a history that holds up later.</p><Link href="/monitor">Explore release monitoring <ArrowRight /></Link></div><div className={styles.feed}><header><span><i/> Monitoring 24 extensions</span><small>LIVE</small></header><article><span>09:41</span><div><small>NEW RELEASE</small><strong>Vyper Guard 0.2.0 published</strong></div><em>Detected</em></article><article><span>09:42</span><div><small>AUTHORITY CHANGE</small><strong>Terminal + network access added</strong></div><em className={styles.review}>Review</em></article><article><span>09:43</span><div><small>DECISION QUEUE</small><strong>Routed to Platform Security</strong></div><ArrowRight/></article></div></section>
+    <section className={styles.watch}><div><p className={styles.eyebrow}><i /> Works in the background</p><h2>The right update<br />finds the right person.</h2><p>Monitor approved extensions and route only meaningful changes to the people who can decide.</p><Link href="/monitor">Explore monitoring <ArrowRight /></Link></div><div className={styles.timeline}><header><span><i /> Monitoring 24 extensions</span><small>Now</small></header><article><time>09:41</time><div><small>NEW RELEASE</small><strong>Vyper Guard 0.2.0 published</strong></div><em>Seen</em></article><article className={styles.changed}><time>09:42</time><div><small>ACCESS CHANGE</small><strong>Terminal + network added</strong></div><em>Review</em></article><article><time>09:43</time><div><small>ROUTED</small><strong>Sent to Platform Security</strong></div><ArrowRight /></article></div></section>
 
-    <section className={styles.closing}><p className={styles.kicker}><i /> The decision is already attached</p><h2>Install with context.</h2><Link href="/registry">Search the registry <ArrowRight /></Link></section>
+    <section className={styles.closing}><p className={styles.eyebrow}><i /> Start with one extension</p><h2>Good decisions start<br />with better context.</h2><Link href="/registry">Search the registry <ArrowRight /></Link></section>
   </main>;
 }
