@@ -6,7 +6,7 @@ function ReleaseReviewMotion() {
   return <div className={styles.productMotion} aria-label="An extension release is reviewed before installation">
     <div className={styles.windowBar}><span /><span /><span /><p>GuardRails · Release review</p><small>LIVE</small></div>
     <div className={styles.motionBody}>
-      <div className={styles.motionTitle}><div className={styles.appIcon}>VG</div><div><small>VYPERGUARD.VYPER-GUARD</small><strong>Vyper Guard <em>0.2.0</em></strong></div><button>Install</button></div>
+      <div className={styles.motionTitle}><div className={styles.appIcon}>GR</div><div><small>EXTENSION UPDATE</small><strong>Workspace assistant <em>2.4.0</em></strong></div><button>Install</button></div>
       <div className={styles.notice}><CircleAlert /> This update asks for new access <span>2 changes</span></div>
       <div className={styles.rows}>
         <article><Terminal /><div><small>TERMINAL</small><strong>Execute shell commands</strong></div><b>NEW</b></article>
@@ -37,7 +37,7 @@ export default function AuthorityLanding() {
       <div><article><span>01</span><h3>Spot the change</h3><p>Compare the exact new package with the version your team already reviewed.</p></article><article><span>02</span><h3>See the access</h3><p>Commands, files, network destinations, and behavior—shown in plain language.</p></article><article><span>03</span><h3>Keep the reason</h3><p>Approve with context, so the next update starts from a real decision.</p></article></div>
     </section>
 
-    <section className={styles.watch}><div><p className={styles.eyebrow}><i /> Works in the background</p><h2>The right update<br />finds the right person.</h2><p>Monitor approved extensions and route only meaningful changes to the people who can decide.</p><Link href="/monitor">Explore monitoring <ArrowRight /></Link></div><div className={styles.timeline}><header><span><i /> Monitoring 24 extensions</span><small>Now</small></header><article><time>09:41</time><div><small>NEW RELEASE</small><strong>Vyper Guard 0.2.0 published</strong></div><em>Seen</em></article><article className={styles.changed}><time>09:42</time><div><small>ACCESS CHANGE</small><strong>Terminal + network added</strong></div><em>Review</em></article><article><time>09:43</time><div><small>ROUTED</small><strong>Sent to Platform Security</strong></div><ArrowRight /></article></div></section>
+    <section className={styles.watch}><div><p className={styles.eyebrow}><i /> Works in the background</p><h2>The right update<br />finds the right person.</h2><p>Monitor approved extensions and route only meaningful changes to the people who can decide.</p><Link href="/monitor">Explore monitoring <ArrowRight /></Link></div><div className={styles.timeline}><header><span><i /> Monitoring your extensions</span><small>Now</small></header><article><time>09:41</time><div><small>NEW RELEASE</small><strong>An extension update was found</strong></div><em>Seen</em></article><article className={styles.changed}><time>09:42</time><div><small>ACCESS CHANGE</small><strong>Terminal + network added</strong></div><em>Review</em></article><article><time>09:43</time><div><small>ROUTED</small><strong>Sent to the right reviewer</strong></div><ArrowRight /></article></div></section>
 
     <section className={styles.closing}><p className={styles.eyebrow}><i /> Start with one extension</p><h2>Good decisions start<br />with better context.</h2><Link href="/registry">Search the registry <ArrowRight /></Link></section>
   </main>;
