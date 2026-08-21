@@ -27,6 +27,7 @@ describe("canonical scan enqueue endpoint", () => {
 
   it("rejects non-canonical purposes and malformed identities", async () => {
     expect((await POST(request("runner-secret", [{ extension_id: "not-an-id", version: "3.0.33", scan_purpose: "user_request" }]))).status).toBe(400);
+    expect((await POST(request("runner-secret", [{ extension_id: "dbaeumer.vscode-eslint", version: "3.0.33", scan_purpose: "benchmark", scanner_build: scannerBuild, target_platform: "linux-x64&redirect=1" }]))).status).toBe(400);
     expect(from).not.toHaveBeenCalled();
   });
 
@@ -52,7 +53,7 @@ describe("canonical scan enqueue endpoint", () => {
                   eq: () => ({
                     in: () => ({
                       maybeSingle: async () => ({
-                        data: { id: "job-1", extension_id: "Publisher.Extension", version: "1.2.3", scan_purpose: "user_request", status: "queued", expected_scanner_build: null },
+                        data: { id: "job-1", extension_id: "Publisher.Extension", version: "1.2.3", scan_purpose: "user_request", status: "queued", expected_scanner_build: null, target_platform: "" },
                         error: null,
                       }),
                     }),
@@ -81,13 +82,14 @@ describe("canonical scan enqueue endpoint", () => {
       version: "1.2.3",
       scan_purpose: "public_intelligence",
       scanner_build: scannerBuild,
+      target_platform: "darwin-x64",
     }]));
 
     expect(response.status).toBe(200);
     expect(versionUpsert).toHaveBeenCalledWith([
       expect.objectContaining({ extension_id: "Publisher.Extension", version: "1.2.3" }),
     ], { onConflict: "extension_id,version" });
-    expect(update).toHaveBeenCalledWith(expect.objectContaining({ expected_scanner_build: scannerBuild, claim_protocol: 2, scan_purpose: "public_intelligence" }));
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ expected_scanner_build: scannerBuild, claim_protocol: 2, scan_purpose: "public_intelligence", target_platform: "darwin-x64" }));
   });
 
   it("does not rebind a job that is already running under another build", async () => {

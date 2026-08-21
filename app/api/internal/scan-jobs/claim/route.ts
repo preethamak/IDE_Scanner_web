@@ -24,5 +24,5 @@ export async function POST(request: Request) {
   if (!job.expected_scanner_build || String(job.expected_scanner_build).toLowerCase() !== githubSha) {
     return NextResponse.json({ error: "Claimed job is not bound to this scanner build." }, { status: 409 });
   }
-  return NextResponse.json({ id: job.id, extension_id: job.extension_id, version: job.version, callback_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://ide-scanner.vercel.app"}/api/internal/scan-results` });
+  return NextResponse.json({ id: job.id, extension_id: job.extension_id, version: job.version, target_platform: String(job.target_platform || ""), callback_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://ide-scanner.vercel.app"}/api/internal/scan-results` });
 }

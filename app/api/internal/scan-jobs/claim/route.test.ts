@@ -23,10 +23,10 @@ describe("scan claim endpoint", () => {
   });
 
   it("returns only the claimed artifact contract", async () => {
-    rpc.mockResolvedValue({ data: { id: "job-1", extension_id: "publisher.extension", version: "1.2.3", expected_scanner_build: githubSha }, error: null });
+    rpc.mockResolvedValue({ data: { id: "job-1", extension_id: "publisher.extension", version: "1.2.3", target_platform: "darwin-x64", expected_scanner_build: githubSha }, error: null });
     const response = await POST(request());
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ id: "job-1", extension_id: "publisher.extension", version: "1.2.3" });
+    expect(await response.json()).toMatchObject({ id: "job-1", extension_id: "publisher.extension", version: "1.2.3", target_platform: "darwin-x64" });
     expect(rpc).toHaveBeenCalledWith("claim_deep_scan_job", { p_runner_id: "github-actions-1", p_scanner_build: githubSha, p_job_id: null, p_github_run_id: null });
   });
 
