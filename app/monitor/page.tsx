@@ -148,7 +148,7 @@ function MonitorGate({ extension }: { extension: string }) {
             <i>01</i>
             <span>
               <small>Baseline</small>
-              <strong>Version 3.18.2 approved</strong>
+              <strong>Reviewed version approved</strong>
               <p>Artifact and decision remain attached.</p>
             </span>
             <CheckCircle2 />
@@ -157,7 +157,7 @@ function MonitorGate({ extension }: { extension: string }) {
             <i>02</i>
             <span>
               <small>New release</small>
-              <strong>Version 3.19.0 detected</strong>
+              <strong>New version detected</strong>
               <p>A separate Deep Scan begins.</p>
             </span>
             <ScanSearch />
