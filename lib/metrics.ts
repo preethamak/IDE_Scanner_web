@@ -1,6 +1,6 @@
 export type MetricDomain = { id: string; label: string; short: string; detail: string; why: string; outputs: string[] };
 export type RuleReference = { id: string; title: string; category: string; evidence: string; severity: string; engine: string; description: string };
-export const RULESET_VERSION = "2026.07.19";
+export const RULESET_VERSION = "2026.08.21-obfuscated-bundle.1";
 
 export const metricCatalog: MetricDomain[] = [
   { id: "confirmed-intelligence", label: "Confirmed intelligence", short: "Known-bad artifacts and malicious dependencies.", detail: "Exact package and file SHA-256 matches, configured threat intelligence, and dependencies identified as malicious.", why: "This is authoritative evidence and can directly drive a BLOCK decision when the intelligence source and artifact identity are valid.", outputs: ["artifact SHA-256", "feed source", "matched dependency"] },
@@ -20,6 +20,8 @@ export const metricCatalog: MetricDomain[] = [
 const rule = (id: string, title: string, category: string, evidence: string, severity: string, engine: string, description: string): RuleReference => ({ id, title, category, evidence, severity, engine, description });
 
 export const ruleCatalog: RuleReference[] = [
+  rule("obfuscated-credential-harvesting-exfiltration", "Obfuscated credential harvesting and exfiltration", "credential access", "correlated", "HIGH", "native correlation", "A structurally obfuscated executable bundle combines multi-family credential targeting, local collection, and outbound payload transfer."),
+  rule("executable-heavy-obfuscation", "Executable-heavy obfuscation", "code", "capability", "MEDIUM", "native static", "An executable bundle contains a compact structural obfuscator scaffold and multiple code-evasion density signals."),
   rule("known-bad-artifact", "Known-bad artifact", "confirmed intelligence", "confirmed", "CRITICAL", "intelligence", "Exact package or file hash matched configured malicious intelligence."),
   rule("malicious-npm-dependency", "Malicious npm dependency", "dependency", "confirmed", "CRITICAL", "dependency intelligence", "A runtime dependency is identified as a malicious package."),
   rule("marketplace-removed-package", "Marketplace removed package", "provenance", "provenance", "HIGH", "marketplace intelligence", "The package appears in a marketplace removal list."),
