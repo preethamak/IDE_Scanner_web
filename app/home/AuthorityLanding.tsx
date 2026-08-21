@@ -1,20 +1,24 @@
 import Link from "next/link";
-import { ArrowRight, Check, ChevronRight, MousePointer2, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, ChevronRight, MousePointer2 } from "lucide-react";
 import AuroraBackdrop from "@/app/components/react-bits/AuroraBackdrop";
 import styles from "./authorityLanding.module.css";
 import film from "./productFilm.module.css";
 
 function ProductFilm() {
   return <div className={film.film} aria-label="GuardRails product interaction">
-    <header><span><i /><i /><i /></span><strong>GuardRails</strong><small>Watching your tools</small></header>
+    <header><span><i /><i /><i /></span><strong>GuardRails</strong><small>Workspace / review queue</small></header>
     <div className={film.filmCanvas}>
-      <div className={film.incoming}><span>New tool update</span><strong>Access request</strong><small>Just arrived</small></div>
-      <div className={film.guard}><span><Sparkles /></span><strong>GuardRails</strong><small>Understood the change</small></div>
-      <div className={film.decision}><span><Check /></span><strong>Decision saved</strong><small>Ready for the next update</small></div>
-      <i className={film.path} /><i className={film.pathTwo} />
-      <MousePointer2 className={film.cursor} />
+      <aside className={film.rail}><b>WORKSPACE</b><span>Review queue</span><span>Inventory</span><span>Decisions</span><span>Monitoring</span></aside>
+      <div className={film.screen}>
+        <div className={film.screenTop}><div><p>Release update</p><h3>Review what changed</h3></div><span className={film.live}><i /> New</span></div>
+        <div className={film.tool}><span className={film.toolMark}>A</span><div><strong>Workspace assistant</strong><small>Version 2.8.0 → 2.9.0</small></div></div>
+        <div className={film.comparison}><header><span>New capability</span><b>Changed</b></header><div className={film.permission}><AlertTriangle /><div><strong>Terminal access</strong><small>Can run commands in the current workspace</small></div><em>Added</em></div></div>
+        <div className={film.actions}><span>1 change needs a decision</span><button className={film.review}>Review change</button></div>
+        <aside className={film.detail}><header><span>GuardRails</span><b>Why this matters</b></header><p>This tool can now run commands with your workspace permissions. Review the reason before your team updates.</p><footer><span>Evidence attached</span><button>Save decision</button></footer></aside>
+        <MousePointer2 className={film.cursor} />
+      </div>
     </div>
-    <footer><span>See the change. Keep the context.</span><b>Live product flow</b></footer>
+    <footer><span>One change. Clear context. A decision your team can return to.</span><b>Product interaction</b></footer>
   </div>;
 }
 
