@@ -1,25 +1,7 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, Check, ChevronRight, MousePointer2 } from "lucide-react";
+import { ArrowRight, Check, ChevronRight } from "lucide-react";
 import styles from "./authorityLanding.module.css";
-import film from "./productFilm.module.css";
-
-function ProductFilm() {
-  return <div className={film.film} aria-label="GuardRails product interaction">
-    <header><span><i /><i /><i /></span><strong>GuardRails</strong><small>Workspace / review queue</small></header>
-    <div className={film.filmCanvas}>
-      <aside className={film.rail}><b>WORKSPACE</b><span>Review queue</span><span>Inventory</span><span>Decisions</span><span>Monitoring</span></aside>
-      <div className={film.screen}>
-        <div className={film.screenTop}><div><p>Release update</p><h3>Review what changed</h3></div><span className={film.live}><i /> New</span></div>
-        <div className={film.tool}><span className={film.toolMark}>A</span><div><strong>Workspace assistant</strong><small>Version 2.8.0 → 2.9.0</small></div></div>
-        <div className={film.comparison}><header><span>New capability</span><b>Changed</b></header><div className={film.permission}><AlertTriangle /><div><strong>Terminal access</strong><small>Can run commands in the current workspace</small></div><em>Added</em></div></div>
-        <div className={film.actions}><span>1 change needs a decision</span><button className={film.review}>Review change</button></div>
-        <aside className={film.detail}><header><span>GuardRails</span><b>Why this matters</b></header><p>This tool can now run commands with your workspace permissions. Review the reason before your team updates.</p><footer><span>Evidence attached</span><button>Save decision</button></footer></aside>
-        <MousePointer2 className={film.cursor} />
-      </div>
-    </div>
-    <footer><span>One change. Clear context. A decision your team can return to.</span><b>Product interaction</b></footer>
-  </div>;
-}
+import ReleaseReviewFilm from "./ReleaseReviewFilm";
 
 function ChangeStory() {
   return <section id="how" className={styles.story}>
@@ -36,7 +18,7 @@ export default function AuthorityLanding() {
   return <main className={styles.page}>
     <section className={styles.hero}>
       <div className={styles.heroCopy}><p className={styles.eyebrow}><i /> GuardRails for developer tools</p><h1>When a tool<br />changes, <em>know why.</em></h1><p className={styles.heroLead}>GuardRails turns a release change into a clear, durable decision for the people who use the tool.</p><div className={styles.actions}><Link href="/registry">Check an extension <ArrowRight /></Link><Link href="#how">See the flow <ChevronRight /></Link></div></div>
-      <div className={styles.heroVisual}><span className={styles.orbit} /><ProductFilm /></div>
+      <div className={styles.heroVisual}><span className={styles.orbit} /><ReleaseReviewFilm /></div>
     </section>
     <section className={styles.statement}><p className={styles.eyebrow}><i /> The moment that matters</p><h2>A release changes.<br /><em>Your team decides.</em></h2><p>GuardRails keeps that moment clear, quick, and attached to the work.</p></section>
     <ChangeStory />
