@@ -20,8 +20,8 @@ const plans = [
   },
   {
     name: "Team",
-    price: "Preview",
-    suffix: "packaging in progress",
+    price: "Early access",
+    suffix: "for shared release decisions",
     description:
       "Coordinate release review, ownership, notifications, and defensible decisions.",
     action: "Use the team workspace",
@@ -36,7 +36,7 @@ const plans = [
   },
   {
     name: "Business",
-    price: "Talk to us",
+    price: "Design partner",
     suffix: "for governed environments",
     description:
       "Plan organization-wide policy and secure developer-environment rollout.",
@@ -62,21 +62,19 @@ export default function PricingPage() {
             <ReceiptText /> Pricing and packaging
           </span>
           <h1>
-            Start with evidence.<em> Add teamwork when it matters.</em>
+            Start with evidence.<em> Grow into a decision system.</em>
           </h1>
           <p>
-            GuardRails packaging follows the product boundary: public
-            intelligence stays useful, while collaboration, retention, and
-            governance scale with the team.
+            Start with a single tool. Add monitoring, shared decisions, and
+            policy when your team is ready to make extension access intentional.
           </p>
         </div>
         <aside>
           <ShieldCheck />
-          <strong>No pretend checkout</strong>
+          <strong>Start small. Expand deliberately.</strong>
           <p>
-            Billing and enforced entitlements are still being built. These cards
-            describe the intended package—not a subscription you can purchase
-            today.
+            Public intelligence stays open. Team access is introduced with a
+            guided workspace rollout, not a forced enterprise contract.
           </p>
         </aside>
       </section>
@@ -109,21 +107,20 @@ export default function PricingPage() {
       </section>
       <section className={styles.honesty}>
         <div>
-          <span>Packaging boundary</span>
-          <h2>What is available now—and what is not.</h2>
+          <span>How GuardRails grows with you</span>
+          <h2>From one review to a team-wide trust boundary.</h2>
         </div>
         <ul>
           <li>
-            Public reports, local report import, monitoring, and the current
-            team workspace can be used today.
+            Begin with public reports and one extension you want to understand.
           </li>
           <li>
-            Billing, plan limits, trials, checkout, and webhook reconciliation
-            are not represented as complete.
+            Move into the team workspace when decisions need owners, history,
+            and meaningful-change notifications.
           </li>
           <li>
-            Enterprise runtime controls depend on the native GuardRails IDE
-            roadmap and are not sold as finished features.
+            Use a design partnership to shape governed rollout requirements
+            around the way your engineering organisation actually works.
           </li>
         </ul>
       </section>
