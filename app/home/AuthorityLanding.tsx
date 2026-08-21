@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Check, ChevronRight } from "lucide-react";
 import styles from "./authorityLanding.module.css";
 import ReleaseReviewFilm from "./ReleaseReviewFilm";
+import DecisionMemoryFilm from "./DecisionMemoryFilm";
 
 function ChangeStory() {
   return <section id="how" className={styles.story}>
@@ -21,8 +22,7 @@ export default function AuthorityLanding() {
       <div className={styles.heroVisual}><span className={styles.orbit} /><ReleaseReviewFilm /></div>
     </section>
     <section className={styles.statement}><p className={styles.eyebrow}><i /> The moment that matters</p><h2>A release changes.<br /><em>Your team decides.</em></h2><p>GuardRails keeps that moment clear, quick, and attached to the work.</p></section>
-    <ChangeStory />
-    <section className={styles.memory}><div><p className={styles.eyebrow}><i /> Team memory</p><h2>Decisions should<br />outlive the meeting.</h2><p>GuardRails preserves the evidence, the reasoning, and the release it belongs to—so the next update has a real baseline.</p><Link href="/monitor">See release monitoring <ArrowRight /></Link></div><div className={styles.memoryVisual}><header><span>Decision history</span><b>Workspace assistant</b></header><div className={styles.historyLine}><i /><i /><i /></div><article><span>2.9.0</span><div><b>Approved with context</b><small>Terminal access reviewed for this workspace</small></div><Check /></article><article><span>2.8.0</span><div><b>Baseline saved</b><small>Previous trusted version</small></div></article><footer>Release-aware decisions, kept together.</footer></div></section>
+    <DecisionMemoryFilm />
     <section className={styles.close}><p className={styles.eyebrow}><i /> Start with one tool</p><h2>See the change.<br /><em>Make the call.</em></h2><Link href="/registry">Explore GuardRails <ArrowRight /></Link></section>
   </main>;
 }
