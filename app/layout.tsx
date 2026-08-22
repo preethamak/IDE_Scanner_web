@@ -21,12 +21,24 @@ import "./readability.css";
 import "./authority.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://abscissa.dev"),
   title: {
-    default: "GuardRails — Extension security intelligence",
-    template: "%s · GuardRails",
+    default: "Guardrails - Check IDE extensions before you install them",
+    template: "%s · Guardrails",
   },
   description:
-    "See what editor extensions can access and know when that behavior changes.",
+    "See what an IDE extension can access before you install it, and hear about it when an update adds terminal, network, or file access.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "Guardrails",
+    title: "Guardrails - Check IDE extensions before you install them",
+    description:
+      "Scan IDE extensions before install, then get flagged when an update quietly gains new access.",
+    images: [{ url: "/logo.png", width: 587, height: 610, alt: "Guardrails" }],
+  },
+  twitter: { card: "summary" },
 };
 
 export default function RootLayout({
