@@ -18,7 +18,7 @@ function ChangeStory() {
 export default function AuthorityLanding() {
   return <main className={styles.page}>
     <section className={styles.hero}>
-      <div className={styles.heroCopy}><p className={styles.eyebrow}><i /> GuardRails for developer tools</p><h1>When a tool<br />changes, <em>know why.</em></h1><p className={styles.heroLead}>GuardRails turns a release change into a clear, durable decision for the people who use the tool.</p><div className={styles.actions}><Link href="/registry">Check an extension <ArrowRight /></Link><Link href="#how">See the flow <ChevronRight /></Link></div></div>
+      <div className={styles.heroCopy}><p className={styles.eyebrow}><i /> IDE extension security</p><h1>Know what an extension<br />does <em>before you install it.</em></h1><p className={styles.heroLead}>Guardrails scans marketplace extensions before you install them, then watches every update and flags when one quietly gains access to your terminal, files, or network.</p><div className={styles.actions}><Link href="/registry">Check an extension <ArrowRight /></Link><Link href="#how">See the flow <ChevronRight /></Link></div></div>
       <div className={styles.heroVisual}><span className={styles.orbit} /><ReleaseReviewFilm /></div>
     </section>
     <section className={styles.statement}><p className={styles.eyebrow}><i /> The moment that matters</p><h2>A release changes.<br /><em>Your team decides.</em></h2><p>GuardRails keeps that moment clear, quick, and attached to the work.</p></section>
