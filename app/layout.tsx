@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
 import { ArrowUpRight } from "lucide-react";
@@ -113,6 +114,18 @@ export default function RootLayout({
           </footer>
         </div>
         <Analytics />
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-TRTLLGPJ5C"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-TRTLLGPJ5C');
+          `}
+        </Script>
       </body>
     </html>
   );
