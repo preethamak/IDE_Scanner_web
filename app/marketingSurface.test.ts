@@ -9,6 +9,7 @@ describe("pricing and solution surfaces", () => {
     expect(pricing).toContain('price: "$19"');
     expect(pricing).toContain('price: "$9"');
     expect(pricing).toContain("mailto:hello@abscissa.dev");
+    expect(pricing).toContain("founding-customer phase");
     expect(pricing.toLowerCase()).not.toContain("buy now");
     expect(pricing.toLowerCase()).not.toContain("checkout");
     expect(pricing).not.toContain("₹");
