@@ -28,9 +28,9 @@ const channels = [
   },
   {
     icon: Handshake,
-    label: "Team and Business plans",
-    title: "Talk rollout requirements",
-    body: "Tell us how your organization reviews extension releases today, and what governed rollout would need to look like.",
+    label: "Teams, reviews, monitoring",
+    title: "Work with us directly",
+    body: "Guided reviews of extensions you care about, release-monitoring early access, or rollout requirements for your organization — all start with this conversation.",
     action: "Apply as a design partner",
     href: "/design-partners",
   },

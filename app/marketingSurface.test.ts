@@ -3,13 +3,14 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) =>
   readFileSync(new URL(path, import.meta.url), "utf8");
 describe("pricing and solution surfaces", () => {
-  it("prices launch offers in USD without pretending checkout exists", () => {
+  it("keeps scanning free and routes deeper help to early access, without invented prices", () => {
     const pricing = read("./pricing/page.tsx");
     expect(pricing).toContain('price: "$0"');
-    expect(pricing).toContain('price: "$19"');
-    expect(pricing).toContain('price: "$9"');
     expect(pricing).toContain("mailto:hello@abscissa.dev");
-    expect(pricing).toContain("founding-customer phase");
+    expect(pricing).toContain("/design-partners");
+    expect(pricing).not.toMatch(/price: "\$[1-9]/);
+    expect(pricing).not.toContain("$19");
+    expect(pricing).not.toContain("$9");
     expect(pricing.toLowerCase()).not.toContain("buy now");
     expect(pricing.toLowerCase()).not.toContain("checkout");
     expect(pricing).not.toContain("₹");

@@ -56,9 +56,9 @@ const faqs = [
   {
     question: "How much does it cost?",
     answer:
-      "Scanning is free and stays free: public exact-release reports, the registry, and the local CLI cost nothing. Beyond that, Guardrails is in its founding-customer phase — a human-reviewed Security Report is $19 one-time and Release Monitoring is $9 per month at a founding rate, both fulfilled directly by the team until self-serve billing exists. Team plans get priced through design-partner conversations when demand proves them.",
+      "Scanning costs nothing and stays free: public exact-release reports, the registry, and the local CLI. Beyond that there are no prices yet — guided reviews of extensions you care about are free during launch with limited weekly slots, release monitoring is open to founding members through early access, and team pricing gets set together with design partners. Nothing pretends to be a checkout before billing exists.",
     href: "/pricing",
-    linkLabel: "See pricing",
+    linkLabel: "See access options",
   },
   {
     question: "How validated is the scanner itself?",

@@ -9,11 +9,11 @@ export type ChangelogEntry = {
 export const changelogEntries: readonly ChangelogEntry[] = [
   {
     date: "2026-08-23",
-    title: "Founding-customer pricing published in USD",
+    title: "Launch access model: scanning free, early access for the rest",
     tag: "Product",
     paragraphs: [
-      "Pricing is now stated plainly and in US dollars. Scanning stays free for good; beyond that Guardrails is in its founding-customer phase — a human-reviewed Security Report is $19 one-time (ordered by email) and Release Monitoring opens at $9 per month by invitation, both at founding rates fulfilled directly by the team.",
-      "Team and organization tiers remain deliberately unpriced until design-partner conversations set them.",
+      "The pricing page now states how Guardrails actually operates today instead of publishing prices nobody has paid yet. Scanning stays free for good. Guided reviews — a personal walkthrough of any extension that matters to you, with a written summary — are free during launch with limited weekly slots, and Release Monitoring opens to founding members through early access.",
+      "Team and organization tiers get designed and priced together with design partners rather than announced into the void.",
     ],
   },
   {

@@ -6,14 +6,14 @@ import styles from "../marketing.module.css";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Scanning IDE extensions is free today. A $19 human-reviewed Security Report and $9/month Release Monitoring open with founding rates for early customers.",
+    "Scanning IDE extensions is free, for good. Guided reviews and release monitoring are open to early customers while Guardrails proves itself.",
   alternates: { canonical: "/pricing" },
 };
 
-const REPORT_ORDER_MAILTO =
-  "mailto:hello@abscissa.dev?subject=Security%20Report%20order&body=Extension%20to%20review%20(marketplace%20link%20or%20ID)%3A%0AAgree%20to%20the%20one-time%20report%20terms%3A%20yes";
+const GUIDED_REVIEW_MAILTO =
+  "mailto:hello@abscissa.dev?subject=Guided%20review%20request&body=Extension%20and%20release%20to%20walk%20through%20(marketplace%20link%20or%20ID)%3A%0AWhat%20decision%20hinges%20on%20it%3A";
 
-const MONITORING_INVITE_MAILTO =
+const MONITORING_ACCESS_MAILTO =
   "mailto:hello@abscissa.dev?subject=Release%20Monitoring%20early%20access";
 
 const tiers = [
@@ -23,7 +23,7 @@ const tiers = [
     price: "$0",
     suffix: "free, for good",
     description:
-      "Everything you need to judge a release before installing it. This tier stays free — it is how the evidence gets read.",
+      "Everything you need to judge a release before installing it. This tier stays free — it is how the evidence earns trust.",
     action: "Open the registry",
     href: "/registry",
     features: [
@@ -35,35 +35,35 @@ const tiers = [
     ],
   },
   {
-    name: "Security Report",
-    status: "Founding rate",
-    price: "$19",
-    suffix: "one-time, per extension",
+    name: "Guided review",
+    status: "Free during launch · limited slots each week",
+    price: "Free",
+    suffix: "while Guardrails is young",
     description:
-      "When a release matters enough to have a person walk through it with you. Fulfilled directly by the founding team.",
-    action: "Order by email",
-    href: REPORT_ORDER_MAILTO,
+      "Send us an extension that matters to you. The person who built the scanner walks your team through what it does and what changed, and you keep the written summary.",
+    action: "Request a guided review",
+    href: GUIDED_REVIEW_MAILTO,
     external: true,
     featured: true,
     features: [
-      "Human-reviewed walkthrough of one exact release",
-      "Dependency and capability-change analysis",
+      "A person examines one exact release with you",
+      "Dependency and capability-change walkthrough",
       "Plain-language verdict — INCOMPLETE called out, not hidden",
-      "Portable report you can share with your team",
+      "Written summary you can share with your team",
     ],
   },
   {
     name: "Release Monitoring",
-    status: "Launch access",
-    price: "$9",
-    suffix: "per month, founding rate",
+    status: "Early access",
+    price: "Free",
+    suffix: "for founding members",
     description:
-      "For extensions you rely on: every new release analyzed, and you hear only about changes that matter.",
-    action: "Request launch access",
-    href: MONITORING_INVITE_MAILTO,
+      "Watch the extensions you rely on. Every new release gets analyzed, and you hear only about changes that matter.",
+    action: "Join early access",
+    href: MONITORING_ACCESS_MAILTO,
     external: true,
     features: [
-      "Up to 25 watched extensions (vs 3 on free)",
+      "More watched extensions than the free tier",
       "Alerts only on meaningful capability changes",
       "Email and Slack delivery targets",
       "Weekly digest and scan history",
@@ -79,25 +79,24 @@ export default function PricingPage() {
       <section className={styles.hero}>
         <div>
           <span className={styles.eyebrow}>
-            <ReceiptText /> Pricing, stated plainly
+            <ReceiptText /> Access and availability
           </span>
           <h1>
-            Free while the evidence
-            <em> earns your trust.</em>
+            Free today.<em> Priced together, later.</em>
           </h1>
           <p>
-            Guardrails is in its founding-customer phase: scanning is free,
-            paid help is fulfilled personally by the team, and early customers
-            lock in founding rates. Prices are in US dollars.
+            Scanning stays free for everyone. Deeper help is open to early
+            customers while Guardrails is young — and paid tiers will be
+            shaped with the people who actually use them.
           </p>
         </div>
         <aside>
           <ShieldCheck />
-          <strong>Why these numbers.</strong>
+          <strong>No price theater.</strong>
           <p>
-            They are set low while the product proves itself, and they buy you
-            direct access to the people who build the scanner — not a support
-            queue. Rates rise only when the evidence says they should.
+            Self-serve billing does not exist yet, so nothing here pretends
+            otherwise. Early customers talk directly to the founding team —
+            and help set what paid plans look like when they arrive.
           </p>
         </aside>
       </section>
@@ -139,29 +138,29 @@ export default function PricingPage() {
       </section>
       <section className={styles.honesty}>
         <div>
-          <span>What is deliberately missing</span>
-          <h2>No team price tag. No enterprise tier. Yet.</h2>
+          <span>For teams and organizations</span>
+          <h2>Designed with design partners, priced with them too.</h2>
         </div>
         <ul>
           <li>
             The team workspace — shared review inbox, decisions with owners,
-            audit export — exists and is rolling out with guided onboarding.
-            Its pricing gets set by design-partner conversations, not announced
-            into the void.
+            audit export — is rolling out with guided onboarding through the{" "}
+            <Link href="/design-partners">design-partner program</Link>.
           </li>
           <li>
-            Self-serve billing arrives when the manual path stops scaling.
-            Until then nothing here pretends to be a payment flow.
+            What team plans cost gets decided in those conversations, based on
+            how teams actually use Guardrails — not announced before it is
+            known.
           </li>
         </ul>
       </section>
       <section className={styles.cta}>
         <div>
           <small>No account needed</small>
-          <h2>Judge the product, not the price.</h2>
+          <h2>Start with a release you care about.</h2>
           <p>
             Open a public exact-release report right now. If the evidence is
-            useful, the paid options above exist to go deeper.
+            useful, everything above exists to go deeper with us.
           </p>
         </div>
         <Link href="/registry">
