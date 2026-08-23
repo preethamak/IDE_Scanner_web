@@ -1,0 +1,144 @@
+/* Shared chrome for footer newsletter capture and the consent banner.
+   Uses the site's light-system variables so it tracks theme overrides. */
+
+.newsletter {
+  display: grid;
+  gap: 10px;
+  max-width: 420px;
+  margin-top: 28px;
+}
+
+.newsletter label {
+  color: var(--faint, #606b64);
+  font: 650 12px var(--mono, monospace);
+  letter-spacing: 0.1em;
+}
+
+.newsletter > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  overflow: hidden;
+  border: 1px solid var(--line-strong, #d5dbe2);
+  border-radius: 9px;
+  background: #fff;
+}
+
+.newsletter input {
+  min-width: 0;
+  height: 44px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  padding: 0 14px;
+  color: var(--text, inherit);
+}
+
+.newsletter input::placeholder {
+  color: var(--faint, #8b95a1);
+}
+
+.newsletter button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 7px;
+  margin: 4px;
+  background: var(--brand, #292b3c);
+  padding: 0 14px;
+  color: var(--brand-contrast, #fff);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.newsletter button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.newsletter button svg,
+.newsletterDone svg {
+  width: 13px;
+}
+
+.newsletter small,
+.newsletterDone {
+  color: var(--muted, #656f79);
+  font-size: 12px;
+}
+
+.newsletterDone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 420px;
+  margin-top: 28px;
+}
+
+.newsletterDone svg {
+  flex: none;
+  color: var(--brand, #377c68);
+}
+
+.consentBanner {
+  position: fixed;
+  z-index: 90;
+  right: 18px;
+  bottom: 18px;
+  left: 18px;
+  display: grid;
+  gap: 12px;
+  width: min(430px, calc(100vw - 36px));
+  margin-left: auto;
+  border: 1px solid var(--line-strong, #d5dbe2);
+  border-radius: 14px;
+  background: #fbfbff;
+  padding: 18px;
+  box-shadow: 0 24px 70px #514b7229;
+}
+
+@media (min-width: 720px) {
+  .consentBanner {
+    left: auto;
+  }
+}
+
+.consentBanner strong {
+  font-size: 13px;
+}
+
+.consentBanner p {
+  margin: 0;
+  color: var(--muted, #656f79);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.consentBanner a {
+  text-decoration: underline;
+}
+
+.consentActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.consentActions button {
+  height: 34px;
+  border: 1px solid var(--line-strong, #d5dbe2);
+  border-radius: 8px;
+  background: #fff;
+  padding: 0 12px;
+  color: var(--text, inherit);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.consentActions button.grant {
+  border-color: transparent;
+  background: var(--brand, #292b3c);
+  color: var(--brand-contrast, #fff);
+}

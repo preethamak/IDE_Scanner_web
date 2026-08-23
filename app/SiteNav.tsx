@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType } from "react";
-import { Activity, ArrowUpRight, BellRing, BookOpen, Bot, Boxes, Building2, ChevronDown, Code2, FileSearch, FlaskConical, Menu, ScanSearch, ScrollText, ShieldCheck, Tags, TerminalSquare, Users, X } from "lucide-react";
+import { Activity, ArrowUpRight, BellRing, BookOpen, Bot, Boxes, Building2, ChevronDown, CircleHelp, Code2, FileSearch, FlaskConical, History, Menu, ScanSearch, ScrollText, ShieldCheck, Tags, TerminalSquare, Users, X } from "lucide-react";
 
 type MenuId = "product" | "solutions" | "resources";
 type NavItem = readonly [string, string, string, ComponentType];
@@ -28,6 +28,8 @@ const menus: Record<MenuId, { label: string; items: readonly NavItem[] }> = {
     ["/metrics", "Detection catalog", "Browse the checks used in reports", FileSearch],
     ["/benchmark", "Validation", "Published tests, coverage, and limitations", FlaskConical],
     ["/settings", "Data boundaries", "Understand what is processed and retained", ScrollText],
+    ["/faq", "FAQ", "Direct answers with methodology links", CircleHelp],
+    ["/changelog", "Changelog", "What shipped, dated honestly", History],
   ] },
 };
 

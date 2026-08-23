@@ -8,6 +8,14 @@ import {
 } from "lucide-react";
 import { researchArticles } from "@/lib/research";
 import styles from "./research.module.css";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Research notes",
+  description:
+    "Field notes on IDE extension capability, exact-release evidence, and the line between a useful signal and an unsupported conclusion.",
+  alternates: { canonical: "/research" },
+};
 
 const principles = [
   "Exact artifact before reputation",

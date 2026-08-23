@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -7,10 +8,19 @@ import {
   Globe2,
   HardDrive,
   LockKeyhole,
+  ScrollText,
   ShieldCheck,
   Trash2,
 } from "lucide-react";
+import ConsentResetButton from "../ConsentResetButton";
 import styles from "../trust.module.css";
+
+export const metadata: Metadata = {
+  title: "Privacy policy",
+  description:
+    "What Guardrails receives, retains, and puts under your control — including analytics consent, retention, deletion, and your rights.",
+  alternates: { canonical: "/privacy" },
+};
 
 const boundaries = [
   {
@@ -173,6 +183,96 @@ export default function PrivacyPage() {
           <span>Workspace event · access controlled</span>
           <span>Delivery target · encrypted</span>
         </div>
+      </section>
+
+      <section className={styles.sectionHead} id="policy">
+        <span>Formal privacy policy</span>
+        <h2>The same boundaries, stated as policy.</h2>
+        <p>
+          Effective August 23, 2026. This section is the legally operative
+          summary; everything above it remains the product-level explanation.
+        </p>
+      </section>
+      <section className={styles.boundaryList}>
+        <article>
+          <header>
+            <span>
+              <ScrollText />
+            </span>
+            <div>
+              <small>Who we are</small>
+              <h3>Controller and contact</h3>
+            </div>
+          </header>
+          <p>
+            Guardrails (abscissa.dev) determines the purposes and means of
+            processing described on this page. Privacy and data-subject
+            requests: security@abscissa.dev. Vulnerability disclosure follows{" "}
+            <Link href="/security">the security page</Link> and security.txt.
+            {/* TODO(owner): name the operating legal entity once incorporated. */}
+          </p>
+        </article>
+        <article>
+          <header>
+            <span>
+              <Database />
+            </span>
+            <div>
+              <small>What we process</small>
+              <h3>Data and purposes</h3>
+            </div>
+          </header>
+          <p>
+            Account data (email, profile, auth provider identifiers) to operate
+            sign-in and workspaces. Workspace content (decisions, watchlists,
+            notification targets, audit history) to provide team review.
+            Extension analysis results to publish public reports. Billing data
+            passes through Stripe when a paid plan is enabled. Aggregate product
+            events measure feature health.
+          </p>
+        </article>
+        <article id="analytics">
+          <header>
+            <span>
+              <Globe2 />
+            </span>
+            <div>
+              <small>Website analytics</small>
+              <h3>Consent-based, revocable</h3>
+            </div>
+          </header>
+          <div>
+            <p>
+              Vercel Analytics collects cookieless page metrics for every visit.
+              Google Analytics loads only after you allow it in the banner or
+              here; declining leaves the site fully functional. Already-sent
+              hits cannot be recalled, but turning analytics off stops new ones.
+            </p>
+            <ConsentResetButton />
+          </div>
+        </article>
+        <article>
+          <header>
+            <span>
+              <Trash2 />
+            </span>
+            <div>
+              <small>Retention and rights</small>
+              <h3>Retention, deletion, and your choices</h3>
+            </div>
+          </header>
+          <p>
+            Public reports are retained as published evidence. Workspace
+            operational records persist until you request workspace deletion or
+            remove them; audit retention windows follow your plan. Imported
+            report bundles never leave your browser unless you export them. You
+            can request access, correction, export, or deletion of your account
+            data by contacting us; identity verification applies where one
+            member could otherwise erase another team&apos;s record. Where GDPR
+            or similar laws apply, you may also lodge a complaint with your
+            supervisory authority.
+          </p>
+        </article>
       </section>
 
       <section className={styles.linkRail}>

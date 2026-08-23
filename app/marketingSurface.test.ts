@@ -3,13 +3,17 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) =>
   readFileSync(new URL(path, import.meta.url), "utf8");
 describe("pricing and solution surfaces", () => {
-  it("does not present unfinished billing as available", () => {
+  it("keeps scanning free and routes deeper help to early access, without invented prices", () => {
     const pricing = read("./pricing/page.tsx");
-    expect(pricing).toContain('"Early access"');
-    expect(pricing).toContain('"Design partner"');
-    expect(pricing).toContain("Discuss your requirements");
+    expect(pricing).toContain('price: "$0"');
+    expect(pricing).toContain("mailto:hello@abscissa.dev");
+    expect(pricing).toContain("/design-partners");
+    expect(pricing).not.toMatch(/price: "\$[1-9]/);
+    expect(pricing).not.toContain("$19");
+    expect(pricing).not.toContain("$9");
     expect(pricing.toLowerCase()).not.toContain("buy now");
     expect(pricing.toLowerCase()).not.toContain("checkout");
+    expect(pricing).not.toContain("₹");
   });
   it("defines the four role-specific solution journeys", () => {
     const data = read("./solutions/data.ts");

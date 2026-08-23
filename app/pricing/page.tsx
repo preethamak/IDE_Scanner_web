@@ -1,52 +1,72 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Check, ReceiptText, ShieldCheck } from "lucide-react";
 import styles from "../marketing.module.css";
 
-const plans = [
+export const metadata: Metadata = {
+  title: "Pricing",
+  description:
+    "Scanning IDE extensions is free, for good. Guided reviews and release monitoring are open to early customers while Guardrails proves itself.",
+  alternates: { canonical: "/pricing" },
+};
+
+const GUIDED_REVIEW_MAILTO =
+  "mailto:hello@abscissa.dev?subject=Guided%20review%20request&body=Extension%20and%20release%20to%20walk%20through%20(marketplace%20link%20or%20ID)%3A%0AWhat%20decision%20hinges%20on%20it%3A";
+
+const MONITORING_ACCESS_MAILTO =
+  "mailto:hello@abscissa.dev?subject=Release%20Monitoring%20early%20access";
+
+const tiers = [
   {
-    name: "Free",
+    name: "Scan",
+    status: "Available now",
     price: "$0",
-    suffix: "for individuals",
+    suffix: "free, for good",
     description:
-      "Inspect public extension reports and keep a small personal watchlist.",
-    action: "Start with the registry",
+      "Everything you need to judge a release before installing it. This tier stays free — it is how the evidence earns trust.",
+    action: "Open the registry",
     href: "/registry",
     features: [
       "Public exact-release reports",
       "Permission Passport and release diff",
-      "Personal monitoring foundation",
-      "Portable local CLI reports",
+      "Local analysis with the GuardRails CLI",
+      "Browser-local imported reports",
+      "Personal watchlist for 3 extensions",
     ],
   },
   {
-    name: "Team",
-    price: "Early access",
-    suffix: "for shared release decisions",
+    name: "Guided review",
+    status: "Free during launch · limited slots each week",
+    price: "Free",
+    suffix: "while Guardrails is young",
     description:
-      "Coordinate release review, ownership, notifications, and defensible decisions.",
-    action: "Use the team workspace",
-    href: "/workspace",
+      "Send us an extension that matters to you. The person who built the scanner walks your team through what it does and what changed, and you keep the written summary.",
+    action: "Request a guided review",
+    href: GUIDED_REVIEW_MAILTO,
+    external: true,
     featured: true,
     features: [
-      "Shared review inbox and assignments",
-      "Allow, block, and exception rationale",
-      "Email, Slack, and weekly digest",
-      "Role-aware CSV and JSON audit export",
+      "A person examines one exact release with you",
+      "Dependency and capability-change walkthrough",
+      "Plain-language verdict — INCOMPLETE called out, not hidden",
+      "Written summary you can share with your team",
     ],
   },
   {
-    name: "Business",
-    price: "Design partner",
-    suffix: "for governed environments",
+    name: "Release Monitoring",
+    status: "Early access",
+    price: "Free",
+    suffix: "for founding members",
     description:
-      "Plan organization-wide policy and secure developer-environment rollout.",
-    action: "Discuss your requirements",
-    href: "/design-partners",
+      "Watch the extensions you rely on. Every new release gets analyzed, and you hear only about changes that matter.",
+    action: "Join early access",
+    href: MONITORING_ACCESS_MAILTO,
+    external: true,
     features: [
-      "Organization policy direction",
-      "Longer audit retention planning",
-      "Private extension workflow planning",
-      "GuardRails IDE design partnership",
+      "More watched extensions than the free tier",
+      "Alerts only on meaningful capability changes",
+      "Email and Slack delivery targets",
+      "Weekly digest and scan history",
     ],
   },
 ] as const;
@@ -59,78 +79,88 @@ export default function PricingPage() {
       <section className={styles.hero}>
         <div>
           <span className={styles.eyebrow}>
-            <ReceiptText /> Pricing and packaging
+            <ReceiptText /> Access and availability
           </span>
           <h1>
-            Start with evidence.<em> Grow into a decision system.</em>
+            Free today.<em> Priced together, later.</em>
           </h1>
           <p>
-            Start with a single tool. Add monitoring, shared decisions, and
-            policy when your team is ready to make extension access intentional.
+            Scanning stays free for everyone. Deeper help is open to early
+            customers while Guardrails is young — and paid tiers will be
+            shaped with the people who actually use them.
           </p>
         </div>
         <aside>
           <ShieldCheck />
-          <strong>Start small. Expand deliberately.</strong>
+          <strong>No price theater.</strong>
           <p>
-            Public intelligence stays open. Team access is introduced with a
-            guided workspace rollout, not a forced enterprise contract.
+            Self-serve billing does not exist yet, so nothing here pretends
+            otherwise. Early customers talk directly to the founding team —
+            and help set what paid plans look like when they arrive.
           </p>
         </aside>
       </section>
       <section className={styles.plans}>
-        {plans.map((plan) => (
+        {tiers.map((tier) => (
           <article
-            className={`${styles.plan} ${"featured" in plan ? styles.featured : ""}`}
-            key={plan.name}
+            className={`${styles.plan} ${
+              "featured" in tier && tier.featured ? styles.featured : ""
+            }`}
+            key={tier.name}
           >
-            <span>{plan.name}</span>
+            <span>{tier.name}</span>
             <div className={styles.price}>
-              <strong>{plan.price}</strong>
-              <small>{plan.suffix}</small>
+              <strong>{tier.price}</strong>
+              <small>{tier.suffix}</small>
             </div>
-            <p>{plan.description}</p>
+            <p>{tier.description}</p>
             <ul>
-              {plan.features.map((feature) => (
+              {tier.features.map((feature) => (
                 <li key={feature}>
                   <Check />
                   {feature}
                 </li>
               ))}
             </ul>
-            <Link href={plan.href}>
-              {plan.action}
-              <ArrowRight />
-            </Link>
+            {"external" in tier && tier.external ? (
+              <a href={tier.href}>
+                {tier.action}
+                <ArrowRight />
+              </a>
+            ) : (
+              <Link href={tier.href}>
+                {tier.action}
+                <ArrowRight />
+              </Link>
+            )}
           </article>
         ))}
       </section>
       <section className={styles.honesty}>
         <div>
-          <span>How GuardRails grows with you</span>
-          <h2>From one review to a team-wide trust boundary.</h2>
+          <span>For teams and organizations</span>
+          <h2>Designed with design partners, priced with them too.</h2>
         </div>
         <ul>
           <li>
-            Begin with public reports and one extension you want to understand.
+            The team workspace — shared review inbox, decisions with owners,
+            audit export — is rolling out with guided onboarding through the{" "}
+            <Link href="/design-partners">design-partner program</Link>.
           </li>
           <li>
-            Move into the team workspace when decisions need owners, history,
-            and meaningful-change notifications.
-          </li>
-          <li>
-            Use a design partnership to shape governed rollout requirements
-            around the way your engineering organisation actually works.
+            What team plans cost gets decided in those conversations, based on
+            how teams actually use Guardrails — not announced before it is
+            known.
           </li>
         </ul>
       </section>
       <section className={styles.cta}>
         <div>
-          <small>Need a practical starting point?</small>
-          <h2>Inspect the extension first.</h2>
+          <small>No account needed</small>
+          <h2>Start with a release you care about.</h2>
           <p>
-            Open a public exact-release report before deciding whether your
-            workflow needs monitoring or team review.
+            Open a public exact-release report right now. If the evidence is
+            useful, everything above exists to go deeper with us.
           </p>
         </div>
         <Link href="/registry">

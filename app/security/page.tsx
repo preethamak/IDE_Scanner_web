@@ -10,7 +10,15 @@ import {
   RadioTower,
   ShieldCheck,
 } from "lucide-react";
+import type { Metadata } from "next";
 import styles from "../trust.module.css";
+
+export const metadata: Metadata = {
+  title: "Security",
+  description:
+    "Published packages are never executed by the scanner, Deep Scan runners are disposable, and workspace delivery targets stay encrypted.",
+  alternates: { canonical: "/security" },
+};
 
 const controls = [
   {
