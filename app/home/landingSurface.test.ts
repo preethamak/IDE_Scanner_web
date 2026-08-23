@@ -4,24 +4,23 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) =>
   readFileSync(new URL(path, import.meta.url), "utf8");
 
+const page = () => read("../page.tsx");
+const landing = () => read("./AuthorityLanding.tsx");
+
 describe("GuardRails landing surface", () => {
   it("composes the homepage from focused product sections", () => {
-    const page = read("../page.tsx");
-    expect(page).toContain("<HomeHero />");
-    expect(page).toContain("<MarketplaceProof />");
-    expect(page).toContain("<PermissionDiff />");
-    expect(page).toContain("<DecisionReceipt />");
-    expect(page).not.toContain("<SecurityBento />");
-    expect(page).not.toContain("<ReleaseWorkflow />");
+    expect(page()).toContain("<AuthorityLanding />");
+    expect(landing()).toContain("<ReleaseReviewFilm />");
+    expect(landing()).toContain("<DecisionMemoryFilm />");
+    expect(landing()).not.toContain("<SecurityBento />");
+    expect(landing()).not.toContain("<ReleaseWorkflow />");
   });
-  it("introduces decision receipts as a distinctive, durable product outcome", () => {
-    const page = read("../page.tsx");
-    const receipt = read("./DecisionReceipt.tsx");
-    expect(page).toContain("DecisionReceipt");
-    expect(receipt).toContain("A GuardRails original");
-    expect(receipt).toContain("Turn every approval into a decision receipt.");
-    expect(receipt).toContain("Human rationale beside machine evidence");
-    expect(receipt).toContain("Baseline locked");
+  it("attaches decisions durably to an exact release", () => {
+    expect(landing()).toContain("DecisionMemoryFilm");
+    const memory = read("./DecisionMemoryFilm.tsx");
+    expect(memory).toContain("Approved with context");
+    expect(memory).toContain("Decision attached to this exact release");
+    expect(memory).toContain("brings forward the last decision");
   });
 
   it("uses a full product-first hero with an announcement and live fog", () => {
@@ -62,10 +61,8 @@ describe("GuardRails landing surface", () => {
   });
 
   it("leads visitors to public working surfaces rather than making workspace the primary CTA", () => {
-    const page = read("../page.tsx");
-    expect(page).toContain('href="/registry"');
-    expect(page).toContain('href="/ide"');
-    expect(page).not.toContain('href="/workspace"');
+    expect(landing()).toContain('href="/registry"');
+    expect(landing()).not.toContain('href="/workspace"');
   });
 
   it("keeps search, evidence, comparison, and decision concepts in the product story", () => {
@@ -79,12 +76,11 @@ describe("GuardRails landing surface", () => {
       expect(files).toContain(phrase);
     }
   });
-  it("includes the interactive permission diff signature", () => {
-    const page = read("../page.tsx");
-    expect(page).toContain("PermissionDiff");
-    const diff = read("./PermissionDiff.tsx");
-    expect(diff).toContain("See the permission change");
-    expect(diff).toContain("Review before rollout");
-    expect(diff).toContain('aria-label="Choose release"');
+  it("shows the release change interaction on the landing page", () => {
+    expect(landing()).toContain("ReleaseReviewFilm");
+    const film = read("./ReleaseReviewFilm.tsx");
+    expect(film).toContain("NEW CAPABILITY");
+    expect(film).toContain("What changed");
+    expect(film).toContain("Save decision");
   });
 });

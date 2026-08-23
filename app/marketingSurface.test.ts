@@ -5,11 +5,11 @@ const read = (path: string) =>
 describe("pricing and solution surfaces", () => {
   it("does not present unfinished billing as available", () => {
     const pricing = read("./pricing/page.tsx");
-    expect(pricing).toContain("No pretend checkout");
-    expect(pricing).toContain(
-      "Billing and enforced entitlements are still being built",
-    );
-    expect(pricing).toContain("not represented as complete");
+    expect(pricing).toContain('"Early access"');
+    expect(pricing).toContain('"Design partner"');
+    expect(pricing).toContain("Discuss your requirements");
+    expect(pricing.toLowerCase()).not.toContain("buy now");
+    expect(pricing.toLowerCase()).not.toContain("checkout");
   });
   it("defines the four role-specific solution journeys", () => {
     const data = read("./solutions/data.ts");

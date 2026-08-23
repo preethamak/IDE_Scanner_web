@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import type { CSSProperties, ReactNode } from "react";
 import {
   ArrowRight,
@@ -18,6 +19,13 @@ import { websiteBenchmark as benchmark } from "@/lib/websiteBenchmark";
 import styles from "./benchmark.module.css";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Validation and limits",
+  description:
+    "A frozen corpus of thirty version-pinned and hash-pinned Marketplace artifacts with published results, corrections, and explicit claim limits.",
+  alternates: { canonical: "/benchmark" },
+};
 
 const publicationRules = [
   "No latest-version substitution",

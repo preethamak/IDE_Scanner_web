@@ -1,6 +1,14 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { ArrowRight, Check, ReceiptText, ShieldCheck } from "lucide-react";
 import styles from "../marketing.module.css";
+
+export const metadata: Metadata = {
+  title: "Pricing",
+  description:
+    "Free public reports for individuals today, with team workspaces for shared release decisions and design-partner access for governed rollouts.",
+  alternates: { canonical: "/pricing" },
+};
 
 const plans = [
   {

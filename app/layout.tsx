@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
 import { ArrowUpRight } from "lucide-react";
 import SiteNav from "./SiteNav";
 import HeaderAccount from "./HeaderAccount";
 import BrandMark from "./BrandMark";
+import FooterNewsletter from "./FooterNewsletter";
+import CookieConsent from "./CookieConsent";
+import { socialLinks } from "../lib/socialLinks";
 import "@fontsource-variable/ibm-plex-sans";
 import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/500.css";
@@ -38,6 +40,7 @@ export const metadata: Metadata = {
       "Scan IDE extensions before install, then get flagged when an update quietly gains new access.",
   },
   twitter: { card: "summary_large_image" },
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({
@@ -87,6 +90,7 @@ export default function RootLayout({
                 <Link className="footerCta" href="/registry">
                   Check an extension <ArrowUpRight />
                 </Link>
+                <FooterNewsletter />
               </div>
               <div className="footerLinks">
                 <div>
@@ -110,14 +114,33 @@ export default function RootLayout({
                 <div>
                   <strong>Company</strong>
                   <Link href="/about">About Guardrails</Link>
-                  <Link href="/privacy">Data handling</Link>
-                  <Link href="/settings">Analysis boundaries</Link>
+                  <Link href="/contact">Contact</Link>
+                  <Link href="/changelog">Changelog</Link>
+                  <Link href="/faq">FAQ</Link>
+                  <Link href="/integrations">Integrations</Link>
+                  <Link href="/privacy">Privacy policy</Link>
+                  <Link href="/terms">Terms of Service</Link>
                   <Link href="/security">Security</Link>
                 </div>
               </div>
             </div>
             <div className="footerBottom">
               <span>© GuardRails</span>
+              {socialLinks.length > 0 ? (
+                <span className="footerSocial">
+                  {socialLinks.map((link) => (
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      rel="me noopener noreferrer"
+                      target="_blank"
+                    >
+                      {link.label}
+                    </a>
+                  ))}
+                </span>
+              ) : null}
+              <Link href="/privacy#analytics">Analytics settings</Link>
               <span>
                 Extension behavior, before install and after every update.
               </span>
@@ -125,18 +148,7 @@ export default function RootLayout({
           </footer>
         </div>
         <Analytics />
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-TRTLLGPJ5C"
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-TRTLLGPJ5C');
-          `}
-        </Script>
+        <CookieConsent />
       </body>
     </html>
   );

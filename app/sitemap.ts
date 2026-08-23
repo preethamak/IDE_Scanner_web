@@ -21,6 +21,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ["/solutions/engineering-teams", 0.8, "monthly"],
     ["/solutions/security-teams", 0.8, "monthly"],
     ["/solutions/ai-agent-security", 0.8, "monthly"],
+    ["/terms", 0.4, "yearly"],
+    ["/privacy", 0.4, "yearly"],
+    ["/contact", 0.5, "monthly"],
+    ["/faq", 0.6, "monthly"],
+    ["/changelog", 0.5, "weekly"],
+    ["/integrations", 0.6, "monthly"],
+    ["/demos", 0.6, "monthly"],
+    ["/compare", 0.6, "monthly"],
+    ["/design-partners", 0.5, "monthly"],
+    ["/scoring", 0.7, "monthly"],
+    ["/metrics", 0.7, "weekly"],
   ];
 
   const lastModified = new Date();
