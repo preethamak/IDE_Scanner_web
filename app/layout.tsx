@@ -36,9 +36,8 @@ export const metadata: Metadata = {
     title: "Guardrails - Check IDE extensions before you install them",
     description:
       "Scan IDE extensions before install, then get flagged when an update quietly gains new access.",
-    images: [{ url: "/logo.png", width: 587, height: 610, alt: "Guardrails" }],
   },
-  twitter: { card: "summary" },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({
