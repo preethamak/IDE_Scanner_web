@@ -56,7 +56,7 @@ const faqs = [
   {
     question: "How much does it cost?",
     answer:
-      "Public reports, the registry, and the local CLI are free. The Team workspace is in guided early access for shared release decisions, and Business is shaped with design partners. Nothing pretends to be a finished checkout before billing exists.",
+      "Scanning is free: public exact-release reports, the registry, and the local CLI cost nothing. A human-reviewed Security Report for one exact release is $19 one-time, ordered by email during launch. Release Monitoring — alerts when a watched extension meaningfully changes — is $9 per month in launch access. Team plans follow once individual workflows prove out.",
     href: "/pricing",
     linkLabel: "See pricing",
   },

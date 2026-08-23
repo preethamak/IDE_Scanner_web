@@ -36,11 +36,11 @@ const channels = [
   },
   {
     icon: LifeBuoy,
-    label: "Workspace support",
-    title: "Signed-in teams",
-    body: "Workspaces include a notification channel test and audit export; for account or billing questions, contact us from your workspace email so we can verify ownership quickly.",
-    action: "Email workspace support",
-    href: "mailto:security@abscissa.dev?subject=Guardrails%20workspace%20support",
+    label: "Product and support",
+    title: "Everything else",
+    body: "Questions about reports, monitoring launch access, report orders, or your account — write from your workspace email where relevant so ownership is quick to verify.",
+    action: "hello@abscissa.dev",
+    href: "mailto:hello@abscissa.dev?subject=Guardrails%20support",
   },
   {
     icon: Bug,
@@ -86,7 +86,7 @@ export default function ContactPage() {
             <Mail />
             <span>
               <small>General inquiries</small>
-              <strong>security@abscissa.dev</strong>
+              <strong>hello@abscissa.dev</strong>
             </span>
           </header>
           <div>

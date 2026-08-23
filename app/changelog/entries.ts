@@ -9,6 +9,15 @@ export type ChangelogEntry = {
 export const changelogEntries: readonly ChangelogEntry[] = [
   {
     date: "2026-08-23",
+    title: "USD launch pricing: free scans, $19 reports, $9 monitoring",
+    tag: "Product",
+    paragraphs: [
+      "Pricing is now stated in US dollars and matches how Guardrails actually sells today. Scanning public releases stays free; a human-reviewed Security Report for one exact release is $19 one-time, ordered directly by email while billing automation ships; Release Monitoring opens at $9 per month with launch access.",
+      "Team and organization tiers stay out of the price sheet until individual workflows prove demand for them.",
+    ],
+  },
+  {
+    date: "2026-08-23",
     title: "Shareable preview cards for every page",
     tag: "Site",
     paragraphs: [

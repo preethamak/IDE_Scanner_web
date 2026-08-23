@@ -1,60 +1,70 @@
-import Link from "next/link";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ArrowRight, Check, ReceiptText, ShieldCheck } from "lucide-react";
 import styles from "../marketing.module.css";
 
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Free public reports for individuals today, with team workspaces for shared release decisions and design-partner access for governed rollouts.",
+    "Start free with public exact-release reports, order a $19 human-reviewed Security Report, or get launch access to $9/month Release Monitoring.",
   alternates: { canonical: "/pricing" },
 };
 
-const plans = [
+const REPORT_ORDER_MAILTO =
+  "mailto:hello@abscissa.dev?subject=Security%20Report%20order&body=Extension%20to%20review%20(marketplace%20link%20or%20ID)%3A%0AAgree%20to%20the%20one-time%20report%20terms%3A%20yes";
+
+const MONITORING_INVITE_MAILTO =
+  "mailto:hello@abscissa.dev?subject=Release%20Monitoring%20early%20access";
+
+const offers = [
   {
-    name: "Free",
+    name: "Scan",
     price: "$0",
-    suffix: "for individuals",
+    suffix: "always free",
     description:
-      "Inspect public extension reports and keep a small personal watchlist.",
-    action: "Start with the registry",
+      "Inspect any published extension release before you install it.",
+    action: "Open the registry",
     href: "/registry",
     features: [
       "Public exact-release reports",
       "Permission Passport and release diff",
-      "Personal monitoring foundation",
-      "Portable local CLI reports",
+      "Local analysis with the GuardRails CLI",
+      "Personal watchlist for 3 extensions",
     ],
   },
   {
-    name: "Team",
-    price: "Early access",
-    suffix: "for shared release decisions",
+    name: "Security Report",
+    price: "$19",
+    suffix: "one-time, per extension",
     description:
-      "Coordinate release review, ownership, notifications, and defensible decisions.",
-    action: "Use the team workspace",
-    href: "/workspace",
+      "A human-reviewed deep read of one exact release, delivered as evidence you can act on.",
+    action: "Order by email",
+    href: REPORT_ORDER_MAILTO,
+    external: true,
     featured: true,
     features: [
-      "Shared review inbox and assignments",
-      "Allow, block, and exception rationale",
-      "Email, Slack, and weekly digest",
-      "Role-aware CSV and JSON audit export",
+      "Everything in Scan, examined by a person",
+      "Behavioral walkthrough of what the release does",
+      "Dependency and capability-change notes",
+      "Plain-language verdict, with INCOMPLETE called out honestly",
+      "Portable report you can share with your team",
     ],
   },
   {
-    name: "Business",
-    price: "Design partner",
-    suffix: "for governed environments",
+    name: "Release Monitoring",
+    price: "$9",
+    suffix: "per month",
     description:
-      "Plan organization-wide policy and secure developer-environment rollout.",
-    action: "Discuss your requirements",
-    href: "/design-partners",
+      "Watch the extensions you trust and hear only about meaningful changes.",
+    action: "Request launch access",
+    href: MONITORING_INVITE_MAILTO,
+    external: true,
     features: [
-      "Organization policy direction",
-      "Longer audit retention planning",
-      "Private extension workflow planning",
-      "GuardRails IDE design partnership",
+      "Automatic analysis of every new release",
+      "Alerts only when capability actually changes",
+      "Email and Slack delivery targets",
+      "Weekly digest of watched-extension activity",
+      "Scan history with downloadable reports",
     ],
   },
 ] as const;
@@ -70,65 +80,73 @@ export default function PricingPage() {
             <ReceiptText /> Pricing and packaging
           </span>
           <h1>
-            Start with evidence.<em> Grow into a decision system.</em>
+            Start with evidence.<em> Pay when it saves you a decision.</em>
           </h1>
           <p>
-            Start with a single tool. Add monitoring, shared decisions, and
-            policy when your team is ready to make extension access intentional.
+            Prices are in US dollars. Scanning public releases costs nothing;
+            you pay for human review, or for watching releases continuously.
           </p>
         </div>
         <aside>
           <ShieldCheck />
-          <strong>Start small. Expand deliberately.</strong>
+          <strong>Launch-stage pricing.</strong>
           <p>
-            Public intelligence stays open. Team access is introduced with a
-            guided workspace rollout, not a forced enterprise contract.
+            Paid offers are fulfilled directly by the founding team while
+            billing automation ships — you always know who you are paying and
+            what arrives next.
           </p>
         </aside>
       </section>
       <section className={styles.plans}>
-        {plans.map((plan) => (
+        {offers.map((offer) => (
           <article
-            className={`${styles.plan} ${"featured" in plan ? styles.featured : ""}`}
-            key={plan.name}
+            className={`${styles.plan} ${
+              "featured" in offer && offer.featured ? styles.featured : ""
+            }`}
+            key={offer.name}
           >
-            <span>{plan.name}</span>
+            <span>{offer.name}</span>
             <div className={styles.price}>
-              <strong>{plan.price}</strong>
-              <small>{plan.suffix}</small>
+              <strong>{offer.price}</strong>
+              <small>{offer.suffix}</small>
             </div>
-            <p>{plan.description}</p>
+            <p>{offer.description}</p>
             <ul>
-              {plan.features.map((feature) => (
+              {offer.features.map((feature) => (
                 <li key={feature}>
                   <Check />
                   {feature}
                 </li>
               ))}
             </ul>
-            <Link href={plan.href}>
-              {plan.action}
-              <ArrowRight />
-            </Link>
+            {"external" in offer && offer.external ? (
+              <a href={offer.href}>
+                {offer.action}
+                <ArrowRight />
+              </a>
+            ) : (
+              <Link href={offer.href}>
+                {offer.action}
+                <ArrowRight />
+              </Link>
+            )}
           </article>
         ))}
       </section>
       <section className={styles.honesty}>
         <div>
-          <span>How GuardRails grows with you</span>
-          <h2>From one review to a team-wide trust boundary.</h2>
+          <span>For teams, after individuals work</span>
+          <h2>Shared review and organization policy come next.</h2>
         </div>
         <ul>
           <li>
-            Begin with public reports and one extension you want to understand.
+            The team workspace — shared review inbox, decisions with owners,
+            audit export — is rolling out with guided onboarding rather than a
+            self-serve price tag. Talk to us through the design-partner form.
           </li>
           <li>
-            Move into the team workspace when decisions need owners, history,
-            and meaningful-change notifications.
-          </li>
-          <li>
-            Use a design partnership to shape governed rollout requirements
-            around the way your engineering organisation actually works.
+            Higher tiers will be shaped by what launch customers actually use,
+            not announced before they exist.
           </li>
         </ul>
       </section>
@@ -138,7 +156,7 @@ export default function PricingPage() {
           <h2>Inspect the extension first.</h2>
           <p>
             Open a public exact-release report before deciding whether your
-            workflow needs monitoring or team review.
+            workflow needs human review or continuous monitoring.
           </p>
         </div>
         <Link href="/registry">
