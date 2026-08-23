@@ -49,8 +49,32 @@ Expected log lines every few minutes:
 
 Generate with: `openssl rand -hex 32`
 
-## Scanning on this box (optional)
+## Scanning on this box (Deep Scan runner mode)
 
-Set `SCAN_COMMAND` to any shell command, e.g. a loop invocation of the
-guardrails CLI runner against `/api/internal/scan-jobs`. The command runs
-under the worker dyno on the `SCAN_INTERVAL_SECONDS` cadence.
+This replaces the flaky `ide-scanner/.github/workflows/deep-scan.yml`
+scheduled workflow (GitHub delays/skips scheduled runs, which is why the
+corpus aged out and catalog refresh started failing).
+
+Setup:
+
+```bash
+# Buildpacks: node runs the ticker, python runs the scanner
+heroku buildpacks:set heroku/nodejs
+heroku buildpacks:add heroku/python
+
+# Scanner secrets (same values as the repo's GitHub Actions secrets;
+# if you cannot read the old values, rotate: new value into BOTH
+# GitHub secrets and Heroku config)
+heroku config:set SCAN_RUNNER_SECRET='<value>' SCAN_CALLBACK_SECRET='<value>'
+heroku config:set SCAN_COMMAND='bash /app/deep-scan.sh' SCAN_INTERVAL_SECONDS=300
+git subtree push --prefix worker heroku main
+```
+
+`deep-scan.sh` clones `preethamak/ide-scanner` (depth 1) on first run,
+installs analyzers, then each cycle: enqueues a canonical maintenance scan,
+claims the next prioritized job, scans the exact artifact (semgrep, yara,
+dependency intelligence), and submits the signed callback. The 503 health
+gate in catalog-refresh clears once fresh scans land (corpus < 30h old).
+
+## Secrets
+
