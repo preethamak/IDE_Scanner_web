@@ -9,11 +9,11 @@ export type ChangelogEntry = {
 export const changelogEntries: readonly ChangelogEntry[] = [
   {
     date: "2026-08-23",
-    title: "Launch access model: scanning free, early access for the rest",
+    title: "Launch access model published",
     tag: "Product",
     paragraphs: [
-      "The pricing page now states how Guardrails actually operates today instead of publishing prices nobody has paid yet. Scanning stays free for good. Guided reviews — a personal walkthrough of any extension that matters to you, with a written summary — are free during launch with limited weekly slots, and Release Monitoring opens to founding members through early access.",
-      "Team and organization tiers get designed and priced together with design partners rather than announced into the void.",
+      "The pricing page now describes how access works during the launch period. All public analysis features remain free. Guided reviews of specific extension releases are available at no cost with limited weekly capacity. Release Monitoring is open to early customers through the early-access program.",
+      "Team and organization tiers will be designed and priced together with participants in the design-partner program.",
     ],
   },
   {
@@ -47,7 +47,7 @@ export const changelogEntries: readonly ChangelogEntry[] = [
     title: "Pricing reframed around rollout stages",
     tag: "Product",
     paragraphs: [
-      "Plans now describe how teams actually adopt GuardRails — start with evidence in the registry, grow into shared decisions, then governed rollout — instead of pretending billing is finished.",
+      "Plans now describe adoption in stages: evidence in the registry, shared team decisions, then governed rollout.",
     ],
   },
   {

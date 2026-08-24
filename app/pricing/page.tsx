@@ -6,12 +6,12 @@ import styles from "../marketing.module.css";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Scanning IDE extensions is free, for good. Guided reviews and release monitoring are open to early customers while Guardrails proves itself.",
+    "All public analysis features are free. Guided reviews and release monitoring are open to early customers during the launch period.",
   alternates: { canonical: "/pricing" },
 };
 
 const GUIDED_REVIEW_MAILTO =
-  "mailto:hello@abscissa.dev?subject=Guided%20review%20request&body=Extension%20and%20release%20to%20walk%20through%20(marketplace%20link%20or%20ID)%3A%0AWhat%20decision%20hinges%20on%20it%3A";
+  "mailto:hello@abscissa.dev?subject=Guided%20review%20request&body=Extension%20and%20release%20(marketplace%20link%20or%20ID)%3A%0AContext%3A";
 
 const MONITORING_ACCESS_MAILTO =
   "mailto:hello@abscissa.dev?subject=Release%20Monitoring%20early%20access";
@@ -19,52 +19,52 @@ const MONITORING_ACCESS_MAILTO =
 const tiers = [
   {
     name: "Scan",
-    status: "Available now",
+    status: "Available to everyone",
     price: "$0",
-    suffix: "free, for good",
+    suffix: "Permanent free tier",
     description:
-      "Everything you need to judge a release before installing it. This tier stays free — it is how the evidence earns trust.",
+      "Analyze any published IDE extension release before installing it. These features remain free.",
     action: "Open the registry",
     href: "/registry",
     features: [
       "Public exact-release reports",
       "Permission Passport and release diff",
       "Local analysis with the GuardRails CLI",
-      "Browser-local imported reports",
-      "Personal watchlist for 3 extensions",
+      "Imported reports stored in your browser",
+      "Personal watchlist for up to 3 extensions",
     ],
   },
   {
     name: "Guided review",
-    status: "Free during launch · limited slots each week",
+    status: "Limited slots each week",
     price: "Free",
-    suffix: "while Guardrails is young",
+    suffix: "Launch period",
     description:
-      "Send us an extension that matters to you. The person who built the scanner walks your team through what it does and what changed, and you keep the written summary.",
-    action: "Request a guided review",
+      "Request an examination of a specific extension release. The GuardRails team reviews the exact package and provides a written summary of its behavior and changes.",
+    action: "Request a review",
     href: GUIDED_REVIEW_MAILTO,
     external: true,
     featured: true,
     features: [
-      "A person examines one exact release with you",
-      "Dependency and capability-change walkthrough",
-      "Plain-language verdict — INCOMPLETE called out, not hidden",
-      "Written summary you can share with your team",
+      "Manual examination of one exact release",
+      "Dependency and capability-change analysis",
+      "Findings stated plainly, including incomplete results",
+      "Written summary suitable for sharing with your team",
     ],
   },
   {
     name: "Release Monitoring",
     status: "Early access",
     price: "Free",
-    suffix: "for founding members",
+    suffix: "For early customers",
     description:
-      "Watch the extensions you rely on. Every new release gets analyzed, and you hear only about changes that matter.",
+      "Monitor the extensions your team depends on. New releases are analyzed automatically, and notifications are limited to meaningful capability changes.",
     action: "Join early access",
     href: MONITORING_ACCESS_MAILTO,
     external: true,
     features: [
-      "More watched extensions than the free tier",
-      "Alerts only on meaningful capability changes",
+      "Watchlist expansion beyond the free tier",
+      "Notifications on meaningful capability changes only",
       "Email and Slack delivery targets",
       "Weekly digest and scan history",
     ],
@@ -79,24 +79,24 @@ export default function PricingPage() {
       <section className={styles.hero}>
         <div>
           <span className={styles.eyebrow}>
-            <ReceiptText /> Access and availability
+            <ReceiptText /> Pricing
           </span>
           <h1>
-            Free today.<em> Priced together, later.</em>
+            Scanning is free.
+            <em> Paid plans will follow.</em>
           </h1>
           <p>
-            Scanning stays free for everyone. Deeper help is open to early
-            customers while Guardrails is young — and paid tiers will be
-            shaped with the people who actually use them.
+            All public analysis features cost nothing. During the launch
+            period, guided reviews and release monitoring are provided free of
+            charge to early customers. Team plans will be introduced afterward.
           </p>
         </div>
         <aside>
           <ShieldCheck />
-          <strong>No price theater.</strong>
+          <strong>Billing is not enabled yet.</strong>
           <p>
-            Self-serve billing does not exist yet, so nothing here pretends
-            otherwise. Early customers talk directly to the founding team —
-            and help set what paid plans look like when they arrive.
+            Early customers work directly with the founding team. Paid plans
+            will be announced on this page when they become available.
           </p>
         </aside>
       </section>
@@ -138,29 +138,28 @@ export default function PricingPage() {
       </section>
       <section className={styles.honesty}>
         <div>
-          <span>For teams and organizations</span>
-          <h2>Designed with design partners, priced with them too.</h2>
+          <span>Teams and organizations</span>
+          <h2>Team plans are shaped with design partners.</h2>
         </div>
         <ul>
           <li>
-            The team workspace — shared review inbox, decisions with owners,
-            audit export — is rolling out with guided onboarding through the{" "}
+            The team workspace provides a shared review inbox, decisions with
+            owners, and audit export. Access is currently provided through the{" "}
             <Link href="/design-partners">design-partner program</Link>.
           </li>
           <li>
-            What team plans cost gets decided in those conversations, based on
-            how teams actually use Guardrails — not announced before it is
-            known.
+            Team pricing will be set based on how participating organizations
+            use Guardrails in practice.
           </li>
         </ul>
       </section>
       <section className={styles.cta}>
         <div>
-          <small>No account needed</small>
-          <h2>Start with a release you care about.</h2>
+          <small>Get started</small>
+          <h2>Inspect an extension first.</h2>
           <p>
-            Open a public exact-release report right now. If the evidence is
-            useful, everything above exists to go deeper with us.
+            Public exact-release reports require no account. If the analysis is
+            useful, the options above extend it further.
           </p>
         </div>
         <Link href="/registry">

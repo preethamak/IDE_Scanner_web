@@ -21,14 +21,14 @@ const faqs = [
   {
     question: "Do you install or execute extensions to scan them?",
     answer:
-      "No. Website analysis inspects the published package without running it inside your editor. The local CLI can examine extensions already installed on your machine, and that analysis happens on your machine — nothing is uploaded unless you explicitly export a portable report.",
+      "No. Website analysis inspects the published package without running it inside your editor. The local CLI examines extensions installed on your machine, and that analysis stays on your machine; nothing is uploaded unless you explicitly export a portable report.",
     href: "/analyze",
     linkLabel: "Choose an analysis path",
   },
   {
     question: "What do ALLOW, REVIEW, BLOCK, and INCOMPLETE mean?",
     answer:
-      "They are the four report decisions. ALLOW means findings stayed within normal behavior. REVIEW flags changes that deserve human judgment. BLOCK marks behavior that should stop an install or update in governed environments. INCOMPLETE means we could not verify enough to decide — an honest outcome, not a pass.",
+      "They are the four report decisions. ALLOW means findings remained within normal behavior. REVIEW flags changes that warrant human judgment. BLOCK marks behavior that should stop an install or update in governed environments. INCOMPLETE indicates the analysis could not verify enough to decide; it represents a limit of the analysis rather than a pass.",
     href: "/scoring",
     linkLabel: "Read the scoring methodology",
   },
@@ -42,23 +42,23 @@ const faqs = [
   {
     question: "How does release monitoring decide what to tell me?",
     answer:
-      "You watch specific extensions. When a new release publishes, GuardRails compares its capability surface against previous versions and notifies you only about meaningful changes — quiet re-publishes without behavioral change do not page anyone. Notifications arrive by email, Slack, Jira, or a weekly digest depending on your workspace settings.",
+      "You select specific extensions to watch. When a new release is published, GuardRails compares its capability surface against previous versions and notifies you only about meaningful changes; re-publishes without behavioral change do not generate notifications. Delivery is available by email, Slack, Jira, or a weekly digest according to your workspace settings.",
     href: "/monitor",
     linkLabel: "See Release Monitoring",
   },
   {
     question: "Which editors are supported?",
     answer:
-      "Analysis covers extensions published to marketplace registries used by editors such as VS Code, Cursor, and Windsurf. Guardrails is an independent reviewer — it is not affiliated with or endorsed by those platforms, and it does not modify your editors.",
+      "Analysis covers extensions published to marketplace registries used by editors such as VS Code, Cursor, and Windsurf. Guardrails is an independent reviewer; it is not affiliated with or endorsed by those platforms and does not modify your editors.",
     href: "/registry",
     linkLabel: "Search the registry",
   },
   {
     question: "How much does it cost?",
     answer:
-      "Scanning costs nothing and stays free: public exact-release reports, the registry, and the local CLI. Beyond that there are no prices yet — guided reviews of extensions you care about are free during launch with limited weekly slots, release monitoring is open to founding members through early access, and team pricing gets set together with design partners. Nothing pretends to be a checkout before billing exists.",
+      "All public analysis features are free, including exact-release reports, the registry, and the local CLI. Guided reviews and release monitoring are provided free of charge to early customers during the launch period. Team plans will be introduced afterward and priced through the design-partner program.",
     href: "/pricing",
-    linkLabel: "See access options",
+    linkLabel: "See pricing",
   },
   {
     question: "How validated is the scanner itself?",
@@ -68,9 +68,9 @@ const faqs = [
     linkLabel: "Review validation and limits",
   },
   {
-    question: "A finding looks wrong — or an extension looks malicious. Now what?",
+    question: "How do I dispute a finding or flag a malicious extension?",
     answer:
-      "Both go through Contact. Report disputes should include the exact-release link and what you believe was missed; corrections ship as visible methodology updates. Suspected malicious extensions can be flagged for urgent review at security@abscissa.dev.",
+      "Both are handled through the contact page. Report disputes should include the exact release link and describe what you believe was missed. Disputes are resolved through published corrections. Suspected malicious extensions can be reported to security@abscissa.dev for urgent review.",
     href: "/contact",
     linkLabel: "Contact the team",
   },
@@ -101,22 +101,22 @@ export default function FaqPage() {
       <section className={styles.hero}>
         <div>
           <span className={styles.eyebrow}>
-            <CircleHelp /> Frequently asked
+            <CircleHelp /> Support
           </span>
           <h1>
-            Questions, answered
+            Frequently asked
             <br />
-            <em>the way we work.</em>
+            <em>questions.</em>
           </h1>
           <p>
-            Short answers with links into the methodology, so every claim has a
-            page behind it.
+            Each answer links to the methodology pages that document the claim
+            in full.
           </p>
           <div className={styles.actions}>
             <Link href="/registry">
               Check an extension now <ArrowRight />
             </Link>
-            <Link href="/contact">Still stuck? Contact us</Link>
+            <Link href="/contact">Contact the team</Link>
           </div>
         </div>
         <div className={styles.assurance}>
@@ -140,7 +140,7 @@ export default function FaqPage() {
             <strong>Full public reports</strong>
           </div>
           <footer>
-            <ArrowRight /> Missing something? Ask and we will add it here
+            <ArrowRight /> Additional questions can be sent to hello@abscissa.dev
           </footer>
         </div>
       </section>

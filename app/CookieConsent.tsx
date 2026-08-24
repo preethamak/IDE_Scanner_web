@@ -63,9 +63,9 @@ export default function CookieConsent() {
         <Cookie style={{ width: 13, verticalAlign: "-2px" }} /> Optional analytics
       </strong>
       <p>
-        Guardrails loads Google Analytics only if you accept. The site works
-        fully without it. Details in the{" "}
-        <Link href="/privacy#analytics">privacy policy</Link>.
+        Google Analytics is loaded only with your consent. All features remain
+        available if you decline. See the{" "}
+        <Link href="/privacy#analytics">privacy policy</Link> for details.
       </p>
       <div className={styles.consentActions}>
         <button className={styles.grant} onClick={() => decide("granted")}>

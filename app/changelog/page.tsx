@@ -31,13 +31,13 @@ export default function ChangelogPage() {
             <History /> Changelog
           </span>
           <h1>
-            What shipped,
+            Product and
             <br />
-            <em>dated honestly.</em>
+            <em>platform updates.</em>
           </h1>
           <p>
-            Product, methodology, and site changes as they land. The same
-            transparency we ask of extensions applies here.
+            User-visible product, methodology, and site changes are recorded
+            here as they land.
           </p>
           <div className={styles.actions}>
             <Link href="/registry">
@@ -63,7 +63,7 @@ export default function ChangelogPage() {
             <strong>{changelogEntries[0].date}</strong>
           </div>
           <footer>
-            <ArrowRight /> Internal refactors stay off this page
+            <ArrowRight /> Only user-visible changes are listed
           </footer>
         </div>
       </section>
