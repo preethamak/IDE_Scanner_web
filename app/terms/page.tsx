@@ -29,7 +29,7 @@ const sections = [
     title: "3. Acceptable use",
     body: [
       "Do not abuse the service: no attempts to bypass rate limits, disrupt availability, access data that is not yours, or repackage our reports as another product without attribution.",
-      "Automated access should use the published API endpoints within documented limits. If you need more capacity, talk to us before hammering the service.",
+      "Automated access should use the published API endpoints within documented limits. Contact us before planning usage above those limits.",
     ],
   },
   {
@@ -42,7 +42,7 @@ const sections = [
   {
     title: "5. Paid plans and billing",
     body: [
-      "The Free plan costs nothing. Team and Business plans are introduced as early-access offerings and may carry fees once billing is enabled for your workspace; anything you are charged for will be stated at checkout before payment.",
+      "The Free plan costs nothing. Team and Business plans are introduced as early-access offerings and may carry fees once billing is enabled for your workspace; the amount and terms are always disclosed before a payment is confirmed.",
       "Paid subscriptions are billed through Stripe. You can change or cancel through the billing portal, and cancellation stops future charges while preserving your historical records.",
     ],
   },
@@ -94,17 +94,16 @@ export default function TermsPage() {
       <section className={styles.hero}>
         <div>
           <span className={styles.eyebrow}>
-            <Scale /> Terms of Service
+            <Scale /> Legal
           </span>
           <h1>
-            Plain terms for a
-            <br />
-            <em>trust product.</em>
+            Terms of<br />
+            <em>Service</em>
           </h1>
           <p>
             These terms cover the public registry, the local CLI, portable
-            reports, release monitoring, team workspaces, and any paid plan.
-            They are written to be read.
+            reports, release monitoring, team workspaces, and paid offerings.
+            Please read them before using the service.
           </p>
           <div className={styles.actions}>
             <Link href="/faq">
@@ -131,10 +130,10 @@ export default function TermsPage() {
           </div>
           <div>
             <span>Charges</span>
-            <strong>Disclosed at checkout</strong>
+            <strong>Disclosed before payment</strong>
           </div>
           <footer>
-            <FileText /> Reports are evidence, not guarantees — see section 4
+            <FileText /> Limitations of analysis results are described in section 4
           </footer>
         </div>
       </section>

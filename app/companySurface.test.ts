@@ -8,7 +8,7 @@ describe("company site surface", () => {
   it("publishes terms that cover billing honesty and analysis limits", () => {
     const terms = read("./terms/page.tsx");
     expect(terms).toContain("point-in-time evidence");
-    expect(terms).toContain("Disclosed at checkout");
+    expect(terms).toContain("Disclosed before payment");
     expect(terms).toContain("not affiliated with or endorsed");
     expect(terms).toContain("security@abscissa.dev");
     expect(terms).toMatch(/export const metadata/);
@@ -28,7 +28,7 @@ describe("company site surface", () => {
       "What does Guardrails actually check?",
       "Do you install or execute extensions to scan them?",
       "How much does it cost?",
-      "A finding looks wrong — or an extension looks malicious. Now what?",
+      "How do I dispute a finding or flag a malicious extension?",
     ])
       expect(faq).toContain(question);
     expect(faq).toContain('"@type": "FAQPage"');

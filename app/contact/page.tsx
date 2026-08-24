@@ -22,7 +22,7 @@ const channels = [
     icon: ShieldAlert,
     label: "Security issues",
     title: "Report a vulnerability",
-    body: "Found a security problem in Guardrails or a malicious extension worth urgent review? Email us directly — coordinated disclosure, credit given.",
+    body: "Report a security problem in Guardrails or flag a malicious extension that requires urgent review. We follow coordinated disclosure and credit reporters.",
     action: "security@abscissa.dev",
     href: "mailto:security@abscissa.dev",
   },
@@ -30,7 +30,7 @@ const channels = [
     icon: Handshake,
     label: "Teams, reviews, monitoring",
     title: "Work with us directly",
-    body: "Guided reviews of extensions you care about, release-monitoring early access, or rollout requirements for your organization — all start with this conversation.",
+    body: "Guided reviews of extensions you care about, release-monitoring early access, and rollout requirements for your organization begin with this conversation.",
     action: "Apply as a design partner",
     href: "/design-partners",
   },
@@ -44,9 +44,9 @@ const channels = [
   },
   {
     icon: Bug,
-    label: "Wrong findings",
-    title: "Dispute a report",
-    body: "Every decision page shows its evidence. If a finding looks wrong, send the exact release link with what we missed — corrections ship in public.",
+    label: "Report disputes",
+    title: "Dispute a finding",
+    body: "Every decision page shows its evidence. If a finding appears incorrect, include the exact release link and describe the expected result. Corrections are published openly.",
     action: "Read scoring methodology",
     href: "/scoring",
   },
@@ -66,13 +66,13 @@ export default function ContactPage() {
             <Mail /> Contact
           </span>
           <h1>
-            Reach the people
+            Contact
             <br />
-            <em>behind the reports.</em>
+            <em>the Guardrails team.</em>
           </h1>
           <p>
-            One small team builds Guardrails and reads every message. Pick the
-            path that gets you the fastest answer.
+            Messages reach the team that builds and operates Guardrails. Use
+            the channel matching your topic for the fastest response.
           </p>
           <div className={styles.actions}>
             <Link href="/status">
@@ -102,7 +102,7 @@ export default function ContactPage() {
             <strong>Public</strong>
           </div>
           <footer>
-            <Bug /> Report disputes ship as visible methodology updates
+            <Bug /> Disputes are resolved through published corrections
           </footer>
         </div>
       </section>

@@ -18,7 +18,7 @@ import styles from "../trust.module.css";
 export const metadata: Metadata = {
   title: "Privacy policy",
   description:
-    "What Guardrails receives, retains, and puts under your control — including analytics consent, retention, deletion, and your rights.",
+    "What Guardrails receives, retains, and places under your control, including analytics consent, retention, deletion, and your rights.",
   alternates: { canonical: "/privacy" },
 };
 

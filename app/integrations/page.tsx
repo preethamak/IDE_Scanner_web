@@ -27,7 +27,7 @@ const groups = [
     items: [
       "Marketplace registries used by VS Code, Cursor, and Windsurf",
       "Exact-release reports for every monitored version",
-      "No editor plugins required — review happens beside the marketplace",
+      "No editor plugins required; review happens beside the marketplace",
     ],
   },
   {
@@ -43,7 +43,7 @@ const groups = [
   {
     icon: MessagesSquare,
     name: "Team review",
-    tagline: "Decisions land where the team already works",
+    tagline: "Review activity in familiar tools",
     items: [
       "Weekly digest of watched-extension changes",
       "Jira tickets from review decisions",
@@ -93,21 +93,20 @@ export default function IntegrationsPage() {
             <Plug /> Integrations
           </span>
           <h1>
-            Evidence where
-            <em> your team already works.</em>
+            Delivered to
+            <em> the tools you already use.</em>
           </h1>
           <p>
-            Guardrails does not ask you to live in another dashboard. Reports
-            reach your inbox, your chat, your tracker, and your terminal — and
-            stay portable everywhere.
+            Analysis results are delivered to your inbox, chat, issue tracker,
+            and terminal, and remain portable as report files.
           </p>
         </div>
         <aside>
           <BellRing />
-          <strong>Notification, not noise.</strong>
+          <strong>Focused notifications.</strong>
           <p>
-            Delivery targets are encrypted, testable from workspace settings,
-            and limited to meaningful release changes.
+            Delivery targets are encrypted, can be tested from workspace
+            settings, and are limited to meaningful release changes.
           </p>
         </aside>
       </section>
@@ -130,31 +129,31 @@ export default function IntegrationsPage() {
       </section>
       <section className={styles.honesty}>
         <div>
-          <span>What integrations do not do</span>
-          <h2>No ambient access. No silent expansion.</h2>
+          <span>Scope boundaries</span>
+          <h2>Integrations remain narrowly scoped.</h2>
         </div>
         <ul>
           <li>
-            Guardrails never asks for access to your editor, repositories, or
-            source code — the product reviews published releases.
+            Guardrails never requests access to your editor, repositories, or
+            source code. The product analyzes published releases.
           </li>
           <li>
-            Delivery targets (Slack, email, Jira) carry notifications out; they
-            never grant Guardrails write access into those systems.
+            Delivery targets receive notifications only. They do not grant
+            Guardrails write access to those systems.
           </li>
           <li>
-            Local CLI results stay on your machine until you deliberately
+            Local CLI results remain on your machine until you explicitly
             export a portable report.
           </li>
         </ul>
       </section>
       <section className={styles.cta}>
         <div>
-          <small>Start with one release</small>
-          <h2>Check an extension today.</h2>
+          <small>Get started</small>
+          <h2>Inspect an extension today.</h2>
           <p>
-            Open a public exact-release report, then wire notifications into
-            the channel your team actually reads.
+            Open a public exact-release report, then connect notifications to
+            the channel your team reads.
           </p>
         </div>
         <Link href="/registry">
