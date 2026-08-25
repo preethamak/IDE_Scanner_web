@@ -104,6 +104,7 @@ export const solutions = {
     ],
     cta: "Create a review workflow your team can revisit.",
     href: "/workspace",
+    callCta: "Book an intro call",
   },
   security: {
     eyebrow: "For security teams",
@@ -151,6 +152,7 @@ export const solutions = {
     ],
     cta: "Build an exact-release extension inventory.",
     href: "/analyze",
+    callCta: "Book an intro call",
   },
   agents: {
     eyebrow: "For AI-agent security",

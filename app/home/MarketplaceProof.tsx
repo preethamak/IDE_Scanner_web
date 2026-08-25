@@ -1,5 +1,5 @@
 import { BadgeCheck, Blocks, Download, ScanSearch } from "lucide-react";
-import styles from "./landing.module.css";
+import styles from "./authorityLanding.module.css";
 
 const metrics = [
   { value: "~60,000", label: "Marketplace extensions", icon: Blocks },

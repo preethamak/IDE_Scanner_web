@@ -13,6 +13,7 @@ export type Solution = {
   steps: Array<{ title: string; detail: string }>;
   cta: string;
   href: string;
+  callCta?: string;
 };
 export default function SolutionPage({ solution }: { solution: Solution }) {
   const Icon = solution.icon;
@@ -80,9 +81,20 @@ export default function SolutionPage({ solution }: { solution: Solution }) {
             presented as already shipped.
           </p>
         </div>
-        <Link href={solution.href}>
-          Get started <ArrowRight />
-        </Link>
+        {solution.callCta ? (
+          <div className={styles.ctaActions}>
+            <Link href={solution.href}>
+              Get started <ArrowRight />
+            </Link>
+            <a href="mailto:hello@abscissa.dev?subject=Intro%20call%20(20%20min)">
+              {solution.callCta} <ArrowRight />
+            </a>
+          </div>
+        ) : (
+          <Link href={solution.href}>
+            Get started <ArrowRight />
+          </Link>
+        )}
       </section>
     </main>
   );

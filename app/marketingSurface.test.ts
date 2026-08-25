@@ -5,9 +5,15 @@ const read = (path: string) =>
 describe("pricing and solution surfaces", () => {
   it("does not present unfinished billing as available", () => {
     const pricing = read("./pricing/page.tsx");
-    expect(pricing).toContain('"Early access"');
-    expect(pricing).toContain('"Design partner"');
-    expect(pricing).toContain("Discuss your requirements");
+    expect(pricing).toContain('"Free"');
+    expect(pricing).toContain('"$0"');
+    expect(pricing).toContain('"Team"');
+    expect(pricing).toContain('"$19"');
+    expect(pricing).toContain("per seat / month");
+    expect(pricing).toContain('"Enterprise"');
+    expect(pricing).toContain('"Custom"');
+    expect(pricing).toContain("Most popular");
+    expect(pricing).toContain("Book an intro call");
     expect(pricing.toLowerCase()).not.toContain("buy now");
     expect(pricing.toLowerCase()).not.toContain("checkout");
   });

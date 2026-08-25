@@ -110,7 +110,8 @@
   border-color: #d5a9ba;
   background: linear-gradient(180deg, #fff7fa, #fff);
 }
-.plan > span {
+.plan > span,
+.planHead > span {
   color: #9a496d;
   font: 800 12px var(--mono);
   text-transform: uppercase;
@@ -312,6 +313,141 @@
 }
 .cta a svg {
   width: 15px;
+}
+.ctaActions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 10px;
+}
+.ctaActions a:last-child {
+  border: 1px solid #9a496d;
+  background: transparent;
+  color: #823b58;
+}
+.planBadge {
+  align-self: flex-start;
+  margin-top: -4px;
+  border-radius: 999px;
+  background: #9a496d;
+  padding: 4px 10px;
+  color: #fff;
+  font: 800 10px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.featured .planBadge {
+  background: #f0d9e3;
+  color: #7c3551;
+}
+.planHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.audience {
+  display: block;
+  margin-top: 6px;
+  color: #766b72;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.featured .audience {
+  color: #b9a9b2;
+}
+.compareSection {
+  margin: 90px 0;
+}
+.compareScroll {
+  overflow-x: auto;
+  border: 1px solid #e0d5d9;
+  border-radius: 18px;
+  background: #fff;
+}
+.compare {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  text-align: left;
+}
+.compare thead th {
+  position: sticky;
+  top: 0;
+  background: #fff7fa;
+  padding: 18px 20px;
+  text-align: center;
+  vertical-align: bottom;
+}
+.compare thead th:first-child {
+  text-align: left;
+}
+.compare thead strong {
+  display: block;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+.compare thead small {
+  color: #8a7d84;
+  font-size: 11.5px;
+}
+.compare [data-plan="team"] {
+  background: #fdf3f7;
+}
+.compare thead th[data-plan="team"] strong {
+  color: #9a496d;
+}
+.compare tbody th {
+  padding: 13px 20px;
+  color: #4f464d;
+  font-size: 13px;
+  font-weight: 600;
+}
+.compare tbody td {
+  padding: 13px 20px;
+  text-align: center;
+  font-size: 13px;
+}
+.compare tbody tr {
+  border-top: 1px solid #f1e9ec;
+}
+.groupRow td {
+  border-top: 1px solid #dfd5d9 !important;
+  background: #fbf5f7;
+  color: #934765;
+  font: 800 11px var(--mono);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  text-align: left !important;
+  padding: 10px 20px !important;
+}
+.cellYes {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #4b9d86;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.cellYes svg {
+  width: 14px;
+}
+.cellNo {
+  display: inline-flex;
+  color: #c4b8be;
+}
+.cellNo svg {
+  width: 14px;
+}
+.cellText {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.compareNote {
+  max-width: 720px;
+  margin: 16px 2px 0;
+  color: #675f66;
+  font-size: 12.5px;
 }
 @media (max-width: 900px) {
   .hero,
