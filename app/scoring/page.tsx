@@ -1,4 +1,12 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Scoring methodology",
+  description:
+    "Severity classes, analyzer coverage, and versioned policy combine into BLOCK, REVIEW, INCOMPLETE, or ALLOW decisions on an exact artifact.",
+  alternates: { canonical: "/scoring" },
+};
 
 const decisions = [
   ["BLOCK", "Authoritative malicious intelligence matched, or the selected policy explicitly rejects high-confidence abuse evidence.", "Do not install; remove and investigate existing exposure."],

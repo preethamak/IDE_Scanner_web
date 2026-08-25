@@ -1,68 +1,86 @@
-import Link from "next/link";
+import type { Metadata } from "next";
 import { Fragment } from "react";
+import Link from "next/link";
 import { ArrowRight, Check, Minus, ReceiptText, ShieldCheck } from "lucide-react";
 import styles from "../marketing.module.css";
+
+export const metadata: Metadata = {
+  title: "Pricing",
+  description:
+    "All public analysis features are free. Guided reviews and release monitoring are open to early customers during the launch period.",
+  alternates: { canonical: "/pricing" },
+};
+
+const MONITORING_ACCESS_MAILTO =
+  "mailto:hello@abscissa.dev?subject=Release%20Monitoring%20early%20access";
+
+const INTRO_CALL_MAILTO =
+  "mailto:hello@abscissa.dev?subject=Intro%20call%20(20%20min)";
 
 type Cell = boolean | string;
 
 const plans = [
   {
-    id: "free",
-    name: "Free",
+    id: "scan",
+    name: "Scan",
     audience: "For individual developers",
     price: "$0",
-    suffix: "free forever",
+    suffix: "Free forever",
     description:
       "Know what an extension does before you install it. No account needed for public reports.",
-    action: "Start with the registry",
+    action: "Open the registry",
     href: "/registry",
-    badge: "",
+    external: false,
     featured: false,
+    badge: "",
     features: [
-      "Unlimited public exact-release reports",
+      "Public exact-release reports",
       "Permission Passport and release diff",
-      "Local inventory with the GuardRails CLI",
-      "Watchlist for up to 3 extensions",
+      "Local analysis with the GuardRails CLI",
+      "Personal watchlist for up to 3 extensions",
+      "Guided human reviews during launch",
     ],
   },
   {
-    id: "team",
-    name: "Team",
+    id: "monitoring",
+    name: "Release Monitoring",
     audience: "For teams sharing extensions",
-    price: "$19",
-    suffix: "per seat / month",
+    price: "Free",
+    suffix: "Launch period · early access",
     description:
-      "Stop re-reviewing releases from scratch. Every update arrives with the last decision attached.",
-    action: "Start with your team",
-    href: "/design-partners",
-    badge: "Most popular",
+      "Stop re-reviewing releases from scratch. Every update arrives analyzed, with only meaningful capability changes surfaced.",
+    action: "Join early access",
+    href: MONITORING_ACCESS_MAILTO,
+    external: true,
     featured: true,
+    badge: "Most popular",
     features: [
-      "Everything in Free, unlimited watchlist",
-      "Alerts only when capabilities actually change",
-      "Shared review inbox with owners and due dates",
-      "Decision memory: approve once, reuse forever",
-      "Audit export (CSV/JSON) for compliance",
+      "Everything in Scan, unlimited watchlist",
+      "Notifications on meaningful changes only",
+      "Email and Slack delivery targets",
+      "Weekly digest and scan history",
+      "Shared review inbox, decisions with owners",
     ],
   },
   {
-    id: "enterprise",
-    name: "Enterprise",
+    id: "teams",
+    name: "Teams",
     audience: "For governed organizations",
     price: "Custom",
-    suffix: "annual agreement",
+    suffix: "Shaped with design partners",
     description:
-      "Roll extension policy out organization-wide with support from the team that builds the scanner.",
+      "Roll extension policy out organization-wide, with decisions your auditor can read and support from the founding team.",
     action: "Book an intro call",
-    href: "mailto:hello@abscissa.dev?subject=Enterprise%20intro%20call",
-    badge: "",
+    href: INTRO_CALL_MAILTO,
+    external: true,
     featured: false,
+    badge: "",
     features: [
-      "Everything in Team, unlimited seats",
-      "SSO and procurement support",
-      "Organization-wide policy direction",
-      "Longer audit retention",
-      "Direct line to the founding team",
+      "Everything in Release Monitoring",
+      "Allow, block, and exception rationale",
+      "Decision memory across releases",
+      "Role-aware CSV and JSON audit export",
+      "SSO, policy direction, extended retention",
     ],
   },
 ] as const;
@@ -77,7 +95,7 @@ const comparison: Array<{
       ["Public exact-release reports", true, true, true],
       ["Permission Passport and capability diff", true, true, true],
       ["GuardRails CLI local inventory", true, true, true],
-      ["Guided human review of a release", true, true, true],
+      ["Guided human review of a release", "Launch period", true, true],
     ],
   },
   {
@@ -93,11 +111,11 @@ const comparison: Array<{
   {
     group: "Team workflow",
     rows: [
-      ["Seats included", "1", "5–100", "Unlimited"],
+      ["Seats included", "1", "Small teams", "Unlimited"],
       ["Shared review inbox and assignments", false, true, true],
-      ["Allow, block, and exception rationale", false, true, true],
-      ["Decision memory across releases", false, true, true],
-      ["Role-aware CSV and JSON audit export", false, true, true],
+      ["Allow, block, and exception rationale", false, false, true],
+      ["Decision memory across releases", false, false, true],
+      ["Role-aware CSV and JSON audit export", false, false, true],
     ],
   },
   {
@@ -107,8 +125,7 @@ const comparison: Array<{
       ["Organization-wide policy direction", false, false, true],
       ["Extended audit retention", false, false, true],
       ["Private extension workflow planning", false, false, true],
-      ["GuardRails IDE design partnership", false, false, true],
-      ["Direct founding-team line and SLA", false, false, true],
+      ["Direct founding-team line", false, true, true],
     ],
   },
 ];
@@ -137,24 +154,23 @@ export default function PricingPage() {
       <section className={styles.hero}>
         <div>
           <span className={styles.eyebrow}>
-            <ReceiptText /> Pricing and packaging
+            <ReceiptText /> Pricing
           </span>
           <h1>
-            Scanning stays free.<em> Pay when a team depends on it.</em>
+            Scanning is free.<em> Pay when a team depends on it.</em>
           </h1>
           <p>
-            Check any extension for nothing, forever. Upgrade when release
-            decisions need owners, notifications, and history your auditor can
-            read.
+            All public analysis features cost nothing. During the launch period,
+            guided reviews and release monitoring are provided free of charge to
+            early customers. Team plans will be introduced afterward.
           </p>
         </div>
         <aside>
           <ShieldCheck />
-          <strong>Start small. Expand deliberately.</strong>
+          <strong>Billing is not enabled yet.</strong>
           <p>
-            Public intelligence stays free forever. Team plans are priced per
-            seat, and early-access customers keep their terms when billing
-            switches on.
+            Early customers work directly with the founding team and keep their
+            launch terms when billing switches on.
           </p>
         </aside>
       </section>
@@ -185,7 +201,7 @@ export default function PricingPage() {
                 </li>
               ))}
             </ul>
-            {plan.href.startsWith("mailto:") ? (
+            {plan.external ? (
               <a href={plan.href}>
                 {plan.action}
                 <ArrowRight />
@@ -215,7 +231,7 @@ export default function PricingPage() {
                 {plans.map((plan) => (
                   <th scope="col" key={plan.id} data-plan={plan.id}>
                     <strong>{plan.name}</strong>
-                    <small>{plan.id === "team" ? "$19 /seat/mo" : plan.id === "free" ? "$0" : "Custom"}</small>
+                    <small>{plan.suffix}</small>
                   </th>
                 ))}
               </tr>
@@ -226,12 +242,12 @@ export default function PricingPage() {
                   <tr className={styles.groupRow}>
                     <td colSpan={4}>{group.group}</td>
                   </tr>
-                  {group.rows.map(([label, free, team, enterprise]) => (
+                  {group.rows.map(([label, scan, monitoring, teams]) => (
                     <tr key={`${group.group}-${label}`}>
                       <th scope="row">{label}</th>
-                      <td><CellValue value={free} /></td>
-                      <td data-plan="team"><CellValue value={team} /></td>
-                      <td><CellValue value={enterprise} /></td>
+                      <td><CellValue value={scan} /></td>
+                      <td data-plan="monitoring"><CellValue value={monitoring} /></td>
+                      <td><CellValue value={teams} /></td>
                     </tr>
                   ))}
                 </Fragment>
@@ -241,45 +257,44 @@ export default function PricingPage() {
         </div>
         <p className={styles.compareNote}>
           Guided reviews are provided free during the launch period. Early-access
-          customers keep launch terms when billing switches on.
+          customers keep launch terms when billing switches on. Team pricing will
+          be set with design partners based on how organizations use Guardrails in
+          practice.
         </p>
       </section>
 
       <section className={styles.honesty}>
         <div>
-          <span>How GuardRails grows with you</span>
-          <h2>From one review to a team-wide trust boundary.</h2>
+          <span>Teams and organizations</span>
+          <h2>Team plans are shaped with design partners.</h2>
         </div>
         <ul>
           <li>
-            Begin with public reports and one extension you want to understand.
+            The team workspace provides a shared review inbox, decisions with
+            owners, and audit export. Access is currently provided through the{" "}
+            <Link href="/design-partners">design-partner program</Link>.
           </li>
           <li>
-            Move into the team workspace when decisions need owners, history,
-            and meaningful-change notifications.
-          </li>
-          <li>
-            Use an enterprise agreement to shape governed rollout requirements
-            around the way your engineering organisation actually works.
+            Team pricing will be set based on how participating organizations use
+            Guardrails in practice.
           </li>
         </ul>
       </section>
 
       <section className={styles.cta}>
         <div>
-          <small>Need a practical starting point?</small>
-          <h2>Inspect the extension first.</h2>
+          <small>Get started</small>
+          <h2>Inspect an extension first.</h2>
           <p>
-            Open a public exact-release report before deciding whether your
-            workflow needs monitoring or team review. Want to talk it through?
-            Book a 20-minute call with the founding team.
+            Public exact-release reports require no account. Want to talk it
+            through? Book a 20-minute call with the founding team.
           </p>
         </div>
         <div className={styles.ctaActions}>
           <Link href="/registry">
             Search extensions <ArrowRight />
           </Link>
-          <a href="mailto:hello@abscissa.dev?subject=Intro%20call%20(20%20min)">
+          <a href={INTRO_CALL_MAILTO}>
             Book an intro call <ArrowRight />
           </a>
         </div>

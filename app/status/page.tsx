@@ -6,8 +6,18 @@ import {
   Radio,
 } from "lucide-react";
 import { getPublicStatus, type ServiceState } from "@/lib/publicStatus";
+import type { Metadata } from "next";
 import styles from "./status.module.css";
+
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Product status",
+  description:
+    "Live service checks across registry refreshes, Deep Scan runner health, canonical scan outcomes, notification delivery, and database reachability.",
+  alternates: { canonical: "/status" },
+};
+
 const copy: Record<ServiceState, string> = {
   operational: "All measured systems operational",
   degraded: "Some systems are degraded",

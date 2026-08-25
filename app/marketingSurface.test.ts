@@ -3,19 +3,19 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) =>
   readFileSync(new URL(path, import.meta.url), "utf8");
 describe("pricing and solution surfaces", () => {
-  it("does not present unfinished billing as available", () => {
+  it("keeps scanning free and routes deeper help to early access, without invented prices", () => {
     const pricing = read("./pricing/page.tsx");
-    expect(pricing).toContain('"Free"');
-    expect(pricing).toContain('"$0"');
-    expect(pricing).toContain('"Team"');
-    expect(pricing).toContain('"$19"');
-    expect(pricing).toContain("per seat / month");
-    expect(pricing).toContain('"Enterprise"');
-    expect(pricing).toContain('"Custom"');
-    expect(pricing).toContain("Most popular");
-    expect(pricing).toContain("Book an intro call");
+    expect(pricing).toContain('price: "$0"');
+    expect(pricing).toContain("mailto:hello@abscissa.dev");
+    expect(pricing).toContain("/design-partners");
+    expect(pricing).not.toMatch(/price: "\$[1-9]/);
+    expect(pricing).not.toContain("$19");
+    expect(pricing).not.toContain("$9");
+    expect(pricing).toContain("Compare every detail");
+    expect(pricing.toLowerCase()).toContain("audience:");
     expect(pricing.toLowerCase()).not.toContain("buy now");
     expect(pricing.toLowerCase()).not.toContain("checkout");
+    expect(pricing).not.toContain("₹");
   });
   it("defines the four role-specific solution journeys", () => {
     const data = read("./solutions/data.ts");
