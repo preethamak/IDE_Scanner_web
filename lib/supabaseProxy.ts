@@ -2,7 +2,12 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { supabaseConfig } from "@/lib/supabase";
 
+export function hasSession(request: NextRequest) {
+  return request.cookies.getAll().some((cookie) => cookie.name.startsWith("sb-"));
+}
+
 export async function refreshSession(request: NextRequest) {
+  if (!hasSession(request)) return NextResponse.next({ request });
   let response = NextResponse.next({ request });
   const db = createServerClient(supabaseConfig.url, supabaseConfig.publishableKey, {
     cookies: {

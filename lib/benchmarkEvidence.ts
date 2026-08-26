@@ -1,4 +1,5 @@
 import { publicDb } from "@/lib/supabase";
+import { unstable_cache } from "next/cache";
 import { benchmarkRows } from "@/lib/websiteBenchmarkRows";
 
 export type ReproducibleBenchmarkRow = (typeof benchmarkRows)[number] & {
@@ -9,7 +10,11 @@ export type ReproducibleBenchmarkRow = (typeof benchmarkRows)[number] & {
   };
 };
 
-export async function getReproducibleBenchmark(): Promise<{ rows: ReproducibleBenchmarkRow[]; published: number; awaiting: number }> {
+const cachedBenchmark=unstable_cache(async()=>fetchReproducibleBenchmark(),["public-benchmark-v1"],{revalidate:300,tags:["public-intel"]});
+
+export function getReproducibleBenchmark(): Promise<{ rows: ReproducibleBenchmarkRow[]; published: number; awaiting: number }> { return cachedBenchmark(); }
+
+async function fetchReproducibleBenchmark(): Promise<{ rows: ReproducibleBenchmarkRow[]; published: number; awaiting: number }> {
   const db = publicDb();
   if (!db) return { rows: benchmarkRows.map((row) => ({ ...row, scan: null })), published: 0, awaiting: benchmarkRows.length };
   const ids = [...new Set(benchmarkRows.map((row) => row.id))];

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 const rpc = vi.fn();
 const select = vi.fn();
+vi.mock("next/cache", () => ({ unstable_cache: (fn: unknown) => fn }));
 vi.mock("@/lib/supabase", () => ({ publicDb: () => ({ rpc, from: () => ({ select }) }) }));
 import { getPublicMetrics } from "./publicMetrics";
 

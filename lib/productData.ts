@@ -28,7 +28,18 @@ export type PublicSecurityFeedItem = { scan_id: string; extension_id: string; ve
 export type PublicInventoryItem = PublicSecurityFeedItem & { publisher: string; publisher_verified: boolean; description: string; icon_url: string; risk_score: number; malware_score: number; artifact_sha256: string; provenance_tier: string; expected_profile_id: string; capability_assessment: Record<string, unknown>; scanner_build: string; ruleset_version: string; score_schema_version: string };
 export type PublicInventory = { items: PublicInventoryItem[]; totals: { extensions: number; releases: number; complete: number; allowed: number; expected: number; investigate: number; review: number; blocked: number; lastScannedAt: string | null } };
 
-export async function getPublicSecurityFeed(limit = 6): Promise<PublicSecurityFeedItem[]> {
+const cachedSecurityFeed=unstable_cache(async(limit:number)=>fetchPublicSecurityFeed(limit),["public-feed-v1"],{revalidate:300,tags:["public-intel"]});
+const cachedPublicInventory=unstable_cache(async(limit:number)=>fetchPublicInventory(limit),["public-inventory-v1"],{revalidate:300,tags:["public-intel"]});
+const cachedCatalog=unstable_cache(async(query:string,limit:number)=>fetchCatalog(query,limit),["public-catalog-v1"],{revalidate:300,tags:["public-intel","catalog"]});
+
+export function getPublicSecurityFeed(limit = 6): Promise<PublicSecurityFeedItem[]> { return cachedSecurityFeed(limit); }
+
+/** Current-policy reproducible scans only. Development and private work never enter this catalog. */
+export function getPublicInventory(limit = 240): Promise<PublicInventory> { return cachedPublicInventory(limit); }
+
+export function listCatalog(query = "", limit = 50): Promise<CatalogExtension[]> { return cachedCatalog(query, limit); }
+
+async function fetchPublicSecurityFeed(limit = 6): Promise<PublicSecurityFeedItem[]> {
   const db = publicDb();
   if (!db) return [];
   const classification = await activePublicClassification(db);
@@ -48,7 +59,7 @@ export async function getPublicSecurityFeed(limit = 6): Promise<PublicSecurityFe
 }
 
 /** Current-policy reproducible scans only. Development and private work never enter this catalog. */
-export async function getPublicInventory(limit = 240): Promise<PublicInventory> {
+async function fetchPublicInventory(limit = 240): Promise<PublicInventory> {
   const db = publicDb();
   if (!db) return emptyInventory();
   const classification = await activePublicClassification(db);
@@ -85,7 +96,7 @@ export async function getPublicInventory(limit = 240): Promise<PublicInventory> 
   return { items, totals: { extensions: new Set(items.map((item) => item.extension_id)).size, releases: items.length, complete: items.filter((item) => item.public_outcome !== "incomplete").length, allowed: items.filter((item) => item.decision === "allow").length, expected: items.filter((item) => item.public_outcome === "expected_capability").length, investigate: items.filter((item) => item.public_outcome === "investigate").length, review: items.filter((item) => item.decision === "review").length, blocked: items.filter((item) => item.decision === "block").length, lastScannedAt: items[0]?.scanned_at || null } };
 }
 
-export async function listCatalog(query = "", limit = 50): Promise<CatalogExtension[]> {
+async function fetchCatalog(query = "", limit = 50): Promise<CatalogExtension[]> {
   const db = publicDb();
   if (db) {
     let request = db.from("extensions").select("*, extension_versions(version,is_latest,latest_scan_id,scan_state)").order("catalog_rank", { ascending: true, nullsFirst: false }).limit(Math.min(limit, 100));
@@ -180,8 +191,8 @@ async function loadVersionScan(db: SupabaseClient, id: string, version: string, 
   const [scan, findings, files, dependencies, previews] = await Promise.all([
     db.from("scans").select("*").eq("id", scanId).eq("extension_id", id).eq("version", version).maybeSingle(),
     db.from("findings").select("*").eq("scan_id", scanId).order("severity"),
-    db.from("artifact_files").select("*").eq("scan_id", scanId).order("path").limit(5000),
-    db.from("dependencies").select("*").eq("scan_id", scanId).order("relationship").order("name"),
+    db.from("artifact_files").select("path,sha256,size_bytes").eq("scan_id", scanId).order("path").limit(5000),
+    db.from("dependencies").select("name,version,ecosystem,relationship,advisories").eq("scan_id", scanId).order("relationship").order("name"),
     db.from("artifact_file_previews").select("path,content_sha256,truncated").eq("scan_id", scanId),
   ]);
   if (!scan.data) return null;
@@ -430,6 +441,46 @@ function isMissingScanJobResultsTable(error: { code?: string; message?: string }
   return error.code === "PGRST205"
     && String(error.message || "").includes("scan_job_results");
 }
+
+export type BadgeDecision = {
+  found: boolean;
+  extension_id: string | null;
+  version: string | null;
+  decision: "allow" | "review" | "block" | null;
+  scanned_at: string | null;
+};
+
+const cachedBadgeDecision=unstable_cache(async(id:string)=>fetchBadgeDecision(id),["public-badge-v1"],{revalidate:300,tags:["public-intel"]});
+
+export function getBadgeDecision(id: string): Promise<BadgeDecision> { return cachedBadgeDecision(id.toLowerCase()); }
+
+async function fetchBadgeDecision(rawId: string): Promise<BadgeDecision> {
+  const db = publicDb();
+  if (!db) return { found: false, extension_id: null, version: null, decision: null, scanned_at: null };
+  const storedId = await resolveStoredExtensionId(db, rawId);
+  if (!storedId) return { found: false, extension_id: null, version: null, decision: null, scanned_at: null };
+  const classification = await activePublicClassification(db).catch(() => null);
+  let request = db.from("scans").select("id,extension_id,version,decision,scanned_at")
+    .eq("extension_id", storedId)
+    .in("scan_purpose", ["public_intelligence", "benchmark"])
+    .eq("analysis_status", "complete")
+    .is("superseded_at", null)
+    .order("scanned_at", { ascending: false })
+    .limit(1);
+  if (classification?.scanIds) request = request.in("id", classification.scanIds);
+  const { data } = await request;
+  const row = (data || [])[0] as Record<string, unknown> | undefined;
+  if (!row) return { found: true, extension_id: storedId, version: null, decision: null, scanned_at: null };
+  const decision = normalizeDecision(row.decision);
+  return {
+    found: true,
+    extension_id: storedId,
+    version: String(row.version || ""),
+    decision: decision === "incomplete" ? null : decision,
+    scanned_at: row.scanned_at ? String(row.scanned_at) : null,
+  };
+}
+
 
 function emptyInventory(): PublicInventory {
   return { items: [], totals: { extensions: 0, releases: 0, complete: 0, allowed: 0, expected: 0, investigate: 0, review: 0, blocked: 0, lastScannedAt: null } };

@@ -1,4 +1,5 @@
 import { publicDb } from "@/lib/supabase";
+import { unstable_cache } from "next/cache";
 
 export type PublicMetrics = {
   as_of: string | null;
@@ -27,7 +28,11 @@ const EMPTY: PublicMetrics = {
   }
 };
 
-export async function getPublicMetrics(): Promise<PublicMetrics> {
+const cachedPublicMetrics=unstable_cache(async()=>fetchPublicMetrics(),["public-metrics-v1"],{revalidate:300,tags:["public-intel"]});
+
+export function getPublicMetrics(): Promise<PublicMetrics> { return cachedPublicMetrics(); }
+
+async function fetchPublicMetrics(): Promise<PublicMetrics> {
   const db = publicDb();
   if (!db) return EMPTY;
   const [aggregate, refreshes] = await Promise.all([

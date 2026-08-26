@@ -1,5 +1,6 @@
 import { getDeepScanHealth } from "@/lib/deepScanHealth";
 import { serviceDb } from "@/lib/supabase";
+import { unstable_cache } from "next/cache";
 
 export type ServiceState = "operational" | "degraded" | "outage" | "unknown";
 export type PublicService = {
@@ -129,7 +130,11 @@ export function evaluatePublicStatus(input: HealthInput): PublicStatus {
   };
 }
 
-export async function getPublicStatus(): Promise<PublicStatus> {
+const cachedPublicStatus=unstable_cache(async()=>fetchPublicStatus(),["public-status-v1"],{revalidate:60,tags:["public-status"]});
+
+export function getPublicStatus(): Promise<PublicStatus> { return cachedPublicStatus(); }
+
+async function fetchPublicStatus(): Promise<PublicStatus> {
   const runner = await getDeepScanHealth();
   const since = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
   try {
