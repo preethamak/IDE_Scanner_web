@@ -27,6 +27,7 @@ export type ReportScan = ReportObject & {
 export type PublicOutcome =
   | "clear"
   | "expected_capability"
+  | "explained_preventive_chain"
   | "investigate"
   | "preventive_block"
   | "confirmed_threat"
@@ -53,6 +54,7 @@ export class ReportContractError extends Error {
 const PUBLIC_OUTCOMES = new Set<PublicOutcome>([
   "clear",
   "expected_capability",
+  "explained_preventive_chain",
   "investigate",
   "preventive_block",
   "confirmed_threat",
