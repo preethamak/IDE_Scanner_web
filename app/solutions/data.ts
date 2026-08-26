@@ -108,18 +108,18 @@ export const solutions = {
   },
   security: {
     eyebrow: "For security teams",
-    title: "Replace extension guesswork with",
-    emphasis: "version-bound evidence.",
+    title: "Every verdict tied to",
+    emphasis: "an exact release.",
     intro:
       "Prioritize review with capabilities and findings while preserving coverage gaps, exact identities, and the limits of each conclusion.",
     icon: ShieldCheck,
-    promise: "Evidence that survives review",
+    promise: "Answers you can point to later",
     outcomes: [
       {
         icon: Fingerprint,
-        title: "Artifact boundary",
+        title: "Exact identity",
         detail:
-          "Every public result identifies the package version, hash, scanner, and ruleset.",
+          "Every result names the package version, hash, scanner, and ruleset it used. No blending results across releases.",
       },
       {
         icon: ScrollText,
@@ -150,14 +150,14 @@ export const solutions = {
         detail: "Retain the exact report and the team decision that followed.",
       },
     ],
-    cta: "Build an exact-release extension inventory.",
+    cta: "Build an inventory of the extensions your team actually runs.",
     href: "/analyze",
     callCta: "Book an intro call",
   },
   agents: {
     eyebrow: "For AI-agent security",
     title: "Give autonomous tools",
-    emphasis: "less ambient authority.",
+    emphasis: "clear, limited access.",
     intro:
       "Explore the permission model for files, commands, network destinations, secrets, tools, and delegation before the native runtime is built.",
     icon: Bot,
@@ -165,19 +165,19 @@ export const solutions = {
     outcomes: [
       {
         icon: FileDiff,
-        title: "Patch-first writes",
+        title: "Reviewable changes",
         detail:
           "The runtime target makes agent changes reviewable before applying them.",
       },
       {
         icon: Network,
-        title: "Brokered destinations",
+        title: "Explicit network access",
         detail:
           "Network access is designed around explicit destinations rather than ambient egress.",
       },
       {
         icon: Bot,
-        title: "Delegation visibility",
+        title: "Who did what, visible",
         detail:
           "Agents and tools keep distinct principals so authority cannot silently expand.",
       },

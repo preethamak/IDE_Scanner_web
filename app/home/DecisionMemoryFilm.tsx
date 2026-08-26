@@ -12,7 +12,7 @@ export default function DecisionMemoryFilm() {
   }, []);
 
   return <section className={styles.scene}>
-    <div className={styles.copy}><p><i /> Built-up context</p><h2>Good decisions<br />should <em>compound.</em></h2><span>When the next version appears, its review begins with the last decision—not a blank page.</span></div>
+    <div className={styles.copy}><p><i /> Built-up context</p><h2>Your last review<br />should <em>carry forward.</em></h2><span>When the next version appears, its review begins with the last decision—not a blank page.</span></div>
     <div className={`${styles.window} ${nextRelease ? styles.next : ""}`} aria-label="GuardRails decision history interaction">
       <header><div><i /><i /><i /></div><b>GuardRails</b><span>Release history</span><small>Workspace assistant</small></header>
       <div className={styles.app}>
@@ -25,7 +25,7 @@ export default function DecisionMemoryFilm() {
           <MousePointer2 className={styles.cursor} />
         </main>
       </div>
-      <footer className={styles.caption}><span>Review once. Start smarter next time.</span><div><i className={!nextRelease ? styles.on : ""} /><i className={nextRelease ? styles.on : ""} /></div></footer>
+      <footer className={styles.caption}><span>Review a release once. Every future release starts from that answer.</span><div><i className={!nextRelease ? styles.on : ""} /><i className={nextRelease ? styles.on : ""} /></div></footer>
     </div>
   </section>;
 }
