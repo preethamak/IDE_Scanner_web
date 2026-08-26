@@ -6,7 +6,7 @@ export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 
 export default async function AppleIcon() {
-  const logo = await readFile(join(process.cwd(), "public/logo.png"));
+  const logo = await readFile(join(process.cwd(), "public/logo-transparent.png"));
 
   return new ImageResponse(
     (
@@ -17,7 +17,7 @@ export default async function AppleIcon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(135deg, #0A1017 0%, #101B26 100%)",
+          background: "#ffffff",
           padding: 24,
         }}
       >

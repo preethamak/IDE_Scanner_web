@@ -6,8 +6,13 @@ export const alt = "Guardrails - Check IDE extensions before you install them";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
+const INK = "#16181d";
+const MUTED = "#6b7280";
+const PINK = "#f43f5e";
+const CYAN = "#17aef0";
+
 export default async function Image() {
-  const logo = await readFile(join(process.cwd(), "public/logo.png"));
+  const logo = await readFile(join(process.cwd(), "public/logo-transparent.png"));
 
   return new ImageResponse(
     (
@@ -19,8 +24,8 @@ export default async function Image() {
           flexDirection: "column",
           justifyContent: "space-between",
           padding: "64px 72px",
-          background: "linear-gradient(135deg, #0A1017 0%, #101B26 100%)",
-          color: "#E8EEF4",
+          background: "#ffffff",
+          color: INK,
         }}
       >
         <div
@@ -48,7 +53,7 @@ export default async function Image() {
               Guardrails
             </div>
           </div>
-          <div style={{ display: "flex", fontSize: 28, color: "#7E93A8" }}>
+          <div style={{ display: "flex", fontSize: 28, color: MUTED }}>
             abscissa.dev
           </div>
         </div>
@@ -72,7 +77,7 @@ export default async function Image() {
               fontWeight: 700,
               lineHeight: 1.18,
               letterSpacing: -1.5,
-              color: "#3ECF8E",
+              color: PINK,
             }}
           >
             before you install it.
@@ -81,7 +86,7 @@ export default async function Image() {
             style={{
               display: "flex",
               fontSize: 31,
-              color: "#94A8BC",
+              color: MUTED,
               marginTop: 26,
             }}
           >
@@ -99,17 +104,42 @@ export default async function Image() {
           <div
             style={{
               display: "flex",
-              padding: "14px 30px",
-              background: "#12202C",
-              border: "1px solid #23384A",
-              borderRadius: 999,
-              fontSize: 27,
-              color: "#BFDCF2",
+              alignItems: "center",
+              gap: 18,
             }}
           >
-            Scan an extension now
+            <div
+              style={{
+                display: "flex",
+                padding: "14px 30px",
+                background: INK,
+                borderRadius: 999,
+                fontSize: 27,
+                color: "#ffffff",
+              }}
+            >
+              Scan an extension now
+            </div>
+            <div
+              style={{
+                display: "flex",
+                width: 34,
+                height: 34,
+                borderRadius: 10,
+                background: CYAN,
+              }}
+            />
+            <div
+              style={{
+                display: "flex",
+                width: 34,
+                height: 34,
+                borderRadius: 10,
+                background: PINK,
+              }}
+            />
           </div>
-          <div style={{ display: "flex", fontSize: 27, color: "#3ECF8E" }}>
+          <div style={{ display: "flex", fontSize: 27, color: MUTED }}>
             abscissa.dev
           </div>
         </div>
