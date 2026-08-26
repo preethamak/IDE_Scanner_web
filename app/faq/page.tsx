@@ -6,13 +6,13 @@ import styles from "../trust.module.css";
 export const metadata: Metadata = {
   title: "FAQ",
   description:
-    "What Guardrails checks, where analysis runs, how monitoring works, what decisions mean, and what it costs.",
+    "What GuardRails checks, where analysis runs, how monitoring works, what decisions mean, and what it costs.",
   alternates: { canonical: "/faq" },
 };
 
 const faqs = [
   {
-    question: "What does Guardrails actually check?",
+    question: "What does GuardRails actually check?",
     answer:
       "Published IDE extension releases. A report examines an exact release: requested permissions, capabilities that changed since the previous version, dependency additions, and the coverage of the evidence behind each finding. Findings are normalized into six scoring dimensions and mapped to a decision you can act on.",
     href: "/metrics",
@@ -49,7 +49,7 @@ const faqs = [
   {
     question: "Which editors are supported?",
     answer:
-      "Analysis covers extensions published to marketplace registries used by editors such as VS Code, Cursor, and Windsurf. Guardrails is an independent reviewer; it is not affiliated with or endorsed by those platforms and does not modify your editors.",
+      "Analysis covers extensions published to marketplace registries used by editors such as VS Code, Cursor, and Windsurf. GuardRails is an independent reviewer; it is not affiliated with or endorsed by those platforms and does not modify your editors.",
     href: "/registry",
     linkLabel: "Search the registry",
   },
@@ -93,11 +93,6 @@ export default function FaqPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <div className={styles.atmosphere} aria-hidden="true">
-        <i />
-        <i />
-        <i />
-      </div>
       <section className={styles.hero}>
         <div>
           <span className={styles.eyebrow}>

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BadgeCheck, ChevronRight, Download } from "lucide-react";
@@ -15,6 +16,24 @@ import type { ReportFile } from "@/lib/reportContract";
 import { extensionPageModel, scanDecision } from "@/lib/extensionPageModel";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const db = await serverDb();
+  const product = await getExtensionProduct(decodeURIComponent(id), db);
+  if (!product) return { title: "Extension not found" };
+  const name = product.extension.display_name || product.extension.id;
+  const publisher = product.extension.publisher;
+  return {
+    title: `${name} (${publisher}) — safety check`,
+    description: `See what the ${name} VS Code extension can access before you install it: permissions, capabilities, and changes between releases, analyzed by GuardRails.`,
+    alternates: { canonical: `/extensions/${product.extension.id}` },
+  };
+}
 
 export default async function ExtensionPage({
   params,

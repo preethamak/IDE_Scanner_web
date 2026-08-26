@@ -18,7 +18,7 @@ import styles from "../trust.module.css";
 export const metadata: Metadata = {
   title: "Privacy policy",
   description:
-    "What Guardrails receives, retains, and places under your control, including analytics consent, retention, deletion, and your rights.",
+    "What GuardRails receives, retains, and places under your control, including analytics consent, retention, deletion, and your rights.",
   alternates: { canonical: "/privacy" },
 };
 
@@ -68,11 +68,6 @@ const boundaries = [
 export default function PrivacyPage() {
   return (
     <main className={styles.page}>
-      <div className={styles.atmosphere} aria-hidden="true">
-        <i />
-        <i />
-        <i />
-      </div>
       <section className={styles.hero}>
         <div>
           <span className={styles.eyebrow}>
@@ -205,7 +200,7 @@ export default function PrivacyPage() {
             </div>
           </header>
           <p>
-            Guardrails (abscissa.dev) determines the purposes and means of
+            GuardRails (abscissa.dev) determines the purposes and means of
             processing described on this page. Privacy and data-subject
             requests: security@abscissa.dev. Vulnerability disclosure follows{" "}
             <Link href="/security">the security page</Link> and security.txt.

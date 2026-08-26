@@ -28,10 +28,6 @@ export default function ResearchPage() {
 
   return (
     <main className={styles.page}>
-      <div className={styles.atmosphere} aria-hidden="true">
-        <i />
-        <i />
-      </div>
 
       <section className={styles.hero}>
         <div>

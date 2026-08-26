@@ -13,7 +13,7 @@ import styles from "../trust.module.css";
 export const metadata: Metadata = {
   title: "Contact",
   description:
-    "Reach the Guardrails team: security disclosure, product questions, team plan inquiries, and support for workspaces.",
+    "Reach the GuardRails team: security disclosure, product questions, team plan inquiries, and support for workspaces.",
   alternates: { canonical: "/contact" },
 };
 
@@ -22,7 +22,7 @@ const channels = [
     icon: ShieldAlert,
     label: "Security issues",
     title: "Report a vulnerability",
-    body: "Report a security problem in Guardrails or flag a malicious extension that requires urgent review. We follow coordinated disclosure and credit reporters.",
+    body: "Report a security problem in GuardRails or flag a malicious extension that requires urgent review. We follow coordinated disclosure and credit reporters.",
     action: "security@abscissa.dev",
     href: "mailto:security@abscissa.dev",
   },
@@ -40,7 +40,7 @@ const channels = [
     title: "Everything else",
     body: "Questions about reports, monitoring launch access, report orders, or your account — write from your workspace email where relevant so ownership is quick to verify.",
     action: "hello@abscissa.dev",
-    href: "mailto:hello@abscissa.dev?subject=Guardrails%20support",
+    href: "mailto:hello@abscissa.dev?subject=GuardRails%20support",
   },
   {
     icon: Bug,
@@ -55,11 +55,6 @@ const channels = [
 export default function ContactPage() {
   return (
     <main className={styles.page}>
-      <div className={styles.atmosphere} aria-hidden="true">
-        <i />
-        <i />
-        <i />
-      </div>
       <section className={styles.hero}>
         <div>
           <span className={styles.eyebrow}>
@@ -68,10 +63,10 @@ export default function ContactPage() {
           <h1>
             Contact
             <br />
-            <em>the Guardrails team.</em>
+            <em>the GuardRails team.</em>
           </h1>
           <p>
-            Messages reach the team that builds and operates Guardrails. Use
+            Messages reach the team that builds and operates GuardRails. Use
             the channel matching your topic for the fastest response.
           </p>
           <div className={styles.actions}>
@@ -138,7 +133,7 @@ export default function ContactPage() {
       <section className={styles.linkRail}>
         <Link href="/about">
           <span>About</span>
-          <strong>What Guardrails checks and why.</strong>
+          <strong>What GuardRails checks and why.</strong>
           <ArrowRight />
         </Link>
         <Link href="/pricing">

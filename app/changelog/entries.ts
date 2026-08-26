@@ -21,7 +21,7 @@ export const changelogEntries: readonly ChangelogEntry[] = [
     title: "Shareable preview cards for every page",
     tag: "Site",
     paragraphs: [
-      "Links to Guardrails now unfurl into a generated 1200×630 card with the headline and a call to action, so shared reports look like reports instead of a bare domain.",
+      "Links to GuardRails now unfurl into a generated 1200×630 card with the headline and a call to action, so shared reports look like reports instead of a bare domain.",
     ],
   },
   {
@@ -29,7 +29,7 @@ export const changelogEntries: readonly ChangelogEntry[] = [
     title: "Findability and disclosure pass",
     tag: "Site",
     paragraphs: [
-      "sitemap.xml and robots.txt went live for search indexing, site metadata was rewritten to state concretely what Guardrails checks, and the homepage hero now says why it matters.",
+      "sitemap.xml and robots.txt went live for search indexing, site metadata was rewritten to state concretely what GuardRails checks, and the homepage hero now says why it matters.",
       "A security.txt file publishes our vulnerability disclosure contact (security@abscissa.dev) at /.well-known/security.txt.",
     ],
   },

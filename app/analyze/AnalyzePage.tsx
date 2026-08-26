@@ -65,11 +65,6 @@ export default function AnalyzePage() {
 
   return (
     <main className={styles.page}>
-      <div className={styles.atmosphere} aria-hidden="true">
-        <i />
-        <i />
-        <i />
-      </div>
       <section className={styles.hero}>
         <span className={styles.eyebrow}>
           <ShieldCheck /> Choose the evidence boundary

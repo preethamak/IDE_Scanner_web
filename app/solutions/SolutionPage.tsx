@@ -19,8 +19,6 @@ export default function SolutionPage({ solution }: { solution: Solution }) {
   const Icon = solution.icon;
   return (
     <main className={styles.page}>
-      <i className={`${styles.glow} ${styles.glowOne}`} aria-hidden="true" />
-      <i className={`${styles.glow} ${styles.glowTwo}`} aria-hidden="true" />
       <section className={styles.hero}>
         <div>
           <span className={styles.eyebrow}>

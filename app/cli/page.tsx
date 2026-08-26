@@ -16,7 +16,7 @@ import CliInstallCommand from "@/app/CliInstallCommand";
 import "./cli.css";
 
 export const metadata: Metadata = {
-  title: "Guardrails CLI",
+  title: "GuardRails CLI",
   description:
     "Scan extensions already installed in your IDE without uploading or executing their code.",
 };
@@ -33,11 +33,11 @@ const comparison = [
   },
   {
     icon: HardDrive,
-    label: "Guardrails CLI",
+    label: "GuardRails CLI",
     title: "Check what is already installed.",
     body: "Find extensions in VS Code, Cursor, Windsurf, VSCodium, and Insiders, then inspect local snapshots on your machine.",
     use: "Best for auditing the editor you use today.",
-    action: "Install Guardrails CLI",
+    action: "Install GuardRails CLI",
     href: "#install",
   },
 ] as const;
@@ -48,7 +48,7 @@ export default function CliPage() {
       <section className="cliHero">
         <div className="cliHeroCopy">
           <span className="cliEyebrow">
-            <TerminalSquare /> Guardrails CLI
+            <TerminalSquare /> GuardRails CLI
           </span>
           <h1>Audit every editor on your machine.</h1>
           <p>
@@ -74,7 +74,7 @@ export default function CliPage() {
         </div>
         <div
           className="cliTerminal"
-          aria-label="Guardrails CLI terminal preview"
+          aria-label="GuardRails CLI terminal preview"
         >
           <header>
             <span>
@@ -176,7 +176,7 @@ export default function CliPage() {
           </span>
           <h2>Your extension code stays on your machine.</h2>
           <p>
-            Guardrails copies selected extensions into a temporary private
+            GuardRails copies selected extensions into a temporary private
             snapshot, scans it locally, then removes the snapshot. It never
             launches extension code.
           </p>
@@ -187,7 +187,7 @@ export default function CliPage() {
             <div>
               <strong>No code upload</strong>
               <p>
-                Source files and package contents are not sent to Guardrails.
+                Source files and package contents are not sent to GuardRails.
               </p>
             </div>
           </article>
@@ -196,7 +196,7 @@ export default function CliPage() {
             <div>
               <strong>Verified scanner runtime</strong>
               <p>
-                The scanner is bundled with Guardrails and checked for
+                The scanner is bundled with GuardRails and checked for
                 unexpected changes before it runs.
               </p>
             </div>

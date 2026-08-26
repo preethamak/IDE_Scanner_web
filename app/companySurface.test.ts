@@ -25,7 +25,7 @@ describe("company site surface", () => {
   it("answers FAQ questions with methodology links and structured data", () => {
     const faq = read("./faq/page.tsx");
     for (const question of [
-      "What does Guardrails actually check?",
+      "What does GuardRails actually check?",
       "Do you install or execute extensions to scan them?",
       "How much does it cost?",
       "How do I dispute a finding or flag a malicious extension?",

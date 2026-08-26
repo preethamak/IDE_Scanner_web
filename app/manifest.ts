@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Guardrails - Check IDE extensions before you install them",
-    short_name: "Guardrails",
+    name: "GuardRails - Check IDE extensions before you install them",
+    short_name: "GuardRails",
     description:
       "Scan IDE extensions before install, then get flagged when an update quietly gains new access.",
     start_url: "/",

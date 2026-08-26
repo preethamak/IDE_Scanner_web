@@ -14,6 +14,14 @@ export async function POST(request: Request) {
     if (result.error) throw result.error;
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Subscription failed." }, { status: 400 });
+    const message = error instanceof Error ? error.message : "Subscription failed.";
+    console.error("[newsletter]", message);
+    if (/credential|not configured|supabase/i.test(message)) {
+      return NextResponse.json(
+        { error: "Signup is temporarily unavailable. Email hello@abscissa.dev and we will add you manually." },
+        { status: 503 },
+      );
+    }
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }

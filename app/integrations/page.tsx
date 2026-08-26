@@ -15,7 +15,7 @@ import styles from "../marketing.module.css";
 export const metadata: Metadata = {
   title: "Integrations",
   description:
-    "Where Guardrails fits into your workflow: editors, Slack and email notifications, Jira tickets, the local CLI, portable reports, and audit exports.",
+    "Where GuardRails fits into your workflow: editors, Slack and email notifications, Jira tickets, the local CLI, portable reports, and audit exports.",
   alternates: { canonical: "/integrations" },
 };
 
@@ -85,8 +85,6 @@ const groups = [
 export default function IntegrationsPage() {
   return (
     <main className={styles.page}>
-      <i className={`${styles.glow} ${styles.glowOne}`} aria-hidden="true" />
-      <i className={`${styles.glow} ${styles.glowTwo}`} aria-hidden="true" />
       <section className={styles.hero}>
         <div>
           <span className={styles.eyebrow}>
@@ -134,12 +132,12 @@ export default function IntegrationsPage() {
         </div>
         <ul>
           <li>
-            Guardrails never requests access to your editor, repositories, or
+            GuardRails never requests access to your editor, repositories, or
             source code. The product analyzes published releases.
           </li>
           <li>
             Delivery targets receive notifications only. They do not grant
-            Guardrails write access to those systems.
+            GuardRails write access to those systems.
           </li>
           <li>
             Local CLI results remain on your machine until you explicitly

@@ -97,11 +97,6 @@ function MonitorGate({ extension }: { extension: string }) {
     : "/monitor";
   return (
     <main className={styles.gate}>
-      <div className={styles.atmosphere} aria-hidden="true">
-        <i />
-        <i />
-        <i />
-      </div>
       <section className={styles.gateHero}>
         <div>
           <span className={styles.eyebrow}>

@@ -6,15 +6,15 @@ import styles from "../trust.module.css";
 export const metadata: Metadata = {
   title: "Terms of Service",
   description:
-    "The terms that govern use of Guardrails: public reports, local CLI analysis, team workspaces, and paid plans.",
+    "The terms that govern use of GuardRails: public reports, local CLI analysis, team workspaces, and paid plans.",
   alternates: { canonical: "/terms" },
 };
 
 const sections = [
   {
-    title: "1. What Guardrails provides",
+    title: "1. What GuardRails provides",
     body: [
-      "Guardrails analyzes published IDE extension releases and presents the results as public exact-release reports. You can also analyze extensions installed on your machine with the local CLI, import portable report bundles into your browser, monitor watched extensions for meaningful changes, and coordinate review decisions in a team workspace.",
+      "GuardRails analyzes published IDE extension releases and presents the results as public exact-release reports. You can also analyze extensions installed on your machine with the local CLI, import portable report bundles into your browser, monitor watched extensions for meaningful changes, and coordinate review decisions in a team workspace.",
       "Public reports, the detection catalog, scoring methodology, and validation results are published openly so you can check our work.",
     ],
   },
@@ -49,7 +49,7 @@ const sections = [
   {
     title: "6. Third-party services",
     body: [
-      "Guardrails depends on third parties it does not control: marketplace registries for package metadata, Stripe for payments when enabled, and delivery providers such as email, Slack, or Jira for notifications you configure. Their availability and terms are their own.",
+      "GuardRails depends on third parties it does not control: marketplace registries for package metadata, Stripe for payments when enabled, and delivery providers such as email, Slack, or Jira for notifications you configure. Their availability and terms are their own.",
       "Editor names and marketplace references describe where monitored extensions are published; GuardRails is not affiliated with or endorsed by those platforms.",
     ],
   },
@@ -62,13 +62,13 @@ const sections = [
   {
     title: "8. Termination",
     body: [
-      "You can stop using Guardrails at any time. We may suspend accounts or workspaces that violate these terms or create risk for other users; where practical, we will explain what happened and what restores access.",
+      "You can stop using GuardRails at any time. We may suspend accounts or workspaces that violate these terms or create risk for other users; where practical, we will explain what happened and what restores access.",
     ],
   },
   {
     title: "9. Disclaimers and liability",
     body: [
-      "The service is provided as is. To the fullest extent permitted by law, Guardrails is not liable for indirect or consequential damages, or for decisions you make based on reports alone.",
+      "The service is provided as is. To the fullest extent permitted by law, GuardRails is not liable for indirect or consequential damages, or for decisions you make based on reports alone.",
       "Nothing in these terms limits liability that cannot be limited by law.",
     ],
   },
@@ -86,11 +86,6 @@ export default function TermsPage() {
   const effective = "Effective August 23, 2026";
   return (
     <main className={styles.page}>
-      <div className={styles.atmosphere} aria-hidden="true">
-        <i />
-        <i />
-        <i />
-      </div>
       <section className={styles.hero}>
         <div>
           <span className={styles.eyebrow}>

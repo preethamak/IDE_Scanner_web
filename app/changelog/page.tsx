@@ -7,7 +7,7 @@ import styles from "../trust.module.css";
 export const metadata: Metadata = {
   title: "Changelog",
   description:
-    "What shipped on Guardrails: product changes, methodology updates, and site releases, newest first.",
+    "What shipped on GuardRails: product changes, methodology updates, and site releases, newest first.",
   alternates: { canonical: "/changelog" },
 };
 
@@ -20,11 +20,6 @@ const tagClass: Record<string, string> = {
 export default function ChangelogPage() {
   return (
     <main className={styles.page}>
-      <div className={styles.atmosphere} aria-hidden="true">
-        <i />
-        <i />
-        <i />
-      </div>
       <section className={styles.hero}>
         <div>
           <span className={styles.eyebrow}>

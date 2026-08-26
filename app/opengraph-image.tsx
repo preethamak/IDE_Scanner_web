@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-export const alt = "Guardrails - Check IDE extensions before you install them";
+export const alt = "GuardRails - Check IDE extensions before you install them";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -50,7 +50,7 @@ export default async function Image() {
                 marginLeft: 20,
               }}
             >
-              Guardrails
+              GuardRails
             </div>
           </div>
           <div style={{ display: "flex", fontSize: 28, color: MUTED }}>

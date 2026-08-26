@@ -28,7 +28,7 @@ export default function ComparePage() {
       }
       setResults(await Promise.all(responses.map((response) => response.json())) as [Product, Product]);
     } catch {
-      setError("Guardrails could not load the comparison. Check your connection and try again.");
+      setError("GuardRails could not load the comparison. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
