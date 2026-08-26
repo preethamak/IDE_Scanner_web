@@ -391,10 +391,10 @@
   color: #8a7d84;
   font-size: 11.5px;
 }
-.compare [data-plan="team"] {
+.compare [data-plan="monitoring"] {
   background: #fdf3f7;
 }
-.compare thead th[data-plan="team"] strong {
+.compare thead th[data-plan="monitoring"] strong {
   color: #9a496d;
 }
 .compare tbody th {
