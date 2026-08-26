@@ -19,7 +19,7 @@ grant select on public.team_policies to authenticated;
 
 alter table public.team_monitoring_alerts drop constraint team_monitoring_alerts_kind_check;
 alter table public.team_monitoring_alerts add constraint team_monitoring_alerts_kind_check
-  check (kind in ('release_detected', 'scan_completed', 'review_required', 'confirmed_threat', 'coverage_incomplete', 'scan_failed', 'decision_due', 'policy_block'));
+  check (kind in ('release_detected', 'scan_completed', 'review_required', 'confirmed_threat', 'coverage_incomplete', 'scan_failed', 'decision_due', 'decision_changed', 'policy_block'));
 
 create or replace function public.evaluate_team_policies()
 returns trigger language plpgsql security definer set search_path = public as $$
