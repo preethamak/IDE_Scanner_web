@@ -78,7 +78,7 @@ const events: Array<[EventPreference, string, string]> = [
   [
     "scan_alerts",
     "Analysis completed or failed",
-    "Know when exact-release evidence is ready or needs attention.",
+    "Know when per-version results is ready or needs attention.",
   ],
   [
     "decision_alerts",

@@ -13,7 +13,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Research notes",
   description:
-    "Field notes on IDE extension capability, exact-release evidence, and the line between a useful signal and an unsupported conclusion.",
+    "Field notes on IDE extension capability, per-version results, and the line between a useful signal and an unsupported conclusion.",
   alternates: { canonical: "/research" },
 };
 

@@ -14,8 +14,8 @@ export default async function ExtensionRegistryPage({ searchParams }: { searchPa
   const spotlight = inventory.items.find((item) => item.decision === "review" || item.decision === "block") || inventory.items[0];
   return <main className={styles.page}>
     <section className={styles.hero}>
-      <div className={styles.heroCopy}><span className={styles.eyebrow}><i/> Extension intelligence</span><h1>Know what runs<br/>in your editor.</h1><p>Search any VS Code or Open VSX extension. Confirm its identity, inspect the exact analyzed release, and understand what deserves attention.</p></div>
-      <div className={styles.searchPanel}><div className={styles.searchHeading}><span><ScanSearch/> Search the registry</span><small>Marketplace + Open VSX</small></div><div className={styles.discoverySearch}><ExtensionSearch initialQuery={q || ""} submitLabel="Find extension"/></div><div className={styles.popular}><span>Popular</span>{popular.map((name) => <Link key={name} href={`/registry?q=${encodeURIComponent(name)}`}>{name}</Link>)}</div><footer><ShieldCheck/><span>Results distinguish exact identities from similar names.</span></footer></div>
+      <div className={styles.heroCopy}><span className={styles.eyebrow}><i/> Extension intelligence</span><h1>Know what runs<br/>in your editor.</h1><p>Search any VS Code or Open VSX extension. Search by name or ID, confirm you found the right one, and read what each release can access before installing.</p></div>
+      <div className={styles.searchPanel}><div className={styles.searchHeading}><span><ScanSearch/> Search the registry</span><small>Marketplace + Open VSX</small></div><div className={styles.discoverySearch}><ExtensionSearch initialQuery={q || ""} submitLabel="Find extension"/></div><div className={styles.popular}><span>Popular</span>{popular.map((name) => <Link key={name} href={`/registry?q=${encodeURIComponent(name)}`}>{name}</Link>)}</div><footer><ShieldCheck/><span>Results separate exact matches from similar names.</span></footer></div>
     </section>
 
     <section className={styles.snapshot} aria-label="Registry snapshot">
@@ -25,17 +25,17 @@ export default async function ExtensionRegistryPage({ searchParams }: { searchPa
       <div><span>Last refreshed</span><strong>{relativeTime(inventory.totals.lastScannedAt)}</strong><small>latest completed analysis</small></div>
     </section>
 
-    {spotlight ? <section className={styles.signalRoom}>
-      <div className={styles.signalIntro}><span className={styles.eyebrow}><i/> Release signal</span><h2>The version is the boundary.</h2><p>GuardRails turns one completed artifact analysis into a decision-ready signal—not a popularity score.</p><Link href={`/extensions/${encodeURIComponent(spotlight.extension_id)}`}>Open the full evidence <ArrowRight/></Link></div>
-      <article className={styles.signalCard}><header><div><span>Current public signal</span><strong>{spotlight.display_name}</strong><code>{spotlight.extension_id}@{spotlight.version}</code></div><em className={styles[`signal${signalTone(spotlight.decision)}`]}>{signalLabel(spotlight.decision)}</em></header><div className={styles.signalEvidence}><div><small>What deserves attention</small><strong>{spotlight.decision_reason}</strong></div><div><span><b>{spotlight.coverage_percent}%</b> evidence coverage</span><span><b>{spotlight.severity}</b> highest severity</span><span><b>{spotlight.artifact_sha256.slice(0,12)}</b> artifact identity</span></div></div><footer><ShieldCheck/><span>Applies only to this exact release</span><Link href={`/extensions/${encodeURIComponent(spotlight.extension_id)}`}>Inspect signal <ArrowRight/></Link></footer></article>
+    {spotlight && !q ? <section className={styles.signalRoom}>
+      <div className={styles.signalIntro}><span className={styles.eyebrow}><i/> Latest finding</span><h2>A recent result worth knowing about.</h2><p>One recent analysis that needs a human decision, refreshed as new releases ship.</p><Link href={`/extensions/${encodeURIComponent(spotlight.extension_id)}`}>Open the full report <ArrowRight/></Link></div>
+      <article className={styles.signalCard}><header><div><span>Current public signal</span><strong>{spotlight.display_name}</strong><code>{spotlight.extension_id}@{spotlight.version}</code></div><em className={styles[`signal${signalTone(spotlight.decision)}`]}>{signalLabel(spotlight.decision)}</em></header><div className={styles.signalEvidence}><div><small>Why it is flagged</small><strong>{spotlight.decision_reason}</strong></div><div><span><b>{spotlight.coverage_percent}%</b> evidence coverage</span><span><b>{spotlight.severity}</b> highest severity</span><span><b>{spotlight.artifact_sha256.slice(0,12)}</b> artifact identity</span></div></div><footer><ShieldCheck/><span>Applies only to this exact release</span><Link href={`/extensions/${encodeURIComponent(spotlight.extension_id)}`}>Open report <ArrowRight/></Link></footer></article>
     </section>:null}
 
     <section className={styles.catalog}>
-      <header className={styles.catalogHeader}><div><span className={styles.eyebrow}><i/> Public reports</span><h2>Extension intelligence,<br/>ready to inspect.</h2></div><p>Each result is attached to one exact release. Filter the public reports below, then open an extension to review its versions and evidence.</p></header>
+      <header className={styles.catalogHeader}><div><span className={styles.eyebrow}><i/> Public reports</span><h2>Recently analyzed<br/>extensions.</h2></div><p>Every report covers one exact release. Open an extension to see its versions and what changed between them.</p></header>
       <InventoryClient inventory={inventory}/>
     </section>
 
-    <section className={styles.trustStrip}><PackageCheck/><div><span>Exact-release boundary</span><strong>A decision never silently follows an extension update.</strong><p>“No known concern” describes only the analyzed artifact and available evidence. It is not a guarantee of safety.</p></div><Link href="/research">How analysis works <ArrowRight/></Link></section>
+    <section className={styles.trustStrip}><PackageCheck/><div><span>Version-specific</span><strong>A decision never silently follows an extension update.</strong><p>“No known concern” describes only the analyzed artifact and available evidence. It is not a guarantee of safety.</p></div><Link href="/research">How analysis works <ArrowRight/></Link></section>
   </main>;
 }
 

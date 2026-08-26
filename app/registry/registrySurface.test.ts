@@ -10,10 +10,9 @@ const css = fs.readFileSync(path.join(root,"app/registry/registry.module.css"),"
 describe("Extension Registry product surface",()=>{
   it("frames registry search around identity and exact releases",()=>{
     expect(page).toContain("Know what runs");
-    expect(page).toContain("Results distinguish exact identities from similar names.");
-    expect(page).toContain("Exact-release boundary");
-    expect(page).toContain("The version is the boundary.");
-    expect(page).toContain("Current public signal");
+    expect(page).toContain("Results separate exact matches from similar names.");
+    expect(page).toContain("Version-specific");
+    expect(page).toContain("A decision never silently follows an extension update.");
   });
   it("shows useful registry health rather than only internal totals",()=>{
     for(const label of ["Public intelligence","Exact artifacts","Needs attention","Last refreshed"]) expect(page).toContain(label);

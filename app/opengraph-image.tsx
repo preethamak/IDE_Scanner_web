@@ -90,7 +90,7 @@ export default async function Image() {
               marginTop: 26,
             }}
           >
-            Every update re-checked for quiet access gains.
+            Every update re-checked before it reaches your editor.
           </div>
         </div>
 

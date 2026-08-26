@@ -14,7 +14,7 @@ const sections = [
   {
     title: "1. What GuardRails provides",
     body: [
-      "GuardRails analyzes published IDE extension releases and presents the results as public exact-release reports. You can also analyze extensions installed on your machine with the local CLI, import portable report bundles into your browser, monitor watched extensions for meaningful changes, and coordinate review decisions in a team workspace.",
+      "GuardRails analyzes published IDE extension releases and presents the results as public per-version reports. You can also analyze extensions installed on your machine with the local CLI, import portable report bundles into your browser, monitor watched extensions for meaningful changes, and coordinate review decisions in a team workspace.",
       "Public reports, the detection catalog, scoring methodology, and validation results are published openly so you can check our work.",
     ],
   },

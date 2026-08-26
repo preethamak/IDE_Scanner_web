@@ -56,7 +56,7 @@ const faqs = [
   {
     question: "How much does it cost?",
     answer:
-      "All public analysis features are free, including exact-release reports, the registry, and the local CLI. Guided reviews and release monitoring are provided free of charge to early customers during the launch period. Team plans will be introduced afterward and priced through the design-partner program.",
+      "All public analysis features are free, including per-version reports, the registry, and the local CLI. Guided reviews and release monitoring are provided free of charge to early customers during the launch period. Team plans will be introduced afterward and priced through the design-partner program.",
     href: "/pricing",
     linkLabel: "See pricing",
   },

@@ -150,7 +150,7 @@ export default function IntegrationsPage() {
           <small>Get started</small>
           <h2>Inspect an extension today.</h2>
           <p>
-            Open a public exact-release report, then connect notifications to
+            Open a public per-version report, then connect notifications to
             the channel your team reads.
           </p>
         </div>
