@@ -25,8 +25,8 @@ import "./authority.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://abscissa.dev"),
   title: {
-    default: "Guardrails - Check IDE extensions before you install them",
-    template: "%s · Guardrails",
+    default: "GuardRails - Check IDE extensions before you install them",
+    template: "%s · GuardRails",
   },
   description:
     "See what an IDE extension can access before you install it, and hear about it when an update adds terminal, network, or file access.",
@@ -34,8 +34,8 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: "/",
-    siteName: "Guardrails",
-    title: "Guardrails - Check IDE extensions before you install them",
+    siteName: "GuardRails",
+    title: "GuardRails - Check IDE extensions before you install them",
     description:
       "Scan IDE extensions before install, then get flagged when an update quietly gains new access.",
   },
@@ -55,9 +55,9 @@ export default function RootLayout({
           </a>
           <header className="siteHeader">
             <div className="headerInner">
-              <Link className="wordmark" href="/" aria-label="Guardrails home">
+              <Link className="wordmark" href="/" aria-label="GuardRails home">
                 <BrandMark />
-                <strong>Guardrails</strong>
+                <strong>GuardRails</strong>
               </Link>
               <SiteNav />
               <div className="headerCommands">
@@ -76,7 +76,7 @@ export default function RootLayout({
               <div className="footerLead">
                 <Link className="wordmark footerWordmark" href="/">
                   <BrandMark />
-                  <strong>Guardrails</strong>
+                  <strong>GuardRails</strong>
                 </Link>
                 <h2>
                   Know what runs
@@ -96,6 +96,7 @@ export default function RootLayout({
                 <div>
                   <strong>Product</strong>
                   <Link href="/registry">Extension Registry</Link>
+                  <Link href="/detections">Recent Detections</Link>
                   <Link href="/monitor">Release Monitoring</Link>
                   <Link href="/workspace">Team Workspace</Link>
                   <Link href="/ide">GuardRails IDE</Link>
@@ -113,11 +114,12 @@ export default function RootLayout({
                 </div>
                 <div>
                   <strong>Company</strong>
-                  <Link href="/about">About Guardrails</Link>
+                  <Link href="/about">About GuardRails</Link>
                   <Link href="/contact">Contact</Link>
                   <Link href="/changelog">Changelog</Link>
                   <Link href="/faq">FAQ</Link>
                   <Link href="/integrations">Integrations</Link>
+                  <Link href="/badge">Publisher Badge</Link>
                   <Link href="/privacy">Privacy policy</Link>
                   <Link href="/terms">Terms of Service</Link>
                   <Link href="/security">Security</Link>

@@ -7,7 +7,7 @@ import styles from "../marketing.module.css";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "All public analysis features are free. Guided reviews and release monitoring are open to early customers during the launch period.",
+    "All public analysis features are free. Monitoring is $19/month and Teams is $99/month after launch — both free for early customers now, with launch terms locked in.",
   alternates: { canonical: "/pricing" },
 };
 
@@ -34,7 +34,7 @@ const plans = [
     featured: false,
     badge: "",
     features: [
-      "Public exact-release reports",
+      "Per-version public reports",
       "Permission Passport and release diff",
       "Local analysis with the GuardRails CLI",
       "Personal watchlist for up to 3 extensions",
@@ -43,13 +43,13 @@ const plans = [
   },
   {
     id: "monitoring",
-    name: "Release Monitoring",
+    name: "Monitoring",
     audience: "For teams sharing extensions",
-    price: "Free",
-    suffix: "Launch period · early access",
+    price: "$19",
+    suffix: "per month · free during launch",
     description:
       "Stop re-reviewing releases from scratch. Every update arrives analyzed, with only meaningful capability changes surfaced.",
-    action: "Join early access",
+    action: "Join early access — lock in $19/mo",
     href: MONITORING_ACCESS_MAILTO,
     external: true,
     featured: true,
@@ -66,17 +66,17 @@ const plans = [
     id: "teams",
     name: "Teams",
     audience: "For governed organizations",
-    price: "Custom",
-    suffix: "Shaped with design partners",
+    price: "$99",
+    suffix: "per month · up to 25 seats, then custom",
     description:
       "Roll extension policy out organization-wide, with decisions your auditor can read and support from the founding team.",
-    action: "Book an intro call",
+    action: "Book an intro call — lock in $99/mo",
     href: INTRO_CALL_MAILTO,
     external: true,
     featured: false,
     badge: "",
     features: [
-      "Everything in Release Monitoring",
+      "Everything in Monitoring",
       "Allow, block, and exception rationale",
       "Decision memory across releases",
       "Role-aware CSV and JSON audit export",
@@ -92,7 +92,7 @@ const comparison: Array<{
   {
     group: "Scanning and evidence",
     rows: [
-      ["Public exact-release reports", true, true, true],
+      ["Per-version public reports", true, true, true],
       ["Permission Passport and capability diff", true, true, true],
       ["GuardRails CLI local inventory", true, true, true],
       ["Guided human review of a release", "Launch period", true, true],
@@ -149,8 +149,6 @@ function CellValue({ value }: { value: Cell }) {
 export default function PricingPage() {
   return (
     <main className={styles.page}>
-      <i className={`${styles.glow} ${styles.glowOne}`} aria-hidden="true" />
-      <i className={`${styles.glow} ${styles.glowTwo}`} aria-hidden="true" />
       <section className={styles.hero}>
         <div>
           <span className={styles.eyebrow}>
@@ -167,10 +165,11 @@ export default function PricingPage() {
         </div>
         <aside>
           <ShieldCheck />
-          <strong>Billing is not enabled yet.</strong>
+          <strong>Launch pricing is locked in.</strong>
           <p>
-            Early customers work directly with the founding team and keep their
-            launch terms when billing switches on.
+            Billing is not enabled yet. Early customers keep $19/mo Monitoring
+            and $99/mo Teams when it switches on — and annual billing will take
+            two months off, with a 30-day money-back guarantee from day one.
           </p>
         </aside>
       </section>
@@ -256,10 +255,11 @@ export default function PricingPage() {
           </table>
         </div>
         <p className={styles.compareNote}>
-          Guided reviews are provided free during the launch period. Early-access
-          customers keep launch terms when billing switches on. Team pricing will
-          be set with design partners based on how organizations use Guardrails in
-          practice.
+          Monitoring is $19/month and Teams is $99/month (up to 25 seats) when
+          billing switches on — annual billing takes two months off, and every
+          paid plan carries a 30-day money-back guarantee. Early-access
+          customers keep launch terms. Guided reviews are provided free during
+          the launch period.
         </p>
       </section>
 
@@ -275,8 +275,8 @@ export default function PricingPage() {
             <Link href="/design-partners">design-partner program</Link>.
           </li>
           <li>
-            Team pricing will be set based on how participating organizations use
-            Guardrails in practice.
+            Organizations above 25 seats, procurement, or custom retention needs
+            are priced on a short call with the founding team.
           </li>
         </ul>
       </section>
@@ -286,7 +286,7 @@ export default function PricingPage() {
           <small>Get started</small>
           <h2>Inspect an extension first.</h2>
           <p>
-            Public exact-release reports require no account. Want to talk it
+            Public reports require no account. Want to talk it
             through? Book a 20-minute call with the founding team.
           </p>
         </div>

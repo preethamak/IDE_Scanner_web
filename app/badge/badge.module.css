@@ -1,0 +1,125 @@
+.page {
+  min-height: 100vh;
+  padding: 110px max(24px, calc((100vw - 880px) / 2)) 130px;
+  background: #fbfbff;
+  color: #20212e;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #bfd1ee;
+  border-radius: 30px;
+  padding: 7px 10px;
+  background: #f1f6ff;
+  color: #2f6fdd;
+  font: 800 12px var(--mono);
+  text-transform: uppercase;
+}
+.eyebrow svg {
+  width: 15px;
+}
+.hero h1 {
+  max-width: 720px;
+  margin: 22px 0 18px;
+  font-size: clamp(42px, 5vw, 64px);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+}
+.hero h1 em {
+  color: #2f6fdd;
+  font-style: normal;
+}
+.hero p {
+  max-width: 640px;
+  margin: 0;
+  color: #586777;
+  font-size: 16.5px;
+  line-height: 1.65;
+}
+.builder {
+  margin-top: 46px;
+  border: 1px solid #dbe1e8;
+  border-radius: 17px;
+  background: #fff;
+  padding: 30px 32px;
+}
+.builder label {
+  display: block;
+  font: 800 12px var(--mono);
+  text-transform: uppercase;
+  color: #586777;
+}
+.builder input {
+  width: 100%;
+  margin-top: 9px;
+  border: 1px solid #c4cdd6;
+  border-radius: 9px;
+  padding: 11px 13px;
+  font: 600 14px var(--mono);
+}
+.builder p {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: #586777;
+  font-size: 14px;
+}
+.builder pre {
+  overflow-x: auto;
+  border: 1px solid #e0e6eb;
+  border-radius: 10px;
+  background: #17212c;
+  padding: 14px 16px;
+  color: #d7e2ec;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.builder h3 {
+  margin: 22px 0 8px;
+  font-size: 15px;
+}
+.builder button {
+  border: 1px solid #2f6fdd;
+  border-radius: 9px;
+  background: #2f6fdd;
+  padding: 10px 16px;
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+}
+.builder button + button {
+  border-color: #bbc7d2;
+  background: #fff;
+  color: #263440;
+}
+.rules {
+  margin-top: 60px;
+}
+.rules h2 {
+  font-size: clamp(24px, 2.8vw, 34px);
+  letter-spacing: -0.04em;
+}
+.rules ul {
+  padding-left: 20px;
+  display: grid;
+  gap: 12px;
+  color: #3d4a57;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.rules a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 26px;
+  font-weight: 800;
+  font-size: 14px;
+  color: #2f6fdd;
+  text-decoration: none;
+}
+.rules svg {
+  width: 15px;
+}
