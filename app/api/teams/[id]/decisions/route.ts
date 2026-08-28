@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticated } from "@/lib/auth";
 import { asUuid, requireTeamRole, teamDecision } from "@/lib/teams";
-import {
-  decisionEventKind,
-  type DecisionSnapshot,
-} from "@/lib/teamDecisionLifecycle";
+import { teamApiError } from "@/lib/teamApiError";
 import { serviceDb } from "@/lib/supabase";
 
 export async function GET(
@@ -21,17 +18,13 @@ export async function GET(
         "*,team_decision_events(*),scans(capabilities,capability_assessment,analysis_status,scanned_at,artifact_sha256)",
       )
       .eq("team_id", id)
-      .order("updated_at", { ascending: false });
+      .order("updated_at", { ascending: false })
+      .limit(200);
     if (error) throw error;
     return NextResponse.json({ decisions: data || [] });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Decision lookup failed.",
-      },
-      { status: 403 },
-    );
+    const failure = teamApiError(error, "Decision lookup failed.");
+    return NextResponse.json({ error: failure.error }, { status: failure.status });
   }
 }
 
@@ -85,114 +78,50 @@ export async function POST(
           { status: 400 },
         );
     }
-    const existing = await db
-      .from("team_decisions")
-      .select("*")
-      .eq("team_id", id)
-      .eq("scan_id", scanId)
-      .maybeSingle();
-    if (existing.error) throw existing.error;
-    const before = existing.data ? snapshot(existing.data) : null;
-    const resolvedAt =
-      decision === "review"
-        ? null
-        : before?.resolved_at || new Date().toISOString();
-    const after: DecisionSnapshot = {
-      decision,
-      rationale,
-      assigned_to: assignedTo,
-      due_at: dueAt?.toISOString() || null,
-      resolved_at: resolvedAt,
-    };
-    const payload = {
-      team_id: id,
-      scan_id: scanId,
-      extension_id: scan.extension_id,
-      version: scan.version,
-      ...after,
-      updated_by: user.id,
-    };
-    const result = existing.data
-      ? await db
-          .from("team_decisions")
-          .update(payload)
-          .eq("id", existing.data.id)
-          .select()
-          .single()
-      : await db
-          .from("team_decisions")
-          .insert({ ...payload, created_by: user.id })
-          .select()
-          .single();
-    const { data, error } = result;
+    const { data, error } = await db.rpc("record_team_decision_atomically", {
+      target_team: id,
+      actor: user.id,
+      target_scan: scanId,
+      desired_decision: decision,
+      decision_rationale: rationale,
+      desired_assignee: assignedTo,
+      desired_due_at: dueAt?.toISOString() || null,
+    });
     if (error) throw error;
-    const eventKind = decisionEventKind(before, after);
-    const event = await db
-      .from("team_decision_events")
-      .insert({
-        decision_id: data.id,
-        actor_id: user.id,
-        kind: eventKind,
-        before_value: before || {},
-        after_value: after,
-      })
-      .select("id")
-      .single();
-    if (event.error) throw event.error;
-    const alert = await db.from("team_monitoring_alerts").upsert(
-      {
-        team_id: id,
-        extension_id: scan.extension_id,
-        version: scan.version,
-        scan_id: scanId,
-        kind: "decision_changed",
-        severity: null,
-        title: `Team decision ${decision}: ${scan.extension_id}@${scan.version}`,
-        summary: `A team member ${eventKind === "assigned" ? "changed ownership" : "updated the recorded decision"}.`,
-        metadata: {
-          decision,
-          assigned_to: assignedTo,
-          due_at: after.due_at,
-          decision_event_id: event.data.id,
-        },
-        dedupe_key: `decision:${event.data.id}`,
-      },
-      { onConflict: "team_id,dedupe_key", ignoreDuplicates: true },
-    );
-    if (alert.error) throw alert.error;
+    const mutation = atomicDecisionMutation(data);
     return NextResponse.json(
       {
-        ...data,
-        audit_receipt: {
-          event_id: event.data.id,
-          actor_id: user.id,
-          kind: eventKind,
-          recorded_at: data.updated_at || new Date().toISOString(),
-        },
+        ...mutation.decision,
+        audit_receipt: mutation.audit_receipt,
       },
-      { status: existing.data ? 200 : 201 },
+      { status: mutation.created ? 201 : 200 },
     );
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Decision update failed.",
-      },
-      { status: 400 },
-    );
+    const failure = teamApiError(error, "Decision update failed.");
+    return NextResponse.json({ error: failure.error }, { status: failure.status });
   }
 }
 
-function snapshot(value: Record<string, unknown>): DecisionSnapshot {
-  const decision = teamDecision(value.decision);
-  if (!decision) throw new Error("Stored decision is invalid.");
+function atomicDecisionMutation(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Decision mutation returned an invalid response.");
+  }
+  const mutation = value as Record<string, unknown>;
+  const decision = mutation.decision;
+  const auditReceipt = mutation.audit_receipt;
+  if (
+    !decision ||
+    typeof decision !== "object" ||
+    Array.isArray(decision) ||
+    !auditReceipt ||
+    typeof auditReceipt !== "object" ||
+    Array.isArray(auditReceipt)
+  ) {
+    throw new Error("Decision mutation returned incomplete evidence.");
+  }
   return {
-    decision,
-    rationale: typeof value.rationale === "string" ? value.rationale : "",
-    assigned_to:
-      typeof value.assigned_to === "string" ? value.assigned_to : null,
-    due_at: typeof value.due_at === "string" ? value.due_at : null,
-    resolved_at:
-      typeof value.resolved_at === "string" ? value.resolved_at : null,
+    created: mutation.created === true,
+    decision: decision as Record<string, unknown>,
+    audit_receipt: auditReceipt as Record<string, unknown>,
   };
 }

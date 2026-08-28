@@ -55,9 +55,33 @@ export async function GET(
       "coverage_percent",
       "analysis_status",
     ]),
-    findings: product.findings || [],
+    findings: Array.isArray(product.findings)
+      ? product.findings.map((finding) =>
+          pick(finding as Record<string, unknown>, [
+            "id",
+            "rule_id",
+            "category",
+            "severity",
+            "confidence",
+            "evidence_class",
+            "actionability",
+            "summary",
+            "recommendation",
+            "file_refs",
+          ]),
+        )
+      : [],
     capabilities: scan.capabilities || {},
-    dependencies: product.dependencies || [],
+    dependencies: Array.isArray(product.dependencies)
+      ? product.dependencies.map((dependency) =>
+          pick(dependency as Record<string, unknown>, [
+            "name",
+            "version",
+            "ecosystem",
+            "relationship",
+          ]),
+        )
+      : [],
     files: Array.isArray(product.files)
       ? product.files.map((file) =>
           pick(file as Record<string, unknown>, [

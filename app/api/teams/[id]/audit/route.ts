@@ -29,6 +29,17 @@ export async function GET(request: Request, context: Context) {
     const format = url.searchParams.get("format") || "json";
     const wantsDownload =
       format === "csv" || url.searchParams.get("download") === "1";
+    const filters = {
+      actor: url.searchParams.get("actor") || undefined,
+      extension: url.searchParams.get("extension") || undefined,
+      version: url.searchParams.get("version") || undefined,
+      eventType: url.searchParams.get("event_type") || undefined,
+      risk: url.searchParams.get("risk") || undefined,
+      decision: url.searchParams.get("decision") || undefined,
+      deliveryStatus: url.searchParams.get("delivery_status") || undefined,
+      from: url.searchParams.get("from") || undefined,
+      to: url.searchParams.get("to") || undefined,
+    };
     if (wantsDownload && role === "viewer") {
       return NextResponse.json(
         { error: "Viewer access does not include audit export." },
@@ -38,47 +49,75 @@ export async function GET(request: Request, context: Context) {
     if (wantsDownload) await requireEntitlement(id, "audit_export");
 
     const db = serviceDb();
+    const bounds = auditBounds(filters);
+    filters.from = bounds.from;
+    filters.to = bounds.to;
+    let decisionsQuery = db
+      .from("team_decisions")
+      .select(
+        "id,extension_id,version,rationale,updated_at,team_decision_events(id,actor_id,kind,before_value,after_value,created_at)",
+      )
+      .eq("team_id", id)
+      .order("updated_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(500);
+    let alertsQuery = db
+      .from("team_monitoring_alerts")
+      .select(
+        "id,kind,title,extension_id,version,severity,state,metadata,created_at,resolved_at",
+      )
+      .eq("team_id", id)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(500);
+    let deliveriesQuery = db
+      .from("team_notification_deliveries")
+      .select(
+        "id,status,attempts,delivered_at,last_error,created_at,team_monitoring_alerts(extension_id,version,severity)",
+      )
+      .eq("team_id", id)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(500);
+    let digestsQuery = db
+      .from("team_digest_deliveries")
+      .select(
+        "id,status,attempts,delivered_at,last_error,period_start,period_end,created_at,snapshot",
+      )
+      .eq("team_id", id)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(250);
+    let domainEventsQuery = db
+      .from("team_audit_events")
+      .select(
+        "id,actor_id,action,object_type,object_id,extension_id,version,previous_state,resulting_state,rationale,risk_level,created_at",
+      )
+      .eq("team_id", id)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(500);
+    if (bounds.from) {
+      decisionsQuery = decisionsQuery.gte("updated_at", bounds.from);
+      alertsQuery = alertsQuery.gte("created_at", bounds.from);
+      deliveriesQuery = deliveriesQuery.gte("created_at", bounds.from);
+      digestsQuery = digestsQuery.gte("created_at", bounds.from);
+      domainEventsQuery = domainEventsQuery.gte("created_at", bounds.from);
+    }
+    if (bounds.to) {
+      decisionsQuery = decisionsQuery.lte("updated_at", bounds.to);
+      alertsQuery = alertsQuery.lte("created_at", bounds.to);
+      deliveriesQuery = deliveriesQuery.lte("created_at", bounds.to);
+      digestsQuery = digestsQuery.lte("created_at", bounds.to);
+      domainEventsQuery = domainEventsQuery.lte("created_at", bounds.to);
+    }
     const [decisions, alerts, deliveries, digests, domainEvents] =
       await Promise.all([
-        db
-          .from("team_decisions")
-          .select(
-            "id,extension_id,version,rationale,team_decision_events(id,actor_id,kind,before_value,after_value,created_at)",
-          )
-          .eq("team_id", id)
-          .limit(500),
-        db
-          .from("team_monitoring_alerts")
-          .select(
-            "id,kind,title,extension_id,version,severity,state,metadata,created_at,resolved_at",
-          )
-          .eq("team_id", id)
-          .order("created_at", { ascending: false })
-          .limit(500),
-        db
-          .from("team_notification_deliveries")
-          .select(
-            "id,status,attempts,delivered_at,last_error,created_at,team_monitoring_alerts(extension_id,version,severity)",
-          )
-          .eq("team_id", id)
-          .order("created_at", { ascending: false })
-          .limit(500),
-        db
-          .from("team_digest_deliveries")
-          .select(
-            "id,status,attempts,delivered_at,last_error,period_start,period_end,created_at,snapshot",
-          )
-          .eq("team_id", id)
-          .order("created_at", { ascending: false })
-          .limit(250),
-        db
-          .from("team_audit_events")
-          .select(
-            "id,actor_id,action,object_type,object_id,extension_id,version,previous_state,resulting_state,rationale,risk_level,created_at",
-          )
-          .eq("team_id", id)
-          .order("created_at", { ascending: false })
-          .limit(500),
+        decisionsQuery,
+        alertsQuery,
+        deliveriesQuery,
+        digestsQuery,
+        domainEventsQuery,
       ]);
     const failure = [decisions, alerts, deliveries, digests, domainEvents].find(
       (result) => result.error,
@@ -93,20 +132,10 @@ export async function GET(request: Request, context: Context) {
         digests: digests.data || [],
         domainEvents: domainEvents.data || [],
       }),
-      {
-        actor: url.searchParams.get("actor") || undefined,
-        extension: url.searchParams.get("extension") || undefined,
-        version: url.searchParams.get("version") || undefined,
-        eventType: url.searchParams.get("event_type") || undefined,
-        risk: url.searchParams.get("risk") || undefined,
-        decision: url.searchParams.get("decision") || undefined,
-        deliveryStatus: url.searchParams.get("delivery_status") || undefined,
-        from: url.searchParams.get("from") || undefined,
-        to: url.searchParams.get("to") || undefined,
-      },
+      filters,
     );
     const visibleEvents =
-      role === "analyst"
+      role === "analyst" || role === "viewer"
         ? events.filter((event) =>
             ["decision", "monitoring"].includes(event.object_type),
           )
@@ -294,5 +323,16 @@ function domainObjectType(value: unknown): TeamAuditEvent["object_type"] {
     team_monitoring_preferences: "preference",
     team_monitoring_alerts: "monitoring",
   };
-  return mapping[String(value)] || "monitoring";
+  return mapping[String(value)] || "unknown";
+}
+
+function auditBounds(filters: { from?: string; to?: string }) {
+  const from = validTimestamp(filters.from);
+  const to = validTimestamp(filters.to);
+  return { from, to };
+}
+
+function validTimestamp(value: string | undefined) {
+  if (!value || Number.isNaN(new Date(value).getTime())) return undefined;
+  return value;
 }

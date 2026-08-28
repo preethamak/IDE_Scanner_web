@@ -10,9 +10,8 @@ const source = fs.readFileSync(
 describe("team decision audit receipts", () => {
   it("returns the durable event identity and recording context", () => {
     expect(source).toContain("audit_receipt");
-    expect(source).toContain("event_id: event.data.id");
-    expect(source).toContain("actor_id: user.id");
-    expect(source).toContain("kind: eventKind");
-    expect(source).toContain("recorded_at:");
+    expect(source).toContain('rpc("record_team_decision_atomically"');
+    expect(source).toContain("audit_receipt: mutation.audit_receipt");
+    expect(source).not.toContain('.from("team_decision_events").insert');
   });
 });

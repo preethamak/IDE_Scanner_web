@@ -28,9 +28,9 @@ describe("immutable scan evidence export", () => {
         decision: "review",
         internal_note: "never export",
       },
-      findings: [{ rule_id: "network" }],
+      findings: [{ rule_id: "network", evidence: { raw: "never export" } }],
       files: [{ path: "extension.js", content: "never export source" }],
-      dependencies: [],
+      dependencies: [{ name: "dep", version: "1.0.0", advisories: [{ raw: "never export" }] }],
     });
     const response = await GET(new Request("https://example.test"), context);
     expect(response.status).toBe(200);
@@ -52,6 +52,8 @@ describe("immutable scan evidence export", () => {
     });
     expect(JSON.stringify(payload)).not.toContain("internal_note");
     expect(JSON.stringify(payload)).not.toContain("never export source");
+    expect(JSON.stringify(payload)).not.toContain('"evidence"');
+    expect(JSON.stringify(payload)).not.toContain('"advisories"');
   });
 
   it("rejects non-terminal evidence", async () => {
