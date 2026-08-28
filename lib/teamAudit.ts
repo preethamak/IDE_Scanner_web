@@ -14,7 +14,8 @@ export type TeamAuditEvent = {
     | "invitation"
     | "watchlist"
     | "channel"
-    | "preference";
+    | "preference"
+    | "unknown";
   object_id: string;
   extension_id: string | null;
   version: string | null;
@@ -81,7 +82,11 @@ export function filterTeamAuditEvents(
     .filter(
       (event) => to == null || new Date(event.occurred_at).getTime() <= to,
     )
-    .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at));
+    .sort(
+      (a, b) =>
+        b.occurred_at.localeCompare(a.occurred_at) ||
+        b.event_id.localeCompare(a.event_id),
+    );
 }
 
 export function auditManifest(workspaceId: string, events: TeamAuditEvent[]) {

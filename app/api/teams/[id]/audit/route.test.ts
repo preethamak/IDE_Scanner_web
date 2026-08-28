@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 const mocks = vi.hoisted(() => ({
   requireTeamRole: vi.fn(),
@@ -34,5 +36,15 @@ describe("workspace audit route authorization", () => {
       error: "Viewer access does not include audit export.",
     });
     expect(mocks.serviceDb).not.toHaveBeenCalled();
+  });
+
+  it("keeps viewers on the same decision and monitoring-only audit surface as analysts", () => {
+    const source = readFileSync(
+      join(process.cwd(), "app/api/teams/[id]/audit/route.ts"),
+      "utf8",
+    );
+    expect(source).toContain('role === "analyst" || role === "viewer"');
+    expect(source).toContain('return mapping[String(value)] || "unknown"');
+    expect(source).toContain('.order("id", { ascending: false })');
   });
 });
