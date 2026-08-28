@@ -21,6 +21,13 @@ describe("research index surface", () => {
     expect(page).toContain('href="/registry"');
   });
 
+  it("publishes the Solidity Pro case study as an attributed research note", () => {
+    const research = readFileSync(new URL("../../lib/research.ts", import.meta.url), "utf8");
+    expect(research).toContain('slug: "solidity-pro"');
+    expect(research).toContain("wallet stealer behind the audit tool");
+    expect(research).toContain("Yeeth Security");
+  });
+
   it("uses a light responsive and motion-safe surface", () => {
     expect(styles).toContain("#dce9ff");
     expect(styles).toContain("#ffe6ef");

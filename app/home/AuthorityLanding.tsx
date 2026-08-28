@@ -13,6 +13,7 @@ export default function AuthorityLanding() {
       <div className={styles.heroCopy}><p className={styles.eyebrow}><i /> IDE extension security</p><h1>Know what an extension<br />does <em>before you install it.</em></h1><p className={styles.heroLead}>GuardRails scans marketplace extensions before you install them, then watches every update and flags when one quietly gains access to your terminal, files, or network.</p><div className={styles.actions}><Link href="/registry">Check an extension <ArrowRight /></Link><Link href="#how">See the flow <ChevronRight /></Link></div></div>
       <div className={styles.heroVisual}><ReleaseReviewFilm /></div>
     </section>
+    <section className={styles.researchLink}><p>Latest research</p><div><h2>Solidity Pro: the wallet stealer behind the audit tool.</h2><Link href="/research/solidity-pro">Read the case study <ArrowRight /></Link></div></section>
     <MarketplaceProof />
     <TrustProof />
     <section className={styles.statement}><p className={styles.eyebrow}><i /> The moment that matters</p><h2>A release changes.<br /><em>Your team decides.</em></h2><p>GuardRails keeps that moment clear, quick, and attached to the work.</p></section>

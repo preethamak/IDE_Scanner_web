@@ -708,6 +708,9 @@ code, pre { font-family: var(--mono); }
 .articleLayout aside strong { display: block; margin-top: 27px; }
 .articleLayout aside p { font-size: 12px; }
 .articleLayout aside a { display: inline-flex; align-items: center; gap: 6px; color: var(--acid-dark); font-size: 12px; font-weight: 700; }
+.researchSources { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.researchSources a { display: inline-flex; align-items: center; gap: 7px; color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+.researchSources svg { width: 14px; }
 .alertReference header { display: grid; grid-template-columns: 1fr 280px; gap: 80px; align-items: end; border-bottom: 1px solid var(--ink); padding: 45px 0 48px; }
 .alertReference header h1 { max-width: 850px; margin: 12px 0 8px; font-family: var(--sans); font-size: 48px; }
 .alertReference header code { color: var(--acid-dark); font-size: 12px; }
