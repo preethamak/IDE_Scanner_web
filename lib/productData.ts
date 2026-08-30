@@ -447,36 +447,68 @@ export type BadgeDecision = {
   extension_id: string | null;
   version: string | null;
   decision: "allow" | "review" | "block" | null;
+  verdict: string | null;
+  public_outcome: string | null;
+  analysis_status: string;
+  capability_assessment: Record<string, unknown>;
+  analysis_coverage: Record<string, unknown>;
   scanned_at: string | null;
 };
 
-const cachedBadgeDecision=unstable_cache(async(id:string)=>fetchBadgeDecision(id),["public-badge-v1"],{revalidate:300,tags:["public-intel"]});
+const emptyBadgeDecision = (found = false): BadgeDecision => ({
+  found,
+  extension_id: null,
+  version: null,
+  decision: null,
+  verdict: null,
+  public_outcome: null,
+  analysis_status: "incomplete",
+  capability_assessment: {},
+  analysis_coverage: {},
+  scanned_at: null,
+});
+
+const cachedBadgeDecision=unstable_cache(async(id:string)=>fetchBadgeDecision(id, null),["public-badge-v2"],{revalidate:300,tags:["public-intel"]});
+const cachedVersionBadgeDecision=unstable_cache(async(id:string,version:string)=>fetchBadgeDecision(id, version),["public-badge-version-v1"],{revalidate:300,tags:["public-intel"]});
 
 export function getBadgeDecision(id: string): Promise<BadgeDecision> { return cachedBadgeDecision(id.toLowerCase()); }
 
-async function fetchBadgeDecision(rawId: string): Promise<BadgeDecision> {
+/** Exact-version badge lookup; the seal is pinned to the analyzed artifact. */
+export function getVersionBadgeDecision(id: string, version: string): Promise<BadgeDecision> {
+  const normalized = version.replace(/^v/, "").trim();
+  if (!normalized) return getBadgeDecision(id);
+  return cachedVersionBadgeDecision(id.toLowerCase(), normalized);
+}
+
+async function fetchBadgeDecision(rawId: string, version: string | null): Promise<BadgeDecision> {
   const db = publicDb();
-  if (!db) return { found: false, extension_id: null, version: null, decision: null, scanned_at: null };
+  if (!db) return emptyBadgeDecision();
   const storedId = await resolveStoredExtensionId(db, rawId);
-  if (!storedId) return { found: false, extension_id: null, version: null, decision: null, scanned_at: null };
+  if (!storedId) return emptyBadgeDecision();
   const classification = await activePublicClassification(db).catch(() => null);
-  let request = db.from("scans").select("id,extension_id,version,decision,scanned_at")
+  let request = db.from("scans").select("id,extension_id,version,decision,verdict,public_outcome,analysis_status,analysis_coverage,capability_assessment,scanned_at")
     .eq("extension_id", storedId)
     .in("scan_purpose", ["public_intelligence", "benchmark"])
     .eq("analysis_status", "complete")
     .is("superseded_at", null)
     .order("scanned_at", { ascending: false })
     .limit(1);
+  if (version) request = request.eq("version", version);
   if (classification?.scanIds) request = request.in("id", classification.scanIds);
   const { data } = await request;
   const row = (data || [])[0] as Record<string, unknown> | undefined;
-  if (!row) return { found: true, extension_id: storedId, version: null, decision: null, scanned_at: null };
+  if (!row) return { ...emptyBadgeDecision(true), extension_id: storedId };
   const decision = normalizeDecision(row.decision);
   return {
     found: true,
     extension_id: storedId,
     version: String(row.version || ""),
     decision: decision === "incomplete" ? null : decision,
+    verdict: row.verdict ? String(row.verdict) : null,
+    public_outcome: row.public_outcome ? String(row.public_outcome) : null,
+    analysis_status: String(row.analysis_status || "incomplete"),
+    capability_assessment: objectValue(row.capability_assessment),
+    analysis_coverage: objectValue(row.analysis_coverage),
     scanned_at: row.scanned_at ? String(row.scanned_at) : null,
   };
 }

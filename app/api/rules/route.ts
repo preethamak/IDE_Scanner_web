@@ -6,7 +6,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type BridgeRulesResult = {
+  policy_version: string | null;
   ruleset_version: string;
+  score_schema_version: string | null;
+  scanner_build: string | null;
   rules: unknown[];
   source: "active-publication" | "static-fallback";
 };
@@ -23,7 +26,7 @@ export async function GET() {
     const db = serviceDb();
     const release = await db
       .from("scan_publication_releases")
-      .select("policy_version,ruleset_version,scanner_build")
+      .select("policy_version,ruleset_version,score_schema_version,scanner_build")
       .eq("active", true)
       .limit(1)
       .maybeSingle();
@@ -49,7 +52,10 @@ export async function GET() {
     }
 
     const data: BridgeRulesResult = {
+      policy_version: String(release.data.policy_version),
       ruleset_version: String(release.data.ruleset_version),
+      score_schema_version: String(release.data.score_schema_version),
+      scanner_build: String(release.data.scanner_build),
       rules: catalog.rules,
       source: "active-publication",
     };
@@ -57,7 +63,10 @@ export async function GET() {
     return NextResponse.json(data);
   } catch {
     const data: BridgeRulesResult = {
+      policy_version: null,
       ruleset_version: RULESET_VERSION,
+      score_schema_version: null,
+      scanner_build: null,
       rules: ruleCatalog.map((rule) => ({
         rule_id: rule.id,
         title: rule.title,

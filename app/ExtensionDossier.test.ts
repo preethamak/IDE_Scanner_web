@@ -8,8 +8,9 @@ import {
 describe("outcome-specific evidence copy", () => {
   it("does not describe a block as approval review", () => {
     expect(outcomeGroupSummary("block", 2)).toBe(
-      "2 evidence groups support this do-not-install decision.",
+      "2 evidence groups back this policy flag.",
     );
+    expect(outcomeGroupSummary("block", 2)).not.toContain("do-not-install");
     expect(evidenceSectionLabel("block")).toBe(
       "Evidence supporting this decision",
     );

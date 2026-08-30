@@ -9,7 +9,7 @@ import styles from "@/app/registry/registry.module.css";
 
 const outcomes = ["all", "allow", "review", "block", "incomplete"] as const;
 const severities = ["all", "critical", "high", "medium", "low", "info"] as const;
-const labels = { allow: "No known concern", review: "Review recommended", block: "Do not install", incomplete: "Incomplete" } as const;
+const labels = { allow: "Analyzed", review: "Attention", block: "Flagged by policy", incomplete: "Analysis pending" } as const;
 
 export default function InventoryClient({ inventory }: { inventory: PublicInventory }) {
   const [query, setQuery] = useState("");

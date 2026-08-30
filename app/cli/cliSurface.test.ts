@@ -13,7 +13,7 @@ const css = fs.readFileSync(
 
 describe("GuardRails CLI product surface", () => {
   it("leads with the local editor audit outcome and explicit boundary", () => {
-    expect(page).toContain("Audit every editor on your machine.");
+    expect(page).toContain("Audit every VS Code-based editor on your machine.");
     expect(page).toContain("Local inventory");
     expect(page).toContain("Exact snapshot");
     expect(page).toContain("Zero execution");
