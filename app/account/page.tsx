@@ -88,18 +88,18 @@ export default function AccountPage() {
           ? "The sign-in response was incomplete. Start again."
           : "";
     if (!text) return;
-    const timer = window.setTimeout(() => setMessage(text), 0);
-    return () => window.clearTimeout(timer);
+    setMessage(text);
+    // Clear the error from the URL so a reload or later navigation starts clean.
+    const clean = new URL(window.location.href);
+    clean.searchParams.delete("error");
+    window.history.replaceState(null, "", clean);
   }, []);
   function callbackUrl() {
     const destination =
       new URLSearchParams(window.location.search).get("next") || "/workspace";
-    const configured = process.env.NEXT_PUBLIC_SITE_URL;
-    const origin =
-      window.location.hostname === "localhost"
-        ? window.location.origin
-        : configured || window.location.origin;
-    return `${origin}/auth/callback?next=${encodeURIComponent(destination)}`;
+    // The PKCE code verifier lives in a cookie on this origin, so the email
+    // link must come back to the same origin or the exchange fails.
+    return `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`;
   }
   function continueToDestination() {
     const destination = new URLSearchParams(window.location.search).get("next");
