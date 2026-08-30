@@ -249,7 +249,9 @@ export default function SettingsView({
                       />
                       <button
                         onClick={() =>
-                          void navigator.clipboard.writeText(inviteMessage)
+                          void navigator.clipboard
+                            .writeText(inviteMessage)
+                            .catch(() => {})
                         }
                       >
                         <ClipboardCheck /> Copy link

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import {
   Bot,
   Check,
@@ -37,6 +38,7 @@ export default function PermissionPassport({
   reportHref?: string;
   compact?: boolean;
 }) {
+  const [copied, setCopied] = useState(false);
   const freshness = freshnessCopy(passport);
   const observed = passport.categories.filter(
     (category) => category.state === "observed",
@@ -53,7 +55,13 @@ export default function PermissionPassport({
     URL.revokeObjectURL(href);
   }
   async function copyLink() {
-    await navigator.clipboard?.writeText(window.location.href);
+    try {
+      await navigator.clipboard?.writeText(window.location.href);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
+    }
   }
   return (
     <section
@@ -122,7 +130,7 @@ export default function PermissionPassport({
         <span>This passport never carries forward to another version.</span>
         <div>
           <button type="button" onClick={() => void copyLink()}>
-            <Share2 /> Copy link
+            {copied ? <Check /> : <Share2 />} {copied ? "Copied" : "Copy link"}
           </button>
           <button type="button" onClick={download}>
             <Clipboard /> Export JSON

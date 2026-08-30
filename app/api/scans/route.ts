@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createJob, latestCompleteReport, publicJob, setCompleteJob, updateJob } from "@/lib/jobs";
-import { isPythonBridgeUnavailable, localScannerUnavailableMessage, runPythonBridge } from "@/lib/pythonBridge";
+import { isPythonBridgeUnavailable, localScannerEnabled, localScannerUnavailableMessage, runPythonBridge } from "@/lib/pythonBridge";
 import type { ReportSummary } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -21,6 +21,12 @@ type BridgeScanResult = {
 };
 
 export async function POST(request: Request) {
+  if (!localScannerEnabled()) {
+    return NextResponse.json({
+      error: localScannerUnavailableMessage(),
+      code: "LOCAL_SCANNER_UNAVAILABLE"
+    }, { status: 503 });
+  }
   const payload = await request.json().catch(() => ({})) as ScanPayload;
   const paths = payload.extension_paths || payload.paths;
 

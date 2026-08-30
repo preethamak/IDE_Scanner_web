@@ -1,7 +1,10 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
 export function validRunnerSecret(authorization: string | null): boolean {
-  const expected = process.env.SCAN_RUNNER_SECRET || "";
+  return validBearerSecret(authorization, process.env.SCAN_RUNNER_SECRET || "");
+}
+
+export function validBearerSecret(authorization: string | null, expected: string): boolean {
   const supplied = authorization?.startsWith("Bearer ") ? authorization.slice(7) : "";
   if (!expected || !supplied) return false;
   const left = createHash("sha256").update(expected).digest();

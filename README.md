@@ -58,8 +58,10 @@ PYTHONPATH=src .venv/bin/python -m ide_scanner.service --host 127.0.0.1 --port 8
 Start the website:
 
 ```bash
-IDE_SCANNER_API_URL=http://127.0.0.1:8787 npm run dev
+IDE_SCANNER_LOCAL_API=true IDE_SCANNER_API_URL=http://127.0.0.1:8787 npm run dev
 ```
+
+`IDE_SCANNER_LOCAL_API=true` enables the local scanner bridge routes (`/api/inventory`, `/api/scans`, `/api/sandbox`). They scan operator-supplied filesystem paths, so they stay disabled unless this flag is set — never set it on a hosted deployment.
 
 Open `http://127.0.0.1:8765`.
 

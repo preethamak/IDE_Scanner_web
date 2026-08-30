@@ -26,7 +26,7 @@ export default function MonitorExtensionAction({ extensionId, version, scanId }:
       setTeams(writable); setTeamId(writable[0]?.id || "");
       if (!response.ok) { setMessage(body.error || "Workspace choices could not be loaded."); setState("error"); }
       else setState(writable.length ? "ready" : "empty");
-    })();
+    })().catch(() => { setMessage("Workspace choices could not be loaded."); setState("error"); });
   }, [token]);
 
   async function enableMonitoring() {

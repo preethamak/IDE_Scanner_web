@@ -5,6 +5,7 @@ import {
   retryDisposition,
   shouldNotify,
 } from "@/lib/monitoringPolicy";
+import { validBearerSecret } from "@/lib/internalRunnerAuth";
 import { serviceDb } from "@/lib/supabase";
 import { genericWebhookMessage } from "@/lib/teamNotificationPayload";
 import {
@@ -22,10 +23,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const expected = process.env.NOTIFICATION_CRON_SECRET || "";
-  if (
-    !expected ||
-    request.headers.get("authorization") !== `Bearer ${expected}`
-  )
+  if (!validBearerSecret(request.headers.get("authorization"), expected))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const workflowRun = request.headers.get("x-workflow-run-url");
   if (workflowRun)

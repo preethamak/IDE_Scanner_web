@@ -38,7 +38,7 @@ export default function ExtensionIcon({
           alt=""
           fill
           sizes={size === "lg" ? "80px" : "56px"}
-          preload={size === "logo"}
+          priority={size === "logo"}
           unoptimized
           decoding="async"
           onLoad={() => setLoadedSource(source)}

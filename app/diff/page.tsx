@@ -6,13 +6,15 @@ import type { ScanJobPublic } from "@/lib/types";
 
 export default function DiffPage() {
   const [latest, setLatest] = useState<ScanJobPublic | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     void fetch("/api/scans/history", { cache: "no-store" })
       .then((res) => res.json())
       .then((data: { scans?: ScanJobPublic[] }) => {
         setLatest((data.scans || []).find((scan) => scan.status === "complete" && scan.summary) || null);
-      });
+      })
+      .catch(() => setError("Scan history could not be loaded. Refresh to try again."));
   }, []);
 
   const deltas = latest?.summary?.version_deltas || [];
@@ -39,7 +41,8 @@ export default function DiffPage() {
             <pre className="diffPreview">{JSON.stringify(delta.changes, null, 2)}</pre>
           </article>
         ))}
-        {!latest ? <p className="emptyCopy">Run at least one scan. A second scan will compare against the first completed report.</p> : null}
+        {error ? <p className="emptyCopy" role="alert">{error}</p> : null}
+        {!latest && !error ? <p className="emptyCopy">Run at least one scan. A second scan will compare against the first completed report.</p> : null}
         {latest && deltas.length === 0 ? <p className="emptyCopy">No version, dependency, score, or artifact changes were found in the latest scan.</p> : null}
       </section>
     </main>

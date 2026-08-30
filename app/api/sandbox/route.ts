@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { runPythonBridge } from "@/lib/pythonBridge";
+import { localScannerEnabled, localScannerUnavailableMessage, runPythonBridge } from "@/lib/pythonBridge";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,6 +11,12 @@ type SandboxPayload = {
 };
 
 export async function POST(request: Request) {
+  if (!localScannerEnabled()) {
+    return NextResponse.json({
+      error: localScannerUnavailableMessage(),
+      code: "LOCAL_SCANNER_UNAVAILABLE"
+    }, { status: 503 });
+  }
   const payload = await request.json().catch(() => ({})) as SandboxPayload;
   if (typeof payload.path !== "string" || !payload.path) {
     return NextResponse.json({ error: "path must be a string" }, { status: 400 });

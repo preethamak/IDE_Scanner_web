@@ -171,39 +171,44 @@ export default function AccountPage() {
       (useCase === "team" ? "My team workspace" : "My developer workspace");
     setOnboardingSaving(true);
     setMessage("");
-    const teamsResponse = await fetch("/api/teams", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${account.token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ name, onboarding: true }),
-    });
-    const teamsBody = await teamsResponse.json().catch(() => ({}));
-    if (!teamsResponse.ok) {
+    try {
+      const teamsResponse = await fetch("/api/teams", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${account.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, onboarding: true }),
+      });
+      const teamsBody = await teamsResponse.json().catch(() => ({}));
+      if (!teamsResponse.ok) {
+        setOnboardingSaving(false);
+        return setMessage(
+          teamsBody.error || "Your workspace could not be created. Try again.",
+        );
+      }
+      const profileResponse = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${account.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ role, primary_ide: ide, use_case: useCase }),
+      });
+      const profileBody = await profileResponse.json().catch(() => ({}));
+      if (!profileResponse.ok) {
+        setOnboardingSaving(false);
+        return setMessage(
+          profileBody.error ||
+            "Your workspace was created, but setup is not complete. Try again to save your profile.",
+        );
+      }
+      setAccount({ ...account, profile: profileBody.profile });
+      continueToDestination();
+    } catch {
       setOnboardingSaving(false);
-      return setMessage(
-        teamsBody.error || "Your workspace could not be created. Try again.",
-      );
+      setMessage("Setup could not be completed. Try again.");
     }
-    const profileResponse = await fetch("/api/profile", {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${account.token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ role, primary_ide: ide, use_case: useCase }),
-    });
-    const profileBody = await profileResponse.json();
-    if (!profileResponse.ok) {
-      setOnboardingSaving(false);
-      return setMessage(
-        profileBody.error ||
-          "Your workspace was created, but setup is not complete. Try again to save your profile.",
-      );
-    }
-    setAccount({ ...account, profile: profileBody.profile });
-    continueToDestination();
   }
   async function signOut() {
     await db?.auth.signOut();

@@ -16,10 +16,12 @@ export default function InvitationAcceptance({ token }: { token: string }) {
     const session = await db?.auth.getSession();
     const accessToken = session?.data.session?.access_token;
     if (!accessToken) { router.push(`/account?next=${encodeURIComponent(`/workspace/invitations/${token}`)}`); return; }
-    const response = await fetch("/api/team-invitations/accept", { method: "POST", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ token }) });
-    const body = await response.json();
-    if (!response.ok) { setState("error"); setMessage(String(body.error || "Could not accept invitation.")); return; }
-    router.replace("/workspace"); router.refresh();
+    try {
+      const response = await fetch("/api/team-invitations/accept", { method: "POST", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ token }) });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) { setState("error"); setMessage(String(body.error || "Could not accept invitation.")); return; }
+      router.replace("/workspace"); router.refresh();
+    } catch { setState("error"); setMessage("Could not accept invitation."); }
   }
 
   return <main className="workspacePage gatePage"><section className="workspaceSignedOut">

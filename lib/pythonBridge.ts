@@ -6,6 +6,12 @@ const appRoot = process.cwd();
 const scannerRoot = process.env.IDE_SCANNER_ROOT || path.resolve(appRoot, "../ide-scanner");
 const scannerSrc = path.join(scannerRoot, "src");
 
+// The bridge spawns a local Python process and scans caller-supplied paths, so
+// hosted deployments must never expose it. Requires explicit operator opt-in.
+export function localScannerEnabled(): boolean {
+  return process.env.IDE_SCANNER_LOCAL_API === "true";
+}
+
 export async function runPythonBridge<T>(command: "inventory" | "scan" | "benchmark" | "sandbox" | "search" | "rules", payload?: unknown): Promise<T> {
   return new Promise((resolve, reject) => {
     const child = spawn(pythonCommand(), ["-m", "ide_scanner.web_bridge", command], {

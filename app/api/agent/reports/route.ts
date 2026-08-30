@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { agentReportToJob, saveAgentReport } from "@/lib/agentReports";
+import { validBearerSecret } from "@/lib/internalRunnerAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,8 +15,7 @@ export async function POST(request: Request) {
   if (!expectedToken) {
     return NextResponse.json({ error: "agent report ingestion is not configured" }, { status: 503 });
   }
-  const header = request.headers.get("authorization") || "";
-  if (header !== `Bearer ${expectedToken}`) {
+  if (!validBearerSecret(request.headers.get("authorization"), expectedToken)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
