@@ -41,9 +41,7 @@ export default function InventoryClient({ inventory }: { inventory: PublicInvent
 }
 
 function RegistryCard({item}:{item:PublicInventoryItem}) {
-  // The tier distinguishes "no findings with high coverage" from "no findings
-  // but partial coverage", so an allow verdict is never overstated on a card.
-  const tier = deriveTrustTier({ decision: item.decision === "incomplete" ? null : item.decision, analysis_status: "complete", coverage_percent: item.coverage_percent });
+  const tier = deriveTrustTier({ decision: item.decision === "incomplete" ? null : item.decision, analysis_status: "complete" });
   const decision = tier.tier === "unanalyzed" ? labels.incomplete : title(tier.label);
   return <Link className={styles.card} href={`/extensions/${encodeURIComponent(item.extension_id)}`} aria-label={`Open ${item.display_name} extension profile`}>
     <header><ExtensionIcon iconUrl={item.icon_url} publisher={item.publisher} name={item.display_name}/><div><strong>{item.display_name}{item.publisher_verified?<BadgeCheck aria-label="Verified publisher"/>:null}</strong><span>{item.publisher} · {item.extension_id}</span></div><ArrowUpRight/></header>
