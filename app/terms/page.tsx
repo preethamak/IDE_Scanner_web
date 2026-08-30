@@ -75,9 +75,9 @@ const sections = [
   {
     title: "10. Changes and contact",
     body: [
-      // TODO(owner): state the operating entity and governing jurisdiction before
-      // charging money under this agreement.
-      "We will post changes here and update the effective date below. Continued use after a change means acceptance. Governing law: [operating entity and jurisdiction to be confirmed]. Questions: hello@abscissa.dev for anything commercial or account-related, security@abscissa.dev for vulnerabilities.",
+      "We will post changes here and update the effective date below. Continued use after a change means acceptance.",
+      "GuardRails is operated by an independent developer, not a registered company. There is no separate corporate entity behind this service, and these terms are an agreement with that individual operator.",
+      "Questions: hello@abscissa.dev for anything commercial or account-related, security@abscissa.dev for vulnerabilities.",
     ],
   },
 ] as const;

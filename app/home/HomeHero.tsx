@@ -6,7 +6,6 @@ import {
   Search, ShieldCheck, TerminalSquare, UsersRound,
 } from "lucide-react";
 import HomeSearch from "@/app/HomeSearch";
-import FogBackdrop from "./FogBackdrop";
 import styles from "./landing.module.css";
 
 const popular = [
@@ -17,7 +16,6 @@ const popular = [
 export default function HomeHero() {
   return (
     <section className={styles.productHero}>
-      <FogBackdrop className={styles.fogBackdrop} />
       <Link href="/research/artifact-is-the-boundary" className={styles.updateRail}>
         <span>New</span><b>Decision Receipts</b><em>Artifact, reviewer, and rationale now travel together.</em><ArrowRight />
       </Link>

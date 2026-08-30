@@ -35,7 +35,10 @@ function MonitorPageContent() {
 
   useEffect(() => {
     if (!db) {
-      queueMicrotask(() => setState("error"));
+      // No workspace connection is available at all. For a visitor that is
+      // indistinguishable from being signed out, so show the explanatory gate
+      // rather than an error page.
+      queueMicrotask(() => setState("signed-out"));
       return;
     }
     let active = true;
@@ -43,7 +46,7 @@ function MonitorPageContent() {
       .getUser()
       .then(({ data, error }) => {
         if (!active) return;
-        if (error) setState("error");
+        if (error) setState("signed-out");
         else setState(data.user ? "ready" : "signed-out");
       })
       .catch(() => active && setState("error"));

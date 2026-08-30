@@ -22,8 +22,9 @@ describe("GuardRails CLI product surface", () => {
 
   it("uses a light atmospheric product treatment", () => {
     expect(css).toContain("/* Light product experience */");
-    expect(css).toContain("#dce9ff");
-    expect(css).toContain("#f8ddec");
     expect(css).toContain(".cliTerminalBody");
+    // One accent hue: no blue, pink, or violet palette layers may return.
+    for (const hex of ["#2f6fdd", "#dce9ff", "#f8ddec", "#7658d8", "#e4d8ff"])
+      expect(css.toLowerCase()).not.toContain(hex);
   });
 });

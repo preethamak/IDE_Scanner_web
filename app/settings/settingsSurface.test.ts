@@ -27,8 +27,8 @@ describe("analysis boundaries surface", () => {
   });
 
   it("uses a light responsive and reduced-motion design", () => {
-    expect(styles).toContain("#dce9ff");
-    expect(styles).toContain("#ffe5ef");
+    expect(styles).toContain("#dcecdf");
+    expect(styles).toContain("#eef5e6");
     expect(styles).toContain("#efffcf");
     expect(styles).toContain("prefers-reduced-motion");
   });

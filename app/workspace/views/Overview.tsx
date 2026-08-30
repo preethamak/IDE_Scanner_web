@@ -5,10 +5,10 @@ import {
   ArrowRight,
   CheckCircle2,
   ClipboardCheck,
+  LayoutDashboard,
   Radar,
   RefreshCw,
   ShieldCheck,
-  Sparkles,
   UserRound,
 } from "lucide-react";
 import type { QueueDecision } from "@/lib/teamDecisionQueue";
@@ -143,7 +143,7 @@ export default function Overview({
     <>
       {sampleMode ? (
         <div className={styles.sampleBanner}>
-          <Sparkles />
+          <Radar />
           <span>
             <strong>Sample workspace</strong>This preview uses example data and
             cannot change your real workspace.
@@ -164,7 +164,7 @@ export default function Overview({
                   className={styles.sampleButton}
                   onClick={() => onSample(true)}
                 >
-                  <Sparkles /> Preview sample workspace
+                  <LayoutDashboard /> Preview sample workspace
                 </button>
               ) : null}
               <button

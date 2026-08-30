@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 
+// The layout template already appends "· GuardRails"; never repeat it here.
 export const metadata: Metadata = {
-  title: "Product demos · GuardRails",
-  description: "Short, silent product walkthroughs from GuardRails.",
+  title: "Product demos",
+  description: "Short, silent screen recordings of GuardRails.",
+  alternates: { canonical: "/demos" },
 };
 
 const demos = [

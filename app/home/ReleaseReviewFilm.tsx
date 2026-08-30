@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, ChevronRight, CircleAlert, MousePointer2, Sparkles } from "lucide-react";
+import { Check, ChevronRight, CircleAlert, GitCompareArrows, MousePointer2 } from "lucide-react";
 import styles from "./releaseReviewFilm.module.css";
 
 const stages = ["arrived", "explained", "saved"] as const;
@@ -27,7 +27,7 @@ export default function ReleaseReviewFilm() {
         <div className={styles.topline}><div><p>RELEASE UPDATE</p><h3>Workspace assistant <small>2.8.0 → 2.9.0</small></h3></div><span className={styles.pending}><i /> Needs review</span></div>
         <div className={styles.tabs}><span className={styles.selected}>What changed <i>1</i></span><span>Previous decision</span><span>Evidence</span></div>
         <article className={styles.change}><div className={styles.changeIcon}><CircleAlert /></div><div><p>NEW CAPABILITY</p><h4>Terminal access</h4><span>Can run commands in the current workspace</span></div><b>Added</b></article>
-        <article className={styles.note}><Sparkles /><div><b>New compared with your approved version</b><p>Open the context before you decide.</p></div><ChevronRight /></article>
+        <article className={styles.note}><GitCompareArrows /><div><b>New compared with your approved version</b><p>Open the context before you decide.</p></div><ChevronRight /></article>
         <footer className={styles.actions}><span><i /> Evidence is attached to this release</span><button>{stage === "saved" ? <><Check /> Decision saved</> : "Review change"}</button></footer>
         <MousePointer2 className={styles.cursor} />
       </main>

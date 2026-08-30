@@ -200,11 +200,50 @@ export default function PrivacyPage() {
             </div>
           </header>
           <p>
-            GuardRails (abscissa.dev) determines the purposes and means of
-            processing described on this page. Privacy and data-subject
-            requests: security@abscissa.dev. Vulnerability disclosure follows{" "}
+            GuardRails (abscissa.dev) is operated by an independent developer,
+            not a registered company, and that individual operator determines
+            the purposes and means of processing described on this page.
+            Privacy and data-subject requests: hello@abscissa.dev. Security
+            vulnerabilities: security@abscissa.dev, following{" "}
             <Link href="/security">the security page</Link> and security.txt.
-            {/* TODO(owner): name the operating legal entity once incorporated. */}
+          </p>
+        </article>
+        <article>
+          <header>
+            <span>
+              <Globe2 />
+            </span>
+            <div>
+              <small>Who else touches data</small>
+              <h3>Processors and infrastructure</h3>
+            </div>
+          </header>
+          <p>
+            Supabase stores account, workspace, and newsletter data and provides
+            authentication. Vercel hosts the site and provides cookieless
+            aggregate analytics. Google Analytics runs only with your consent.
+            Stripe processes payments only once billing is enabled. Rate
+            limiting and abuse prevention store a salted hash derived from your
+            IP address, not the address itself; the hash cannot be reversed but
+            is an identifier while the salt exists.
+          </p>
+        </article>
+        <article>
+          <header>
+            <span>
+              <HardDrive />
+            </span>
+            <div>
+              <small>Cookies and storage</small>
+              <h3>What this site stores in your browser</h3>
+            </div>
+          </header>
+          <p>
+            Local storage holds your analytics choice under{" "}
+            <code>guardrails-consent</code>, your Supabase session tokens when
+            you sign in, and any report bundles you import (until you remove
+            them on the Reports page). Google Analytics sets its own cookies
+            only after consent. There are no advertising cookies.
           </p>
         </article>
         <article>
@@ -262,10 +301,11 @@ export default function PrivacyPage() {
             remove them; audit retention windows follow your plan. Imported
             report bundles never leave your browser unless you export them. You
             can request access, correction, export, or deletion of your account
-            data by contacting us; identity verification applies where one
-            member could otherwise erase another team&apos;s record. Where GDPR
-            or similar laws apply, you may also lodge a complaint with your
-            supervisory authority.
+            data by writing to hello@abscissa.dev; identity verification
+            applies where one member could otherwise erase another team&apos;s
+            record. Newsletter subscriptions can be ended the same way at any
+            time. Where GDPR or similar laws apply, you may also lodge a
+            complaint with your supervisory authority.
           </p>
         </article>
       </section>

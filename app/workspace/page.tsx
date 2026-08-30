@@ -18,7 +18,9 @@ export default function WorkspacePage() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      if (!db) { setState("error"); return; }
+      // No workspace connection available: for a visitor this is the same as
+      // being signed out, so show the gate rather than an error page.
+      if (!db) { setState("signed-out"); return; }
       void db.auth.getUser()
         .then(({ data }) => setState(data.user ? "ready" : "signed-out"))
         .catch(() => setState("error"));

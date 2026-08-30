@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { ArrowRight, CheckCircle2, LogOut, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, LogOut, ShieldCheck } from "lucide-react";
 import BrandMark from "@/app/BrandMark";
 import styles from "@/app/workspace/teamWorkspace.module.css";
 
@@ -45,7 +45,7 @@ export default function WorkspaceOnboarding({
       <section>
         <span className={styles.step}>Step 1 of 3</span>
         <div className={styles.onboardingIcon}>
-          <Sparkles />
+          <ShieldCheck />
         </div>
         <h1>Build your security workspace.</h1>
         <p>

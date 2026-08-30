@@ -12,7 +12,7 @@
   border-radius: 30px;
   padding: 7px 10px;
   background: #f1f6ff;
-  color: #2f6fdd;
+  color: #1f6a4a;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -27,7 +27,7 @@
   letter-spacing: -0.06em;
 }
 .hero h1 em {
-  color: #2f6fdd;
+  color: #1f6a4a;
   font-style: normal;
 }
 .hero p {
@@ -81,9 +81,9 @@
   font-size: 15px;
 }
 .builder button {
-  border: 1px solid #2f6fdd;
+  border: 1px solid #1f6a4a;
   border-radius: 9px;
-  background: #2f6fdd;
+  background: #1f6a4a;
   padding: 10px 16px;
   color: #fff;
   font-weight: 800;
@@ -117,7 +117,7 @@
   margin-top: 26px;
   font-weight: 800;
   font-size: 14px;
-  color: #2f6fdd;
+  color: #1f6a4a;
   text-decoration: none;
 }
 .rules svg {

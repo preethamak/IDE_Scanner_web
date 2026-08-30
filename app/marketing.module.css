@@ -9,7 +9,8 @@
 }
 /* Authority Ledger treatment for pricing and solution pages. */
 .page{background:var(--ledger-paper);color:var(--ledger-ink)}.glowOne{background:radial-gradient(circle,#f8c8bc,transparent 70%)}.glowTwo{background:radial-gradient(circle,#eadfce,transparent 70%)}.eyebrow{border:0;border-radius:0;background:transparent;padding:0;color:var(--ledger-signal);letter-spacing:.1em}.hero{border-bottom-color:var(--ledger-line)}.hero h1 em{color:var(--ledger-signal)}.hero p{color:var(--ledger-muted)}.hero aside{border-color:var(--ledger-line);border-radius:18px;background:var(--ledger-white)}.hero aside svg{color:var(--ledger-signal)}.plan{border-color:var(--ledger-line)!important;border-radius:18px!important;background:var(--ledger-white)!important}.featured{background:var(--ledger-night)!important;color:#fffdf9!important}.featured p,.featured li{color:#d9d0c4!important}.plan a,.cta>a{border-radius:999px!important;background:var(--ledger-ink)!important;color:white!important}.featured a{background:var(--ledger-signal)!important}.steps>div,.outcomes{border-color:var(--ledger-line)!important}.steps article,.outcomes article{background:var(--ledger-white)!important}.cta{background:var(--ledger-signal)!important}.cta>a{background:var(--ledger-white)!important;color:var(--ledger-ink)!important}
-.glowOne{background:radial-gradient(circle,#e4d8ff,transparent 70%)}.glowTwo{background:radial-gradient(circle,#c8f0e8,transparent 70%)}.featured{background:linear-gradient(145deg,#f0ebff,#fff)!important;color:var(--ledger-ink)!important}.featured p,.featured li{color:var(--ledger-muted)!important}.featured a{background:#7658d8!important}.plan a,.cta>a{border-radius:11px!important}.cta{background:linear-gradient(110deg,#e7ddff,#caefe8)!important}
+/* Final palette pass: the radial washes and the featured plan follow the one brand accent (--ledger-signal). Do not reintroduce a second hue here. */
+.glowOne{background:radial-gradient(circle,#dcecdf,transparent 70%)}.glowTwo{background:radial-gradient(circle,#e8f0d6,transparent 70%)}.featured{background:linear-gradient(145deg,#eef5ef,#fff)!important;color:var(--ledger-ink)!important}.featured p,.featured li{color:var(--ledger-muted)!important}.featured a{background:var(--ledger-signal)!important}.plan a,.cta>a{border-radius:11px!important}.cta{background:var(--ledger-signal)!important}
 .glow {
   position: absolute;
   z-index: -1;
@@ -21,7 +22,7 @@
   right: -180px;
   width: 700px;
   height: 700px;
-  background: radial-gradient(circle, #f5dce6, transparent 70%);
+  background: radial-gradient(circle, #dcecdf, transparent 70%);
 }
 .glowTwo {
   top: 620px;
@@ -107,12 +108,12 @@
   padding: 28px;
 }
 .featured {
-  border-color: #d5a9ba;
-  background: linear-gradient(180deg, #fff7fa, #fff);
+  border-color: #bcd5c2;
+  background: linear-gradient(180deg, #f4f9f5, #fff);
 }
 .plan > span,
 .planHead > span {
-  color: #9a496d;
+  color: var(--ledger-signal);
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -131,6 +132,12 @@
   line-height: 1;
 }
 .price small {
+  color: #766b72;
+  font-size: 12px;
+}
+.planLater {
+  display: block;
+  margin: -18px 0 24px;
   color: #766b72;
   font-size: 12px;
 }
@@ -158,7 +165,7 @@
 .plan li svg {
   flex: 0 0 auto;
   width: 16px;
-  color: #9a496d;
+  color: var(--ledger-signal);
 }
 .plan a {
   display: flex;
@@ -167,7 +174,7 @@
   gap: 8px;
   min-height: 46px;
   margin-top: auto;
-  border: 1px solid #9a496d;
+  border: 1px solid var(--ledger-signal);
   border-radius: 9px;
   background: #fff;
   color: #823b58;
@@ -175,7 +182,7 @@
   font-weight: 800;
 }
 .featured a {
-  background: #9a496d;
+  background: var(--ledger-signal);
   color: #fff;
 }
 .plan a svg {
@@ -197,7 +204,7 @@
 }
 .honesty > div > span,
 .sectionHead span {
-  color: #9a496d;
+  color: var(--ledger-signal);
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -260,7 +267,7 @@
   border-right: 0;
 }
 .steps i {
-  color: #9a496d;
+  color: var(--ledger-signal);
   font: 700 12px var(--mono);
   font-style: normal;
 }
@@ -305,7 +312,7 @@
   gap: 8px;
   min-height: 46px;
   border-radius: 9px;
-  background: #9a496d;
+  background: var(--ledger-signal);
   padding: 0 17px;
   color: #fff;
   font-size: 13px;
@@ -321,7 +328,7 @@
   gap: 10px;
 }
 .ctaActions a:last-child {
-  border: 1px solid #9a496d;
+  border: 1px solid var(--ledger-signal);
   background: transparent;
   color: #823b58;
 }
@@ -329,7 +336,7 @@
   align-self: flex-start;
   margin-top: -4px;
   border-radius: 999px;
-  background: #9a496d;
+  background: var(--ledger-signal);
   padding: 4px 10px;
   color: #fff;
   font: 800 10px var(--mono);
@@ -374,7 +381,7 @@
 .compare thead th {
   position: sticky;
   top: 0;
-  background: #fff7fa;
+  background: #f4f9f5;
   padding: 18px 20px;
   text-align: center;
   vertical-align: bottom;
@@ -395,7 +402,7 @@
   background: #fdf3f7;
 }
 .compare thead th[data-plan="monitoring"] strong {
-  color: #9a496d;
+  color: var(--ledger-signal);
 }
 .compare tbody th {
   padding: 13px 20px;

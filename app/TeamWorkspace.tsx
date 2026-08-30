@@ -25,7 +25,6 @@ import {
   Search,
   Settings,
   ShieldCheck,
-  Sparkles,
   Trash2,
   UserCog,
   UserRound,
@@ -1097,7 +1096,7 @@ function WorkspaceOnboarding({
       <section>
         <span className={styles.step}>Step 1 of 3</span>
         <div className={styles.onboardingIcon}>
-          <Sparkles />
+          <ShieldCheck />
         </div>
         <h1>Build your security workspace.</h1>
         <p>
@@ -1562,7 +1561,7 @@ function WorkspaceSetup({
             <>
               <div className={styles.setupSuccess}>
                 <span>
-                  <Sparkles />
+                  <CheckCircle2 />
                 </span>
                 <small>Workspace ready</small>
                 <h1>{team.name} is monitoring its first extension.</h1>
@@ -1684,7 +1683,7 @@ function Overview({
     <>
       {sampleMode ? (
         <div className={styles.sampleBanner}>
-          <Sparkles />
+          <Radar />
           <span>
             <strong>Sample workspace</strong>This preview uses example data and
             cannot change your real workspace.
@@ -1705,7 +1704,7 @@ function Overview({
                   className={styles.sampleButton}
                   onClick={() => onSample(true)}
                 >
-                  <Sparkles /> Preview sample workspace
+                  <LayoutDashboard /> Preview sample workspace
                 </button>
               ) : null}
               <button

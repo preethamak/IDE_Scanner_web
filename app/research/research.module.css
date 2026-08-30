@@ -23,14 +23,14 @@
   right: -170px;
   width: 760px;
   height: 760px;
-  background: radial-gradient(circle, #dce9ff, transparent 69%);
+  background: radial-gradient(circle, #dcecdf, transparent 69%);
 }
 .atmosphere i:last-child {
   top: 550px;
   left: -190px;
   width: 530px;
   height: 530px;
-  background: radial-gradient(circle, #ffe6ef, transparent 70%);
+  background: radial-gradient(circle, #eef5e6, transparent 70%);
 }
 .hero {
   display: grid;
@@ -49,7 +49,7 @@
   border-radius: 30px;
   padding: 7px 10px;
   background: #f1f6ff;
-  color: #2f6fdd;
+  color: #1f6a4a;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -64,7 +64,7 @@
   letter-spacing: -0.066em;
 }
 .hero h1 em {
-  color: #2f6fdd;
+  color: #1f6a4a;
   font-style: normal;
 }
 .hero > div > p {
@@ -121,7 +121,7 @@
 }
 .principles svg {
   width: 17px;
-  color: #2f6fdd;
+  color: #1f6a4a;
 }
 .feature {
   display: grid;
@@ -149,7 +149,7 @@
   align-content: center;
   justify-items: center;
   background: linear-gradient(145deg, #eaf2ff, #f7faff 53%, #ffeaf2);
-  color: #2f6fdd;
+  color: #1f6a4a;
 }
 .featureArt span {
   font: 900 13px var(--mono);
@@ -166,7 +166,7 @@
 }
 .featureCopy > span,
 .library header span {
-  color: #2f6fdd;
+  color: #1f6a4a;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -187,7 +187,7 @@
   align-items: center;
   gap: 8px;
   margin-top: 25px;
-  color: #2f6fdd;
+  color: #1f6a4a;
   font-size: 13px;
 }
 .featureCopy svg,
@@ -265,7 +265,7 @@
   font: 700 12px var(--mono);
 }
 .library > div > a > svg {
-  color: #2f6fdd;
+  color: #1f6a4a;
 }
 .library > div > a > svg:last-child {
   width: 19px;
@@ -294,11 +294,11 @@
   gap: 50px;
   margin-top: 100px;
   border-radius: 18px;
-  background: linear-gradient(120deg, #edf4ff, #fff 58%, #fff0f5);
+  background: linear-gradient(120deg, #eff5ee, #fff 58%, #fff0f5);
   padding: 48px;
 }
 .cta small {
-  color: #2f6fdd;
+  color: #1f6a4a;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -320,7 +320,7 @@
   gap: 8px;
   min-height: 46px;
   border-radius: 9px;
-  background: #2f6fdd;
+  background: #1f6a4a;
   padding: 0 17px;
   color: #fff;
   font-size: 13px;

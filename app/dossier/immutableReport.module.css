@@ -90,8 +90,8 @@
   white-space: nowrap;
 }
 .actions a {
-  border-color: #9a496d;
-  background: #9a496d;
+  border-color: #1f6a4a;
+  background: #1f6a4a;
   color: #fff;
   text-decoration: none;
 }
@@ -100,7 +100,7 @@
 }
 .actions button:focus-visible,
 .actions a:focus-visible {
-  outline: 3px solid #2f6fdd3d;
+  outline: 3px solid #1f6a4a3d;
   outline-offset: 2px;
 }
 @media (max-width: 1050px) {

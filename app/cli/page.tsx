@@ -5,7 +5,6 @@ import {
   Check,
   Cloud,
   Code2,
-  GitBranch,
   HardDrive,
   LockKeyhole,
   PackageCheck,
@@ -60,20 +59,17 @@ export default function CliPage() {
           <CliInstallCommand />
           <div className="cliHeroNotes">
             <span>
-              <Check /> Package: <code>guardlens</code>
-            </span>
-            <span>
-              <Check /> Command: <code>guardrails</code>
-            </span>
-            <span>
               <Check /> Python 3.11+
             </span>
             <span>
               <Check /> One self-contained, integrity-checked package
             </span>
+            <span>
+              <Check /> Extension code is never executed
+            </span>
           </div>
           <p className="cliPackageNote">
-            <code>guardlens</code> is the PyPI package; it installs the <code>guardrails</code> command.
+            <a href="https://pypi.org/project/guardlens/" target="_blank" rel="noreferrer"><code>guardlens</code></a> is the PyPI package name; it installs the <code>guardrails</code> command. Verify the project on PyPI before installing.
           </p>
         </div>
         <div
@@ -214,49 +210,6 @@ export default function CliPage() {
                 metadata using IDs, versions, dependencies, and URLs.
               </p>
             </div>
-          </article>
-        </div>
-      </section>
-
-      <section className="cliGate" id="ci-gate" aria-labelledby="ci-gate-heading">
-        <header>
-          <span className="cliEyebrow">
-            <GitBranch /> Gate releases in CI
-          </span>
-          <h2 id="ci-gate-heading">
-            Fail the build when a release isn&apos;t cleared.
-          </h2>
-          <p>
-            Every scanned release has a public verdict endpoint. Call it for
-            the exact extension and version you are about to ship or install,
-            and let a blocked or unreviewed release fail your pipeline
-            instead of reaching your team.
-          </p>
-        </header>
-        <div className="cliGateGrid">
-          <article>
-            <span>Check a release</span>
-            <pre>
-              <code>{`curl -fsS "https://abscissa.dev/api/gate?extension=publisher.name&version=1.2.3"`}</code>
-            </pre>
-            <small>
-              Returns HTTP 422 when the release is blocked or needs review,
-              so <code>curl -fsS</code> fails the step. Add{" "}
-              <code>&amp;fail-on=unreviewed</code> to also fail when no
-              completed analysis exists yet.
-            </small>
-          </article>
-          <article>
-            <span>GitHub Actions</span>
-            <pre>
-              <code>{`- name: GuardRails release gate
-  run: |
-    curl -fsS "https://abscissa.dev/api/gate?extension=publisher.name&version=\${{ steps.meta.outputs.version }}&fail-on=unreviewed"`}</code>
-            </pre>
-            <small>
-              Drop this in after you resolve the extension version you are
-              about to publish or install.
-            </small>
           </article>
         </div>
       </section>

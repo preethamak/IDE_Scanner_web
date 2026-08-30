@@ -24,7 +24,7 @@ describe("public benchmark surface", () => {
   });
 
   it("uses a light responsive evidence table", () => {
-    expect(styles).toContain("#dce9ff");
+    expect(styles).toContain("#dcecdf");
     expect(styles).toContain("#efffd2");
     expect(styles).toContain("overflow-x: auto");
     expect(styles).toContain("prefers-reduced-motion");
