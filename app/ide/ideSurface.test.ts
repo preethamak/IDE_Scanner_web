@@ -21,7 +21,7 @@ describe("GuardRails IDE control plane", () => {
     for (const phrase of ["Filesystem broker", "Network broker", "Command broker", "Credential broker", "Opaque handle + destination binding", "Read-only workspace", "Patch review", "Package audit", "Policy templates"]) expect(workbench).toContain(phrase);
   });
 
-  it("groups the public information architecture around products and outcomes", () => {
-    for (const phrase of ["Product", "Solutions", "Resources", "Extension Registry", "Engineering teams", "AI-agent security", "Data boundaries"]) expect(navigation).toContain(phrase);
+  it("keeps a small top row with everything secondary in one grouped menu", () => {
+    for (const phrase of ["Registry", "Docs", "Pricing", "Product", "Solutions", "Team Workspace", "Engineering teams", "AI-agent security"]) expect(navigation).toContain(phrase);
   });
 });

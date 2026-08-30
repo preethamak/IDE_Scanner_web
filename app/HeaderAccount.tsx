@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BellRing, CircleUserRound, LayoutDashboard, LogOut, Radar } from "lucide-react";
+import { CircleUserRound, LayoutDashboard, LogOut, Radar } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { browserDb } from "@/lib/supabase";
 
@@ -26,7 +26,7 @@ export default function HeaderAccount() {
   return <div className="headerAccountSlot" ref={root}>
     {user === undefined ? <Link className="headerSignIn" href="/account">Sign in</Link> : user ? <>
       <button className="headerAccountButton" aria-label="Open account menu" aria-expanded={open} onClick={() => setOpen((value) => !value)}><CircleUserRound/></button>
-      {open ? <div className="headerAccountMenu" role="menu"><span>Signed in to GUARDRAILS</span><strong>{user.email || "GUARDRAILS account"}</strong><Link role="menuitem" href="/workspace" onClick={() => setOpen(false)}><LayoutDashboard/> Dashboard</Link><Link role="menuitem" href="/monitor" onClick={() => setOpen(false)}><Radar/> Monitor releases</Link><Link role="menuitem" href="/workspace" onClick={() => setOpen(false)}><BellRing/> Alert inbox</Link><button role="menuitem" onClick={() => void signOut()}><LogOut/> Sign out</button></div> : null}
+      {open ? <div className="headerAccountMenu" role="menu"><span>Signed in to GUARDRAILS</span><strong>{user.email || "GUARDRAILS account"}</strong><Link role="menuitem" href="/workspace" onClick={() => setOpen(false)}><LayoutDashboard/> Workspace</Link><Link role="menuitem" href="/monitor" onClick={() => setOpen(false)}><Radar/> Monitor releases</Link><Link role="menuitem" href="/account" onClick={() => setOpen(false)}><CircleUserRound/> Account</Link><button role="menuitem" onClick={() => void signOut()}><LogOut/> Sign out</button></div> : null}
     </> : <Link className="headerSignIn" href="/account">Sign in</Link>}
   </div>;
 }
