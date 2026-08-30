@@ -1,7 +1,7 @@
 export type Verdict = "clean" | "review" | "suspicious" | "malicious";
 export type VerdictState = "safe" | "safe_with_notes" | "needs_review" | "suspicious" | "confirmed_malicious";
 export type Decision = "allow" | "review" | "block" | "incomplete";
-export type PublicOutcome = "clear" | "expected_capability" | "investigate" | "preventive_block" | "confirmed_threat" | "incomplete";
+export type PublicOutcome = "clear" | "expected_capability" | "explained_preventive_chain" | "investigate" | "preventive_block" | "confirmed_threat" | "incomplete";
 
 export type InventoryExtension = {
   type: string;
