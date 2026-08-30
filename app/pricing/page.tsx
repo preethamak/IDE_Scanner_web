@@ -7,7 +7,7 @@ import styles from "../marketing.module.css";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Everything on GuardRails is free right now — public reports, the CLI, and release monitoring. When billing opens, Monitoring is $19/month and Teams is $99/month, and early-access users keep those prices.",
+    "Scan is free forever. Monitoring is $19/month and Teams is $99/month for up to 25 seats — billing has not opened yet, and early access locks those prices in.",
   alternates: { canonical: "/pricing" },
 };
 
@@ -44,10 +44,10 @@ const plans = [
     id: "monitoring",
     name: "Monitoring",
     audience: "For teams sharing extensions",
-    price: "Free",
-    suffix: "during the launch period",
-    tableSuffix: "Free during launch",
-    later: "$19/month when billing opens",
+    price: "$19",
+    suffix: "per month",
+    tableSuffix: "$19/month",
+    later: "Not billed until billing opens — early access locks this price in",
     description:
       "Stop re-reviewing releases from scratch. Every update arrives analyzed, with only meaningful capability changes surfaced.",
     action: "Join early access",
@@ -67,10 +67,10 @@ const plans = [
     id: "teams",
     name: "Teams",
     audience: "For governed organizations",
-    price: "Free",
-    suffix: "during the launch period",
-    tableSuffix: "Free during launch",
-    later: "$99/month up to 25 seats when billing opens",
+    price: "$99",
+    suffix: "per month, up to 25 seats",
+    tableSuffix: "$99/month",
+    later: "Not billed until billing opens — early access locks this price in",
     description:
       "Roll extension policy out organization-wide, with decisions your auditor can read and a direct line to the founder.",
     action: "Talk to the founder",
@@ -160,13 +160,13 @@ export default function PricingPage() {
             <ReceiptText /> Pricing
           </span>
           <h1>
-            Nothing is billed today.<em> Prices start when teams depend on it.</em>
+            Scan free, forever.<em> Lock in your plan price before billing opens.</em>
           </h1>
           <p>
             Public reports, the registry, and the GuardRails CLI are free
-            permanently. Release monitoring and the team workspace are also free
-            right now, during the launch period. The prices below are what they
-            will cost once billing opens.
+            permanently. Monitoring is $19/month and Teams is $99/month for up
+            to 25 seats; billing has not opened yet, and early-access users
+            keep those prices.
           </p>
         </div>
         <aside>
@@ -266,10 +266,9 @@ export default function PricingPage() {
           </table>
         </div>
         <p className={styles.compareNote}>
-          Everything in this table is free today. When billing opens, Monitoring
-          is $19/month and Teams is $99/month for up to 25 seats; larger
-          organizations are quoted on a call. Early-access users keep those
-          prices.
+          Scan stays free. Monitoring and Teams prices apply when billing
+          opens; early-access users keep them. Larger organizations are quoted
+          on a call.
         </p>
       </section>
 

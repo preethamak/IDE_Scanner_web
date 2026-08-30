@@ -98,16 +98,16 @@
 .productSearch button,
 .workflowQuestion a,
 .referenceHero .heroAction {
-  border-color: var(--ledger-signal) !important;
-  background: var(--ledger-signal) !important;
-  color: #fff !important;
+  border-color: #cfe3d6 !important;
+  background: var(--ledger-signal-soft) !important;
+  color: var(--ledger-signal) !important;
 }
 .buttonDark:hover,
 .extensionSearch button:hover,
 .headerAnalyze:hover,
 .referenceHero .heroAction:hover {
-  border-color: #17553b !important;
-  background: #17553b !important;
+  border-color: #b9d8c5 !important;
+  background: #d8ebdf !important;
 }
 .buttonQuiet,
 .buttonLight {
@@ -150,8 +150,8 @@ h3 {
 }
 .wordmark > span {
   border-radius: 10px;
-  background: var(--ledger-signal);
-  color: #fff;
+  background: var(--ledger-signal-soft);
+  color: var(--ledger-signal);
 }
 .wordmark strong {
   letter-spacing: -0.035em;
@@ -171,12 +171,13 @@ h3 {
 }
 .headerProductCta {
   border-radius: 11px !important;
-  background: var(--ledger-signal) !important;
-  color: #fff !important;
+  border: 1px solid #cfe3d6 !important;
+  background: var(--ledger-signal-soft) !important;
+  color: var(--ledger-signal) !important;
   box-shadow: none !important;
 }
 .headerProductCta:hover {
-  background: #17553b !important;
+  background: #d8ebdf !important;
 }
 .navPopover,
 .headerAccountMenu {
@@ -222,8 +223,9 @@ h3 {
 }
 .footerCta {
   border-radius: 11px;
-  background: var(--ledger-signal) !important;
-  color: #fff !important;
+  border: 1px solid #cfe3d6 !important;
+  background: var(--ledger-signal-soft) !important;
+  color: var(--ledger-signal) !important;
 }
 .footerLinks a:hover,
 .footerScan {
@@ -249,15 +251,15 @@ h3 {
 .buttonDark,
 .primaryAction,
 .heroAction {
-  border-color: var(--ledger-signal);
-  background: var(--ledger-signal);
-  color: #fff;
+  border-color: #cfe3d6;
+  background: var(--ledger-signal-soft);
+  color: var(--ledger-signal);
 }
 .buttonDark:hover,
 .primaryAction:hover,
 .heroAction:hover {
-  border-color: #17553b;
-  background: #17553b;
+  border-color: #b9d8c5;
+  background: #d8ebdf;
 }
 .secondaryAction,
 .buttonLight {
