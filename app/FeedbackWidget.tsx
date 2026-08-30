@@ -139,6 +139,7 @@ export default function FeedbackWidget() {
                 <label>
                   <span>What kind of feedback is this?</span>
                   <select
+                    autoFocus
                     value={form.category}
                     onChange={(event) => setForm({ ...form, category: event.target.value as FeedbackCategory })}
                     disabled={state.kind === "busy"}

@@ -1,7 +1,7 @@
 create table if not exists public.feedback_submissions(
   id uuid primary key default gen_random_uuid(),
   category text not null check (category in ('bug', 'suggestion', 'report_clarity', 'other')),
-  message text not null check (char_length(message) between 1 and 4000),
+  message text not null check (char_length(message) between 3 and 4000),
   contact_email text,
   page_path text not null default '',
   requester_hash text not null,
@@ -39,7 +39,7 @@ begin
   if p_category not in ('bug', 'suggestion', 'report_clarity', 'other') then
     raise exception 'Choose a valid feedback category.';
   end if;
-  if normalized_message = '' then
+  if char_length(normalized_message) < 3 then
     raise exception 'Tell us a little more so the team can act on your feedback.';
   end if;
   if char_length(normalized_message) > 4000 then

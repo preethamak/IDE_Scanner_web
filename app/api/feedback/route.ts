@@ -53,7 +53,7 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  if (!message) {
+  if (message.length < 3) {
     return NextResponse.json(
       { error: "Tell us a little more so the team can act on your feedback." },
       { status: 400 },

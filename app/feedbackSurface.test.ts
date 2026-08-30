@@ -22,4 +22,16 @@ describe("feedback surface", () => {
     expect(widget).toContain('role="dialog"');
     expect(css).toContain("max-height: min(760px, calc(100vh - 48px))");
   });
+
+  it("keeps the stored submissions private and server-mediated", () => {
+    const migration = readFileSync(
+      new URL("../supabase/migrations/20260830143000_feedback_submissions.sql", import.meta.url),
+      "utf8",
+    );
+    const route = read("./api/feedback/route.ts");
+    expect(migration).toContain("alter table public.feedback_submissions enable row level security");
+    expect(migration).toContain("revoke all on public.feedback_submissions from public, anon, authenticated");
+    expect(migration).toContain("grant execute on function public.submit_feedback");
+    expect(route).toContain('db.rpc("submit_feedback"');
+  });
 });
