@@ -131,6 +131,17 @@ describe("signed scan result callback", () => {
     expect(rpc).toHaveBeenCalledTimes(1);
   });
 
+  it("retries a transient Postgres statement timeout without terminalizing the job", async () => {
+    ingestScanBundle.mockRejectedValue({
+      code: "57014",
+      message: "canceling statement due to statement timeout",
+    });
+    const response = await POST(request({ job_id: jobId, bundle: { extensions: [{}] } }));
+    expect(response.status).toBe(503);
+    expect(response.headers.get("retry-after")).toBe("2");
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
+
   it("atomically records a permanent ingestion rejection", async () => {
     ingestScanBundle.mockRejectedValue(new Error("canonical identity mismatch"));
     const response = await POST(request({ job_id: jobId, bundle: { extensions: [{}] } }));

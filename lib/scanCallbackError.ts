@@ -7,6 +7,8 @@ const TRANSIENT_MARKERS = [
   "fetch failed",
   "connection terminated",
   "connection reset",
+  "statement timeout",
+  "canceling statement due to statement timeout",
 ];
 
 export function isTransientScanCallbackError(error: unknown): boolean {
