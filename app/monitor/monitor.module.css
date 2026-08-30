@@ -27,14 +27,14 @@
   top: -230px;
   width: 680px;
   height: 680px;
-  background: radial-gradient(circle, #dce9ff, transparent 69%);
+  background: radial-gradient(circle, #dcecdf, transparent 69%);
 }
 .atmosphere i:nth-child(2) {
   left: -210px;
   bottom: -230px;
   width: 540px;
   height: 540px;
-  background: radial-gradient(circle, #ffe5ef, transparent 70%);
+  background: radial-gradient(circle, #eef5e6, transparent 70%);
 }
 .atmosphere i:last-child {
   right: 34%;
@@ -58,7 +58,7 @@
   border-radius: 30px;
   padding: 7px 10px;
   background: #f1f6ff;
-  color: #2f6fdd;
+  color: #1f6a4a;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -73,7 +73,7 @@
   letter-spacing: -0.068em;
 }
 .gateHero h1 em {
-  color: #2f6fdd;
+  color: #1f6a4a;
   font-style: normal;
 }
 .gateHero > div:first-child > p {
@@ -94,7 +94,7 @@
   border-radius: 11px;
   padding: 10px 12px;
   background: #f2f6ff;
-  color: #2f6fdd;
+  color: #1f6a4a;
 }
 .resume > svg {
   width: 18px;
@@ -136,8 +136,8 @@
   font-weight: 800;
 }
 .heroActions a:first-child {
-  border-color: #2f6fdd;
-  background: #2f6fdd;
+  border-color: #1f6a4a;
+  background: #1f6a4a;
   color: #fff;
 }
 .heroActions svg {
@@ -174,7 +174,7 @@
 }
 .loop header svg {
   width: 16px;
-  color: #2f6fdd;
+  color: #1f6a4a;
 }
 .loop header b {
   border-radius: 18px;
@@ -228,17 +228,17 @@
   border: 1px solid #bcd0ed;
   border-radius: 12px;
   background: #f2f6ff;
-  box-shadow: inset 3px 0 #2f6fdd;
+  box-shadow: inset 3px 0 #1f6a4a;
 }
 .loop .active + article {
   border-top: 1px solid #e5e9ec;
 }
 .loop .active > i {
   background: #dfeaff;
-  color: #2f6fdd;
+  color: #1f6a4a;
 }
 .loop .active > svg {
-  color: #2f6fdd;
+  color: #1f6a4a;
 }
 .loop footer {
   display: flex;
@@ -249,7 +249,7 @@
 }
 .loop footer > svg {
   width: 19px;
-  color: #2f6fdd;
+  color: #1f6a4a;
 }
 .loop footer span {
   display: grid;
@@ -301,7 +301,7 @@
   place-content: center;
   border-radius: 16px;
   background: #e9f1ff;
-  color: #2f6fdd;
+  color: #1f6a4a;
 }
 .stateIcon svg {
   width: 24px;
@@ -337,8 +337,8 @@
   font-weight: 800;
 }
 .stateActions button {
-  border-color: #2f6fdd;
-  background: #2f6fdd;
+  border-color: #1f6a4a;
+  background: #1f6a4a;
   color: #fff;
 }
 .stateActions svg {

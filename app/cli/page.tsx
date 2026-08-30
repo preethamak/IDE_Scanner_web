@@ -59,20 +59,17 @@ export default function CliPage() {
           <CliInstallCommand />
           <div className="cliHeroNotes">
             <span>
-              <Check /> Package: <code>guardlens</code>
-            </span>
-            <span>
-              <Check /> Command: <code>guardrails</code>
-            </span>
-            <span>
               <Check /> Python 3.11+
             </span>
             <span>
               <Check /> One self-contained, integrity-checked package
             </span>
+            <span>
+              <Check /> Extension code is never executed
+            </span>
           </div>
           <p className="cliPackageNote">
-            <code>guardlens</code> is the PyPI package; it installs the <code>guardrails</code> command.
+            <a href="https://pypi.org/project/guardlens/" target="_blank" rel="noreferrer"><code>guardlens</code></a> is the PyPI package name; it installs the <code>guardrails</code> command. Verify the project on PyPI before installing.
           </p>
         </div>
         <div

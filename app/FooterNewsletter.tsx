@@ -70,7 +70,10 @@ export default function FooterNewsletter() {
       {state.kind === "error" ? (
         <small role="alert">{state.message}</small>
       ) : (
-        <small>Product and research updates only.</small>
+        <small>
+          Product and research updates only. Unsubscribe any time via
+          hello@abscissa.dev.
+        </small>
       )}
     </form>
   );

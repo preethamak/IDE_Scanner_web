@@ -24,14 +24,14 @@
   top: -190px;
   width: 620px;
   height: 620px;
-  background: radial-gradient(circle, #dce9ff, transparent 69%);
+  background: radial-gradient(circle, #dcecdf, transparent 69%);
 }
 .atmosphere i:nth-child(2) {
   left: -230px;
   top: 330px;
   width: 560px;
   height: 560px;
-  background: radial-gradient(circle, #ffe5ef, transparent 70%);
+  background: radial-gradient(circle, #eef5e6, transparent 70%);
 }
 .atmosphere i:last-child {
   right: 29%;
@@ -55,7 +55,7 @@
   border-radius: 30px;
   padding: 7px 10px;
   background: #f0f5ff;
-  color: #2f6fdd;
+  color: #1f6a4a;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -70,7 +70,7 @@
   letter-spacing: -0.065em;
 }
 .hero h1 em {
-  color: #2f6fdd;
+  color: #1f6a4a;
   font-style: normal;
 }
 .hero > div:first-child > p {
@@ -101,8 +101,8 @@
   font-weight: 800;
 }
 .heroActions a:first-child {
-  border-color: #2f6fdd;
-  background: #2f6fdd;
+  border-color: #1f6a4a;
+  background: #1f6a4a;
   color: #fff;
 }
 .heroActions svg {
@@ -133,7 +133,7 @@
 }
 .reportPreview header svg {
   width: 16px;
-  color: #2f6fdd;
+  color: #1f6a4a;
 }
 .reportPreview header b {
   border-radius: 20px;
@@ -148,7 +148,7 @@
   padding: 25px 22px;
 }
 .reportPreview small {
-  color: #2f6fdd;
+  color: #1f6a4a;
   font: 800 12px var(--mono);
 }
 .reportPreview > div strong {
@@ -245,7 +245,7 @@
   gap: 5px;
 }
 .library > header span {
-  color: #2f6fdd;
+  color: #1f6a4a;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -265,7 +265,7 @@
   min-height: 42px;
   border-radius: 8px;
   padding: 0 13px;
-  background: #2f6fdd;
+  background: #1f6a4a;
   color: #fff;
   font-size: 12px;
   font-weight: 800;
@@ -285,7 +285,7 @@
 .loading i {
   height: 8px;
   border-radius: 50%;
-  background: #2f6fdd;
+  background: #1f6a4a;
   animation: pulse 1s infinite alternate;
 }
 .loading i:nth-child(2) {
@@ -331,7 +331,7 @@
   place-content: center;
   border-radius: 11px;
   background: #e9f1ff;
-  color: #2f6fdd;
+  color: #1f6a4a;
 }
 .icon svg {
   width: 19px;
@@ -472,7 +472,7 @@
   place-content: center;
   border-radius: 16px;
   background: #e9f1ff;
-  color: #2f6fdd;
+  color: #1f6a4a;
 }
 .empty > span svg {
   width: 25px;
@@ -506,8 +506,8 @@
   font-weight: 800;
 }
 .empty a:first-child {
-  border-color: #2f6fdd;
-  background: #2f6fdd;
+  border-color: #1f6a4a;
+  background: #1f6a4a;
   color: #fff;
 }
 .empty svg {
@@ -539,7 +539,7 @@
   font-size: 13px;
 }
 .contract summary span {
-  color: #2f6fdd;
+  color: #1f6a4a;
   font-weight: 800;
 }
 .contract summary svg {
@@ -579,7 +579,7 @@
 }
 .files svg {
   width: 16px;
-  color: #2f6fdd;
+  color: #1f6a4a;
 }
 .files div {
   display: grid;

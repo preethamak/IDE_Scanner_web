@@ -7,7 +7,7 @@ import styles from "./detections.module.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Recent detections · GuardRails",
+  title: "Recent detections",
   description:
     "Live feed of IDE extension releases recently flagged for review or blocked by GuardRails Deep Scan, with exact artifact evidence.",
   alternates: { canonical: "/detections" },

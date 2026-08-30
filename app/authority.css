@@ -1,3 +1,275 @@
-/* GuardRails light product system. Public pages can retain their layout but share these tokens. */
-:root{--ledger-paper:#fbfbff;--ledger-white:#fff;--ledger-ink:#20212e;--ledger-muted:#6a6c7d;--ledger-line:#e2e3ed;--ledger-signal:#7658d8;--ledger-signal-soft:#eee9ff;--ledger-amber:#ad6b24;--ledger-night:#292b3c;--paper:var(--ledger-paper);--white:var(--ledger-white);--ink:var(--ledger-ink);--ink-2:#444657;--muted:var(--ledger-muted);--line:var(--ledger-line);--wash:#f2f0fb;--acid:#f17e69;--acid-dark:#bd5a4b;--green:#418b76}
-*{box-sizing:border-box}body{background:var(--ledger-paper);color:var(--ledger-ink)}::selection{background:#dcd2ff;color:#20212e}h1,h2,h3{letter-spacing:-.055em}.siteHeader{border-bottom-color:#e8e8f0;background:#fbfbfff2;backdrop-filter:blur(16px)}.headerInner{max-width:1520px}.wordmark>span{border-radius:10px;background:linear-gradient(135deg,#7658d8,#f17e69);color:#fff}.wordmark strong{letter-spacing:-.035em}.primaryNav>a,.navMenu>button{border-radius:10px;color:#656778;font-size:13px}.primaryNav>a:hover,.primaryNav>a.active,.navMenu>button:hover,.navMenu>button.active{background:#f0edff;color:#5844ae}.headerProductCta{border-radius:11px!important;background:#292b3c!important;color:#fff!important;box-shadow:none!important}.headerProductCta:hover{background:#7658d8!important}.navPopover,.headerAccountMenu{border-color:#e1e2ec;border-radius:14px;box-shadow:0 24px 70px #514b721c}.navPopover aside{background:#f5f2ff}.siteFooter{background:#292b3c;padding-top:80px}.footerWordmark>span{border-radius:10px;background:linear-gradient(135deg,#7658d8,#f17e69)}.footerLead h2{max-width:440px;font-size:clamp(40px,4vw,62px);line-height:.92}.footerCta{border-radius:11px;background:#fff;color:#292b3c}.footerLinks a:hover,.footerScan{color:#cfc0ff}.pageWrap,.shell{max-width:1360px}.pageHero,.catalogHero,.scannerIntro,.reportMast,.reportBottomLine{border-color:var(--ledger-line)}.button,.primaryAction,.heroAction{border-radius:11px}.buttonDark,.primaryAction,.heroAction{border-color:#292b3c;background:#292b3c}.buttonDark:hover,.primaryAction:hover,.heroAction:hover{border-color:#7658d8;background:#7658d8}.secondaryAction,.buttonLight{border-color:#e1e2ec;background:#fff}.decision{border-radius:999px;letter-spacing:.06em}.decision.review{background:#fff1dc;color:#986122}.decision.block{background:#ffebe6;color:#ac4f3d}.decision.allow{background:#e8f7f1;color:#377c68}@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+/* GuardRails light product system — the last stylesheet in the cascade, so the
+   tokens declared here are the ones the whole site actually renders with.
+
+   One palette only: green-black ink, warm paper, deep-green signal, lime as an
+   accent that is ONLY ever used on dark fills (see `--acid` usage in
+   globals.css). Do not reintroduce a second accent hue here; earlier layers
+   already author against these tokens, so a violet or peach value in this file
+   turns every green-branded surface into a mixed palette. */
+:root {
+  --ledger-paper: #f8f9f5;
+  --ledger-white: #fff;
+  --ledger-ink: #14201a;
+  --ledger-muted: #66716b;
+  --ledger-line: #dde2da;
+  --ledger-signal: #1f6a4a;
+  --ledger-signal-soft: #e7f1ea;
+  --ledger-amber: #96601f;
+  --ledger-night: #16231d;
+
+  --paper: var(--ledger-paper);
+  --white: var(--ledger-white);
+  --ink: var(--ledger-ink);
+  --ink-2: #33403a;
+  --muted: var(--ledger-muted);
+  --line: var(--ledger-line);
+  --wash: #eef2ea;
+  --acid: #c9ff45;
+  --acid-dark: #496b00;
+  /* Referenced by .discoveryLoading in globals.css; previously undefined. */
+  --acid-pale: #f0f8dc;
+  --green: #147c4a;
+  --green-2: #2e8b62;
+  /* design-system.css aliases these to blue/pink "logo accents". Structural UI
+     uses one accent hue, so they resolve to the brand green here. `--violet`
+     is deliberately untouched: it is the semantic INCOMPLETE verdict colour,
+     not decoration. */
+  --brand-blue: #1f6a4a;
+  --brand-blue-soft: #e7f1ea;
+  --blue: #1f6a4a;
+  /* Earlier layers set --brand to lime (#c9ff45) and then use it both as text
+     on white and as a button background under white text — both illegible.
+     Lime is reserved for --acid on dark fills; the brand token itself must be
+     a colour that works as text and as a filled button. */
+  --brand: var(--ledger-signal);
+  --brand-soft: var(--ledger-signal-soft);
+  --brand-contrast: #fff;
+}
+
+/* Cascade repair: guardrails.css still carries a dark-theme pass that paints
+   these tile children `color: white` while every surface underneath has since
+   become white. Restore ink text on the light surfaces. */
+.exploreNext article,
+.analysisWorkspace > div,
+.uploadWorkspace,
+.studyNumbers article,
+.methodNote article,
+.referenceStats > div,
+.dimensionReference article,
+.metricDomainGrid article,
+.evidenceGrid article,
+.securityPrinciples article,
+.architectureBands article,
+.message,
+.workspaceSection,
+.dossierContent,
+.packageAside > div,
+.whyCard,
+.identityCard,
+.overviewDecision,
+.unassessedBand,
+.researchFeature > a,
+.researchFeature aside,
+.researchList,
+.disclosure,
+.securityLinks a,
+.architectureRules,
+.architectureClosing,
+.oauthPanel,
+.onboardingForm,
+.signedInProduct,
+.accountNextSteps > a {
+  color: var(--ledger-ink) !important;
+}
+.catalogHero h1,
+.scannerIntro h1,
+.pageHero h1,
+.studyHero h1,
+.researchHero h1,
+.securityPage > section:first-child h1,
+.catalogHero input,
+.extensionSearch input {
+  color: var(--ledger-ink) !important;
+}
+/* Filled CTAs that earlier layers paint lime-under-white-text. */
+.buttonDark,
+.extensionSearch button,
+.headerAnalyze,
+.productSearch button,
+.workflowQuestion a,
+.referenceHero .heroAction {
+  border-color: var(--ledger-night) !important;
+  background: var(--ledger-night) !important;
+  color: #fff !important;
+}
+.buttonDark:hover,
+.extensionSearch button:hover,
+.headerAnalyze:hover,
+.referenceHero .heroAction:hover {
+  border-color: var(--ledger-signal) !important;
+  background: var(--ledger-signal) !important;
+}
+.buttonQuiet,
+.buttonLight {
+  border-color: var(--ledger-line) !important;
+  background: #fff !important;
+  color: var(--ledger-ink) !important;
+}
+/* One eyebrow treatment site-wide. */
+.kicker,
+.eyebrow,
+.productSectionHead > span,
+.dossierHead > span {
+  color: var(--ledger-signal) !important;
+}
+
+* {
+  box-sizing: border-box;
+}
+body {
+  background: var(--ledger-paper);
+  color: var(--ledger-ink);
+}
+::selection {
+  background: var(--acid);
+  color: var(--ledger-ink);
+}
+h1,
+h2,
+h3 {
+  letter-spacing: -0.055em;
+}
+
+.siteHeader {
+  border-bottom-color: var(--ledger-line);
+  background: #f8f9f5f2;
+  backdrop-filter: blur(16px);
+}
+.headerInner {
+  max-width: 1520px;
+}
+.wordmark > span {
+  border-radius: 10px;
+  background: var(--ledger-night);
+  color: var(--acid);
+}
+.wordmark strong {
+  letter-spacing: -0.035em;
+}
+.primaryNav > a,
+.navMenu > button {
+  border-radius: 10px;
+  color: #59645d;
+  font-size: 13px;
+}
+.primaryNav > a:hover,
+.primaryNav > a.active,
+.navMenu > button:hover,
+.navMenu > button.active {
+  background: var(--ledger-signal-soft);
+  color: var(--ledger-signal);
+}
+.headerProductCta {
+  border-radius: 11px !important;
+  background: var(--ledger-night) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+.headerProductCta:hover {
+  background: var(--ledger-signal) !important;
+}
+.navPopover,
+.headerAccountMenu {
+  border-color: var(--ledger-line);
+  border-radius: 14px;
+  box-shadow: 0 24px 70px #1c2a231c;
+}
+.navPopover aside {
+  background: var(--ledger-signal-soft);
+}
+
+.siteFooter {
+  background: var(--ledger-night);
+  padding-top: 80px;
+}
+.footerWordmark > span {
+  border-radius: 10px;
+  background: var(--acid);
+  color: var(--ledger-night);
+}
+.footerLead h2 {
+  max-width: 440px;
+  font-size: clamp(40px, 4vw, 62px);
+  line-height: 0.92;
+}
+.footerCta {
+  border-radius: 11px;
+  background: #fff;
+  color: var(--ledger-night);
+}
+.footerLinks a:hover,
+.footerScan {
+  color: var(--acid);
+}
+
+.pageWrap,
+.shell {
+  max-width: 1360px;
+}
+.pageHero,
+.catalogHero,
+.scannerIntro,
+.reportMast,
+.reportBottomLine {
+  border-color: var(--ledger-line);
+}
+.button,
+.primaryAction,
+.heroAction {
+  border-radius: 11px;
+}
+.buttonDark,
+.primaryAction,
+.heroAction {
+  border-color: var(--ledger-night);
+  background: var(--ledger-night);
+}
+.buttonDark:hover,
+.primaryAction:hover,
+.heroAction:hover {
+  border-color: var(--ledger-signal);
+  background: var(--ledger-signal);
+}
+.secondaryAction,
+.buttonLight {
+  border-color: var(--ledger-line);
+  background: #fff;
+}
+
+.decision {
+  border-radius: 999px;
+  letter-spacing: 0.06em;
+}
+.decision.review {
+  background: #fff1dc;
+  color: #7f5015;
+}
+.decision.block {
+  background: #ffebe6;
+  color: #97402f;
+}
+.decision.allow {
+  background: #e8f7f1;
+  color: #2d6a58;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

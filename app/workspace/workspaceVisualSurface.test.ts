@@ -18,6 +18,11 @@ describe("workspace visual surface", () => {
     expect(css).toContain("2026 workspace canvas");
     expect(css).toContain(".focusDeck");
     expect(css).toContain(".signalConstellation");
-    expect(css).toContain("#f7dce7");
+    // One brand palette: the canvas washes are green-family, and the retired
+    // pink/blue/violet accents must not return.
+    expect(css).toContain("#ddeede");
+    for (const hex of ["#f7dce7", "#2f6fdd", "#7658d8", "#9a496d"]) {
+      expect(css.toLowerCase()).not.toContain(hex);
+    }
   });
 });

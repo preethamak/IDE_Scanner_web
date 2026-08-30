@@ -8,7 +8,6 @@ import {
   CircleAlert,
   LogOut,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 import BrandMark from "@/app/BrandMark";
 import ExtensionSearch from "@/app/ExtensionSearch";
@@ -467,7 +466,7 @@ export default function WorkspaceSetup({
             <>
               <div className={styles.setupSuccess}>
                 <span>
-                  <Sparkles />
+                  <CheckCircle2 />
                 </span>
                 <small>Workspace ready</small>
                 <h1>{team.name} is monitoring its first extension.</h1>

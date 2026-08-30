@@ -23,7 +23,7 @@
   right: -190px;
   width: 760px;
   height: 760px;
-  background: radial-gradient(circle, #dce9ff, transparent 69%);
+  background: radial-gradient(circle, #dcecdf, transparent 69%);
 }
 .atmosphere i:last-child {
   top: 760px;
@@ -47,7 +47,7 @@
   border-radius: 30px;
   padding: 7px 10px;
   background: #f1f6ff;
-  color: #2f6fdd;
+  color: #1f6a4a;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -62,7 +62,7 @@
   letter-spacing: -0.067em;
 }
 .hero h1 em {
-  color: #2f6fdd;
+  color: #1f6a4a;
   font-style: normal;
 }
 .hero > div > p {
@@ -94,8 +94,8 @@
 }
 .heroActions a:first-child,
 .cta > a {
-  border-color: #2f6fdd;
-  background: #2f6fdd;
+  border-color: #1f6a4a;
+  background: #1f6a4a;
   color: #fff;
 }
 .heroActions svg,
@@ -120,7 +120,7 @@
 }
 .gateCard header svg {
   width: 22px;
-  color: #2f6fdd;
+  color: #1f6a4a;
 }
 .gateCard header span {
   display: grid;
@@ -138,7 +138,7 @@
 }
 .gauge > strong {
   display: block;
-  color: #2f6fdd;
+  color: #1f6a4a;
   font-size: 48px;
   line-height: 1;
 }
@@ -155,7 +155,7 @@
   border-radius: 20px;
   background: linear-gradient(
     to right,
-    #2f6fdd var(--progress),
+    #1f6a4a var(--progress),
     #e6ebef var(--progress)
   );
   font-style: normal;
@@ -212,7 +212,7 @@
 }
 .metrics strong {
   display: block;
-  color: #2f6fdd;
+  color: #1f6a4a;
   font-size: 42px;
 }
 .metrics span {
@@ -240,7 +240,7 @@
 .gates header span,
 .evidence header span,
 .refusals > div > span {
-  color: #2f6fdd;
+  color: #1f6a4a;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -372,7 +372,7 @@
 .identity svg {
   flex: 0 0 auto;
   width: 13px;
-  color: #2f6fdd;
+  color: #1f6a4a;
 }
 .identity code {
   display: block;
@@ -407,7 +407,7 @@
   text-transform: uppercase;
 }
 .allow {
-  color: #2f6fdd;
+  color: #1f6a4a;
 }
 .review {
   color: #8b6908;
@@ -455,9 +455,9 @@
 }
 .refusals li span {
   border-radius: 20px;
-  background: #edf4ff;
+  background: #eff5ee;
   padding: 5px 8px;
-  color: #2f6fdd;
+  color: #1f6a4a;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -467,7 +467,7 @@
   align-items: center;
   gap: 25px;
   border-radius: 18px;
-  background: linear-gradient(120deg, #edf4ff, #fff 58%, #fff0f5);
+  background: linear-gradient(120deg, #eff5ee, #fff 58%, #fff0f5);
   padding: 48px;
 }
 .cta > svg {
@@ -475,7 +475,7 @@
   color: #e7578b;
 }
 .cta small {
-  color: #2f6fdd;
+  color: #1f6a4a;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }

@@ -38,18 +38,20 @@
   --info: #516273;    --info-bg: #eef2f5;    --info-line: #cdd7de;
   --violet: #67519b;  --violet-bg: #ece7f6;
 
-  /* Logo-derived product accents. Structural UI stays neutral, never dark green. */
-  --brand-blue: #2f6fdd;
-  --brand-blue-soft: #e9f1ff;
-  --brand-pink: #ef3d75;
-  --brand-pink-soft: #ffeaf1;
+  /* One accent hue for structural UI: the brand green. The old blue and pink
+     "logo accents" are retired; these names remain only so legacy selectors
+     keep resolving. */
+  --brand-blue: #1f6a4a;
+  --brand-blue-soft: #e7f1ea;
+  --brand-pink: #1f6a4a;
+  --brand-pink-soft: #e7f1ea;
 
-  /* Compatibility aliases keep legacy routes in the light, logo-derived palette. */
-  --green: #2f6fdd;
-  --green-2: #5b8def;
-  --blue: #2f6fdd;
+  /* Compatibility aliases for legacy routes. */
+  --green: #1f6a4a;
+  --green-2: #2e8b62;
+  --blue: #1f6a4a;
   --acid: #c9ff45;
-  --acid-dark: #2f6fdd;
+  --acid-dark: #496b00;
   --night: #17191f;
   --neutral-950: #17191f;
   --neutral-800: #30343d;
@@ -74,7 +76,9 @@
 }
 
 .headerProductCta { display:inline-flex;align-items:center;justify-content:center;min-height:38px;border-radius:8px;padding:0 14px;background:var(--neutral-950);color:#fff!important;font-size:13px;text-decoration:none; }
-@media(max-width:900px){.headerProductCta{display:none}}
+/* Keep the primary action reachable on mobile; just tighten it. */
+@media(max-width:900px){.headerProductCta{min-height:34px;padding:0 10px;font-size:12px}}
+@media(max-width:370px){.headerProductCta{display:none}}
 
 .permissionPassport{overflow:hidden;margin:0 0 46px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-sm)}
 .permissionPassport>header{display:flex;align-items:flex-start;justify-content:space-between;gap:30px;padding:26px;background:linear-gradient(120deg,var(--brand-blue-soft),#fff 62%)}

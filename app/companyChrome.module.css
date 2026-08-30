@@ -44,7 +44,7 @@
   border: 0;
   border-radius: 7px;
   margin: 4px;
-  background: var(--brand, #292b3c);
+  background: var(--brand, var(--ledger-night));
   padding: 0 14px;
   color: var(--brand-contrast, #fff);
   font-size: 12px;
@@ -81,34 +81,31 @@
   color: var(--brand, #377c68);
 }
 
+/* Slim full-width bar. A floating card here used to sit on top of pricing and
+   trust content in the bottom-right corner; a bar keeps page content readable
+   and gives both choices equal visual weight. */
 .consentBanner {
   position: fixed;
   z-index: 90;
-  right: 18px;
-  bottom: 18px;
-  left: 18px;
-  display: grid;
-  gap: 12px;
-  width: min(430px, calc(100vw - 36px));
-  margin-left: auto;
-  border: 1px solid var(--line-strong, #d5dbe2);
-  border-radius: 14px;
-  background: #fbfbff;
-  padding: 18px;
-  box-shadow: 0 24px 70px #514b7229;
-}
-
-@media (min-width: 720px) {
-  .consentBanner {
-    left: auto;
-  }
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 18px;
+  border-top: 1px solid var(--line, #dde2da);
+  background: var(--white, #fff);
+  padding: 12px max(24px, calc((100vw - 1360px) / 2));
 }
 
 .consentBanner strong {
+  flex: none;
   font-size: 13px;
 }
 
 .consentBanner p {
+  flex: 1 1 320px;
   margin: 0;
   color: var(--muted, #656f79);
   font-size: 12px;
@@ -123,11 +120,12 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-left: auto;
 }
 
 .consentActions button {
   height: 34px;
-  border: 1px solid var(--line-strong, #d5dbe2);
+  border: 1px solid var(--line-strong, #cfd6cd);
   border-radius: 8px;
   background: #fff;
   padding: 0 12px;
@@ -138,7 +136,5 @@
 }
 
 .consentActions button.grant {
-  border-color: transparent;
-  background: var(--brand, #292b3c);
-  color: var(--brand-contrast, #fff);
+  border-color: var(--ledger-night, #16231d);
 }
