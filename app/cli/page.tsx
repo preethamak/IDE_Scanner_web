@@ -50,7 +50,7 @@ export default function CliPage() {
           <span className="cliEyebrow">
             <TerminalSquare /> GuardRails CLI
           </span>
-          <h1>Audit every editor on your machine.</h1>
+          <h1>Audit every VS Code-based editor on your machine.</h1>
           <p>
             Find extensions across VS Code, Cursor, Windsurf, and VSCodium.
             Inspect an integrity-checked local snapshot without executing the
@@ -71,6 +71,9 @@ export default function CliPage() {
               <Check /> One self-contained, integrity-checked package
             </span>
           </div>
+          <p className="cliPackageNote">
+            <code>guardlens</code> is the PyPI package; it installs the <code>guardrails</code> command.
+          </p>
         </div>
         <div
           className="cliTerminal"

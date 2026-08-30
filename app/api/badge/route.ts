@@ -1,42 +1,47 @@
-import { getBadgeDecision, type BadgeDecision } from "@/lib/productData";
+import { getBadgeDecision, getVersionBadgeDecision } from "@/lib/productData";
+import { deriveTrustTier, trustBadgeText } from "@/lib/trustTiers";
 
 export const dynamic = "force-dynamic";
 
-const LABELS: Record<string, string> = {
-  allow: "analyzed · no known concern",
-  review: "review needed",
-  block: "do not install",
-};
-
-const COLORS: Record<string, [string, string]> = {
-  allow: ["#1c7c46", "#2fa96c"],
-  review: ["#a06a08", "#d99a1f"],
-  block: ["#b32232", "#e04a58"],
-  none: ["#4b5763", "#6b7783"],
+const TIER_COLORS: Record<string, string> = {
+  verified: "#2fa96c",
+  analyzed: "#31708f",
+  attention: "#d99a1f",
+  confirmed_risk: "#b32232",
+  unanalyzed: "#6b7783",
 };
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const extension = (url.searchParams.get("extension") || "").trim();
-  if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+$/.test(extension)) return svg("invalid extension", COLORS.none[1]);
-  let decision: BadgeDecision;
-  try {
-    decision = await getBadgeDecision(extension);
-  } catch {
-    return svg("unavailable", COLORS.none[1]);
+  const version = (url.searchParams.get("version") || "").trim() || null;
+  if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+$/.test(extension)) {
+    return svg("analysis pending", TIER_COLORS.unanalyzed, "not analyzed");
   }
-  if (!decision.found) return svg("not analyzed", COLORS.none[1]);
-  const key = decision.decision || "none";
-  const label = LABELS[key] || "pending analysis";
-  return svg(`${label}${decision.version ? ` · v${decision.version}` : ""}`, COLORS[key][1]);
+  let decision;
+  try {
+    decision = version ? await getVersionBadgeDecision(extension, version) : await getBadgeDecision(extension);
+  } catch {
+    return svg("analysis pending", TIER_COLORS.unanalyzed, "unavailable");
+  }
+  if (!decision.found || !decision.decision) {
+    return svg("analysis pending", TIER_COLORS.unanalyzed, decision.extension_id ? "no completed analysis" : "not analyzed");
+  }
+  return tierSvg(decision);
 }
 
-function svg(label: string, fill: string) {
+function tierSvg(decision: Awaited<ReturnType<typeof getBadgeDecision>>) {
+  const info = deriveTrustTier(decision);
+  const color = TIER_COLORS[info.tier] || TIER_COLORS.analyzed;
+  return svg(trustBadgeText(info, decision.version), color, `${info.label} (${decision.version || "latest"})`);
+}
+
+function svg(label: string, fill: string, ariaLabel: string) {
   const font = 'font-family="Verdana,Geneva,sans-serif" font-size="11" font-weight="600"';
   const leftWidth = 86;
   const rightWidth = Math.min(Math.max(7 + label.length * 6.2, 40), 300);
   const width = leftWidth + rightWidth;
-  const body = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="20" role="img" aria-label="guardrails: ${label}">
+  const body = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="20" role="img" aria-label="guardrails: ${escapeXml(ariaLabel)}">
 <linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient>
 <clipPath id="r"><rect width="${width}" height="20" rx="3" fill="#fff"/></clipPath>
 <g clip-path="url(#r)">

@@ -380,20 +380,20 @@ function securityDecision(d: ExtensionDetail): Decision {
 }
 function decisionLabel(d: Decision) {
   return d === "allow"
-    ? "No review required"
+    ? "Analyzed · capabilities documented"
     : d === "review"
-      ? "Review before install"
+      ? "Attention · see findings"
       : d === "block"
-        ? "Do not install"
-        : "Analysis incomplete";
+        ? "Flagged by policy"
+        : "Analysis pending";
 }
 function decisionAction(d: Decision) {
   return d === "allow"
     ? "No evidence crossed the active review policy."
     : d === "review"
-      ? "Verify highlighted behavior against publisher intent."
+      ? "Verify flagged behavior against publisher intent."
       : d === "block"
-        ? "Remove or reject this exact artifact."
+        ? "Your team's policy decides the outcome for this exact artifact."
         : "Restore required analyzer coverage before approval.";
 }
 function bottomLine(d: Decision, n: number) {

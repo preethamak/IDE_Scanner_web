@@ -2,23 +2,23 @@ export type DossierRecord = Record<string, unknown>;
 
 export function decisionLabel(value: string) {
   return value === "allow"
-    ? "No known concern"
+    ? "Analyzed"
     : value === "review"
-      ? "Review needed"
+      ? "Attention"
       : value === "block"
-        ? "Do not install"
+        ? "Flagged by policy"
         : value === "failed"
           ? "Analysis failed"
-          : "Analysis incomplete";
+          : "Analysis pending";
 }
 
 export function decisionExplanation(value: string) {
   return value === "allow"
     ? "Required analysis completed without evidence that crosses the review policy."
     : value === "review"
-      ? "Review the cited behavior before approving this exact artifact."
+      ? "Flagged behavior needs context before this exact artifact is approved."
       : value === "block"
-        ? "The scanner found evidence that requires this exact artifact to be rejected."
+        ? "Policy-relevant evidence was recorded for this exact artifact; your team's policy decides the outcome."
         : value === "failed"
           ? "Artifact acquisition or required analysis failed; no approval decision exists."
           : "Required analysis did not complete; this artifact cannot be approved yet.";
@@ -28,9 +28,9 @@ export function decisionHeadline(value: string) {
   return value === "allow"
     ? "No evidence currently requires review."
     : value === "review"
-      ? "Review decision-relevant behavior before installation."
+      ? "Review the flagged behavior before installation."
       : value === "block"
-        ? "This exact artifact should not be installed."
+        ? "Team policy must resolve the flagged evidence for this version."
         : value === "failed"
           ? "Analysis failed before a decision could be assigned."
           : "Analysis must complete before an approval decision.";
@@ -42,8 +42,8 @@ export function outcomeGroupSummary(decision: string, count: number) {
   }
   if (decision === "block") {
     return count
-      ? `${count} evidence group${count === 1 ? "" : "s"} support this do-not-install decision.`
-      : "The canonical policy reason requires rejecting this artifact.";
+      ? `${count} evidence group${count === 1 ? "" : "s"} back this policy flag.`
+      : "The canonical policy reason requires a team decision for this artifact.";
   }
   if (decision === "review" && count) {
     return `${count} behavior group${count === 1 ? " needs" : "s need"} context before approval.`;
