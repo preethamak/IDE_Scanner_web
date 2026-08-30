@@ -11,6 +11,7 @@ import {
   Trash2,
   UserCog,
 } from "lucide-react";
+import ApiKeysPanel from "@/app/workspace/ApiKeysPanel";
 import BillingPanel from "@/app/workspace/BillingPanel";
 import type { Member, Team } from "@/app/workspace/types";
 import { initials, memberName, roleName } from "@/app/workspace/format";
@@ -40,7 +41,7 @@ export default function SettingsView({
   getToken: () => Promise<string>;
 }) {
   const [section, setSection] = useState<
-    "general" | "members" | "notifications"
+    "general" | "members" | "notifications" | "api"
   >("general");
   const [pending, setPending] = useState<{
     kind: "role" | "remove";
@@ -150,6 +151,12 @@ export default function SettingsView({
             onClick={() => setSection("notifications")}
           >
             Notifications
+          </button>
+          <button
+            className={section === "api" ? styles.settingsActive : ""}
+            onClick={() => setSection("api")}
+          >
+            API keys
           </button>
         </nav>
         <section>
@@ -386,8 +393,10 @@ export default function SettingsView({
                 {!members.length ? <p>Member directory is empty.</p> : null}
               </div>
             </>
-          ) : (
+          ) : section === "notifications" ? (
             notificationSettings
+          ) : (
+            <ApiKeysPanel teamId={team.id} getToken={getToken} />
           )}
         </section>
       </div>

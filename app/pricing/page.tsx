@@ -83,6 +83,7 @@ const plans = [
       "Allow, block, and exception rationale",
       "Decision memory across releases",
       "Role-aware CSV and JSON audit export",
+      "API keys and bulk gate checks for CI",
       "SSO, policy direction, extended retention",
     ],
   },
@@ -119,6 +120,7 @@ const comparison: Array<{
       ["Allow, block, and exception rationale", false, false, true],
       ["Decision memory across releases", false, false, true],
       ["Role-aware CSV and JSON audit export", false, false, true],
+      ["API keys and bulk gate checks (up to 200 releases/call)", false, true, true],
     ],
   },
   {
