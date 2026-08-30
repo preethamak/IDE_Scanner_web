@@ -247,22 +247,22 @@ function decisionState(value: unknown) {
 }
 function decisionLabel(value: ReturnType<typeof decisionState>): string {
   return value === "allow"
-    ? "NO KNOWN CONCERN"
+    ? "ANALYZED"
     : value === "review"
-      ? "REVIEW NEEDED"
+      ? "ATTENTION"
       : value === "block"
-        ? "DO NOT INSTALL"
+        ? "FLAGGED BY POLICY"
         : value === "incomplete"
-          ? "ANALYSIS INCOMPLETE"
+          ? "ANALYSIS PENDING"
           : "NOT SCANNED";
 }
 function decisionHeadline(value: ReturnType<typeof decisionState>): string {
   return value === "allow"
-    ? "No known concern."
+    ? "Analysis completed; capabilities are documented below."
     : value === "review"
-      ? "Review this version before installing."
+      ? "Flagged behavior needs context before installing."
       : value === "block"
-        ? "Do not install this version."
+        ? "Team policy must resolve the flagged evidence for this version."
         : value === "incomplete"
           ? "The scan needs to finish."
           : "This version has not been scanned yet.";

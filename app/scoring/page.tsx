@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 const decisions = [
-  ["BLOCK", "Authoritative malicious intelligence matched, or the selected policy explicitly rejects high-confidence abuse evidence.", "Do not install; remove and investigate existing exposure."],
+  ["BLOCK", "Authoritative malicious intelligence matched, or the selected policy explicitly rejects high-confidence abuse evidence.", "Your team's policy decides the outcome; investigate existing exposure before approving."],
   ["REVIEW", "Sensitive capability, correlated behavior, vulnerable dependencies, or provenance concerns need human context.", "Inspect the cited source, intended behavior, and remediation before approval."],
   ["INCOMPLETE", "Required providers, declared entrypoints, archives, or artifacts could not be analyzed sufficiently.", "Restore coverage or independently inspect unsupported content. Never interpret this as clean."],
   ["ALLOW", "Required analysis completed and no evidence crossed the active block or review policy.", "Approval applies to this exact artifact hash and policy version, not every future release."]

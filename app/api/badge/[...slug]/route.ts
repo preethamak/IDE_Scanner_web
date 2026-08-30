@@ -1,7 +1,11 @@
-import { getBadgeDecision, getVersionBadgeDecision } from "@/lib/productData";
+import { getVersionBadgeDecision } from "@/lib/productData";
 import { deriveTrustTier, trustBadgeText } from "@/lib/trustTiers";
 
 export const dynamic = "force-dynamic";
+
+// Version-pinned seal URL: /api/badge/{ecosystem}/{package}/{version}
+// The badge for an analyzed version never changes content; a new release
+// earns a new URL only after its own analysis completes.
 
 const TIER_COLORS: Record<string, string> = {
   verified: "#2fa96c",
@@ -11,29 +15,25 @@ const TIER_COLORS: Record<string, string> = {
   unanalyzed: "#6b7783",
 };
 
-export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const extension = (url.searchParams.get("extension") || "").trim();
-  const version = (url.searchParams.get("version") || "").trim() || null;
-  if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+$/.test(extension)) {
-    return svg("analysis pending", TIER_COLORS.unanalyzed, "not analyzed");
+export async function GET(_request: Request, context: { params: Promise<{ slug?: string[] }> }) {
+  const { slug = [] } = await context.params;
+  const [ecosystem, rawPackage, rawVersion] = slug.map((part) => decodeURIComponent(part || "").trim());
+
+  if (ecosystem !== "vscode" || !rawPackage || !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+$/.test(rawPackage)) {
+    return svg("analysis pending", TIER_COLORS.unanalyzed, "unsupported badge path");
   }
+
   let decision;
   try {
-    decision = version ? await getVersionBadgeDecision(extension, version) : await getBadgeDecision(extension);
+    decision = await getVersionBadgeDecision(rawPackage, rawVersion || "");
   } catch {
     return svg("analysis pending", TIER_COLORS.unanalyzed, "unavailable");
   }
   if (!decision.found || !decision.decision) {
-    return svg("analysis pending", TIER_COLORS.unanalyzed, decision.extension_id ? "no completed analysis" : "not analyzed");
+    return svg("analysis pending", TIER_COLORS.unanalyzed, "not analyzed");
   }
-  return tierSvg(decision);
-}
-
-function tierSvg(decision: Awaited<ReturnType<typeof getBadgeDecision>>) {
   const info = deriveTrustTier(decision);
-  const color = TIER_COLORS[info.tier] || TIER_COLORS.analyzed;
-  return svg(trustBadgeText(info, decision.version), color, `${info.label} (${decision.version || "latest"})`);
+  return svg(trustBadgeText(info, decision.version), TIER_COLORS[info.tier] || TIER_COLORS.analyzed, info.label);
 }
 
 function svg(label: string, fill: string, ariaLabel: string) {

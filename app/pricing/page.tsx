@@ -69,7 +69,7 @@ const plans = [
     price: "$99",
     suffix: "per month · up to 25 seats, then custom",
     description:
-      "Roll extension policy out organization-wide, with decisions your auditor can read and support from the founding team.",
+      "Roll extension policy out organization-wide, with decisions your auditor can read and a direct line to the founding team.",
     action: "Book an intro call — lock in $99/mo",
     href: INTRO_CALL_MAILTO,
     external: true,
@@ -111,7 +111,7 @@ const comparison: Array<{
   {
     group: "Team workflow",
     rows: [
-      ["Seats included", "1", "Small teams", "Unlimited"],
+      ["Seats included", "1", "Up to 25", "Custom"],
       ["Shared review inbox and assignments", false, true, true],
       ["Allow, block, and exception rationale", false, false, true],
       ["Decision memory across releases", false, false, true],
@@ -125,7 +125,7 @@ const comparison: Array<{
       ["Organization-wide policy direction", false, false, true],
       ["Extended audit retention", false, false, true],
       ["Private extension workflow planning", false, false, true],
-      ["Direct founding-team line", false, true, true],
+      ["Direct founding-team line", false, false, true],
     ],
   },
 ];

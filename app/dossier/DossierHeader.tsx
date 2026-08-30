@@ -8,7 +8,7 @@ type Props = Pick<ExtensionDossierData, "id" | "version" | "extension" | "scan">
 
 export default function DossierHeader({ id, version, extension, scan }: Props) {
   const decision = displayedDecision(scan);
-  const nextAction = decision === "allow" ? "Proceed under normal extension controls" : decision === "block" ? "Do not install this version" : decision === "review" ? "Record a team decision before approval" : "Wait for complete analysis";
+  const nextAction = decision === "allow" ? "Proceed under normal extension controls" : decision === "block" ? "Resolve the policy flag for this version" : decision === "review" ? "Record a team decision before approval" : "Wait for complete analysis";
   return <header className="dossierMast">
     <section className="dossierIdentityPanel">
       <ExtensionIdentity
