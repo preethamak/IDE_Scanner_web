@@ -98,16 +98,16 @@
 .productSearch button,
 .workflowQuestion a,
 .referenceHero .heroAction {
-  border-color: var(--ledger-night) !important;
-  background: var(--ledger-night) !important;
+  border-color: var(--ledger-signal) !important;
+  background: var(--ledger-signal) !important;
   color: #fff !important;
 }
 .buttonDark:hover,
 .extensionSearch button:hover,
 .headerAnalyze:hover,
 .referenceHero .heroAction:hover {
-  border-color: var(--ledger-signal) !important;
-  background: var(--ledger-signal) !important;
+  border-color: #17553b !important;
+  background: #17553b !important;
 }
 .buttonQuiet,
 .buttonLight {
@@ -150,8 +150,8 @@ h3 {
 }
 .wordmark > span {
   border-radius: 10px;
-  background: var(--ledger-night);
-  color: var(--acid);
+  background: var(--ledger-signal);
+  color: #fff;
 }
 .wordmark strong {
   letter-spacing: -0.035em;
@@ -171,12 +171,12 @@ h3 {
 }
 .headerProductCta {
   border-radius: 11px !important;
-  background: var(--ledger-night) !important;
+  background: var(--ledger-signal) !important;
   color: #fff !important;
   box-shadow: none !important;
 }
 .headerProductCta:hover {
-  background: var(--ledger-signal) !important;
+  background: #17553b !important;
 }
 .navPopover,
 .headerAccountMenu {
@@ -189,13 +189,31 @@ h3 {
 }
 
 .siteFooter {
-  background: var(--ledger-night);
+  border-top: 1px solid var(--ledger-line);
+  background: var(--ledger-paper) !important;
+  color: var(--ledger-ink) !important;
   padding-top: 80px;
 }
 .footerWordmark > span {
   border-radius: 10px;
-  background: var(--acid);
-  color: var(--ledger-night);
+  background: var(--ledger-signal);
+  color: #fff;
+}
+.footerWordmark strong {
+  color: var(--ledger-ink) !important;
+}
+.footerLead p {
+  color: var(--ledger-muted) !important;
+}
+.footerLinks strong {
+  color: var(--ledger-muted) !important;
+}
+.footerLinks a {
+  color: var(--ledger-ink) !important;
+}
+.footerBottom {
+  border-top-color: var(--ledger-line) !important;
+  color: var(--ledger-muted) !important;
 }
 .footerLead h2 {
   max-width: 440px;
@@ -204,12 +222,12 @@ h3 {
 }
 .footerCta {
   border-radius: 11px;
-  background: #fff;
-  color: var(--ledger-night);
+  background: var(--ledger-signal) !important;
+  color: #fff !important;
 }
 .footerLinks a:hover,
 .footerScan {
-  color: var(--acid);
+  color: var(--ledger-signal) !important;
 }
 
 .pageWrap,
@@ -231,14 +249,15 @@ h3 {
 .buttonDark,
 .primaryAction,
 .heroAction {
-  border-color: var(--ledger-night);
-  background: var(--ledger-night);
+  border-color: var(--ledger-signal);
+  background: var(--ledger-signal);
+  color: #fff;
 }
 .buttonDark:hover,
 .primaryAction:hover,
 .heroAction:hover {
-  border-color: var(--ledger-signal);
-  background: var(--ledger-signal);
+  border-color: #17553b;
+  background: #17553b;
 }
 .secondaryAction,
 .buttonLight {
