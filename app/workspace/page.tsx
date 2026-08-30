@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, LoaderCircle, ShieldAlert } from "lucide-react";
+import { ArrowRight, ShieldAlert } from "lucide-react";
 import TeamWorkspace from "@/app/TeamWorkspace";
 import { browserDb } from "@/lib/supabase";
+import { sampleAlerts, sampleDecisions, sampleWatches } from "@/app/workspace/sampleData";
 import styles from "./workspace.module.css";
 
 export default function WorkspacePage() {
   const db = useMemo(() => browserDb(), []);
-  const [state, setState] = useState<"loading" | "ready" | "signed-out" | "error">("loading");
+  // Anonymous visitors see the gate immediately; the session check runs in the
+  // background and only swaps in the workspace once a session is confirmed.
+  const [state, setState] = useState<"checking" | "ready" | "signed-out" | "error">("checking");
 
   useEffect(() => {
     document.body.classList.add("guardrails-workspace-mode");
@@ -29,14 +32,33 @@ export default function WorkspacePage() {
   }, [db]);
 
   if (state === "ready") return <TeamWorkspace />;
-  if (state === "loading") return <main className={styles.statePage}><LoaderCircle className={styles.spinner}/><strong>Opening your workspace</strong><p>Loading monitoring, ownership, and release decisions…</p></main>;
-  if (state === "signed-out") return <WorkspaceGate />;
-  return <main className={styles.statePage}><ShieldAlert/><strong>Workspace unavailable</strong><p>We could not verify your session. Your public security reports are still available.</p><div className={styles.stateActions}><Link href="/account?next=/workspace">Sign in again <ArrowRight/></Link><Link href="/registry">Open registry</Link></div></main>;
+  if (state === "error") return <main className={styles.statePage}><ShieldAlert/><strong>Workspace unavailable</strong><p>We could not verify your session. Your public security reports are still available.</p><div className={styles.stateActions}><Link href="/account?next=/workspace">Sign in again <ArrowRight/></Link><Link href="/registry">Open registry</Link></div></main>;
+  return <WorkspaceGate />;
+}
+
+function displayName(watch: (typeof sampleWatches)[number]) {
+  const extensions = watch.extensions;
+  const record = Array.isArray(extensions) ? extensions[0] : extensions;
+  return record?.display_name || watch.extension_id;
 }
 
 function WorkspaceGate() {
+  const clineWatch = sampleWatches[0];
+  const clineDecision = sampleDecisions[0];
+  const clineAlert = sampleAlerts[0];
+  const eslintWatch = sampleWatches[2];
   return <main className={styles.gate}>
-    <section className={styles.gateCopy}><span><i/> GuardRails workspace</span><h1>Keep every extension decision in one trusted place.</h1><p>Monitor exact releases, route meaningful changes to an owner, and keep the evidence behind every decision.</p><div className={styles.stateActions}><Link href="/account?next=/workspace">Create your workspace <ArrowRight/></Link><Link href="/registry">Explore public reports</Link></div><small>No credit card required · Public reports stay open</small></section>
-    <section className={styles.gatePreview} aria-label="GuardRails workspace preview"><header><span>Your engineering workspace</span><em>All systems healthy</em></header><div className={styles.previewMetrics}><article><strong>3</strong><span>Need review</span></article><article><strong>38</strong><span>Monitored</span></article><article><strong>96%</strong><span>Current baselines</span></article></div><div className={styles.previewItem}><b>UP</b><div><strong>Extension update</strong><small>Reviewed version → New version</small></div><span>2 capabilities added</span><em>Review</em></div><div className={styles.previewItem}><b>BL</b><div><strong>Approved baseline</strong><small>Evidence and decision attached</small></div><span>No meaningful change</span><em className={styles.safe}>Ready</em></div></section>
+    <section className={styles.gateCopy}><span><i/> GuardRails workspace</span><h1>Every extension decision in one trusted place.</h1><p>Monitor exact releases, route meaningful changes to an owner, and keep the evidence behind every decision.</p><div className={styles.stateActions}><Link href="/account?next=/workspace">Create your workspace <ArrowRight/></Link><Link href="/registry">Explore public reports</Link></div><small>No credit card required · Public reports stay open</small></section>
+    <section className={styles.gatePreview} aria-label="Example workspace preview">
+      <header><span>Example workspace</span><em>Sample data</em></header>
+      <div className={styles.previewMetrics}>
+        <article><strong>{sampleDecisions.length}</strong><span>Need review</span></article>
+        <article><strong>{sampleWatches.length}</strong><span>Monitored</span></article>
+        <article><strong>1</strong><span>Open alert</span></article>
+      </div>
+      <div className={styles.previewItem}><b>UP</b><div><strong>{displayName(clineWatch)} · {clineDecision.extension_id}</strong><small>{clineWatch.baseline_version} → {clineDecision.version}</small></div><span>{clineAlert.title.replace(/^Cline /, "")}</span><em>Review</em></div>
+      <div className={styles.previewItem}><b>BL</b><div><strong>{displayName(eslintWatch)} · {eslintWatch.extension_id}</strong><small>Baseline {eslintWatch.baseline_version} approved</small></div><span>No meaningful change</span><em className={styles.safe}>Ready</em></div>
+      <p className={styles.previewNote}>Illustrative sample rows — your workspace starts empty and fills with your own extensions.</p>
+    </section>
   </main>;
 }

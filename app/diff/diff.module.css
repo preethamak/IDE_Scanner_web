@@ -1,0 +1,125 @@
+.deltaCard {
+  overflow: hidden;
+  margin: 0 0 22px;
+  border: 1px solid var(--ledger-line);
+  border-radius: 17px;
+  background: var(--ledger-white);
+}
+.deltaCard > header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid var(--ledger-line);
+  padding: 18px 22px;
+  background: var(--ledger-paper);
+}
+.identity {
+  display: grid;
+  gap: 4px;
+}
+.identity strong {
+  color: var(--ledger-ink);
+  font-size: 17px;
+}
+.identity span {
+  color: var(--ledger-signal);
+  font: 800 11px var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.versions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ledger-ink);
+  font: 700 13px var(--mono);
+}
+.versions svg {
+  width: 15px;
+  color: var(--ledger-muted);
+}
+.changeRows {
+  display: grid;
+}
+.changeRow {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 6px 18px;
+  align-items: start;
+  border-top: 1px solid var(--ledger-line);
+  padding: 14px 22px;
+}
+.changeRow:first-child {
+  border-top: 0;
+}
+.changeRow > span {
+  color: var(--ledger-muted);
+  font: 800 11px var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-top: 3px;
+}
+.changeRow.added > span {
+  color: var(--ledger-signal);
+}
+.changeRow.removed > span {
+  color: var(--ledger-amber);
+}
+.changeRow > div {
+  display: grid;
+  gap: 6px;
+}
+.changeRow p {
+  margin: 0;
+  color: var(--ledger-ink);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chips li {
+  list-style: none;
+  padding: 4px 9px;
+  border: 1px solid var(--ledger-line);
+  border-radius: 999px;
+  background: var(--ledger-paper);
+  color: var(--ledger-ink);
+  font: 700 12px var(--mono);
+  overflow-wrap: anywhere;
+}
+.chips.addedChips li {
+  border-color: var(--ledger-signal);
+  background: var(--ledger-signal-soft);
+  color: var(--ledger-signal);
+}
+.kvList {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+.kvList div {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 12px;
+  font-size: 13px;
+}
+.kvList dt {
+  color: var(--ledger-muted);
+  font: 700 12px var(--mono);
+}
+.kvList dd {
+  margin: 0;
+  color: var(--ledger-ink);
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .changeRow,
+  .kvList div {
+    grid-template-columns: 1fr;
+  }
+}

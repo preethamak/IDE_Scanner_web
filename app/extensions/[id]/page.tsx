@@ -2,7 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BadgeCheck, ChevronRight, Download } from "lucide-react";
-import { getExtensionProduct, getVersionProduct } from "@/lib/productData";
+import {
+  getExtensionProduct,
+  getPublicInventory,
+  getVersionProduct,
+} from "@/lib/productData";
+import { rankRelatedExtensions } from "@/lib/relatedExtensions";
+import alternativesStyles from "@/app/extensions/alternatives.module.css";
 import { serverDb } from "@/lib/supabaseServer";
 import DeepScanButton from "@/app/DeepScanButton";
 import WatchExtension from "@/app/WatchExtension";
@@ -60,6 +66,20 @@ export default async function ExtensionPage({
   const pageModel = extensionPageModel(product.extension.id, version, scan);
   const decision = pageModel.decision;
   const reportHref = pageModel.reportHref;
+  const inventory = await getPublicInventory().catch(() => null);
+  const alternatives = inventory
+    ? rankRelatedExtensions(
+        {
+          extension_id: product.extension.id,
+          display_name: product.extension.display_name,
+          description: product.extension.description,
+          publisher: product.extension.publisher,
+          decision,
+          severity: scan ? String(scan.severity || "") : undefined,
+        },
+        inventory.items,
+      )
+    : [];
   const publisherReadmeHref =
     product.extension.registry === "openvsx"
       ? `https://open-vsx.org/extension/${encodeURIComponent(product.extension.publisher)}/${encodeURIComponent(product.extension.name)}`
@@ -208,6 +228,53 @@ export default async function ExtensionPage({
               })}
             </div>
           </section>
+          {alternatives.length ? (
+            <section
+              id="alternatives"
+              className={`profileSection ${alternativesStyles.alternatives}`}
+            >
+              <header>
+                <span>Reputable alternatives</span>
+                <h2>Safer picks for the same job</h2>
+              </header>
+              <p className={alternativesStyles.explainer}>
+                Similar extensions with a completed analysis and a cleaner
+                verdict, when they exist.
+              </p>
+              <div className={alternativesStyles.grid}>
+                {alternatives.map((item) => {
+                  const itemDecision = decisionState(item.decision);
+                  return (
+                    <Link
+                      className={alternativesStyles.card}
+                      href={`/extensions/${encodeURIComponent(item.extension_id)}`}
+                      key={item.extension_id}
+                    >
+                      <ExtensionIcon
+                        iconUrl={item.icon_url}
+                        publisher={item.publisher}
+                        name={item.display_name}
+                      />
+                      <span className={alternativesStyles.cardBody}>
+                        <strong>{item.display_name}</strong>
+                        <span className={alternativesStyles.publisher}>
+                          {item.publisher}
+                          {item.publisher_verified ? (
+                            <BadgeCheck size={13} />
+                          ) : null}
+                        </span>
+                        <span
+                          className={`scanState decisionState ${itemDecision}`}
+                        >
+                          {decisionLabel(itemDecision)}
+                        </span>
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
         </div>
         <aside className="profileAside">
           <div>

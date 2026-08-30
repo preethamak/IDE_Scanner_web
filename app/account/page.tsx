@@ -32,7 +32,15 @@ export default function AccountPage() {
   const [emailAuthPending, setEmailAuthPending] = useState(false);
   const [account, setAccount] = useState<AccountState | null>(null);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const error = new URLSearchParams(window.location.search).get("error");
+    return error === "invalid_link"
+      ? "That sign-in link is invalid or expired. Start a new sign-in."
+      : error === "missing_code"
+        ? "The sign-in response was incomplete. Start again."
+        : "";
+  });
   const [role, setRole] = useState("developer");
   const [ide, setIde] = useState("vscode");
   const [useCase, setUseCase] = useState("personal");
@@ -80,17 +88,9 @@ export default function AccountPage() {
       .catch(() => setLoading(false));
   }, [db]);
   useEffect(() => {
-    const error = new URLSearchParams(window.location.search).get("error");
-    const text =
-      error === "invalid_link"
-        ? "That sign-in link is invalid or expired. Start a new sign-in."
-        : error === "missing_code"
-          ? "The sign-in response was incomplete. Start again."
-          : "";
-    if (!text) return;
-    setMessage(text);
     // Clear the error from the URL so a reload or later navigation starts clean.
     const clean = new URL(window.location.href);
+    if (!clean.searchParams.has("error")) return;
     clean.searchParams.delete("error");
     window.history.replaceState(null, "", clean);
   }, []);
