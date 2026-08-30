@@ -27,6 +27,9 @@ GITHUB_REPO_OWNER=preethamak
 GITHUB_SCANNER_REPO=IDE_Scanner
 SCAN_CALLBACK_SECRET=... # random 32+ byte value
 SCAN_RATE_LIMIT_SECRET=... # separate random value
+RESEND_API_KEY=... # server-only; required for feedback and email notifications
+NOTIFICATION_FROM_EMAIL=feedback@abscissa.dev # verified Resend sender
+FEEDBACK_TO_EMAIL=hello@abscissa.dev # company inbox; defaults to hello@abscissa.dev
 ```
 
 Configure the scanner repository Action secret `SCAN_CALLBACK_SECRET` with the same callback value. Configure the web repository Action secrets:
@@ -38,6 +41,8 @@ GITHUB_ACTIONS_TOKEN
 ```
 
 The secret key and workflow token are server-only. Never expose them through `NEXT_PUBLIC_*` variables. Deep Scan callbacks are HMAC-verified before schema validation and ingestion.
+
+The site-wide Feedback button stores private submissions in `feedback_submissions` and sends a plain-text notification through Resend. Apply the latest Supabase migration before enabling it in production. `FEEDBACK_TO_EMAIL` is optional when the company inbox is `hello@abscissa.dev`; set it explicitly for another inbox. If Resend is temporarily unavailable, the submission remains stored and is marked for operator follow-up.
 
 Configure Supabase Auth with site URL `https://ide-scanner.vercel.app` and redirect URLs `https://ide-scanner.vercel.app/auth/callback` and `http://localhost:8765/auth/callback`. Google and GitHub OAuth use callback `https://PROJECT.supabase.co/auth/v1/callback`. Enable the corresponding production UI with `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true` and `NEXT_PUBLIC_GITHUB_AUTH_ENABLED=true` only after its provider is configured in Supabase.
 
