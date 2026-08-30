@@ -7,6 +7,7 @@ import HeaderAccount from "./HeaderAccount";
 import BrandMark from "./BrandMark";
 import FooterNewsletter from "./FooterNewsletter";
 import CookieConsent from "./CookieConsent";
+import FeedbackWidget from "./FeedbackWidget";
 import { socialLinks } from "../lib/socialLinks";
 import "@fontsource-variable/ibm-plex-sans";
 import "@fontsource/ibm-plex-mono/400.css";
@@ -151,6 +152,7 @@ export default function RootLayout({
         </div>
         <Analytics />
         <CookieConsent />
+        <FeedbackWidget />
       </body>
     </html>
   );

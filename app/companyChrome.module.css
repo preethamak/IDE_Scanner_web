@@ -81,6 +81,205 @@
   color: var(--brand, #377c68);
 }
 
+.feedbackLauncher {
+  position: fixed;
+  right: 24px;
+  bottom: 74px;
+  z-index: 80;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  border: 1px solid var(--ink, #101713);
+  border-radius: 999px;
+  background: var(--ink, #101713);
+  padding: 0 15px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgb(16 23 19 / 16%);
+}
+
+.feedbackLauncher:hover {
+  background: #2a342f;
+}
+
+.feedbackLauncher svg {
+  width: 16px;
+}
+
+.feedbackOverlay {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  background: rgb(16 23 19 / 42%);
+  padding: 24px;
+}
+
+.feedbackDialog {
+  width: min(540px, 100%);
+  max-height: min(760px, calc(100vh - 48px));
+  overflow: auto;
+  border: 1px solid var(--ink, #101713);
+  border-radius: 8px;
+  background: var(--paper, #f4f5f0);
+  box-shadow: 0 28px 80px rgb(16 23 19 / 28%);
+}
+
+.feedbackHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid var(--line, #d7dcd5);
+  background: #fff;
+  padding: 22px 24px 19px;
+}
+
+.feedbackEyebrow {
+  color: var(--acid-dark, #496b00);
+  font: 800 11px var(--mono, monospace);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.feedbackHeader h2 {
+  max-width: 390px;
+  margin: 9px 0 0;
+  font-size: 25px;
+  line-height: 1.08;
+}
+
+.feedbackClose {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line, #d7dcd5);
+  border-radius: 5px;
+  background: #fff;
+  color: var(--ink, #101713);
+}
+
+.feedbackClose:hover {
+  border-color: var(--ink, #101713);
+}
+
+.feedbackClose svg {
+  width: 17px;
+}
+
+.feedbackForm {
+  display: grid;
+  gap: 16px;
+  padding: 22px 24px 24px;
+}
+
+.feedbackDescription {
+  margin: 0 0 3px;
+  color: var(--muted, #66716b);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.feedbackForm label {
+  display: grid;
+  gap: 7px;
+}
+
+.feedbackForm label > span {
+  color: var(--ink-2, #334039);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.feedbackForm label > span small {
+  color: var(--faint, #89918d);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.feedbackForm input,
+.feedbackForm select,
+.feedbackForm textarea {
+  width: 100%;
+  border: 1px solid var(--line, #d7dcd5);
+  border-radius: 5px;
+  outline: 0;
+  background: #fff;
+  padding: 11px 12px;
+  color: var(--ink, #101713);
+  font-size: 13px;
+}
+
+.feedbackForm input,
+.feedbackForm select {
+  height: 43px;
+}
+
+.feedbackForm textarea {
+  min-height: 130px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.feedbackForm input:focus,
+.feedbackForm select:focus,
+.feedbackForm textarea:focus {
+  border-color: var(--ink, #101713);
+}
+
+.feedbackMeta {
+  display: grid;
+  gap: 4px;
+  color: var(--faint, #89918d);
+  font: 11px/1.45 var(--mono, monospace);
+}
+
+.feedbackError {
+  margin: -2px 0 0;
+  border-left: 3px solid var(--red, #ba3038);
+  background: var(--red-bg, #f9dfe1);
+  padding: 10px 12px;
+  color: #7b1e25;
+  font-size: 12px;
+}
+
+.feedbackHoneypot {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.feedbackSuccess {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 36px 24px 28px;
+}
+
+.feedbackSuccess > svg {
+  width: 28px;
+  color: var(--green, #147c4a);
+}
+
+.feedbackSuccess h3 {
+  margin: 10px 0 0;
+  font-size: 22px;
+}
+
+.feedbackSuccess p {
+  margin: 0 0 10px;
+  font-size: 13px;
+}
+
 /* Slim full-width bar. A floating card here used to sit on top of pricing and
    trust content in the bottom-right corner; a bar keeps page content readable
    and gives both choices equal visual weight. */
