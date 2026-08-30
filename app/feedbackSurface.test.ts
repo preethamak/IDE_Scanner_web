@@ -32,6 +32,8 @@ describe("feedback surface", () => {
     expect(migration).toContain("alter table public.feedback_submissions enable row level security");
     expect(migration).toContain("revoke all on public.feedback_submissions from public, anon, authenticated");
     expect(migration).toContain("grant execute on function public.submit_feedback");
+    expect(migration).toContain("p_category is null or p_category not in");
+    expect(migration).toContain("pg_advisory_xact_lock");
     expect(route).toContain('db.rpc("submit_feedback"');
   });
 });

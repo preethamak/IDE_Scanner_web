@@ -36,7 +36,7 @@ declare
   normalized_email text := nullif(lower(trim(coalesce(p_contact_email, ''))), '');
   normalized_path text := left(trim(coalesce(p_page_path, '')), 500);
 begin
-  if p_category not in ('bug', 'suggestion', 'report_clarity', 'other') then
+  if p_category is null or p_category not in ('bug', 'suggestion', 'report_clarity', 'other') then
     raise exception 'Choose a valid feedback category.';
   end if;
   if char_length(normalized_message) < 3 then
@@ -52,6 +52,7 @@ begin
     raise exception 'Feedback could not be verified.';
   end if;
 
+  perform pg_advisory_xact_lock(hashtextextended(p_requester_hash, 0));
   select count(*) into recent_count
   from public.feedback_submissions
   where requester_hash = p_requester_hash
