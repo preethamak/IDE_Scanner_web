@@ -25,7 +25,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Standalone output is for the Docker image; Vercel does its own output tracing
+  // and Next 16.3 standalone builds break Vercel's onBuildComplete nft step.
+  output: process.env.VERCEL ? undefined : "standalone",
   poweredByHeader: false,
   turbopack: {
     root: process.cwd()

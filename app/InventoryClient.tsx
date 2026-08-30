@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowUpRight, BadgeCheck, CalendarClock, CheckCircle2, Search, ShieldAlert, SlidersHorizontal } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import ExtensionIcon from "@/app/ExtensionIcon";
 import { deriveTrustTier } from "@/lib/trustTiers";
 import type { PublicInventory, PublicInventoryItem } from "@/lib/productData";
@@ -25,7 +25,9 @@ export default function InventoryClient({ inventory }: { inventory: PublicInvent
   }).sort((a,b) => sort === "name" ? a.display_name.localeCompare(b.display_name) : sort === "severity" ? severityRank(b.severity) - severityRank(a.severity) : b.scanned_at.localeCompare(a.scanned_at)), [inventory.items,outcome,query,severity,sort]);
   const activeFilters = Number(outcome !== "all") + Number(severity !== "all") + Number(Boolean(query));
   const [visible, setVisible] = useState(PAGE_SIZE);
-  useEffect(() => { setVisible(PAGE_SIZE); }, [query, outcome, severity, sort]);
+  const filterKey = `${query}|${outcome}|${severity}|${sort}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (prevFilterKey !== filterKey) { setPrevFilterKey(filterKey); setVisible(PAGE_SIZE); }
   const shown = rows.slice(0, visible);
 
   return <>
