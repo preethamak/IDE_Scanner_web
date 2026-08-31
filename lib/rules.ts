@@ -20,6 +20,8 @@ export type ActiveRuleCatalog = {
   rules: RuleReference[];
 };
 
+export type RuleCatalogIdentity = Pick<ActiveRuleCatalog, "policyVersion" | "rulesetVersion">;
+
 export function normalizeRuleCatalog(value: unknown): RuleReference[] {
   if (!Array.isArray(value)) return [];
   const rules: RuleReference[] = [];
@@ -46,6 +48,24 @@ export function normalizeRuleCatalog(value: unknown): RuleReference[] {
   return rules.sort((left, right) => left.id.localeCompare(right.id));
 }
 
+/** Return a catalog only when the report explicitly identifies the active rule release. */
+export function catalogFromReleaseReport(report: unknown, identity: RuleCatalogIdentity): RuleReference[] | null {
+  const value = objectValue(report);
+  const catalog = objectValue(value.rules);
+  if (
+    text(catalog.policy_version) !== identity.policyVersion
+    || text(catalog.ruleset_version) !== identity.rulesetVersion
+  ) return null;
+  const rules = normalizeRuleCatalog(catalog.rules);
+  return rules.length ? rules : null;
+}
+
 function text(value: unknown, fallback = ""): string {
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function objectValue(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
 }
