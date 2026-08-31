@@ -1,7 +1,12 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, FileSearch, ShieldAlert } from "lucide-react";
-import { ruleCatalog } from "@/lib/metrics";
+import { getActiveRuleCatalog } from "@/lib/activeRuleCatalog";
+import RuleAlert from "./RuleAlert";
 
-export function generateStaticParams() { return ruleCatalog.map(({ id }) => ({ ruleId: id })); }
-export default async function AlertPage({ params }: { params: Promise<{ ruleId: string }> }) { const { ruleId } = await params; const rule = ruleCatalog.find((item) => item.id === ruleId); if (!rule) notFound(); return <main className="alertReference"><Link className="backLink" href="/metrics"><ArrowLeft/> Detection rules</Link><header><div><span>{rule.engine} · {rule.category}</span><h1>{rule.title}</h1><code>{rule.id}</code><p>{rule.description}</p></div><div><ShieldAlert/><span>Default severity</span><strong className={`severityText severity${rule.severity}`}>{rule.severity}</strong><span>Evidence class</span><strong>{rule.evidence}</strong></div></header><section className="alertMeaning"><div><span>What it means</span><h2>Read the evidence before the label.</h2></div><div><p>This alert records <strong>{rule.evidence}</strong> evidence produced by the <strong>{rule.engine}</strong> analyzer. Its default severity describes potential impact, not certainty that an extension is malicious.</p><p>A final decision also considers evidence correlation, artifact identity, analysis coverage, and the active policy.</p></div></section><section className="alertActions"><article><FileSearch/><strong>Expected evidence</strong><p>Exact extension version, artifact hash, affected file or dependency, normalized rule identifier, confidence, and scanner ruleset.</p></article><article><ShieldAlert/><strong>Reviewer action</strong><p>Confirm whether the behavior matches the extension’s declared purpose and whether execution requires explicit user intent.</p></article></section><Link className="alertCta" href={`/catalog?q=${encodeURIComponent(rule.category)}`}>Find extensions in the catalog <ArrowRight/></Link></main>; }
+export const dynamic = "force-dynamic";
+
+export default async function AlertPage({ params }: { params: Promise<{ ruleId: string }> }) {
+  const [{ ruleId }, catalog] = await Promise.all([params, getActiveRuleCatalog()]);
+  const rule = catalog?.rules.find((item) => item.id === ruleId);
+  if (!rule) notFound();
+  return <RuleAlert rule={rule} />;
+}

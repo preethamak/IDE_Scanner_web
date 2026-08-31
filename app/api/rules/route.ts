@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { RULESET_VERSION, ruleCatalog } from "@/lib/metrics";
-import { serviceDb } from "@/lib/supabase";
+import { getActiveRuleCatalog } from "@/lib/activeRuleCatalog";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,63 +10,18 @@ type BridgeRulesResult = {
   score_schema_version: string | null;
   scanner_build: string | null;
   rules: unknown[];
-  source: "active-publication" | "static-fallback";
+  source: "active-publication" | "unavailable";
 };
 
-let cache: { at: number; data: BridgeRulesResult } | null = null;
-const CACHE_MS = 5 * 60 * 1000;
-
 export async function GET() {
-  if (cache && Date.now() - cache.at < CACHE_MS) {
-    return NextResponse.json(cache.data);
-  }
-
-  try {
-    const db = serviceDb();
-    const release = await db
-      .from("scan_publication_releases")
-      .select("policy_version,ruleset_version,score_schema_version,scanner_build")
-      .eq("active", true)
-      .limit(1)
-      .maybeSingle();
-    if (release.error) throw release.error;
-    if (!release.data) throw new Error("No active scan publication exists.");
-
-    const scan = await db
-      .from("scans")
-      .select("canonical_report")
-      .eq("policy_version", release.data.policy_version)
-      .eq("ruleset_version", release.data.ruleset_version)
-      .eq("scanner_build", release.data.scanner_build)
-      .eq("analysis_status", "complete")
-      .is("superseded_at", null)
-      .limit(1)
-      .maybeSingle();
-    if (scan.error) throw scan.error;
-
-    const report = objectValue(scan.data?.canonical_report);
-    const catalog = objectValue(report.rules);
-    if (!Array.isArray(catalog.rules) || catalog.rules.length === 0) {
-      throw new Error("The active publication does not contain a rule catalog.");
-    }
-
+  const catalog = await getActiveRuleCatalog();
+  if (catalog) {
     const data: BridgeRulesResult = {
-      policy_version: String(release.data.policy_version),
-      ruleset_version: String(release.data.ruleset_version),
-      score_schema_version: String(release.data.score_schema_version),
-      scanner_build: String(release.data.scanner_build),
-      rules: catalog.rules,
-      source: "active-publication",
-    };
-    cache = { at: Date.now(), data };
-    return NextResponse.json(data);
-  } catch {
-    const data: BridgeRulesResult = {
-      policy_version: null,
-      ruleset_version: RULESET_VERSION,
-      score_schema_version: null,
-      scanner_build: null,
-      rules: ruleCatalog.map((rule) => ({
+      policy_version: catalog.policyVersion,
+      ruleset_version: catalog.rulesetVersion,
+      score_schema_version: catalog.scoreSchemaVersion,
+      scanner_build: catalog.scannerBuild,
+      rules: catalog.rules.map((rule) => ({
         rule_id: rule.id,
         title: rule.title,
         category: rule.category,
@@ -75,16 +29,21 @@ export async function GET() {
         default_severity: rule.severity,
         engine: rule.engine,
         description: rule.description,
-        recommendation: "Review the cited artifact evidence and apply the rule-specific remediation.",
+        recommendation: rule.recommendation,
+        decision_effect: rule.decisionEffect,
+        confidence_basis: rule.confidenceBasis,
+        false_positive_notes: rule.falsePositiveNotes,
       })),
-      source: "static-fallback",
+      source: "active-publication",
     };
     return NextResponse.json(data);
   }
-}
-
-function objectValue(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : {};
+  return NextResponse.json({
+    policy_version: null,
+    ruleset_version: "",
+    score_schema_version: null,
+    scanner_build: null,
+    rules: [],
+    source: "unavailable",
+  } satisfies BridgeRulesResult, { status: 503 });
 }
