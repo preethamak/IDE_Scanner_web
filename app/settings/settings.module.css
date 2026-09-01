@@ -5,9 +5,9 @@
   min-height: 100vh;
   padding: 84px max(24px, calc((100vw - 1320px) / 2)) 110px;
   background: linear-gradient(180deg, #fff, #fbfcff 60%, #fff);
-  color: #17212c;
+  color: #3a2e2b;
 }
-.page{background:#fbfbff;color:#20212e}.atmosphere i:first-child{background:radial-gradient(circle,#e4d8ff,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#c8f0e8,transparent 70%)}
+.page{background:#fbfbff;color:#20212e}.atmosphere i:first-child{background:radial-gradient(circle,#ffe8de,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#f8e9e2,transparent 70%)}
 .atmosphere {
   position: absolute;
   z-index: -1;
@@ -23,21 +23,21 @@
   top: -240px;
   width: 690px;
   height: 690px;
-  background: radial-gradient(circle, #dcecdf, transparent 69%);
+  background: radial-gradient(circle, #f7ebe6, transparent 69%);
 }
 .atmosphere i:nth-child(2) {
   left: -220px;
   top: 590px;
   width: 550px;
   height: 550px;
-  background: radial-gradient(circle, #eef5e6, transparent 70%);
+  background: radial-gradient(circle, #fff6f2, transparent 70%);
 }
 .atmosphere i:last-child {
   right: 28%;
   top: 290px;
   width: 270px;
   height: 270px;
-  background: radial-gradient(circle, #efffcf, transparent 70%);
+  background: radial-gradient(circle, #fff6f2, transparent 70%);
 }
 .hero {
   display: grid;
@@ -50,11 +50,11 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid #bdd0ef;
+  border: 1px solid #f3c2b0;
   border-radius: 30px;
   padding: 7px 10px;
-  background: #f1f6ff;
-  color: #1f6a4a;
+  background: #fff6f2;
+  color: #a85843;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -69,7 +69,7 @@
   letter-spacing: -0.068em;
 }
 .hero h1 em {
-  color: #1f6a4a;
+  color: #a85843;
   font-style: normal;
 }
 .hero > div:first-child > p {
@@ -95,13 +95,13 @@
   border-radius: 9px;
   padding: 0 16px;
   background: #fff;
-  color: #263440;
+  color: #5a4b46;
   font-size: 13px;
   font-weight: 800;
 }
 .actions a:first-child {
-  border-color: #1f6a4a;
-  background: #1f6a4a;
+  border-color: #a85843;
+  background: #a85843;
   color: #fff;
 }
 .actions svg {
@@ -112,7 +112,7 @@
   border: 1px solid #cad3dc;
   border-radius: 20px;
   background: #fff;
-  box-shadow: 0 32px 80px #28384f1c;
+  box-shadow: 0 32px 80px #7a655f1c;
   transform: rotate(1deg);
 }
 .diagram header {
@@ -125,7 +125,7 @@
 }
 .diagram header > svg {
   width: 21px;
-  color: #1f6a4a;
+  color: #a85843;
 }
 .diagram header span {
   display: grid;
@@ -152,8 +152,8 @@
   height: 31px;
   place-content: center;
   border-radius: 9px;
-  background: #e9f1ff;
-  color: #1f6a4a;
+  background: #fff6f2;
+  color: #a85843;
   font: 800 12px var(--mono);
   font-style: normal;
 }
@@ -170,8 +170,8 @@
   align-items: center;
   gap: 8px;
   padding: 17px 21px;
-  background: #f5ffe6;
-  color: #56741b;
+  background: #fff6f2;
+  color: #8d6b4f;
   font-size: 12px;
   font-weight: 800;
 }
@@ -187,7 +187,7 @@
   padding-top: 34px;
 }
 .sectionHead > span {
-  color: #1f6a4a;
+  color: #a85843;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -221,7 +221,7 @@
   gap: 12px;
   border-bottom: 1px solid #e2e7eb;
   padding: 20px;
-  background: linear-gradient(110deg, #f3f7ff, #fff 70%);
+  background: linear-gradient(110deg, #fff8f5, #fff 70%);
 }
 .pathGrid header > span {
   display: grid;
@@ -229,8 +229,8 @@
   height: 43px;
   place-content: center;
   border-radius: 11px;
-  background: #e2ecff;
-  color: #1f6a4a;
+  background: #ffe8de;
+  color: #a85843;
 }
 .pathGrid header svg {
   width: 20px;
@@ -240,7 +240,7 @@
   gap: 3px;
 }
 .pathGrid small {
-  color: #1f6a4a;
+  color: #a85843;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -282,7 +282,7 @@
   gap: 7px;
   padding: 15px 19px;
   background: #f8fafb;
-  color: #587522;
+  color: #8d6b4f;
   font-size: 12px;
   font-weight: 800;
 }
@@ -303,7 +303,7 @@
   gap: 8px;
 }
 .guarantees > div:first-child span {
-  color: #1f6a4a;
+  color: #a85843;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -331,7 +331,7 @@
   border-top: 1px solid #e0e5e9;
 }
 .guarantees article i {
-  color: #1f6a4a;
+  color: #a85843;
   font: 800 12px var(--mono);
   font-style: normal;
 }
@@ -357,7 +357,7 @@
   border: 1px solid #c7d5e9;
   border-radius: 17px;
   padding: 25px;
-  background: linear-gradient(115deg, #f1f6ff, #fff 62%, #f8ffe9);
+  background: linear-gradient(115deg, #fff6f2, #fff 62%, #fff3e7);
 }
 .next > span {
   display: grid;
@@ -365,8 +365,8 @@
   height: 52px;
   place-content: center;
   border-radius: 14px;
-  background: #dfeaff;
-  color: #1f6a4a;
+  background: #ffe8de;
+  color: #a85843;
 }
 .next > span svg {
   width: 23px;
@@ -376,7 +376,7 @@
   gap: 4px;
 }
 .next small {
-  color: #1f6a4a;
+  color: #a85843;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -396,7 +396,7 @@
   min-height: 42px;
   border-radius: 8px;
   padding: 0 13px;
-  background: #1f6a4a;
+  background: #a85843;
   color: #fff;
   font-size: 12px;
   font-weight: 800;

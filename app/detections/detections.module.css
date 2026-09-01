@@ -29,7 +29,7 @@
   left: -200px;
   width: 560px;
   height: 560px;
-  background: radial-gradient(circle, #efffd2, transparent 70%);
+  background: radial-gradient(circle, #fff6f2, transparent 70%);
 }
 .hero {
   display: grid;
@@ -76,7 +76,7 @@
   border: 1px solid #cad4dd;
   border-radius: 19px;
   background: #fff;
-  box-shadow: 0 32px 80px #28384f1c;
+  box-shadow: 0 32px 80px #7a655f1c;
 }
 .liveCard header {
   display: flex;
@@ -136,8 +136,8 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #2fa96c;
-  box-shadow: 0 0 0 4px #2fa96c22;
+  background: #c0836d;
+  box-shadow: 0 0 0 4px #c0836d22;
 }
 .feed {
   margin-top: 90px;
@@ -212,7 +212,7 @@
   color: inherit;
 }
 .identity a:hover {
-  color: #1f6a4a;
+  color: #a85843;
 }
 .identity a svg {
   width: 14px;
@@ -255,9 +255,9 @@
   justify-content: space-between;
   gap: 30px;
   margin-top: 90px;
-  border: 1px solid #17212c;
+  border: 1px solid #3a2e2b;
   border-radius: 21px;
-  background: #17212c;
+  background: #3a2e2b;
   padding: 38px 42px;
   color: #fff;
 }
@@ -284,11 +284,11 @@
   gap: 8px;
   flex-shrink: 0;
   min-height: 48px;
-  border: 1px solid #d7ff56;
+  border: 1px solid #fff3e7;
   border-radius: 10px;
-  background: #d7ff56;
+  background: #fff3e7;
   padding: 0 20px;
-  color: #17212c;
+  color: #3a2e2b;
   font-size: 13.5px;
   font-weight: 800;
   text-decoration: none;

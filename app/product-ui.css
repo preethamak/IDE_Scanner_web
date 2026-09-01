@@ -18,7 +18,7 @@
 
 .onboardingPage .onboardingIntro > span,
 .onboardingFormIntro > span {
-  color: #5d7800 !important;
+  color: #8f4939 !important;
   font: 800 12px var(--mono) !important;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -86,8 +86,8 @@
   font-weight: 650;
 }
 
-.onboardingPage .onboardingForm fieldset button:hover { border-color: #99b95b !important; background: var(--brand-soft) !important; }
-.onboardingPage .onboardingForm fieldset button.selected { border-color: #b4ec2d !important; background: #c9ff45 !important; color: #14202b !important; }
+.onboardingPage .onboardingForm fieldset button:hover { border-color: #c0836d !important; background: var(--brand-soft) !important; }
+.onboardingPage .onboardingForm fieldset button.selected { border-color: #c0836d !important; background: #ffdcd0 !important; color: #3a2e2b !important; }
 .onboardingPage .onboardingForm fieldset button:focus-visible { outline: 3px solid rgba(201, 255, 69, .7); outline-offset: 2px; }
 .onboardingPage .onboardingForm > .button { width: 100%; justify-content: center; min-height: 46px; border-radius: 8px; font-size: 14px; }
 
@@ -132,7 +132,7 @@
 .dossierPage .dossierDecision.allow { border-left-color: var(--green) !important; }
 .dossierPage .dossierDecision.block { border-left-color: var(--red) !important; }
 .dossierPage .dossierDecision.incomplete { border-left-color: var(--violet) !important; }
-.dossierPage .dossierDecision > span { color: #5d7800 !important; font-size: 12px !important; }
+.dossierPage .dossierDecision > span { color: #8f4939 !important; font-size: 12px !important; }
 .dossierPage .dossierDecision strong { margin-block: 10px !important; font-size: 28px !important; line-height: 1.1; }
 .dossierPage .dossierDecision p { font-size: 14px !important; line-height: 1.55 !important; }
 .dossierPage .dossierHeaderFacts { display: block; margin: 22px 0 !important; padding-top: 18px; border-top: 1px solid var(--line); }

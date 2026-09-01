@@ -11,8 +11,8 @@
   border: 1px solid #bfd1ee;
   border-radius: 30px;
   padding: 7px 10px;
-  background: #f1f6ff;
-  color: #1f6a4a;
+  background: #fff6f2;
+  color: #a85843;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -27,7 +27,7 @@
   letter-spacing: -0.06em;
 }
 .hero h1 em {
-  color: #1f6a4a;
+  color: #a85843;
   font-style: normal;
 }
 .hero p {
@@ -70,7 +70,7 @@
   overflow-x: auto;
   border: 1px solid #e0e6eb;
   border-radius: 10px;
-  background: #17212c;
+  background: #3a2e2b;
   padding: 14px 16px;
   color: #d7e2ec;
   font-size: 12.5px;
@@ -81,9 +81,9 @@
   font-size: 15px;
 }
 .builder button {
-  border: 1px solid #1f6a4a;
+  border: 1px solid #a85843;
   border-radius: 9px;
-  background: #1f6a4a;
+  background: #a85843;
   padding: 10px 16px;
   color: #fff;
   font-weight: 800;
@@ -93,7 +93,7 @@
 .builder button + button {
   border-color: #bbc7d2;
   background: #fff;
-  color: #263440;
+  color: #5a4b46;
 }
 .rules {
   margin-top: 60px;
@@ -106,7 +106,7 @@
   padding-left: 20px;
   display: grid;
   gap: 12px;
-  color: #3d4a57;
+  color: #6b5a54;
   font-size: 15px;
   line-height: 1.6;
 }
@@ -117,7 +117,7 @@
   margin-top: 26px;
   font-weight: 800;
   font-size: 14px;
-  color: #1f6a4a;
+  color: #a85843;
   text-decoration: none;
 }
 .rules svg {

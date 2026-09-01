@@ -23,9 +23,9 @@ describe("reports product surface", () => {
   });
 
   it("uses a light responsive surface with reduced-motion behavior", () => {
-    expect(css).toContain("#dcecdf");
-    expect(css).toContain("#eef5e6");
-    expect(css).toContain("#efffcf");
+    expect(css).toContain("#f7ebe6");
+    expect(css).toContain("#fff6f2");
+    expect(css).toContain("#fff6f2");
     expect(css).toContain("prefers-reduced-motion");
   });
 });

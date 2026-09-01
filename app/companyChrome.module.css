@@ -78,7 +78,7 @@
 
 .newsletterDone svg {
   flex: none;
-  color: var(--brand, #377c68);
+  color: var(--brand, #c0836d);
 }
 
 .feedbackLauncher {
@@ -90,9 +90,9 @@
   align-items: center;
   gap: 8px;
   min-height: 42px;
-  border: 1px solid var(--ink, #101713);
+  border: 1px solid var(--ink, #3a2e2b);
   border-radius: 999px;
-  background: var(--ink, #101713);
+  background: var(--ink, #3a2e2b);
   padding: 0 15px;
   color: #fff;
   font-size: 12px;
@@ -123,7 +123,7 @@
   width: min(540px, 100%);
   max-height: min(760px, calc(100vh - 48px));
   overflow: auto;
-  border: 1px solid var(--ink, #101713);
+  border: 1px solid var(--ink, #3a2e2b);
   border-radius: 8px;
   background: var(--paper, #f4f5f0);
   box-shadow: 0 28px 80px rgb(16 23 19 / 28%);
@@ -140,7 +140,7 @@
 }
 
 .feedbackEyebrow {
-  color: var(--acid-dark, #496b00);
+  color: var(--acid-dark, #8f4939);
   font: 800 11px var(--mono, monospace);
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -162,11 +162,11 @@
   border: 1px solid var(--line, #d7dcd5);
   border-radius: 5px;
   background: #fff;
-  color: var(--ink, #101713);
+  color: var(--ink, #3a2e2b);
 }
 
 .feedbackClose:hover {
-  border-color: var(--ink, #101713);
+  border-color: var(--ink, #3a2e2b);
 }
 
 .feedbackClose svg {
@@ -212,7 +212,7 @@
   outline: 0;
   background: #fff;
   padding: 11px 12px;
-  color: var(--ink, #101713);
+  color: var(--ink, #3a2e2b);
   font-size: 13px;
 }
 
@@ -230,7 +230,7 @@
 .feedbackForm input:focus,
 .feedbackForm select:focus,
 .feedbackForm textarea:focus {
-  border-color: var(--ink, #101713);
+  border-color: var(--ink, #3a2e2b);
 }
 
 .feedbackMeta {
@@ -267,7 +267,7 @@
 
 .feedbackSuccess > svg {
   width: 28px;
-  color: var(--green, #147c4a);
+  color: var(--green, #a85843);
 }
 
 .feedbackSuccess h3 {

@@ -7,20 +7,20 @@
 
    Rules of the road (do not reintroduce the old chaos):
    - Change a color ONCE, here. Never redefine --brand/--text/etc. elsewhere.
-   - Lime (--brand) is decoration only. It NEVER carries text on white.
+   - Peach (--brand) is decoration only. It NEVER carries text on white.
      Text links / kickers use --brand-ink (dark, AA-legible on white).
    - New components live under their own class names so nothing else fights them.
    ========================================================================== */
 
 :root {
   /* Brand + surfaces (canonical — matches the shipped light theme) */
-  --brand: #c9ff45;          /* acid lime — decoration, fills, meters only */
-  --brand-strong: #b4ec2d;   /* lime border/hover */
-  --brand-soft: #efffd0;      /* lime tint background */
-  --brand-ink: #5d7800;       /* legible lime-family ink for text on white */
+  --brand: #ffdcd0;          /* peach — decoration, fills, meters only */
+  --brand-strong: #c0836d;   /* coral border/hover */
+  --brand-soft: #fff6f2;     /* peach-tinted background */
+  --brand-ink: #8f4939;       /* legible coral ink for text on white */
 
-  --text: #14202b;
-  --ink: #14202b;
+  --text: #3a2e2b;
+  --ink: #3a2e2b;
   --ink-2: #33414d;
   --muted: #516273;
   --faint: #75818c;
@@ -32,26 +32,26 @@
   --line-strong: #bdc9d2;
 
   /* Semantic status (verdict / severity) — bands are AA on their tint */
-  --allow: #1f8a4c;   --allow-bg: #e3f6ea;   --allow-line: #a6dcb9;
+  --allow: #a85843;   --allow-bg: #fff3e7;   --allow-line: #c0836d;
   --review: #9a6512;  --review-bg: #fff2d6;  --review-line: #e6c98a;
   --block: #b4373d;   --block-bg: #fde3e4;   --block-line: #eaa9ad;
   --info: #516273;    --info-bg: #eef2f5;    --info-line: #cdd7de;
   --violet: #67519b;  --violet-bg: #ece7f6;
 
-  /* One accent hue for structural UI: the brand green. The old blue and pink
-     "logo accents" are retired; these names remain only so legacy selectors
-     keep resolving. */
-  --brand-blue: #1f6a4a;
-  --brand-blue-soft: #e7f1ea;
-  --brand-pink: #1f6a4a;
-  --brand-pink-soft: #e7f1ea;
+  /* One warm accent hue for structural UI. The old blue and pink "logo
+     accents" are retired; these names remain only so legacy selectors keep
+     resolving. */
+  --brand-blue: #a85843;
+  --brand-blue-soft: #fff0e9;
+  --brand-pink: #a85843;
+  --brand-pink-soft: #fff0e9;
 
   /* Compatibility aliases for legacy routes. */
-  --green: #1f6a4a;
-  --green-2: #2e8b62;
-  --blue: #1f6a4a;
-  --acid: #c9ff45;
-  --acid-dark: #496b00;
+  --green: #a85843;
+  --green-2: #c0836d;
+  --blue: #a85843;
+  --acid: #ffdcd0;
+  --acid-dark: #8f4939;
   --night: #17191f;
   --neutral-950: #17191f;
   --neutral-800: #30343d;
@@ -82,7 +82,7 @@
 
 .permissionPassport{overflow:hidden;margin:0 0 46px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-sm)}
 .permissionPassport>header{display:flex;align-items:flex-start;justify-content:space-between;gap:30px;padding:26px;background:linear-gradient(120deg,var(--brand-blue-soft),#fff 62%)}
-.permissionPassport>header>div{max-width:650px}.permissionPassport header span:first-child{color:var(--brand-blue);font:800 var(--font-xs) var(--mono);letter-spacing:.05em;text-transform:uppercase}.permissionPassport h2{margin:7px 0!important;font-size:var(--font-2xl)!important}.permissionPassport header p{margin:0;color:var(--muted);font-size:var(--font-sm);line-height:1.6}.passportVersion{border:1px solid #bfcfec;border-radius:30px;padding:8px 11px;background:#fff;color:var(--neutral-600);font-size:var(--font-xs);white-space:nowrap}.passportVersion code{color:var(--neutral-950);font-weight:800}.permissionPassport>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line)}.permissionPassport article{display:grid;grid-template-columns:38px 1fr;column-gap:12px;padding:20px;background:#fff}.permissionPassport article svg{grid-row:1/3;width:22px;color:var(--brand-blue)}.permissionPassport article span{color:var(--neutral-600);font-size:var(--font-xs)}.permissionPassport article strong{font-size:var(--font-base)}.permissionPassport>footer{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px 24px;background:var(--neutral-100);font-size:var(--font-sm)}.permissionPassport footer>span,.permissionPassport footer>a{display:flex;align-items:center;gap:7px}.permissionPassport footer svg{width:16px}.permissionPassport footer>a{color:var(--neutral-950);font-weight:800}
+.permissionPassport>header>div{max-width:650px}.permissionPassport header span:first-child{color:var(--brand-blue);font:800 var(--font-xs) var(--mono);letter-spacing:.05em;text-transform:uppercase}.permissionPassport h2{margin:7px 0!important;font-size:var(--font-2xl)!important}.permissionPassport header p{margin:0;color:var(--muted);font-size:var(--font-sm);line-height:1.6}.passportVersion{border:1px solid #f3c2b0;border-radius:30px;padding:8px 11px;background:#fff;color:var(--neutral-600);font-size:var(--font-xs);white-space:nowrap}.passportVersion code{color:var(--neutral-950);font-weight:800}.permissionPassport>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line)}.permissionPassport article{display:grid;grid-template-columns:38px 1fr;column-gap:12px;padding:20px;background:#fff}.permissionPassport article svg{grid-row:1/3;width:22px;color:var(--brand-blue)}.permissionPassport article span{color:var(--neutral-600);font-size:var(--font-xs)}.permissionPassport article strong{font-size:var(--font-base)}.permissionPassport>footer{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px 24px;background:var(--neutral-100);font-size:var(--font-sm)}.permissionPassport footer>span,.permissionPassport footer>a{display:flex;align-items:center;gap:7px}.permissionPassport footer svg{width:16px}.permissionPassport footer>a{color:var(--neutral-950);font-weight:800}
 @media(max-width:680px){.permissionPassport>header,.permissionPassport>footer{align-items:flex-start;flex-direction:column}.permissionPassport>div{grid-template-columns:1fr}.passportVersion{white-space:normal}}
 
 /* ============================================================================
@@ -326,7 +326,7 @@
 .workspaceQueuePreview header > p { max-width: 230px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .workspacePreviewRows article { display: grid; grid-template-columns: 108px minmax(0, 1fr) 145px 72px; gap: 14px; align-items: center; padding: 19px 24px; border-bottom: 1px solid var(--line); }
 .workspacePreviewRows strong { display: block; font-size: 15px; }.workspacePreviewRows code { color: var(--muted); font-size: 12px; }.workspacePreviewRows p { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
-.previewStatus { width: max-content; border: 1px solid var(--line-strong); border-radius: 3px; padding: 5px 7px; font: 800 12px var(--mono); text-transform: uppercase; }.previewStatus.review { border-color: #c17b00; color: #8a5900; }.previewStatus.allow { border-color: #16726a; color: #16726a; }.previewStatus.watch { color: var(--muted); }
+.previewStatus { width: max-content; border: 1px solid var(--line-strong); border-radius: 3px; padding: 5px 7px; font: 800 12px var(--mono); text-transform: uppercase; }.previewStatus.review { border-color: #c17b00; color: #8a5900; }.previewStatus.allow { border-color: #a85843; color: #a85843; }.previewStatus.watch { color: var(--muted); }
 .previewOwner { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }.previewOwner svg { width: 14px; color: var(--acid-dark); }.previewDue { color: var(--muted); font: 700 12px var(--mono); text-transform: uppercase; }
 .workspaceQueuePreview footer { display: flex; align-items: center; gap: 9px; padding: 15px 24px; background: var(--surface-2); color: var(--muted); font-size: 12px; }.workspaceQueuePreview footer svg { width: 16px; color: var(--acid-dark); }
 @media (max-width: 900px) { .workspaceGateway { grid-template-columns: 1fr; min-height: auto; padding: 70px 0; }.workspaceGatewayIntro { max-width: 700px; }.workspacePreviewRows article { grid-template-columns: 104px minmax(0, 1fr) 140px; }.previewDue { display: none; } }
@@ -343,7 +343,7 @@
    only legibility, depth, motion, and a few non-card effects are added.
    ========================================================================== */
 
-/* Hero: gradient-mesh field + lime glow behind the headline (not a flat block). */
+/* Hero: gradient-mesh field + peach glow behind the headline (not a flat block). */
 .productHome .productHero { position: relative; }
 .productHome .productHero::before {
   content: ""; position: absolute; inset: -120px 0 auto; height: 620px; z-index: 0;
@@ -390,14 +390,14 @@
 .productHome .proofTicker a { transition: transform .16s ease, border-color .16s ease; }
 .productHome .proofTicker a:hover { transform: translateY(-2px); border-color: var(--brand-strong); }
 
-/* Section kickers: lime is decoration only — use legible ink for the small labels. */
+/* Section kickers: peach is decoration only — use legible ink for small labels. */
 .productHome .productNarrative > header > span,
 .productHome .monitorShowcase > header span,
 .productHome .evidenceCopy > span,
 .productHome .productClosing > span,
 .productHome .systemLabel { color: var(--brand-ink); }
 
-/* Meter fills get a soft lime gradient instead of a flat bar. */
+/* Meter fills get a soft peach gradient instead of a flat bar. */
 .productHome .coverageDial i b,
 .productHome .benchmarkPanel article > i b {
   background: linear-gradient(90deg, var(--brand-strong), var(--brand));

@@ -1,11 +1,13 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CircleUserRound, LayoutDashboard, LogOut, Radar } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { browserDb } from "@/lib/supabase";
 
 export default function HeaderAccount() {
+  const router = useRouter();
   const db = useMemo(() => browserDb(), []);
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [open, setOpen] = useState(false);
@@ -21,7 +23,7 @@ export default function HeaderAccount() {
     return () => { listener?.data.subscription.unsubscribe(); document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", escape); };
   }, [db]);
 
-  async function signOut() { await db?.auth.signOut(); setOpen(false); window.location.assign("/"); }
+  async function signOut() { await db?.auth.signOut(); setOpen(false); router.replace("/"); }
 
   return <div className="headerAccountSlot" ref={root}>
     {user === undefined ? <Link className="headerSignIn" href="/account">Sign in</Link> : user ? <>

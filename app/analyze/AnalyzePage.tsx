@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   CheckCircle2,
@@ -17,6 +18,7 @@ import { parseReportBundle, saveImportedReport } from "@/lib/reportBundle";
 import styles from "./analyze.module.css";
 
 export default function AnalyzePage() {
+  const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
   const [message, setMessage] = useState<{
@@ -50,7 +52,7 @@ export default function AnalyzePage() {
         tone: "success",
         text: "Report verified. Opening its exact evidence…",
       });
-      window.location.assign(`/reports/${encodeURIComponent(bundle.id)}`);
+      router.push(`/reports/${encodeURIComponent(bundle.id)}`);
     } catch (cause) {
       setMessage({
         tone: "error",

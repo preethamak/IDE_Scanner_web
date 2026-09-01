@@ -9,7 +9,7 @@
   padding: 10px 12px;
   background: linear-gradient(115deg, #fff8fa, #fff 62%, #f7faea);
 }
-.immutableBar{border-color:#e3e3ed;background:linear-gradient(115deg,#f4f0ff,#fff 62%,#edfbf7)}.lock{background:#e9e2ff;color:#654ec0}.immutableBar>div:nth-child(2)>span{color:#6b52c4}.actions a{border-color:#292b3c;background:#292b3c;border-radius:11px}
+.immutableBar{border-color:#e3e3ed;background:linear-gradient(115deg,#f4f0ff,#fff 62%,#edfbf7)}.lock{background:#e9e2ff;color:#a85843}.immutableBar>div:nth-child(2)>span{color:#a85843}.actions a{border-color:#292b3c;background:#292b3c;border-radius:11px}
 .lock {
   display: grid;
   width: 32px;
@@ -85,13 +85,13 @@
   border-radius: 20px;
   padding: 0 12px;
   background: #fff;
-  color: #24313e;
+  color: #493b37;
   font: 800 12px var(--sans);
   white-space: nowrap;
 }
 .actions a {
-  border-color: #1f6a4a;
-  background: #1f6a4a;
+  border-color: #a85843;
+  background: #a85843;
   color: #fff;
   text-decoration: none;
 }
@@ -100,7 +100,7 @@
 }
 .actions button:focus-visible,
 .actions a:focus-visible {
-  outline: 3px solid #1f6a4a3d;
+  outline: 3px solid #a858433d;
   outline-offset: 2px;
 }
 @media (max-width: 1050px) {

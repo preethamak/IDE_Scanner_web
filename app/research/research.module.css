@@ -5,9 +5,9 @@
   min-height: 100vh;
   padding: 84px max(24px, calc((100vw - 1320px) / 2)) 110px;
   background: linear-gradient(180deg, #fff, #fbfcff 62%, #fff);
-  color: #17212c;
+  color: #3a2e2b;
 }
-.page{background:#fbfbff;color:#20212e}.atmosphere i:first-child{background:radial-gradient(circle,#e4d8ff,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#c8f0e8,transparent 70%)}
+.page{background:#fbfbff;color:#20212e}.atmosphere i:first-child{background:radial-gradient(circle,#ffe8de,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#f8e9e2,transparent 70%)}
 .atmosphere {
   position: absolute;
   z-index: -1;
@@ -23,14 +23,14 @@
   right: -170px;
   width: 760px;
   height: 760px;
-  background: radial-gradient(circle, #dcecdf, transparent 69%);
+  background: radial-gradient(circle, #f7ebe6, transparent 69%);
 }
 .atmosphere i:last-child {
   top: 550px;
   left: -190px;
   width: 530px;
   height: 530px;
-  background: radial-gradient(circle, #eef5e6, transparent 70%);
+  background: radial-gradient(circle, #fff6f2, transparent 70%);
 }
 .hero {
   display: grid;
@@ -48,8 +48,8 @@
   border: 1px solid #bfd1ee;
   border-radius: 30px;
   padding: 7px 10px;
-  background: #f1f6ff;
-  color: #1f6a4a;
+  background: #fff6f2;
+  color: #a85843;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -64,7 +64,7 @@
   letter-spacing: -0.066em;
 }
 .hero h1 em {
-  color: #1f6a4a;
+  color: #a85843;
   font-style: normal;
 }
 .hero > div > p {
@@ -79,7 +79,7 @@
   border-radius: 16px;
   background: #fff;
   padding: 25px;
-  box-shadow: 0 24px 60px #28384f14;
+  box-shadow: 0 24px 60px #7a655f14;
 }
 .hero aside svg {
   width: 24px;
@@ -121,7 +121,7 @@
 }
 .principles svg {
   width: 17px;
-  color: #1f6a4a;
+  color: #a85843;
 }
 .feature {
   display: grid;
@@ -142,14 +142,14 @@
 }
 .feature > a:hover {
   transform: translateY(-3px);
-  box-shadow: 0 25px 65px #27384e18;
+  box-shadow: 0 25px 65px #493b3718;
 }
 .featureArt {
   display: grid;
   align-content: center;
   justify-items: center;
-  background: linear-gradient(145deg, #eaf2ff, #f7faff 53%, #ffeaf2);
-  color: #1f6a4a;
+  background: linear-gradient(145deg, #fff3ee, #fffaf7 53%, #ffeaf2);
+  color: #a85843;
 }
 .featureArt span {
   font: 900 13px var(--mono);
@@ -166,7 +166,7 @@
 }
 .featureCopy > span,
 .library header span {
-  color: #1f6a4a;
+  color: #a85843;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -187,7 +187,7 @@
   align-items: center;
   gap: 8px;
   margin-top: 25px;
-  color: #1f6a4a;
+  color: #a85843;
   font-size: 13px;
 }
 .featureCopy svg,
@@ -265,7 +265,7 @@
   font: 700 12px var(--mono);
 }
 .library > div > a > svg {
-  color: #1f6a4a;
+  color: #a85843;
 }
 .library > div > a > svg:last-child {
   width: 19px;
@@ -294,11 +294,11 @@
   gap: 50px;
   margin-top: 100px;
   border-radius: 18px;
-  background: linear-gradient(120deg, #eff5ee, #fff 58%, #fff0f5);
+  background: linear-gradient(120deg, #fff6f2, #fff 58%, #fff0f5);
   padding: 48px;
 }
 .cta small {
-  color: #1f6a4a;
+  color: #a85843;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -320,7 +320,7 @@
   gap: 8px;
   min-height: 46px;
   border-radius: 9px;
-  background: #1f6a4a;
+  background: #a85843;
   padding: 0 17px;
   color: #fff;
   font-size: 13px;

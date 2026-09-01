@@ -5,8 +5,8 @@
    any other page, and wins over legacy layers without needing !important.
    Direction: problem-first product page. Confident, clean, human — not a
    console, not a marketing brochure. Same canonical light palette:
-     brand lime  #c9ff45  — decoration / fills / meters only, never text
-     brand ink   #5d7800  — legible lime-family ink for small labels on white
+     brand lime  #ffdcd0  — decoration / fills / meters only, never text
+     brand ink   #8f4939  — legible lime-family ink for small labels on white
    ========================================================================== */
 
 .lp {
@@ -16,15 +16,15 @@
   --lp-surface-3: #eef2f5;
   --lp-line: #e2e7eb;
   --lp-line-2: #cfd7dd;
-  --lp-text: #14202b;
+  --lp-text: #3a2e2b;
   --lp-ink-2: #33414d;
   --lp-muted: #55636f;
   --lp-faint: #78848f;
-  --lp-brand: #c9ff45;
-  --lp-brand-strong: #b4ec2d;
+  --lp-brand: #ffdcd0;
+  --lp-brand-strong: #c0836d;
   --lp-brand-soft: #f1ffd6;
-  --lp-brand-ink: #5d7800;
-  --lp-allow: #1f8a4c;  --lp-allow-bg: #e3f6ea;  --lp-allow-line: #a6dcb9;
+  --lp-brand-ink: #8f4939;
+  --lp-allow: #a85843;  --lp-allow-bg: #fff3e7;  --lp-allow-line: #c0836d;
   --lp-review: #9a6512; --lp-review-bg: #fff2d6; --lp-review-line: #e6c98a;
   --lp-block: #b4373d;  --lp-block-bg: #fde3e4;  --lp-block-line: #eaa9ad;
   --lp-shadow-sm: 0 2px 10px rgba(20, 32, 43, .06);
@@ -71,7 +71,7 @@
   padding: 15px 24px; font-size: 15px; font-weight: 720;
   transition: transform .16s ease, background .16s ease;
 }
-.lp .lpBtn:hover { transform: translateY(-2px); background: #24333f; }
+.lp .lpBtn:hover { transform: translateY(-2px); background: #493b37; }
 .lp .lpBtn svg { width: 17px; }
 .lp .lpBtn.dark { background: var(--lp-text); }
 .lp .lpBtnGhost {

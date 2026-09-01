@@ -22,14 +22,14 @@
   left: -13%;
   width: 520px;
   height: 520px;
-  background: radial-gradient(circle, #dcecdf 0, #eff5ee 42%, transparent 72%);
+  background: radial-gradient(circle, #f7ebe6 0, #fff6f2 42%, transparent 72%);
 }
 .accountModern:after {
   right: -14%;
   bottom: 2%;
   width: 470px;
   height: 470px;
-  background: radial-gradient(circle, #e8f0d6 0, #fff1f7 38%, transparent 72%);
+  background: radial-gradient(circle, #fff6f2 0, #fff1f7 38%, transparent 72%);
 }
 .accountModern .authValue {
   position: relative;
@@ -43,7 +43,7 @@
     #fbfcff 64%,
     #f2f7ff 100%
   ) !important;
-  box-shadow: 0 28px 90px #24324a14 !important;
+  box-shadow: 0 28px 90px #7a655f14 !important;
 }
 .accountModern .authValue:after {
   position: absolute;
@@ -51,25 +51,25 @@
   top: -55px;
   width: 180px;
   height: 180px;
-  border: 38px solid #c9ff45;
+  border: 38px solid #ffdcd0;
   border-radius: 50%;
   content: "";
   opacity: 0.58;
 }
 .accountModern .authValue > div > span {
   display: inline-flex;
-  border: 1px solid #bad0f4;
+  border: 1px solid #f3c2b0;
   border-radius: 30px;
   padding: 7px 10px;
-  background: #f1f6ff;
-  color: #1f6a4a !important;
+  background: #fff6f2;
+  color: #a85843 !important;
   font: 800 12px var(--mono) !important;
   letter-spacing: 0.03em;
 }
 .accountModern .authValue h1 {
   max-width: 720px;
   margin: 24px 0 18px !important;
-  color: #18212c !important;
+  color: #3a2e2b !important;
   font-size: clamp(46px, 5.8vw, 76px) !important;
   line-height: 0.95 !important;
   letter-spacing: -0.055em;
@@ -97,20 +97,20 @@
 }
 .accountModern .authValue li svg {
   width: 18px;
-  color: #1f6a4a !important;
+  color: #a85843 !important;
 }
 .accountModern .authValue aside {
   margin-top: 38px !important;
   border: 0 !important;
   border-radius: 13px;
   padding: 16px !important;
-  background: #f1f6ff;
+  background: #fff6f2;
 }
 .accountModern .authValue aside svg {
-  color: #1f6a4a !important;
+  color: #a85843 !important;
 }
 .accountModern .authValue aside strong {
-  color: #222c37 !important;
+  color: #493b37 !important;
   font-size: 13px;
 }
 .accountModern .authValue aside p {
@@ -124,7 +124,7 @@
   border-radius: 22px !important;
   padding: 30px !important;
   background: #fff !important;
-  box-shadow: 0 30px 75px #2230471c !important;
+  box-shadow: 0 30px 75px #493b371c !important;
 }
 .accountModern .oauthPanel:before {
   display: block;
@@ -134,20 +134,20 @@
   border-radius: 10px;
   background: linear-gradient(
     90deg,
-    #1f6a4a 0 34%,
+    #a85843 0 34%,
     #ef4d91 34% 67%,
-    #c9ff45 67%
+    #ffdcd0 67%
   );
   content: "";
 }
 .accountModern .oauthPanel > div:first-child > span {
-  color: #1f6a4a !important;
+  color: #a85843 !important;
   font: 800 12px var(--mono) !important;
   letter-spacing: 0.04em;
 }
 .accountModern .oauthPanel h2 {
   margin: 9px 0 26px !important;
-  color: #1d2732 !important;
+  color: #3a2e2b !important;
   font-size: 30px !important;
   line-height: 1.14;
 }
@@ -156,7 +156,7 @@
   border: 1px solid #ccd4dc !important;
   border-radius: 10px !important;
   background: #fff !important;
-  color: #202a35 !important;
+  color: #493b37 !important;
   font-size: 14px !important;
   font-weight: 800 !important;
 }
@@ -182,13 +182,13 @@
   min-height: 48px;
   border: 0 !important;
   border-radius: 10px !important;
-  background: #c9ff45 !important;
-  color: #18212c !important;
+  background: #ffdcd0 !important;
+  color: #3a2e2b !important;
   font-size: 14px !important;
   font-weight: 850 !important;
 }
 .accountModern .emailOtp .textAction {
-  color: #2f5fa8 !important;
+  color: #a85843 !important;
   font-size: 12px !important;
 }
 .accountModern .authMessage {
@@ -213,15 +213,15 @@
   border-radius: 24px !important;
   padding: 42px !important;
   background:
-    radial-gradient(circle at 90% 0, #dcecdf, transparent 35%), #fff !important;
-  color: #202a35 !important;
-  box-shadow: 0 28px 80px #22304714 !important;
+    radial-gradient(circle at 90% 0, #f7ebe6, transparent 35%), #fff !important;
+  color: #493b37 !important;
+  box-shadow: 0 28px 80px #493b3714 !important;
 }
 .accountModern .signedInProduct span {
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #1f6a4a;
+  color: #a85843;
   font: 800 12px var(--mono);
 }
 .accountModern .signedInProduct h1 {
@@ -261,19 +261,19 @@
   border-radius: 16px !important;
   padding: 22px !important;
   background: #fff !important;
-  color: #202a35 !important;
-  box-shadow: 0 14px 40px #24324a0d !important;
+  color: #493b37 !important;
+  box-shadow: 0 14px 40px #7a655f0d !important;
 }
 .accountModern .accountNextSteps > a > svg {
   width: 22px;
-  color: #1f6a4a;
+  color: #a85843;
 }
 .accountModern .accountNextSteps div {
   display: grid;
   gap: 5px;
 }
 .accountModern .accountNextSteps span {
-  color: #1f6a4a;
+  color: #a85843;
   font: 800 12px var(--mono);
 }
 .accountModern .accountNextSteps strong {

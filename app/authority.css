@@ -1,49 +1,61 @@
-/* GuardRails light product system — the last stylesheet in the cascade, so the
-   tokens declared here are the ones the whole site actually renders with.
-
-   One palette only: green-black ink, warm paper, deep-green signal, lime as an
-   accent that is ONLY ever used on dark fills (see `--acid` usage in
-   globals.css). Do not reintroduce a second accent hue here; earlier layers
-   already author against these tokens, so a violet or peach value in this file
-   turns every green-branded surface into a mixed palette. */
+/* GuardRails light product system. This file is intentionally the final global
+   layer: older route styles can keep their structure while sharing one calm,
+   light visual language. A warm peach signal replaces the previous green and
+   blue accents so links, statuses, and calls to action do not compete. */
 :root {
-  --ledger-paper: #f8f9f5;
+  --ledger-paper: #fffaf7;
   --ledger-white: #fff;
-  --ledger-ink: #14201a;
-  --ledger-muted: #66716b;
-  --ledger-line: #dde2da;
-  --ledger-signal: #1f6a4a;
-  --ledger-signal-soft: #e7f1ea;
+  --ledger-ink: #292421;
+  --ledger-muted: #746d69;
+  --ledger-line: #e7ded9;
+  --ledger-signal: #a85843;
+  --ledger-signal-soft: #fff0e9;
+  --ledger-signal-strong: #f3c2b0;
   --ledger-amber: #96601f;
-  --ledger-night: #16231d;
+  --ledger-night: #3a2e2b;
 
   --paper: var(--ledger-paper);
   --white: var(--ledger-white);
   --ink: var(--ledger-ink);
-  --ink-2: #33403a;
+  --ink-2: #4b4441;
   --muted: var(--ledger-muted);
   --line: var(--ledger-line);
-  --wash: #eef2ea;
-  --acid: #c9ff45;
-  --acid-dark: #496b00;
-  /* Referenced by .discoveryLoading in globals.css; previously undefined. */
-  --acid-pale: #f0f8dc;
-  --green: #147c4a;
-  --green-2: #2e8b62;
-  /* design-system.css aliases these to blue/pink "logo accents". Structural UI
-     uses one accent hue, so they resolve to the brand green here. `--violet`
-     is deliberately untouched: it is the semantic INCOMPLETE verdict colour,
-     not decoration. */
-  --brand-blue: #1f6a4a;
-  --brand-blue-soft: #e7f1ea;
-  --blue: #1f6a4a;
-  /* Earlier layers set --brand to lime (#c9ff45) and then use it both as text
-     on white and as a button background under white text — both illegible.
-     Lime is reserved for --acid on dark fills; the brand token itself must be
-     a colour that works as text and as a filled button. */
+  --wash: #fff7f3;
+  --acid: #ffdcd0;
+  --acid-dark: #8f4939;
+  --acid-pale: #fff6f2;
+  --green: #a06b55;
+  --green-2: #c0836d;
+  --allow: #8d6b4f;
+  --allow-bg: #fff3e7;
+  --allow-line: #e5c9a9;
+  --brand-blue: var(--ledger-signal);
+  --brand-blue-soft: var(--ledger-signal-soft);
+  --blue: var(--ledger-signal);
   --brand: var(--ledger-signal);
   --brand-soft: var(--ledger-signal-soft);
+  --brand-strong: var(--ledger-signal-strong);
+  --brand-ink: #8f4939;
   --brand-contrast: #fff;
+  --text: var(--ledger-ink);
+  --surface: var(--ledger-white);
+  --surface-2: #fff8f5;
+  --surface-3: #f7eeea;
+  --line-strong: #d5c9c3;
+  --night: var(--ledger-night);
+  --neutral-950: var(--ledger-night);
+  --neutral-900: #493b37;
+  --neutral-800: #5a4b46;
+  --neutral-600: #796f6a;
+  --neutral-400: #a49a95;
+  --neutral-200: #e5dcd7;
+  --neutral-100: #fff6f2;
+}
+
+/* A closed absolute menu must leave the layout entirely. Visibility and
+   opacity alone still let a wide popover extend the document horizontally. */
+.navPopover:not(.isOpen) {
+  display: none !important;
 }
 
 /* Cascade repair: guardrails.css still carries a dark-theme pass that paints
@@ -91,14 +103,14 @@
 .extensionSearch input {
   color: var(--ledger-ink) !important;
 }
-/* Filled CTAs that earlier layers paint lime-under-white-text. */
+/* Filled CTAs share one visible, light treatment. */
 .buttonDark,
 .extensionSearch button,
 .headerAnalyze,
 .productSearch button,
 .workflowQuestion a,
 .referenceHero .heroAction {
-  border-color: #cfe3d6 !important;
+  border-color: var(--ledger-signal-strong) !important;
   background: var(--ledger-signal-soft) !important;
   color: var(--ledger-signal) !important;
 }
@@ -106,8 +118,8 @@
 .extensionSearch button:hover,
 .headerAnalyze:hover,
 .referenceHero .heroAction:hover {
-  border-color: #b9d8c5 !important;
-  background: #d8ebdf !important;
+  border-color: #f3c2b0 !important;
+  background: #ffe1d4 !important;
 }
 .buttonQuiet,
 .buttonLight {
@@ -142,7 +154,7 @@ h3 {
 
 .siteHeader {
   border-bottom-color: var(--ledger-line);
-  background: #f8f9f5f2;
+  background: #fbfaffeb;
   backdrop-filter: blur(16px);
 }
 .headerInner {
@@ -159,7 +171,7 @@ h3 {
 .primaryNav > a,
 .navMenu > button {
   border-radius: 10px;
-  color: #59645d;
+  color: #596176;
   font-size: 13px;
 }
 .primaryNav > a:hover,
@@ -171,19 +183,19 @@ h3 {
 }
 .headerProductCta {
   border-radius: 11px !important;
-  border: 1px solid #cfe3d6 !important;
+  border: 1px solid var(--ledger-signal-strong) !important;
   background: var(--ledger-signal-soft) !important;
   color: var(--ledger-signal) !important;
-  box-shadow: none !important;
+  box-shadow: 0 5px 14px rgb(168 88 67 / 12%) !important;
 }
 .headerProductCta:hover {
-  background: #d8ebdf !important;
+  background: #ffe1d4 !important;
 }
 .navPopover,
 .headerAccountMenu {
   border-color: var(--ledger-line);
   border-radius: 14px;
-  box-shadow: 0 24px 70px #1c2a231c;
+  box-shadow: 0 24px 70px rgb(44 41 66 / 14%);
 }
 .navPopover aside {
   background: var(--ledger-signal-soft);
@@ -223,7 +235,7 @@ h3 {
 }
 .footerCta {
   border-radius: 11px;
-  border: 1px solid #cfe3d6 !important;
+  border: 1px solid var(--ledger-signal-strong) !important;
   background: var(--ledger-signal-soft) !important;
   color: var(--ledger-signal) !important;
 }
@@ -251,15 +263,15 @@ h3 {
 .buttonDark,
 .primaryAction,
 .heroAction {
-  border-color: #cfe3d6;
+  border-color: var(--ledger-signal-strong);
   background: var(--ledger-signal-soft);
   color: var(--ledger-signal);
 }
 .buttonDark:hover,
 .primaryAction:hover,
 .heroAction:hover {
-  border-color: #b9d8c5;
-  background: #d8ebdf;
+  border-color: #f3c2b0;
+  background: #ffe1d4;
 }
 .secondaryAction,
 .buttonLight {
@@ -280,8 +292,8 @@ h3 {
   color: #97402f;
 }
 .decision.allow {
-  background: #e8f7f1;
-  color: #2d6a58;
+  background: var(--allow-bg);
+  color: var(--allow);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -292,5 +304,168 @@ h3 {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+  }
+}
+
+/* Final interaction pass. These selectors cover legacy route classes as well
+   as the shared primitives, so every actionable control keeps a visible edge
+   against a white or paper surface. */
+:where(
+  .button,
+  .buttonDark,
+  .buttonLight,
+  .primaryAction,
+  .secondaryAction,
+  .heroAction,
+  .headerProductCta,
+  .footerCta,
+  .headerAnalyze,
+  .productSearch button,
+  .extensionSearch button,
+  .workflowQuestion a,
+  .trustInfoAction > a,
+  .alertActions a,
+  .alertActions button,
+  .reportActions .button
+) {
+  border-color: var(--ledger-signal-strong) !important;
+  background: var(--ledger-signal-soft) !important;
+  color: var(--ledger-signal) !important;
+  box-shadow: 0 5px 14px rgb(168 88 67 / 12%);
+}
+:where(
+  .button,
+  .buttonDark,
+  .buttonLight,
+  .primaryAction,
+  .secondaryAction,
+  .heroAction,
+  .headerProductCta,
+  .footerCta,
+  .headerAnalyze,
+  .productSearch button,
+  .extensionSearch button,
+  .workflowQuestion a,
+  .trustInfoAction > a,
+  .alertActions a,
+  .alertActions button,
+  .reportActions .button
+):hover {
+  border-color: #f3c2b0 !important;
+  background: #ffe1d4 !important;
+  color: #8f4939 !important;
+}
+:where(
+  .button,
+  .buttonDark,
+  .buttonLight,
+  .primaryAction,
+  .secondaryAction,
+  .heroAction,
+  .headerProductCta,
+  .footerCta,
+  .headerAnalyze,
+  .productSearch button,
+  .extensionSearch button,
+  .workflowQuestion a,
+  .trustInfoAction > a,
+  .alertActions a,
+  .alertActions button,
+  .reportActions .button
+):focus-visible {
+  outline: 3px solid rgb(168 88 67 / 32%) !important;
+  outline-offset: 3px;
+}
+
+:where(input, select, textarea) {
+  border-color: var(--line-strong) !important;
+}
+:where(input, select, textarea):focus-visible {
+  outline: 3px solid rgb(168 88 67 / 24%) !important;
+  outline-offset: 1px;
+}
+
+/* Green was previously used for both approval semantics and brand decoration.
+   Approval remains positive, but uses a warm sand signal while the brand uses
+   pale peach. */
+:where(
+  .decision.allow,
+  .inventoryDecision.allow,
+  .inventorySeverity.severity-low,
+  .feedSeverity.severity-low,
+  .dossierDecision.allow,
+  .summaryOutcome.allow,
+  .stateDot.allow,
+  .statusDot,
+  .green
+) {
+  border-color: var(--allow-line) !important;
+  background: var(--allow-bg) !important;
+  color: var(--allow) !important;
+}
+:where(.statusDot, .stateDot.allow, .green) {
+  background: var(--allow) !important;
+  box-shadow: 0 0 0 4px rgb(141 107 79 / 14%) !important;
+}
+:where(.healthRing) {
+  background: transparent !important;
+  border-color: #eed6c9 !important;
+  border-right-color: var(--allow) !important;
+}
+
+/* The compact mobile header has three jobs: identify the product, open the
+   menu, and expose the account action. Constrain the brand column so those
+   jobs never overlap at phone widths. */
+@media (max-width: 760px) {
+  .headerInner {
+    width: calc(100% - 24px) !important;
+    grid-template-columns: minmax(0, 1fr) 38px auto !important;
+    gap: 8px !important;
+  }
+  .wordmark {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden;
+  }
+  .wordmark strong {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .primaryNav {
+    width: 38px;
+    min-width: 38px;
+    justify-self: end;
+  }
+  .mobileNavToggle {
+    width: 38px !important;
+    min-width: 38px !important;
+  }
+  .headerCommands {
+    min-width: 0 !important;
+  }
+  .headerProductCta {
+    max-width: 145px;
+    overflow: hidden;
+    padding-inline: 10px !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Keep the wide grouped menu anchored to the viewport, not the small More
+   button. This keeps the open menu usable without creating horizontal scroll. */
+.groupedNavPopover.isOpen {
+  position: fixed !important;
+  top: 72px !important;
+  right: max(16px, calc((100vw - 1440px) / 2)) !important;
+  left: auto !important;
+}
+
+@media (max-width: 920px) {
+  .groupedNavPopover.isOpen {
+    right: 12px !important;
   }
 }

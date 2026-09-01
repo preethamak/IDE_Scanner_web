@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity,
@@ -202,6 +203,7 @@ const sampleAlerts: Alert[] = [
 export default function TeamWorkspace(
   props: { initialExtension?: string; focus?: "workspace" | "monitor" } = {},
 ) {
+  const router = useRouter();
   const db = useMemo(() => browserDb(), []);
   const registryHref = props.initialExtension
     ? `/extensions/${encodeURIComponent(props.initialExtension)}`
@@ -448,7 +450,7 @@ export default function TeamWorkspace(
   }
   async function signOut() {
     await db?.auth.signOut();
-    window.location.assign("/");
+    router.replace("/");
   }
 
   async function mutateMember(memberId: string, role: string | null) {

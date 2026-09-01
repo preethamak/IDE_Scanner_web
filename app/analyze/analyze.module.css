@@ -5,9 +5,9 @@
   min-height: 100vh;
   padding: 92px max(24px, calc((100vw - 1320px) / 2)) 110px;
   background: linear-gradient(180deg, #fff, #fbfcff 60%, #fff);
-  color: #17212c;
+  color: #3a2e2b;
 }
-.page{background:#fbfbff;color:#20212e}.atmosphere i:first-child{background:radial-gradient(circle,#e4d8ff,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#c8f0e8,transparent 70%)}
+.page{background:#fbfbff;color:#20212e}.atmosphere i:first-child{background:radial-gradient(circle,#ffe8de,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#f8e9e2,transparent 70%)}
 .atmosphere {
   position: absolute;
   z-index: -1;
@@ -23,21 +23,21 @@
   top: -220px;
   width: 660px;
   height: 660px;
-  background: radial-gradient(circle, #dcecdf, transparent 69%);
+  background: radial-gradient(circle, #f7ebe6, transparent 69%);
 }
 .atmosphere i:nth-child(2) {
   left: -210px;
   top: 420px;
   width: 520px;
   height: 520px;
-  background: radial-gradient(circle, #eef5e6, transparent 70%);
+  background: radial-gradient(circle, #fff6f2, transparent 70%);
 }
 .atmosphere i:last-child {
   right: 22%;
   top: 300px;
   width: 250px;
   height: 250px;
-  background: radial-gradient(circle, #efffcf, transparent 70%);
+  background: radial-gradient(circle, #fff6f2, transparent 70%);
 }
 .hero {
   max-width: 980px;
@@ -46,11 +46,11 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid #bdd0ef;
+  border: 1px solid #f3c2b0;
   border-radius: 30px;
   padding: 7px 10px;
-  background: #f1f6ff;
-  color: #1f6a4a;
+  background: #fff6f2;
+  color: #a85843;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -64,7 +64,7 @@
   letter-spacing: -0.07em;
 }
 .hero h1 em {
-  color: #1f6a4a;
+  color: #a85843;
   font-style: normal;
 }
 .hero > p {
@@ -88,12 +88,12 @@
   border-radius: 17px;
   padding: 25px;
   background: #fff;
-  box-shadow: 0 13px 36px #29384a0a;
+  box-shadow: 0 13px 36px #493b370a;
 }
 .paths .primaryPath {
-  border-color: #b7cae8;
-  background: linear-gradient(145deg, #f3f7ff, #fff 60%);
-  box-shadow: 0 20px 55px #25374f12;
+  border-color: #f3c2b0;
+  background: linear-gradient(145deg, #fff8f5, #fff 60%);
+  box-shadow: 0 20px 55px #493b3712;
 }
 .pathIcon {
   display: grid;
@@ -106,14 +106,14 @@
 }
 .primaryPath .pathIcon {
   background: #e3edff;
-  color: #1f6a4a;
+  color: #a85843;
 }
 .pathIcon svg {
   width: 20px;
 }
 .paths small {
   margin-top: 40px;
-  color: #1f6a4a;
+  color: #a85843;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -145,7 +145,7 @@
 }
 .paths li svg {
   width: 15px;
-  color: #6c9d30;
+  color: #8d6b4f;
 }
 .paths a,
 .paths button {
@@ -160,13 +160,13 @@
   border-radius: 8px;
   padding: 0 13px;
   background: #fff;
-  color: #263440;
+  color: #5a4b46;
   font-size: 12px;
   font-weight: 800;
 }
 .primaryPath a {
-  border-color: #1f6a4a;
-  background: #1f6a4a;
+  border-color: #a85843;
+  background: #a85843;
   color: #fff;
 }
 .paths a svg,
@@ -195,7 +195,7 @@
     transform 0.16s;
 }
 .dropZone.dragging {
-  border-color: #1f6a4a;
+  border-color: #a85843;
   background: #f0f5ff;
   transform: translateY(-2px);
 }
@@ -205,8 +205,8 @@
   height: 48px;
   place-content: center;
   border-radius: 13px;
-  background: #efffd0;
-  color: #5a771a;
+  background: #fff6f2;
+  color: #8d6b4f;
 }
 .dropZone svg {
   width: 21px;
@@ -229,7 +229,7 @@
   border-radius: 8px;
   padding: 0 13px;
   background: #fff;
-  color: #283541;
+  color: #493b37;
   font-size: 12px;
   font-weight: 800;
 }
@@ -242,7 +242,7 @@
   border-radius: 11px;
   padding: 13px 15px;
   background: #f2f6ff;
-  color: #315b91;
+  color: #a85843;
   font-size: 13px;
   font-weight: 700;
 }
@@ -255,9 +255,9 @@
   color: #91382c;
 }
 .message.success {
-  border-color: #cce3aa;
+  border-color: #c0836d;
   background: #f5fbe9;
-  color: #52751f;
+  color: #8d6b4f;
 }
 .boundary {
   display: grid;
@@ -272,7 +272,7 @@
   gap: 7px;
 }
 .boundary span {
-  color: #1f6a4a;
+  color: #a85843;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }

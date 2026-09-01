@@ -6,11 +6,11 @@ export const alt = "GuardRails - Check IDE extensions before you install them";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// Brand palette: green-black ink, deep-green signal, lime accent.
-const INK = "#14201a";
-const MUTED = "#66716b";
-const SIGNAL = "#1f6a4a";
-const LIME = "#c9ff45";
+// Brand palette: warm charcoal, coral signal, pale peach accent.
+const INK = "#292421";
+const MUTED = "#746d69";
+const SIGNAL = "#a85843";
+const ACCENT = "#ffdcd0";
 
 export default async function Image() {
   const logo = await readFile(join(process.cwd(), "public/logo-transparent.png"));
@@ -127,7 +127,7 @@ export default async function Image() {
                 width: 34,
                 height: 34,
                 borderRadius: 10,
-                background: LIME,
+                background: ACCENT,
               }}
             />
             <div

@@ -33,8 +33,8 @@ describe("public trust center", () => {
   });
 
   it("uses the shared light, responsive trust surface", () => {
-    expect(styles).toContain("#e9f1ff");
-    expect(styles).toContain("#dcecdf");
+    expect(styles).toContain("#fff6f2");
+    expect(styles).toContain("#f7ebe6");
     expect(styles).toContain("#d9e0e6");
     expect(styles).toContain("prefers-reduced-motion");
   });

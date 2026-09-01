@@ -5,9 +5,9 @@
   min-height: 100vh;
   padding: 84px max(24px, calc((100vw - 1320px) / 2)) 110px;
   background: linear-gradient(180deg, #fff, #fbfcff 64%, #fff);
-  color: #17212c;
+  color: #3a2e2b;
 }
-.page{background:#fbfbff;color:#20212e}.atmosphere i:first-child{background:radial-gradient(circle,#e4d8ff,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#c8f0e8,transparent 70%)}
+.page{background:#fbfbff;color:#20212e}.atmosphere i:first-child{background:radial-gradient(circle,#ffe8de,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#f8e9e2,transparent 70%)}
 .atmosphere {
   position: absolute;
   z-index: -1;
@@ -23,14 +23,14 @@
   right: -190px;
   width: 760px;
   height: 760px;
-  background: radial-gradient(circle, #dcecdf, transparent 69%);
+  background: radial-gradient(circle, #f7ebe6, transparent 69%);
 }
 .atmosphere i:last-child {
   top: 760px;
   left: -200px;
   width: 560px;
   height: 560px;
-  background: radial-gradient(circle, #efffd2, transparent 70%);
+  background: radial-gradient(circle, #fff6f2, transparent 70%);
 }
 .hero {
   display: grid;
@@ -46,8 +46,8 @@
   border: 1px solid #bfd1ee;
   border-radius: 30px;
   padding: 7px 10px;
-  background: #f1f6ff;
-  color: #1f6a4a;
+  background: #fff6f2;
+  color: #a85843;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -62,7 +62,7 @@
   letter-spacing: -0.067em;
 }
 .hero h1 em {
-  color: #1f6a4a;
+  color: #a85843;
   font-style: normal;
 }
 .hero > div > p {
@@ -88,14 +88,14 @@
   border-radius: 9px;
   background: #fff;
   padding: 0 16px;
-  color: #263440;
+  color: #5a4b46;
   font-size: 13px;
   font-weight: 800;
 }
 .heroActions a:first-child,
 .cta > a {
-  border-color: #1f6a4a;
-  background: #1f6a4a;
+  border-color: #a85843;
+  background: #a85843;
   color: #fff;
 }
 .heroActions svg,
@@ -107,7 +107,7 @@
   border: 1px solid #cad4dd;
   border-radius: 19px;
   background: #fff;
-  box-shadow: 0 32px 80px #28384f1c;
+  box-shadow: 0 32px 80px #7a655f1c;
   transform: rotate(1deg);
 }
 .gateCard header {
@@ -120,7 +120,7 @@
 }
 .gateCard header svg {
   width: 22px;
-  color: #1f6a4a;
+  color: #a85843;
 }
 .gateCard header span {
   display: grid;
@@ -138,7 +138,7 @@
 }
 .gauge > strong {
   display: block;
-  color: #1f6a4a;
+  color: #a85843;
   font-size: 48px;
   line-height: 1;
 }
@@ -155,7 +155,7 @@
   border-radius: 20px;
   background: linear-gradient(
     to right,
-    #1f6a4a var(--progress),
+    #a85843 var(--progress),
     #e6ebef var(--progress)
   );
   font-style: normal;
@@ -189,7 +189,7 @@
   gap: 8px;
   padding: 17px 20px;
   background: #f5ffe7;
-  color: #58751f;
+  color: #8d6b4f;
   font-size: 12px;
   font-weight: 800;
 }
@@ -212,7 +212,7 @@
 }
 .metrics strong {
   display: block;
-  color: #1f6a4a;
+  color: #a85843;
   font-size: 42px;
 }
 .metrics span {
@@ -240,7 +240,7 @@
 .gates header span,
 .evidence header span,
 .refusals > div > span {
-  color: #1f6a4a;
+  color: #a85843;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -360,7 +360,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #17212c;
+  color: #3a2e2b;
 }
 .identity strong {
   display: block;
@@ -372,7 +372,7 @@
 .identity svg {
   flex: 0 0 auto;
   width: 13px;
-  color: #1f6a4a;
+  color: #a85843;
 }
 .identity code {
   display: block;
@@ -407,7 +407,7 @@
   text-transform: uppercase;
 }
 .allow {
-  color: #1f6a4a;
+  color: #a85843;
 }
 .review {
   color: #8b6908;
@@ -455,9 +455,9 @@
 }
 .refusals li span {
   border-radius: 20px;
-  background: #eff5ee;
+  background: #fff6f2;
   padding: 5px 8px;
-  color: #1f6a4a;
+  color: #a85843;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -467,7 +467,7 @@
   align-items: center;
   gap: 25px;
   border-radius: 18px;
-  background: linear-gradient(120deg, #eff5ee, #fff 58%, #fff0f5);
+  background: linear-gradient(120deg, #fff6f2, #fff 58%, #fff0f5);
   padding: 48px;
 }
 .cta > svg {
@@ -475,7 +475,7 @@
   color: #e7578b;
 }
 .cta small {
-  color: #1f6a4a;
+  color: #a85843;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
