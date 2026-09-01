@@ -12,8 +12,37 @@ describe("GuardRails landing surface", () => {
     expect(page()).toContain("<AuthorityLanding />");
     expect(landing()).toContain("<ReleaseReviewFilm />");
     expect(landing()).toContain("<DecisionMemoryFilm />");
+    expect(landing()).toContain("<IdeCompatibility />");
     expect(landing()).not.toContain("<SecurityBento />");
     expect(landing()).not.toContain("<ReleaseWorkflow />");
+  });
+
+  it("uses official local editor marks without decorative stand-ins", () => {
+    const compatibility = read("./IdeCompatibility.tsx");
+    expect(compatibility).toContain('src: "/brands/ide/vscode.svg"');
+    expect(compatibility).toContain('src: "/brands/ide/cursor.svg"');
+    expect(compatibility).toContain('src: "/brands/ide/windsurf.svg"');
+    expect(compatibility).toContain('src: "/brands/ide/vscodium.svg"');
+    expect(compatibility).toContain("No endorsement implied");
+    expect(compatibility).not.toContain("Code2");
+    expect(compatibility).not.toContain("MousePointer2");
+  });
+
+  it("keeps the focused homepage surfaces free of gradients and fake cursor motion", () => {
+    const focusedStyles = [
+      read("./authorityLanding.module.css"),
+      read("./releaseReviewFilm.module.css"),
+      read("./decisionMemoryFilm.module.css"),
+      read("./ideCompatibility.module.css"),
+    ].join("\n");
+    expect(focusedStyles).not.toContain("gradient");
+    expect(focusedStyles).not.toMatch(/@keyframes\s+cursor/i);
+    expect(focusedStyles).not.toMatch(/\.cursor\b/i);
+  });
+
+  it("removes closed navigation popovers from layout", () => {
+    expect(read("../authority.css")).toContain(".navPopover:not(.isOpen)");
+    expect(read("../authority.css")).toContain("display: none");
   });
   it("attaches decisions durably to an exact release", () => {
     expect(landing()).toContain("DecisionMemoryFilm");
@@ -45,5 +74,14 @@ describe("GuardRails landing surface", () => {
     expect(film).toContain("NEW CAPABILITY");
     expect(film).toContain("What changed");
     expect(film).toContain("Save decision");
+    expect(film).toContain('from "motion/react"');
+    expect(film).not.toContain("setInterval");
+  });
+
+  it("keeps the decision-memory interaction visitor-led", () => {
+    const memory = read("./DecisionMemoryFilm.tsx");
+    expect(memory).toContain('from "motion/react"');
+    expect(memory).toContain('aria-pressed={nextRelease}');
+    expect(memory).not.toContain("setInterval");
   });
 });
