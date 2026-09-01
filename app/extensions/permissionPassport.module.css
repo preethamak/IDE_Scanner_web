@@ -143,8 +143,8 @@
   box-shadow: inset 3px 0 #a85843;
 }
 .categories article[data-state="observed"] em {
-  background: #e9f2ff;
-  color: #a85843;
+  background: var(--ledger-signal-soft, #fff7f3);
+  color: var(--ledger-signal-ink, #8f4939);
 }
 .passport > footer {
   display: flex;

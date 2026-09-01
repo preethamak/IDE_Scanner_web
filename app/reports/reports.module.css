@@ -101,9 +101,9 @@
   font-weight: 800;
 }
 .heroActions a:first-child {
-  border-color: #a85843;
-  background: #a85843;
-  color: #fff;
+  border-color: var(--ledger-signal-strong);
+  background: var(--ledger-signal-soft);
+  color: var(--ledger-signal-ink);
 }
 .heroActions svg {
   width: 16px;
@@ -265,8 +265,9 @@
   min-height: 42px;
   border-radius: 8px;
   padding: 0 13px;
-  background: #a85843;
-  color: #fff;
+  border: 1px solid var(--ledger-signal-strong);
+  background: var(--ledger-signal-soft);
+  color: var(--ledger-signal-ink);
   font-size: 12px;
   font-weight: 800;
 }
@@ -396,8 +397,9 @@
   min-height: 40px;
   border-radius: 8px;
   padding: 0 12px;
-  background: #17191f;
-  color: #fff;
+  border: 1px solid var(--ledger-signal-strong);
+  background: var(--ledger-signal-soft);
+  color: var(--ledger-signal-ink);
   font-size: 12px;
   font-weight: 800;
 }
@@ -452,9 +454,9 @@
   font-weight: 800;
 }
 .confirm button:last-child {
-  border-color: #a64034;
-  background: #a64034;
-  color: #fff;
+  border-color: #d28c7b;
+  background: #fff0ed;
+  color: #8f3328;
 }
 .confirm svg {
   width: 14px;
@@ -506,9 +508,9 @@
   font-weight: 800;
 }
 .empty a:first-child {
-  border-color: #a85843;
-  background: #a85843;
-  color: #fff;
+  border-color: var(--ledger-signal-strong);
+  background: var(--ledger-signal-soft);
+  color: var(--ledger-signal-ink);
 }
 .empty svg {
   width: 15px;

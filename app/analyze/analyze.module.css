@@ -165,9 +165,9 @@
   font-weight: 800;
 }
 .primaryPath a {
-  border-color: #a85843;
-  background: #a85843;
-  color: #fff;
+  border-color: var(--ledger-signal-strong);
+  background: var(--ledger-signal-soft);
+  color: var(--ledger-signal-ink);
 }
 .paths a svg,
 .paths button svg {

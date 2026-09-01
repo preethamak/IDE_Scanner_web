@@ -7,8 +7,8 @@
   background: linear-gradient(180deg, #fff, #fbfcff 70%, #fff);
   color: #3a2e2b;
 }
-.gate,.statePage{background:var(--ledger-paper);color:var(--ledger-ink)}.atmosphere i:first-child{background:radial-gradient(circle,#f7c9bd,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#eadfce,transparent 70%)}.atmosphere i:last-child{background:radial-gradient(circle,#f6d97a55,transparent 70%)}.eyebrow{border:0;border-radius:0;background:transparent;padding:0;color:var(--ledger-signal)}.gateHero h1 em{color:var(--ledger-signal)}.gateHero>div:first-child>p,.resume strong{color:var(--ledger-muted)}.resume,.gatePreview,.metric,.event,.watchlist article{border-color:var(--ledger-line)!important;background:var(--ledger-white)!important}.heroActions a:first-child{border-radius:999px;background:var(--ledger-ink)!important;color:#fff!important}
-.atmosphere i:first-child{background:radial-gradient(circle,#ffe8de,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#f8e9e2,transparent 70%)}.atmosphere i:last-child{background:radial-gradient(circle,#ffd9d155,transparent 70%)}.heroActions a:first-child{border-radius:11px;background:#292b3c!important}
+.gate,.statePage{background:var(--ledger-paper);color:var(--ledger-ink)}.atmosphere i:first-child{background:radial-gradient(circle,#f7c9bd,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#eadfce,transparent 70%)}.atmosphere i:last-child{background:radial-gradient(circle,#f6d97a55,transparent 70%)}.eyebrow{border:0;border-radius:0;background:transparent;padding:0;color:var(--ledger-signal)}.gateHero h1 em{color:var(--ledger-signal)}.gateHero>div:first-child>p,.resume strong{color:var(--ledger-muted)}.resume,.gatePreview,.metric,.event,.watchlist article{border-color:var(--ledger-line)!important;background:var(--ledger-white)!important}.heroActions a:first-child{border-radius:999px;border:1px solid var(--ledger-signal-strong)!important;background:var(--ledger-signal-soft)!important;color:var(--ledger-signal-ink)!important}
+.atmosphere i:first-child{background:radial-gradient(circle,#ffe8de,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#f8e9e2,transparent 70%)}.atmosphere i:last-child{background:radial-gradient(circle,#ffd9d155,transparent 70%)}.heroActions a:first-child{border-radius:11px;background:var(--ledger-signal-soft)!important;color:var(--ledger-signal-ink)!important}
 .gate {
   padding: 78px max(24px, calc((100vw - 1320px) / 2)) 100px;
 }
@@ -136,9 +136,9 @@
   font-weight: 800;
 }
 .heroActions a:first-child {
-  border-color: #a85843;
-  background: #a85843;
-  color: #fff;
+  border-color: var(--ledger-signal-strong);
+  background: var(--ledger-signal-soft);
+  color: var(--ledger-signal-ink);
 }
 .heroActions svg {
   width: 16px;
@@ -337,9 +337,9 @@
   font-weight: 800;
 }
 .stateActions button {
-  border-color: #a85843;
-  background: #a85843;
-  color: #fff;
+  border-color: var(--ledger-signal-strong);
+  background: var(--ledger-signal-soft);
+  color: var(--ledger-signal-ink);
 }
 .stateActions svg {
   width: 15px;

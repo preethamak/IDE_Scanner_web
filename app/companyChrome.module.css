@@ -9,7 +9,7 @@
 }
 
 .newsletter label {
-  color: var(--faint, #606b64);
+  color: var(--faint, #655c57);
   font: 650 12px var(--mono, monospace);
   letter-spacing: 0.1em;
 }
@@ -34,7 +34,7 @@
 }
 
 .newsletter input::placeholder {
-  color: var(--faint, #8b95a1);
+  color: var(--faint, #655c57);
 }
 
 .newsletter button {
@@ -44,7 +44,7 @@
   border: 1px solid var(--brand-strong, #f3c2b0);
   border-radius: 7px;
   margin: 4px;
-  background: var(--brand-soft, #fff0e9);
+  background: var(--brand-soft, #fff7f3);
   padding: 0 14px;
   color: var(--acid-dark, #8f4939) !important;
   font-size: 12px;
@@ -54,13 +54,21 @@
 
 .newsletter button:hover {
   border-color: var(--brand-strong, #f3c2b0);
-  background: #ffe1d4;
+  background: var(--ledger-signal-hover, #ffebe4);
   color: var(--acid-dark, #8f4939) !important;
 }
 
 .newsletter button:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+.newsletter button:focus-visible,
+.feedbackLauncher:focus-visible,
+.feedbackClose:focus-visible,
+.consentActions button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ledger-focus, #b96850) 42%, transparent);
+  outline-offset: 3px;
 }
 
 .newsletter button svg,
@@ -98,7 +106,7 @@
   min-height: 42px;
   border: 1px solid var(--brand-strong, #f3c2b0);
   border-radius: 999px;
-  background: var(--brand-soft, #fff0e9);
+  background: var(--brand-soft, #fff7f3);
   padding: 0 15px;
   color: var(--acid-dark, #8f4939) !important;
   font-size: 12px;
@@ -108,7 +116,7 @@
 
 .feedbackLauncher:hover {
   border-color: var(--brand-strong, #f3c2b0);
-  background: #ffe1d4;
+  background: var(--ledger-signal-hover, #ffebe4);
   color: var(--acid-dark, #8f4939) !important;
 }
 
@@ -351,5 +359,7 @@
 }
 
 .consentActions button.grant {
-  border-color: var(--ledger-night, #16231d);
+  border-color: var(--brand-strong, #efb8a5);
+  background: var(--brand-soft, #fff7f3);
+  color: var(--acid-dark, #8f4939);
 }

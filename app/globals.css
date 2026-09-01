@@ -95,8 +95,8 @@ body.guardrails-workspace-mode .pageContent { padding: 0; max-width: none; }
 .button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; border: 1px solid transparent; border-radius: 5px; padding: 0 16px; font-size: 13px; font-weight: 680; }
 .button:disabled { cursor: wait; opacity: .58; }
 .buttonSmall { min-height: 36px; padding-inline: 13px; }
-.buttonDark { border-color: var(--ink); background: var(--ink); color: white; }
-.buttonDark:hover { background: #2a342f; }
+.buttonDark { border-color: var(--brand-strong); background: var(--brand-soft); color: var(--brand-ink); }
+.buttonDark:hover { border-color: var(--ledger-signal-strong); background: var(--ledger-signal-hover); color: var(--brand-ink); }
 .buttonLight { border-color: white; background: white; color: var(--ink); }
 .pageContent { min-height: calc(100vh - 68px); }
 
@@ -112,7 +112,7 @@ body.guardrails-workspace-mode .pageContent { padding: 0; max-width: none; }
 .heroSearch { width: min(960px, 100%); display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 8px; margin-top: 32px; border: 1px solid var(--ink); border-radius: 6px; background: var(--white); padding: 7px 7px 7px 16px; box-shadow: 0 18px 50px rgba(16, 23, 19, .09); }
 .heroSearch input { min-width: 0; height: 46px; border: 0; outline: 0; background: transparent; color: var(--ink); }
 .heroSearch input::placeholder { color: var(--faint); }
-.heroSearch button { display: inline-flex; align-items: center; gap: 8px; height: 46px; border: 1px solid var(--ink); border-radius: 4px; background: var(--ink); color: white; padding: 0 18px; font-weight: 670; }
+.heroSearch button { display: inline-flex; align-items: center; gap: 8px; height: 46px; border: 1px solid var(--brand-strong); border-radius: 4px; background: var(--brand-soft); color: var(--brand-ink); padding: 0 18px; font-weight: 670; }
 .heroLinks { display: flex; flex-wrap: wrap; gap: 22px; margin: 18px 0 50px; }
 .heroLinks a { border-bottom: 1px solid var(--line-dark); padding-bottom: 3px; color: var(--ink-2); font-size: 12px; font-weight: 650; }
 .heroProductWindow { width: 100%; border: 1px solid var(--ink); border-bottom: 0; border-radius: 7px 7px 0 0; background: var(--white); box-shadow: 0 20px 65px rgba(16, 23, 19, .13); }
@@ -227,7 +227,7 @@ body.guardrails-workspace-mode .pageContent { padding: 0; max-width: none; }
 .modeTabs { display: flex; gap: 0; margin: 22px 0 14px; border: 1px solid var(--ink); border-radius: 5px; overflow: hidden; width: fit-content; }
 .modeTabs button { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; border: 0; border-right: 1px solid var(--line); background: white; color: var(--ink-2); padding: 0 17px; font-size: 12px; font-weight: 650; }
 .modeTabs button:last-child { border-right: 0; }
-.modeTabs button.active { background: var(--ink); color: white; }
+.modeTabs button.active { border-color: var(--brand-strong); background: var(--brand-soft); color: var(--brand-ink); }
 .message { display: flex; align-items: center; gap: 9px; }
 
 /* Product-led public website */
@@ -245,7 +245,7 @@ body.guardrails-workspace-mode .pageContent { padding: 0; max-width: none; }
 .productSearch { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 9px; align-items: center; width: 100%; margin-top: 31px; border: 1px solid var(--ink); border-radius: 6px; background: white; padding: 7px 7px 7px 15px; box-shadow: 0 16px 40px rgba(16,23,19,.1); }
 .productSearch > svg { width: 19px; color: var(--muted); }
 .productSearch input { min-width: 0; height: 45px; border: 0; outline: 0; background: transparent; font-size: 14px; }
-.productSearch button { display: flex; align-items: center; gap: 8px; height: 45px; border: 0; border-radius: 4px; background: var(--ink); color: white; padding: 0 17px; font-size: 12px; font-weight: 680; }
+.productSearch button { display: flex; align-items: center; gap: 8px; height: 45px; border: 1px solid var(--brand-strong); border-radius: 4px; background: var(--brand-soft); color: var(--brand-ink); padding: 0 17px; font-size: 12px; font-weight: 680; }
 .productSearch button svg { width: 15px; }
 .productSearch.compact { margin: 0; box-shadow: none; }
 .heroSecondary { display: flex; gap: 22px; margin-top: 18px; }
@@ -1163,7 +1163,7 @@ body.guardrails-workspace-mode .pageContent { padding: 0; max-width: none; }
 .pageHero h1 { margin: 10px 0; font-size: 48px; }
 .eyebrow { color: var(--acid-dark); font-family: var(--mono); font-size: 12px; font-weight: 800; text-transform: uppercase; }
 .heroCopy { max-width: 760px; margin: 0; }
-.heroAction, .primaryAction, .secondaryAction { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; border: 1px solid var(--ink); border-radius: 5px; background: var(--ink); color: white; padding: 0 14px; font-weight: 680; }
+.heroAction, .primaryAction, .secondaryAction { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; border: 1px solid var(--brand-strong); border-radius: 5px; background: var(--brand-soft); color: var(--brand-ink); padding: 0 14px; font-weight: 680; }
 .secondaryAction { background: white; color: var(--ink); }
 
 .intelligenceScores { scroll-margin-top: 110px; padding: 64px 0; border-bottom: 1px solid var(--ink); }

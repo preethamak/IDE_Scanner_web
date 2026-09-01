@@ -7,10 +7,15 @@
   --ledger-white: #fff;
   --ledger-ink: #292421;
   --ledger-muted: #746d69;
+  --faint: #655c57;
   --ledger-line: #e7ded9;
+  --ledger-line-strong: #d5c9c3;
   --ledger-signal: #a85843;
-  --ledger-signal-soft: #fff0e9;
-  --ledger-signal-strong: #f3c2b0;
+  --ledger-signal-soft: #fff7f3;
+  --ledger-signal-hover: #ffebe4;
+  --ledger-signal-strong: #efb8a5;
+  --ledger-signal-ink: #8f4939;
+  --ledger-focus: #b96850;
   --ledger-amber: #96601f;
   --ledger-night: #3a2e2b;
 
@@ -21,8 +26,8 @@
   --muted: var(--ledger-muted);
   --line: var(--ledger-line);
   --wash: #fff7f3;
-  --acid: #ffdcd0;
-  --acid-dark: #8f4939;
+  --acid: #ffe9df;
+  --acid-dark: var(--ledger-signal-ink);
   --acid-pale: #fff6f2;
   --green: #a06b55;
   --green-2: #c0836d;
@@ -35,7 +40,7 @@
   --brand: var(--ledger-signal);
   --brand-soft: var(--ledger-signal-soft);
   --brand-strong: var(--ledger-signal-strong);
-  --brand-ink: #8f4939;
+  --brand-ink: var(--ledger-signal-ink);
   --brand-contrast: #fff;
   --text: var(--ledger-ink);
   --surface: var(--ledger-white);
@@ -316,15 +321,13 @@ h3 {
   }
 }
 
-/* Final interaction pass. These selectors cover legacy route classes as well
-   as the shared primitives, so every actionable control keeps a visible edge
-   against a white or paper surface. */
+/* Final interaction pass. Primary actions use a very light peach surface;
+   quiet and secondary actions stay white so hierarchy comes from placement
+   and wording instead of dark fills. */
 :where(
   .button,
   .buttonDark,
-  .buttonLight,
   .primaryAction,
-  .secondaryAction,
   .heroAction,
   .headerProductCta,
   .footerCta,
@@ -333,21 +336,33 @@ h3 {
   .extensionSearch button,
   .workflowQuestion a,
   .trustInfoAction > a,
-  .alertActions a,
-  .alertActions button,
-  .reportActions .button
+  .reportActions .button,
+  .modeTabs button.active,
+  .consentActions button.grant
 ) {
   border-color: var(--ledger-signal-strong) !important;
   background: var(--ledger-signal-soft) !important;
-  color: var(--ledger-signal) !important;
-  box-shadow: 0 5px 14px rgb(168 88 67 / 12%);
+  color: var(--ledger-signal-ink) !important;
+  box-shadow: 0 5px 14px rgb(168 88 67 / 10%);
+}
+:where(
+  .buttonLight,
+  .buttonQuiet,
+  .secondaryAction,
+  .alertActions a,
+  .alertActions button,
+  .consentActions button,
+  .feedbackClose
+) {
+  border-color: var(--ledger-line-strong, var(--ledger-line)) !important;
+  background: var(--ledger-white) !important;
+  color: var(--ledger-ink) !important;
+  box-shadow: none;
 }
 :where(
   .button,
   .buttonDark,
-  .buttonLight,
   .primaryAction,
-  .secondaryAction,
   .heroAction,
   .headerProductCta,
   .footerCta,
@@ -356,18 +371,32 @@ h3 {
   .extensionSearch button,
   .workflowQuestion a,
   .trustInfoAction > a,
-  .alertActions a,
-  .alertActions button,
-  .reportActions .button
+  .reportActions .button,
+  .modeTabs button.active,
+  .consentActions button.grant
 ):hover {
-  border-color: #f3c2b0 !important;
-  background: #ffe1d4 !important;
-  color: #8f4939 !important;
+  border-color: var(--ledger-signal-strong) !important;
+  background: var(--ledger-signal-hover) !important;
+  color: var(--ledger-signal-ink) !important;
+}
+:where(
+  .buttonLight,
+  .buttonQuiet,
+  .secondaryAction,
+  .alertActions a,
+  .alertActions button,
+  .consentActions button,
+  .feedbackClose
+):hover {
+  border-color: var(--ledger-signal-strong) !important;
+  background: var(--ledger-signal-soft) !important;
+  color: var(--ledger-ink) !important;
 }
 :where(
   .button,
   .buttonDark,
   .buttonLight,
+  .buttonQuiet,
   .primaryAction,
   .secondaryAction,
   .heroAction,
@@ -378,12 +407,65 @@ h3 {
   .extensionSearch button,
   .workflowQuestion a,
   .trustInfoAction > a,
+  .reportActions .button,
+  .modeTabs button,
   .alertActions a,
   .alertActions button,
-  .reportActions .button
+  .consentActions button,
+  .feedbackClose
 ):focus-visible {
-  outline: 3px solid rgb(168 88 67 / 32%) !important;
+  outline: 3px solid color-mix(in srgb, var(--ledger-focus) 42%, transparent) !important;
   outline-offset: 3px;
+}
+:where(
+  .button,
+  .buttonDark,
+  .buttonLight,
+  .buttonQuiet,
+  .primaryAction,
+  .secondaryAction,
+  .heroAction,
+  .headerProductCta,
+  .footerCta,
+  .headerAnalyze,
+  .productSearch button,
+  .extensionSearch button,
+  .workflowQuestion a,
+  .trustInfoAction > a,
+  .reportActions .button,
+  .modeTabs button,
+  .alertActions a,
+  .alertActions button,
+  .consentActions button,
+  .feedbackClose
+):active {
+  transform: translateY(1px);
+}
+:where(
+  .button,
+  .buttonDark,
+  .buttonLight,
+  .buttonQuiet,
+  .primaryAction,
+  .secondaryAction,
+  .heroAction,
+  .headerProductCta,
+  .footerCta,
+  .headerAnalyze,
+  .productSearch button,
+  .extensionSearch button,
+  .workflowQuestion a,
+  .trustInfoAction > a,
+  .reportActions .button,
+  .modeTabs button,
+  .alertActions a,
+  .alertActions button,
+  .consentActions button,
+  .feedbackClose
+):disabled {
+  opacity: .58;
+  cursor: not-allowed;
+  transform: none;
 }
 
 :where(input, select, textarea) {

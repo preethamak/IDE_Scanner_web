@@ -94,9 +94,9 @@
 }
 .heroActions a:first-child,
 .cta > a {
-  border-color: #a85843;
-  background: #a85843;
-  color: #fff;
+  border-color: var(--ledger-signal-strong);
+  background: var(--ledger-signal-soft);
+  color: var(--ledger-signal-ink);
 }
 .heroActions svg,
 .cta > a svg {
@@ -127,7 +127,7 @@
   gap: 2px;
 }
 .gateCard small {
-  color: #6d7984;
+  color: var(--ledger-muted);
   font-size: 12px;
 }
 .gateCard header strong {
@@ -145,7 +145,7 @@
 .gauge > span {
   display: block;
   margin-top: 7px;
-  color: #63717e;
+  color: var(--ledger-muted);
   font-size: 12px;
 }
 .gauge i {
@@ -175,7 +175,7 @@
   border-right: 0;
 }
 .gateCard dt {
-  color: #72808c;
+  color: var(--ledger-muted);
   font-size: 12px;
 }
 .gateCard dd {
@@ -224,7 +224,7 @@
 .metrics small {
   display: block;
   margin-top: 17px;
-  color: #687581;
+  color: var(--ledger-muted);
   font-size: 12px;
   line-height: 1.55;
 }
@@ -259,7 +259,7 @@
 }
 .interpretation p {
   margin: 0;
-  color: #5f6d79;
+  color: var(--ledger-muted);
   font-size: 15px;
   line-height: 1.75;
 }
@@ -288,7 +288,7 @@
 .gates article small {
   display: block;
   margin-top: 40px;
-  color: #6c7985;
+  color: var(--ledger-muted);
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -299,7 +299,7 @@
 }
 .gates article p {
   margin: 9px 0 0;
-  color: #65727e;
+  color: var(--ledger-muted);
   font-size: 13px;
   line-height: 1.65;
 }
@@ -318,7 +318,7 @@
 }
 .evidence header p {
   margin: 0;
-  color: #62707c;
+  color: var(--ledger-muted);
   font-size: 14px;
   line-height: 1.7;
 }
@@ -345,7 +345,7 @@
 .tableHead {
   min-height: 42px;
   background: #f2f5f8;
-  color: #65727e;
+  color: var(--ledger-muted);
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -378,7 +378,7 @@
   display: block;
   overflow: hidden;
   margin-top: 6px;
-  color: #65727e;
+  color: var(--ledger-muted);
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -394,7 +394,7 @@
 }
 .cell small,
 .stateCell small {
-  color: #6b7884;
+  color: var(--ledger-muted);
   font-size: 12px;
   text-transform: capitalize;
 }
@@ -416,7 +416,7 @@
   color: #b03b55;
 }
 .incomplete {
-  color: #7b6470;
+  color: var(--ledger-muted);
 }
 .refusals {
   display: grid;
@@ -427,7 +427,7 @@
   padding-top: 42px;
 }
 .refusals > div p {
-  color: #63717e;
+  color: var(--ledger-muted);
   font-size: 14px;
   line-height: 1.7;
 }
@@ -446,7 +446,7 @@
   border-bottom: 1px solid #d7dee5;
 }
 .refusals li i {
-  color: #87939e;
+  color: var(--ledger-muted);
   font: 700 12px var(--mono);
   font-style: normal;
 }
@@ -486,7 +486,7 @@
 .cta p {
   max-width: 680px;
   margin: 0;
-  color: #5f6d79;
+  color: var(--ledger-muted);
   font-size: 13px;
   line-height: 1.65;
 }
