@@ -127,6 +127,15 @@
   background: #fff !important;
   color: var(--ledger-ink) !important;
 }
+
+/* Keep report navigation links comfortably readable on white surfaces. */
+.backLink,
+.intelligenceNav a {
+  color: var(--ink-2, #4b4441) !important;
+}
+.intelligenceNav a:hover {
+  color: var(--ledger-ink) !important;
+}
 /* One eyebrow treatment site-wide. */
 .kicker,
 .eyebrow,

@@ -8,16 +8,32 @@ import type { ImportedReportBundle } from "@/lib/types";
 export default function ReportPosturePage({ params }: { params: Promise<{ id: string }> }) {
   const [report, setReport] = useState<ImportedReportBundle | null>(null);
   const [id, setId] = useState("");
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     void params.then(({ id }) => {
       setId(id);
       setReport(getImportedReport(id));
+      setReady(true);
     });
   }, [params]);
 
   const postureSummary = report?.posture.posture_summary as { status?: string; score?: number; counts?: Record<string, number>; clients?: string[]; top_findings?: Array<Record<string, unknown>> } | undefined;
   const posture = Array.isArray(report?.posture.posture) ? report?.posture.posture as Array<Record<string, unknown>> : [];
+
+  if (!ready) {
+    return (
+      <main className="shell" aria-busy="true">
+        <section className="pageHero compactHero">
+          <div>
+            <p className="eyebrow">Posture</p>
+            <h1>Opening report…</h1>
+            <p className="heroCopy">Reading the recorded IDE and client posture.</p>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="shell">

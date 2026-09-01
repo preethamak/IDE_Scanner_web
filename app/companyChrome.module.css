@@ -41,15 +41,21 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  border: 0;
+  border: 1px solid var(--brand-strong, #f3c2b0);
   border-radius: 7px;
   margin: 4px;
-  background: var(--brand, var(--ledger-night));
+  background: var(--brand-soft, #fff0e9);
   padding: 0 14px;
-  color: var(--brand-contrast, #fff);
+  color: var(--acid-dark, #8f4939) !important;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+}
+
+.newsletter button:hover {
+  border-color: var(--brand-strong, #f3c2b0);
+  background: #ffe1d4;
+  color: var(--acid-dark, #8f4939) !important;
 }
 
 .newsletter button:disabled {
@@ -90,22 +96,32 @@
   align-items: center;
   gap: 8px;
   min-height: 42px;
-  border: 1px solid var(--ink, #3a2e2b);
+  border: 1px solid var(--brand-strong, #f3c2b0);
   border-radius: 999px;
-  background: var(--ink, #3a2e2b);
+  background: var(--brand-soft, #fff0e9);
   padding: 0 15px;
-  color: #fff;
+  color: var(--acid-dark, #8f4939) !important;
   font-size: 12px;
   font-weight: 700;
   box-shadow: 0 8px 24px rgb(16 23 19 / 16%);
 }
 
 .feedbackLauncher:hover {
-  background: #2a342f;
+  border-color: var(--brand-strong, #f3c2b0);
+  background: #ffe1d4;
+  color: var(--acid-dark, #8f4939) !important;
 }
 
 .feedbackLauncher svg {
   width: 16px;
+}
+
+@media (max-width: 640px) {
+  /* Keep the launcher above the full-width consent bar on small screens. */
+  .feedbackLauncher {
+    right: 16px;
+    bottom: 168px;
+  }
 }
 
 .feedbackOverlay {

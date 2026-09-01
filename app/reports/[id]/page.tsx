@@ -13,6 +13,7 @@ export default function ReportDashboardPage({ params }: { params: Promise<{ id: 
   const router = useRouter();
   const [report, setReport] = useState<ImportedReportBundle | null>(null);
   const [reportId, setReportId] = useState("");
+  const [ready, setReady] = useState(false);
   const [decision, setDecision] = useState("");
   const [severity, setSeverity] = useState("");
   const [query, setQuery] = useState("");
@@ -21,6 +22,7 @@ export default function ReportDashboardPage({ params }: { params: Promise<{ id: 
     void params.then(({ id }) => {
       setReportId(id);
       const imported = getImportedReport(id); setReport(imported);
+      setReady(true);
       if (imported?.leaderboard.extensions.length === 1) router.replace(`/reports/${encodeURIComponent(id)}/extensions/${encodeURIComponent(imported.leaderboard.extensions[0].extension_id)}`);
     });
   }, [params, router]);
@@ -42,6 +44,20 @@ export default function ReportDashboardPage({ params }: { params: Promise<{ id: 
         a.extension_id.localeCompare(b.extension_id)
       ));
   }, [report, decision, severity, query]);
+
+  if (!ready) {
+    return (
+      <main className="shell" aria-busy="true">
+        <section className="pageHero compactHero">
+          <div>
+            <p className="eyebrow">Report</p>
+            <h1>Opening report…</h1>
+            <p className="heroCopy">Reading the local bundle and its recorded evidence.</p>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   if (!report) {
     return (

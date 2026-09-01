@@ -34,6 +34,7 @@ export default function ReportExtensionPage({
     id: string;
     extensionId: string;
   } | null>(null);
+  const [ready, setReady] = useState(false);
   useEffect(() => {
     void params.then((value) => {
       const next = {
@@ -42,6 +43,7 @@ export default function ReportExtensionPage({
       };
       setRoute(next);
       setReport(getImportedReport(value.id));
+      setReady(true);
     });
   }, [params]);
   const detail = useMemo(() => {
@@ -55,6 +57,18 @@ export default function ReportExtensionPage({
           (x) => x.extension_id === route.extensionId,
         ) || null;
   }, [report, route]);
+  if (!ready)
+    return (
+      <main className="shell" aria-busy="true">
+        <section className="pageHero compactHero">
+          <div>
+            <p className="eyebrow">Report</p>
+            <h1>Opening report…</h1>
+            <p className="heroCopy">Reading the exact artifact evidence.</p>
+          </div>
+        </section>
+      </main>
+    );
   if (!report || !route || !detail)
     return (
       <main className="shell">
