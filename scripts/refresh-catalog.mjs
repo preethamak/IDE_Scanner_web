@@ -1,6 +1,8 @@
 import { createPostgresClient } from "../lib/postgresDb.ts";
 
 const gallery = "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery?api-version=7.2-preview.1";
+const MARKETPLACE_RETRIES = 4;
+const RETRYABLE_MARKETPLACE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
 function databaseConnectionString() {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
   const password = String(process.env.SUPABASE_PASSWORD || "").trim();
@@ -28,9 +30,24 @@ process.on("uncaughtException", async (error) => {
 });
 
 async function queryGallery(body) {
-  const response = await fetch(gallery, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json;api-version=7.2-preview.1" }, body: JSON.stringify(body) });
-  if (!response.ok) throw new Error(`Marketplace returned ${response.status}`);
-  return response.json();
+  let lastError;
+  for (let attempt = 0; attempt < MARKETPLACE_RETRIES; attempt += 1) {
+    try {
+      const response = await fetch(gallery, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json;api-version=7.2-preview.1", "User-Agent": "ide-scanner-catalog-refresh" }, body: JSON.stringify(body) });
+      if (!response.ok) {
+        const error = new Error(`Marketplace returned ${response.status}`);
+        if (!RETRYABLE_MARKETPLACE_STATUSES.has(response.status) || attempt === MARKETPLACE_RETRIES - 1) throw error;
+        lastError = error;
+      } else {
+        return response.json();
+      }
+    } catch (error) {
+      lastError = error;
+      if (attempt === MARKETPLACE_RETRIES - 1) throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
+  }
+  throw lastError || new Error("Marketplace request failed.");
 }
 
 async function marketplacePage(page) {
