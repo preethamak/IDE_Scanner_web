@@ -224,12 +224,14 @@ class PostgresQuery implements PromiseLike<QueryResponse> {
   private cardinality: "many" | "single" | "maybeSingle" = "many";
   private options: QueryOptions = {};
   private conflictColumns: string[] = [];
+  private selectionRequested = false;
 
   constructor(private readonly connectionString: string, private readonly tableName: string) {
     if (!TABLE_NAME.test(tableName)) throw new Error(`Unsafe database table: ${tableName}`);
   }
 
   select(columns = "*", options?: QueryOptions): this {
+    this.selectionRequested = true;
     this.selection = parseSelection(columns);
     this.options = options || {};
     return this;
@@ -358,7 +360,7 @@ class PostgresQuery implements PromiseLike<QueryResponse> {
     } else {
       sql = `DELETE FROM ${table(this.tableName)}${where}`;
     }
-    if (this.selection.fields.length || this.selection.wildcard || this.selection.relations.length) sql += ` RETURNING ${selectSql(this.selection)}`;
+    if (this.selectionRequested) sql += ` RETURNING ${selectSql(this.selection)}`;
     const result = await client.query(sql, params);
     const rows = result.rows as Record<string, unknown>[];
     if (this.options.count) return { data: this.cardinality === "many" ? rows : rows[0] || null, count: result.rowCount || 0, error: null };

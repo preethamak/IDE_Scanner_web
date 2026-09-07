@@ -14,7 +14,7 @@ function databaseConnectionString() {
 const db = createPostgresClient(databaseConnectionString());
 const scanLimit = Number(process.env.SCAN_BATCH_LIMIT || 100);
 const refreshStartedAt = new Date().toISOString();
-const scannerBuild = await currentScannerBuild();
+const scannerBuild = process.env.SCANNER_BUILD_SHA || await currentScannerBuild();
 const chunks = (items, size = 60) => Array.from({ length: Math.ceil(items.length / size) }, (_, index) => items.slice(index * size, (index + 1) * size));
 let terminating = false;
 process.on("uncaughtException", async (error) => {
