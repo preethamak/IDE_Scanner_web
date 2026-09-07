@@ -29,4 +29,4 @@ jobs:
             --request POST \
             --header "Authorization: Bearer ${NOTIFICATION_CRON_SECRET}" \
             --header "X-Workflow-Run-Url: ${run_url}" \
-            https://ide-scanner.vercel.app/api/cron/notifications
+            https://abscissa.dev/api/cron/notifications

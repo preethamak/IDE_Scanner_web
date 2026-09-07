@@ -32,7 +32,7 @@ export function classifyReleaseHealth(status, body) {
 }
 
 async function main() {
-  const baseUrl = process.env.LAUNCH_HEALTH_URL || "https://ide-scanner.vercel.app";
+  const baseUrl = process.env.LAUNCH_HEALTH_URL || "https://abscissa.dev";
   const secret = process.env.LAUNCH_HEALTH_SECRET;
   if (!secret) throw new Error("LAUNCH_HEALTH_SECRET is required.");
 
