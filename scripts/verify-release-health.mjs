@@ -1,6 +1,10 @@
 import { fileURLToPath } from "node:url";
 
 const RUNNER_DELAY_REASON = "Deep Scan runner is runner_delayed.";
+const STALE_PUBLICATION_REASONS = new Set([
+  "Active release is missing published reports.",
+  "Public scan corpus is older than 30 hours.",
+]);
 
 /**
  * Classify the protected release-health response for the catalog workflow.
@@ -22,6 +26,28 @@ export function classifyReleaseHealth(status, body) {
     return {
       outcome: "warn",
       message: `${RUNNER_DELAY_REASON} Catalog refresh completed; queued scans remain accepted.`,
+    };
+  }
+
+  // Catalog refresh and scan publication are separate pipelines. An older
+  // immutable release can remain stale after later scans supersede members,
+  // while the database, runner, and current scan pipeline are healthy. Keep
+  // that condition visible as a warning without marking catalog refresh as a
+  // failed deployment.
+  if (
+    status === 503 &&
+    body?.healthy === false &&
+    body?.runner_status === "ready" &&
+    body?.scan_failure_rate === 0 &&
+    body?.notification_failure_rate === 0 &&
+    Number(body?.current_report_count || 0) > 0 &&
+    Array.isArray(body.reasons) &&
+    body.reasons.length > 0 &&
+    body.reasons.every((reason) => STALE_PUBLICATION_REASONS.has(reason))
+  ) {
+    return {
+      outcome: "warn",
+      message: "Catalog refresh completed; the older publication manifest needs a future scan-corpus refresh.",
     };
   }
 

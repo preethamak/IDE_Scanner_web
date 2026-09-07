@@ -23,4 +23,20 @@ describe("classifyReleaseHealth", () => {
       }),
     ).toMatchObject({ outcome: "fail" });
   });
+
+  it("warns when the runner and pipelines are healthy but an older publication manifest is stale", () => {
+    expect(
+      classifyReleaseHealth(503, {
+        healthy: false,
+        current_report_count: 23,
+        runner_status: "ready",
+        scan_failure_rate: 0,
+        notification_failure_rate: 0,
+        reasons: [
+          "Active release is missing published reports.",
+          "Public scan corpus is older than 30 hours.",
+        ],
+      }),
+    ).toMatchObject({ outcome: "warn" });
+  });
 });
