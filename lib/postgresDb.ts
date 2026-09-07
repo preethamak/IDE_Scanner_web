@@ -1,4 +1,4 @@
-import { Client } from "pg";
+import { Client, Pool } from "pg";
 
 type QueryMode = "select" | "insert" | "upsert" | "update" | "delete";
 type Filter = { column: string; operator: string; value: unknown };
@@ -17,6 +17,18 @@ type QueryOptions = {
   count?: "exact" | "planned" | "estimated";
   head?: boolean;
 };
+
+type QueryRunner = { query: Client["query"] };
+
+const pools = new Map<string, Pool>();
+
+function poolFor(connectionString: string): Pool {
+  const existing = pools.get(connectionString);
+  if (existing) return existing;
+  const pool = new Pool({ connectionString, max: 4, idleTimeoutMillis: 10_000 });
+  pools.set(connectionString, pool);
+  return pool;
+}
 
 const TABLE_NAME = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
@@ -170,7 +182,7 @@ function matchesInner(row: Record<string, unknown>, relation: RelationSelection,
   return Boolean(relationRows);
 }
 
-async function loadRelation(client: Client, parent: string, parents: Record<string, unknown>[], relation: RelationSelection, filters: Filter[]): Promise<Map<string, unknown>> {
+async function loadRelation(client: QueryRunner, parent: string, parents: Record<string, unknown>[], relation: RelationSelection, filters: Filter[]): Promise<Map<string, unknown>> {
   const mapping = relationFor(parent, relation.table);
   const output = new Map<string, unknown>();
   if (!mapping) return output;
@@ -296,19 +308,16 @@ class PostgresQuery implements PromiseLike<QueryResponse> {
   }
 
   private async execute(): Promise<QueryResponse> {
-    const client = new Client({ connectionString: this.connectionString });
+    const client = poolFor(this.connectionString);
     try {
-      await client.connect();
       if (this.mode === "select") return await this.executeSelect(client);
       return await this.executeMutation(client);
     } catch (error) {
       return { data: null, error: normalizeError(error) };
-    } finally {
-      await client.end().catch(() => undefined);
     }
   }
 
-  private async executeSelect(client: Client): Promise<QueryResponse> {
+  private async executeSelect(client: QueryRunner): Promise<QueryResponse> {
     const params: unknown[] = [];
     const where = this.baseWhere(params);
     const order = this.orders.filter((item) => !item.referencedTable).map((item) => `${quoteIdentifier(item.column)} ${item.ascending ? "ASC" : "DESC"}${item.nullsFirst === undefined ? "" : item.nullsFirst ? " NULLS FIRST" : " NULLS LAST"}`).join(", ");
@@ -337,7 +346,7 @@ class PostgresQuery implements PromiseLike<QueryResponse> {
     return this.finishCardinality(rows, null);
   }
 
-  private async executeMutation(client: Client): Promise<QueryResponse> {
+  private async executeMutation(client: QueryRunner): Promise<QueryResponse> {
     const params: unknown[] = [];
     const where = this.baseWhere(params);
     let sql = "";
@@ -401,9 +410,8 @@ class RpcQuery implements PromiseLike<QueryResponse> {
     return this.execute().then(onfulfilled || undefined, onrejected || undefined);
   }
   private async execute(): Promise<QueryResponse> {
-    const client = new Client({ connectionString: this.connectionString });
+    const client = poolFor(this.connectionString);
     try {
-      await client.connect();
       const keys = Object.keys(this.args);
       const params = keys.map((key) => this.args[key]);
       const named = keys.map((key, index) => `${quoteIdentifier(key)} => $${index + 1}`).join(", ");
@@ -421,8 +429,6 @@ class RpcQuery implements PromiseLike<QueryResponse> {
       return { data: rows, error: null };
     } catch (error) {
       return { data: null, error: normalizeError(error) };
-    } finally {
-      await client.end().catch(() => undefined);
     }
   }
 }
