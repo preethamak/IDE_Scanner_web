@@ -6,7 +6,7 @@
   grid-template-columns: minmax(0, 1.08fr) minmax(390px, 0.72fr) !important;
   gap: clamp(45px, 7vw, 100px) !important;
   align-items: center !important;
-  padding: 76px 0 105px !important;
+  padding: 76px 0 180px !important;
 }
 .accountModern:before,
 .accountModern:after {
@@ -299,6 +299,7 @@
 @media (max-width: 560px) {
   .accountModern {
     width: calc(100% - 24px) !important;
+    padding-bottom: 240px !important;
   }
   .accountModern .authValue,
   .accountModern .oauthPanel {

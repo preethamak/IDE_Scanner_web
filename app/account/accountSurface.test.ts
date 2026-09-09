@@ -31,4 +31,9 @@ describe("GuardRails account surface", () => {
   it("keeps all new visible text at twelve pixels or larger", () => {
     expect(css).not.toMatch(/font-size:\s*(?:[0-9]|10|11)px/);
   });
+
+  it("reserves room for the fixed consent banner so auth controls stay reachable", () => {
+    expect(css).toContain("padding: 76px 0 180px !important;");
+    expect(css).toContain("padding-bottom: 240px !important;");
+  });
 });
