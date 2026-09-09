@@ -7,9 +7,9 @@
   border: 1px solid #e4d9dd;
   border-radius: 13px;
   padding: 10px 12px;
-  background: linear-gradient(115deg, #fff8fa, #fff 62%, #f7faea);
+  background: linear-gradient(115deg, #f7f9fc, #fff 62%, #f7faea);
 }
-.immutableBar{border-color:#e3e3ed;background:linear-gradient(115deg,#f4f0ff,#fff 62%,#edfbf7)}.lock{background:#e9e2ff;color:#a85843}.immutableBar>div:nth-child(2)>span{color:#a85843}.actions a{border-color:#292b3c;background:#292b3c;border-radius:11px}
+.immutableBar{border-color:#e3e3ed;background:linear-gradient(115deg,#f4f0ff,#fff 62%,#edfbf7)}.lock{background:#e9e2ff;color:#2277a9}.immutableBar>div:nth-child(2)>span{color:#2277a9}.actions a{border-color:#292b3c;background:#292b3c;border-radius:11px}
 .lock {
   display: grid;
   width: 32px;
@@ -85,13 +85,13 @@
   border-radius: 20px;
   padding: 0 12px;
   background: #fff;
-  color: #493b37;
+  color: #2c4357;
   font: 800 12px var(--sans);
   white-space: nowrap;
 }
 .actions a {
-  border-color: #a85843;
-  background: #a85843;
+  border-color: #2277a9;
+  background: #2277a9;
   color: #fff;
   text-decoration: none;
 }
@@ -100,7 +100,7 @@
 }
 .actions button:focus-visible,
 .actions a:focus-visible {
-  outline: 3px solid #a858433d;
+  outline: 3px solid #2277a93d;
   outline-offset: 2px;
 }
 @media (max-width: 1050px) {

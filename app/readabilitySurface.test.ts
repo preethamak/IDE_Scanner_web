@@ -15,8 +15,8 @@ describe("cross-site readability contract", () => {
   });
 
   it("keeps legacy accents logo-derived and the workspace navigation light", () => {
-    expect(designSystem).toContain("--green: #a85843");
-    expect(designSystem).toContain("--acid: #ffdcd0");
+    expect(designSystem).toContain("--green: #2277a9");
+    expect(designSystem).toContain("--acid: #d9efff");
     expect(workspace).toContain("--nav:#ffffff");
     expect(workspace).toContain("border-right:1px solid var(--line);background:var(--nav)");
     expect(workspace).not.toContain("--nav:#17191f");

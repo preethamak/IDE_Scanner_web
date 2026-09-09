@@ -41,21 +41,21 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  border: 1px solid var(--brand-strong, #f3c2b0);
+  border: 1px solid var(--brand-strong, #95c5df);
   border-radius: 7px;
   margin: 4px;
-  background: var(--brand-soft, #fff7f3);
+  background: var(--brand-soft, #eaf5fb);
   padding: 0 14px;
-  color: var(--acid-dark, #8f4939) !important;
+  color: var(--acid-dark, #155b83) !important;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
 }
 
 .newsletter button:hover {
-  border-color: var(--brand-strong, #f3c2b0);
-  background: var(--ledger-signal-hover, #ffebe4);
-  color: var(--acid-dark, #8f4939) !important;
+  border-color: var(--brand-strong, #95c5df);
+  background: var(--ledger-signal-hover, #dbeefa);
+  color: var(--acid-dark, #155b83) !important;
 }
 
 .newsletter button:disabled {
@@ -67,7 +67,7 @@
 .feedbackLauncher:focus-visible,
 .feedbackClose:focus-visible,
 .consentActions button:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--ledger-focus, #b96850) 42%, transparent);
+  outline: 3px solid color-mix(in srgb, var(--ledger-focus, #2277a9) 42%, transparent);
   outline-offset: 3px;
 }
 
@@ -92,7 +92,7 @@
 
 .newsletterDone svg {
   flex: none;
-  color: var(--brand, #c0836d);
+  color: var(--brand, #52b9a3);
 }
 
 .feedbackLauncher {
@@ -104,20 +104,20 @@
   align-items: center;
   gap: 8px;
   min-height: 42px;
-  border: 1px solid var(--brand-strong, #f3c2b0);
+  border: 1px solid var(--brand-strong, #95c5df);
   border-radius: 999px;
-  background: var(--brand-soft, #fff7f3);
+  background: var(--brand-soft, #eaf5fb);
   padding: 0 15px;
-  color: var(--acid-dark, #8f4939) !important;
+  color: var(--acid-dark, #155b83) !important;
   font-size: 12px;
   font-weight: 700;
   box-shadow: 0 8px 24px rgb(16 23 19 / 16%);
 }
 
 .feedbackLauncher:hover {
-  border-color: var(--brand-strong, #f3c2b0);
-  background: var(--ledger-signal-hover, #ffebe4);
-  color: var(--acid-dark, #8f4939) !important;
+  border-color: var(--brand-strong, #95c5df);
+  background: var(--ledger-signal-hover, #dbeefa);
+  color: var(--acid-dark, #155b83) !important;
 }
 
 .feedbackLauncher svg {
@@ -147,7 +147,7 @@
   width: min(540px, 100%);
   max-height: min(760px, calc(100vh - 48px));
   overflow: auto;
-  border: 1px solid var(--ink, #3a2e2b);
+  border: 1px solid var(--ink, #182433);
   border-radius: 8px;
   background: var(--paper, #f4f5f0);
   box-shadow: 0 28px 80px rgb(16 23 19 / 28%);
@@ -164,7 +164,7 @@
 }
 
 .feedbackEyebrow {
-  color: var(--acid-dark, #8f4939);
+  color: var(--acid-dark, #155b83);
   font: 800 11px var(--mono, monospace);
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -186,11 +186,11 @@
   border: 1px solid var(--line, #d7dcd5);
   border-radius: 5px;
   background: #fff;
-  color: var(--ink, #3a2e2b);
+  color: var(--ink, #182433);
 }
 
 .feedbackClose:hover {
-  border-color: var(--ink, #3a2e2b);
+  border-color: var(--ink, #182433);
 }
 
 .feedbackClose svg {
@@ -236,7 +236,7 @@
   outline: 0;
   background: #fff;
   padding: 11px 12px;
-  color: var(--ink, #3a2e2b);
+  color: var(--ink, #182433);
   font-size: 13px;
 }
 
@@ -254,7 +254,7 @@
 .feedbackForm input:focus,
 .feedbackForm select:focus,
 .feedbackForm textarea:focus {
-  border-color: var(--ink, #3a2e2b);
+  border-color: var(--ink, #182433);
 }
 
 .feedbackMeta {
@@ -291,7 +291,7 @@
 
 .feedbackSuccess > svg {
   width: 28px;
-  color: var(--green, #a85843);
+  color: var(--green, #2277a9);
 }
 
 .feedbackSuccess h3 {
@@ -360,6 +360,6 @@
 
 .consentActions button.grant {
   border-color: var(--brand-strong, #efb8a5);
-  background: var(--brand-soft, #fff7f3);
-  color: var(--acid-dark, #8f4939);
+  background: var(--brand-soft, #eaf5fb);
+  color: var(--acid-dark, #155b83);
 }

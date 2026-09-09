@@ -1,39 +1,38 @@
-/* GuardRails light product system. This file is intentionally the final global
-   layer: older route styles can keep their structure while sharing one calm,
-   light visual language. A warm peach signal replaces the previous green and
-   blue accents so links, statuses, and calls to action do not compete. */
+/* GuardRails light product system. Older route styles can keep their structure
+   while sharing one calm, light visual language: cool surfaces, slate text,
+   and a restrained blue/teal signal. */
 :root {
-  --ledger-paper: #fffaf7;
+  --ledger-paper: #f7f9fc;
   --ledger-white: #fff;
-  --ledger-ink: #292421;
-  --ledger-muted: #746d69;
+  --ledger-ink: #182433;
+  --ledger-muted: #5b6878;
   --faint: #655c57;
-  --ledger-line: #e7ded9;
-  --ledger-line-strong: #d5c9c3;
-  --ledger-signal: #a85843;
-  --ledger-signal-soft: #fff7f3;
-  --ledger-signal-hover: #ffebe4;
-  --ledger-signal-strong: #efb8a5;
-  --ledger-signal-ink: #8f4939;
-  --ledger-focus: #b96850;
-  --ledger-amber: #96601f;
-  --ledger-night: #3a2e2b;
+  --ledger-line: #dfe6ee;
+  --ledger-line-strong: #b8c7d5;
+  --ledger-signal: #2277a9;
+  --ledger-signal-soft: #eaf5fb;
+  --ledger-signal-hover: #dbeefa;
+  --ledger-signal-strong: #95c5df;
+  --ledger-signal-ink: #155b83;
+  --ledger-focus: #2277a9;
+  --ledger-amber: #986300;
+  --ledger-night: #182433;
 
   --paper: var(--ledger-paper);
   --white: var(--ledger-white);
   --ink: var(--ledger-ink);
-  --ink-2: #4b4441;
+  --ink-2: #334255;
   --muted: var(--ledger-muted);
   --line: var(--ledger-line);
-  --wash: #fff7f3;
-  --acid: #ffe9df;
+  --wash: #eaf5fb;
+  --acid: #d9efff;
   --acid-dark: var(--ledger-signal-ink);
-  --acid-pale: #fff6f2;
-  --green: #a06b55;
-  --green-2: #c0836d;
-  --allow: #8d6b4f;
-  --allow-bg: #fff3e7;
-  --allow-line: #e5c9a9;
+  --acid-pale: #f2f9fd;
+  --green: #168b76;
+  --green-2: #52b9a3;
+  --allow: #177d69;
+  --allow-bg: #e8f8f3;
+  --allow-line: #9bd8c9;
   --brand-blue: var(--ledger-signal);
   --brand-blue-soft: var(--ledger-signal-soft);
   --blue: var(--ledger-signal);
@@ -44,17 +43,17 @@
   --brand-contrast: #fff;
   --text: var(--ledger-ink);
   --surface: var(--ledger-white);
-  --surface-2: #fff8f5;
-  --surface-3: #f7eeea;
-  --line-strong: #d5c9c3;
+  --surface-2: #f1f5f9;
+  --surface-3: #e8f0f6;
+  --line-strong: #b8c7d5;
   --night: var(--ledger-night);
   --neutral-950: var(--ledger-night);
-  --neutral-900: #493b37;
+  --neutral-900: #2c4357;
   --neutral-800: #5a4b46;
   --neutral-600: #796f6a;
   --neutral-400: #a49a95;
   --neutral-200: #e5dcd7;
-  --neutral-100: #fff6f2;
+  --neutral-100: #f2f9fd;
 }
 
 /* A closed absolute menu must leave the layout entirely. Visibility and
@@ -123,8 +122,8 @@
 .extensionSearch button:hover,
 .headerAnalyze:hover,
 .referenceHero .heroAction:hover {
-  border-color: #f3c2b0 !important;
-  background: #ffe1d4 !important;
+  border-color: #95c5df !important;
+  background: #dbeefa !important;
 }
 .buttonQuiet,
 .buttonLight {
@@ -200,10 +199,10 @@ h3 {
   border: 1px solid var(--ledger-signal-strong) !important;
   background: var(--ledger-signal-soft) !important;
   color: var(--ledger-signal) !important;
-  box-shadow: 0 5px 14px rgb(168 88 67 / 12%) !important;
+  box-shadow: 0 5px 14px rgb(34 119 169 / 12%) !important;
 }
 .headerProductCta:hover {
-  background: #ffe1d4 !important;
+  background: #dbeefa !important;
 }
 .navPopover,
 .headerAccountMenu {
@@ -284,8 +283,8 @@ h3 {
 .buttonDark:hover,
 .primaryAction:hover,
 .heroAction:hover {
-  border-color: #f3c2b0;
-  background: #ffe1d4;
+  border-color: #95c5df;
+  background: #dbeefa;
 }
 .secondaryAction,
 .buttonLight {
@@ -321,7 +320,7 @@ h3 {
   }
 }
 
-/* Final interaction pass. Primary actions use a very light peach surface;
+/* Final interaction pass. Primary actions use a very light blue surface;
    quiet and secondary actions stay white so hierarchy comes from placement
    and wording instead of dark fills. */
 :where(
@@ -343,7 +342,7 @@ h3 {
   border-color: var(--ledger-signal-strong) !important;
   background: var(--ledger-signal-soft) !important;
   color: var(--ledger-signal-ink) !important;
-  box-shadow: 0 5px 14px rgb(168 88 67 / 10%);
+  box-shadow: 0 5px 14px rgb(34 119 169 / 10%);
 }
 :where(
   .buttonLight,
@@ -472,13 +471,12 @@ h3 {
   border-color: var(--line-strong) !important;
 }
 :where(input, select, textarea):focus-visible {
-  outline: 3px solid rgb(168 88 67 / 24%) !important;
+  outline: 3px solid rgb(34 119 169 / 24%) !important;
   outline-offset: 1px;
 }
 
 /* Green was previously used for both approval semantics and brand decoration.
-   Approval remains positive, but uses a warm sand signal while the brand uses
-   pale peach. */
+   Approval remains positive, while the brand uses pale blue. */
 :where(
   .decision.allow,
   .inventoryDecision.allow,

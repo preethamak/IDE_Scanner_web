@@ -29,7 +29,7 @@
   left: -200px;
   width: 560px;
   height: 560px;
-  background: radial-gradient(circle, #fff6f2, transparent 70%);
+  background: radial-gradient(circle, #f2f9fd, transparent 70%);
 }
 .hero {
   display: grid;
@@ -136,8 +136,8 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #c0836d;
-  box-shadow: 0 0 0 4px #c0836d22;
+  background: #52b9a3;
+  box-shadow: 0 0 0 4px #52b9a322;
 }
 .feed {
   margin-top: 90px;
@@ -212,7 +212,7 @@
   color: inherit;
 }
 .identity a:hover {
-  color: #a85843;
+  color: #2277a9;
 }
 .identity a svg {
   width: 14px;
@@ -255,9 +255,9 @@
   justify-content: space-between;
   gap: 30px;
   margin-top: 90px;
-  border: 1px solid #3a2e2b;
+  border: 1px solid #182433;
   border-radius: 21px;
-  background: #3a2e2b;
+  background: #182433;
   padding: 38px 42px;
   color: #fff;
 }
@@ -284,11 +284,11 @@
   gap: 8px;
   flex-shrink: 0;
   min-height: 48px;
-  border: 1px solid #fff3e7;
+  border: 1px solid #e8f8f3;
   border-radius: 10px;
-  background: #fff3e7;
+  background: #e8f8f3;
   padding: 0 20px;
-  color: #3a2e2b;
+  color: #182433;
   font-size: 13.5px;
   font-weight: 800;
   text-decoration: none;

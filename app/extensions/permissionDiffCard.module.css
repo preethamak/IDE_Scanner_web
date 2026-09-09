@@ -22,7 +22,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #a85843;
+  color: #2277a9;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -77,8 +77,8 @@
   background: #fff;
 }
 .changeGrid article.changed {
-  box-shadow: inset 3px 0 #a85843;
-  background: #fffaf7;
+  box-shadow: inset 3px 0 #2277a9;
+  background: #f7f9fc;
 }
 .changeGrid span {
   color: #66727d;
@@ -92,7 +92,7 @@
 }
 .changeGrid strong svg {
   width: 16px;
-  color: #8d6b4f;
+  color: #177d69;
 }
 .changeGrid p {
   margin: 0;

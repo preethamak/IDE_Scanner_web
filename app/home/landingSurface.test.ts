@@ -63,6 +63,15 @@ describe("GuardRails landing surface", () => {
     expect(proof).not.toContain('value: "4×"');
   });
 
+  it("explains the Sarvam relationship without overstating the product claim", () => {
+    expect(landing()).toContain("SarvamProgramNote");
+    const note = read("../SarvamProgramNote.tsx");
+    expect(note).toContain("accepted into Sarvam AI&apos;s Startup Program");
+    expect(note).toContain("exact artifacts, published evidence, and version-specific analysis");
+    expect(note).toContain('https://indus.sarvam.ai');
+    expect(note).toContain('https://docs.sarvam.ai');
+  });
+
   it("leads visitors to public working surfaces rather than making workspace the primary CTA", () => {
     expect(landing()).toContain('href="/registry"');
     expect(landing()).not.toContain('href="/workspace"');

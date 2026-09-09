@@ -30,7 +30,7 @@ describe("pricing and solution surfaces", () => {
     // cascade cannot fork it back into a second hue.
     expect(css).toContain("var(--ledger-signal)");
     expect(trust).toContain("var(--ledger-signal)");
-    // Retired palettes: dominant blue, plum, and the violet/peach pass.
+    // Retired palettes: dominant blue, plum, and the earlier violet accent pass.
     for (const hex of ["#2f6fdd", "#9a496d", "#7658d8", "#f17e69", "#e4d8ff"]) {
       expect(css.toLowerCase()).not.toContain(hex);
       expect(trust.toLowerCase()).not.toContain(hex);

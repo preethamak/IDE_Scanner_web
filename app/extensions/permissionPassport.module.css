@@ -4,7 +4,7 @@
   border: 1px solid #d7dee5;
   border-radius: 20px;
   background: #fff;
-  box-shadow: 0 24px 70px #493b3712;
+  box-shadow: 0 24px 70px #2c435712;
 }
 .passport > header {
   display: flex;
@@ -13,14 +13,14 @@
   gap: 30px;
   padding: 28px;
   background:
-    radial-gradient(circle at 8% 0, #f7ebe6 0, transparent 40%),
+    radial-gradient(circle at 8% 0, #eaf5fb 0, transparent 40%),
     linear-gradient(120deg, #f5f8ff, #fff 68%);
 }
 .passport header > div:first-child {
   max-width: 690px;
 }
 .passport header span {
-  color: #a85843;
+  color: #2277a9;
   font: 800 12px var(--mono);
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -53,7 +53,7 @@
   font-size: 12px;
 }
 .freshness.current {
-  border-color: #c0836d;
+  border-color: #52b9a3;
   background: #f6ffe9;
 }
 .freshness.newer_release {
@@ -105,7 +105,7 @@
 }
 .categories article > svg {
   width: 21px;
-  color: #a85843;
+  color: #2277a9;
 }
 .categories article > div {
   display: grid;
@@ -140,11 +140,11 @@
   width: 12px;
 }
 .categories article[data-state="observed"] {
-  box-shadow: inset 3px 0 #a85843;
+  box-shadow: inset 3px 0 #2277a9;
 }
 .categories article[data-state="observed"] em {
-  background: var(--ledger-signal-soft, #fff7f3);
-  color: var(--ledger-signal-ink, #8f4939);
+  background: var(--ledger-signal-soft, #eaf5fb);
+  color: var(--ledger-signal-ink, #155b83);
 }
 .passport > footer {
   display: flex;

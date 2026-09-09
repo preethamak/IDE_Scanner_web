@@ -41,6 +41,13 @@ describe("company site surface", () => {
     expect(contact).toContain("/design-partners");
   });
 
+  it("describes the Sarvam Startup Program relationship accurately", () => {
+    const about = read("./about/page.tsx");
+    expect(about).toContain("Supported through Sarvam AI&apos;s Startup Program");
+    expect(about).toContain("exploring Sarvam APIs");
+    expect(about).toContain("version-specific and inspectable");
+  });
+
   it("describes integrations that exist in the product", () => {
     const integrations = read("./integrations/page.tsx");
     for (const feature of ["Slack", "Jira", "Weekly digest", "audit export", "GuardRails CLI"])
