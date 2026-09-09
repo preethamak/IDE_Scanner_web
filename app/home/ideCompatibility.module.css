@@ -16,7 +16,7 @@
 
 .eyebrow {
   margin: 0;
-  color: var(--ledger-signal, #2277a9);
+  color: var(--ledger-signal, #2f7f76);
   font: 800 10px var(--font-mono);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -41,7 +41,7 @@
 }
 
 .heading a:hover {
-  color: var(--ledger-signal, #2277a9);
+  color: var(--ledger-signal, #2f7f76);
 }
 
 .heading a svg {

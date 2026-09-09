@@ -21,9 +21,9 @@ describe("GuardRails account surface", () => {
   });
 
   it("uses a light atmospheric surface without dark-green treatments", () => {
-    expect(css).toContain("#eaf5fb");
-    expect(css).toContain("#f2f9fd");
-    expect(css).toContain("#d9efff");
+    expect(css).toContain("#edf7f4");
+    expect(css).toContain("#f4faf8");
+    expect(css).toContain("#e1f3ef");
     expect(css).not.toContain("#173f2a");
     expect(css).not.toContain("#245d3e");
   });

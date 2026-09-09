@@ -55,9 +55,9 @@ describe("reports product surface", () => {
   });
 
   it("uses a light responsive surface with reduced-motion behavior", () => {
-    expect(css).toContain("#eaf5fb");
-    expect(css).toContain("#f2f9fd");
-    expect(css).toContain("#f2f9fd");
+    expect(css).toContain("#edf7f4");
+    expect(css).toContain("#f4faf8");
+    expect(css).toContain("#f4faf8");
     expect(css).toContain("prefers-reduced-motion");
   });
 
@@ -69,9 +69,9 @@ describe("reports product surface", () => {
   });
 
   it("keeps the light button contract token-driven", () => {
-    expect(authority).toContain("--ledger-signal-soft: #eaf5fb");
-    expect(authority).toContain("--ledger-signal-hover: #dbeefa");
-    expect(authority).toContain("--ledger-focus: #2277a9");
+    expect(authority).toContain("--ledger-signal-soft: #edf7f4");
+    expect(authority).toContain("--ledger-signal-hover: #dcefeb");
+    expect(authority).toContain("--ledger-focus: #2f7f76");
     expect(authority).toContain("--faint: #655c57");
     expect(authority).toContain("color: var(--ledger-signal-ink) !important");
     expect(refresh).not.toContain(".button,button,input,select,textarea");

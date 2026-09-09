@@ -41,21 +41,21 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  border: 1px solid var(--brand-strong, #95c5df);
+  border: 1px solid var(--brand-strong, #a6cec8);
   border-radius: 7px;
   margin: 4px;
-  background: var(--brand-soft, #eaf5fb);
+  background: var(--brand-soft, #edf7f4);
   padding: 0 14px;
-  color: var(--acid-dark, #155b83) !important;
+  color: var(--acid-dark, #24645f) !important;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
 }
 
 .newsletter button:hover {
-  border-color: var(--brand-strong, #95c5df);
-  background: var(--ledger-signal-hover, #dbeefa);
-  color: var(--acid-dark, #155b83) !important;
+  border-color: var(--brand-strong, #a6cec8);
+  background: var(--ledger-signal-hover, #dcefeb);
+  color: var(--acid-dark, #24645f) !important;
 }
 
 .newsletter button:disabled {
@@ -67,7 +67,7 @@
 .feedbackLauncher:focus-visible,
 .feedbackClose:focus-visible,
 .consentActions button:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--ledger-focus, #2277a9) 42%, transparent);
+  outline: 3px solid color-mix(in srgb, var(--ledger-focus, #2f7f76) 42%, transparent);
   outline-offset: 3px;
 }
 
@@ -104,31 +104,38 @@
   align-items: center;
   gap: 8px;
   min-height: 42px;
-  border: 1px solid var(--brand-strong, #95c5df);
+  border: 1px solid var(--brand-strong, #a6cec8);
   border-radius: 999px;
-  background: var(--brand-soft, #eaf5fb);
+  background: var(--brand-soft, #edf7f4);
   padding: 0 15px;
-  color: var(--acid-dark, #155b83) !important;
+  color: var(--acid-dark, #24645f) !important;
   font-size: 12px;
   font-weight: 700;
   box-shadow: 0 8px 24px rgb(16 23 19 / 16%);
 }
 
 .feedbackLauncher:hover {
-  border-color: var(--brand-strong, #95c5df);
-  background: var(--ledger-signal-hover, #dbeefa);
-  color: var(--acid-dark, #155b83) !important;
+  border-color: var(--brand-strong, #a6cec8);
+  background: var(--ledger-signal-hover, #dcefeb);
+  color: var(--acid-dark, #24645f) !important;
 }
 
 .feedbackLauncher svg {
   width: 16px;
 }
 
-@media (max-width: 640px) {
-  /* Keep the launcher above the full-width consent bar on small screens. */
+@media (max-width: 760px) {
+  /* Keep the launcher above the wrapped consent bar on narrow screens. */
   .feedbackLauncher {
     right: 16px;
     bottom: 168px;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 980px) {
+  /* The consent copy can still wrap before the desktop one-row layout begins. */
+  .feedbackLauncher {
+    bottom: 110px;
   }
 }
 
@@ -164,7 +171,7 @@
 }
 
 .feedbackEyebrow {
-  color: var(--acid-dark, #155b83);
+  color: var(--acid-dark, #24645f);
   font: 800 11px var(--mono, monospace);
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -291,7 +298,7 @@
 
 .feedbackSuccess > svg {
   width: 28px;
-  color: var(--green, #2277a9);
+  color: var(--green, #2f7f76);
 }
 
 .feedbackSuccess h3 {
@@ -360,6 +367,6 @@
 
 .consentActions button.grant {
   border-color: var(--brand-strong, #efb8a5);
-  background: var(--brand-soft, #eaf5fb);
-  color: var(--acid-dark, #155b83);
+  background: var(--brand-soft, #edf7f4);
+  color: var(--acid-dark, #24645f);
 }

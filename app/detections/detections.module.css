@@ -29,7 +29,7 @@
   left: -200px;
   width: 560px;
   height: 560px;
-  background: radial-gradient(circle, #f2f9fd, transparent 70%);
+  background: radial-gradient(circle, #f4faf8, transparent 70%);
 }
 .hero {
   display: grid;
@@ -212,7 +212,7 @@
   color: inherit;
 }
 .identity a:hover {
-  color: #2277a9;
+  color: #2f7f76;
 }
 .identity a svg {
   width: 14px;

@@ -7,7 +7,7 @@
   background: linear-gradient(180deg, #fff, #fbfcff 64%, #fff);
   color: #182433;
 }
-.page{background:#fbfbff;color:#20212e}.atmosphere i:first-child{background:radial-gradient(circle,#eaf5fb,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#f2f9fd,transparent 70%)}
+.page{background:#fbfbff;color:#20212e}.atmosphere i:first-child{background:radial-gradient(circle,#edf7f4,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#f4faf8,transparent 70%)}
 .atmosphere {
   position: absolute;
   z-index: -1;
@@ -23,14 +23,14 @@
   right: -190px;
   width: 760px;
   height: 760px;
-  background: radial-gradient(circle, #eaf5fb, transparent 69%);
+  background: radial-gradient(circle, #edf7f4, transparent 69%);
 }
 .atmosphere i:last-child {
   top: 760px;
   left: -200px;
   width: 560px;
   height: 560px;
-  background: radial-gradient(circle, #f2f9fd, transparent 70%);
+  background: radial-gradient(circle, #f4faf8, transparent 70%);
 }
 .hero {
   display: grid;
@@ -46,8 +46,8 @@
   border: 1px solid #bfd1ee;
   border-radius: 30px;
   padding: 7px 10px;
-  background: #f2f9fd;
-  color: #2277a9;
+  background: #f4faf8;
+  color: #2f7f76;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -62,7 +62,7 @@
   letter-spacing: -0.067em;
 }
 .hero h1 em {
-  color: #2277a9;
+  color: #2f7f76;
   font-style: normal;
 }
 .hero > div > p {
@@ -120,7 +120,7 @@
 }
 .gateCard header svg {
   width: 22px;
-  color: #2277a9;
+  color: #2f7f76;
 }
 .gateCard header span {
   display: grid;
@@ -138,7 +138,7 @@
 }
 .gauge > strong {
   display: block;
-  color: #2277a9;
+  color: #2f7f76;
   font-size: 48px;
   line-height: 1;
 }
@@ -155,7 +155,7 @@
   border-radius: 20px;
   background: linear-gradient(
     to right,
-    #2277a9 var(--progress),
+    #2f7f76 var(--progress),
     #e6ebef var(--progress)
   );
   font-style: normal;
@@ -212,7 +212,7 @@
 }
 .metrics strong {
   display: block;
-  color: #2277a9;
+  color: #2f7f76;
   font-size: 42px;
 }
 .metrics span {
@@ -240,7 +240,7 @@
 .gates header span,
 .evidence header span,
 .refusals > div > span {
-  color: #2277a9;
+  color: #2f7f76;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -372,7 +372,7 @@
 .identity svg {
   flex: 0 0 auto;
   width: 13px;
-  color: #2277a9;
+  color: #2f7f76;
 }
 .identity code {
   display: block;
@@ -407,7 +407,7 @@
   text-transform: uppercase;
 }
 .allow {
-  color: #2277a9;
+  color: #2f7f76;
 }
 .review {
   color: #8b6908;
@@ -455,9 +455,9 @@
 }
 .refusals li span {
   border-radius: 20px;
-  background: #f2f9fd;
+  background: #f4faf8;
   padding: 5px 8px;
-  color: #2277a9;
+  color: #2f7f76;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -467,7 +467,7 @@
   align-items: center;
   gap: 25px;
   border-radius: 18px;
-  background: linear-gradient(120deg, #f2f9fd, #fff 58%, #fff0f5);
+  background: linear-gradient(120deg, #f4faf8, #fff 58%, #fff0f5);
   padding: 48px;
 }
 .cta > svg {
@@ -475,7 +475,7 @@
   color: #e7578b;
 }
 .cta small {
-  color: #2277a9;
+  color: #2f7f76;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }

@@ -7,7 +7,7 @@
   background: linear-gradient(180deg, #fff, #fbfcff 60%, #fff);
   color: #182433;
 }
-.page{background:#fbfbff;color:#20212e}.atmosphere i:first-child{background:radial-gradient(circle,#eaf5fb,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#f2f9fd,transparent 70%)}
+.page{background:#fbfbff;color:#20212e}.atmosphere i:first-child{background:radial-gradient(circle,#edf7f4,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#f4faf8,transparent 70%)}
 .atmosphere {
   position: absolute;
   z-index: -1;
@@ -23,21 +23,21 @@
   top: -220px;
   width: 660px;
   height: 660px;
-  background: radial-gradient(circle, #eaf5fb, transparent 69%);
+  background: radial-gradient(circle, #edf7f4, transparent 69%);
 }
 .atmosphere i:nth-child(2) {
   left: -210px;
   top: 420px;
   width: 520px;
   height: 520px;
-  background: radial-gradient(circle, #f2f9fd, transparent 70%);
+  background: radial-gradient(circle, #f4faf8, transparent 70%);
 }
 .atmosphere i:last-child {
   right: 22%;
   top: 300px;
   width: 250px;
   height: 250px;
-  background: radial-gradient(circle, #f2f9fd, transparent 70%);
+  background: radial-gradient(circle, #f4faf8, transparent 70%);
 }
 .hero {
   max-width: 980px;
@@ -46,11 +46,11 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid #95c5df;
+  border: 1px solid #a6cec8;
   border-radius: 30px;
   padding: 7px 10px;
-  background: #f2f9fd;
-  color: #2277a9;
+  background: #f4faf8;
+  color: #2f7f76;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -64,7 +64,7 @@
   letter-spacing: -0.07em;
 }
 .hero h1 em {
-  color: #2277a9;
+  color: #2f7f76;
   font-style: normal;
 }
 .hero > p {
@@ -91,7 +91,7 @@
   box-shadow: 0 13px 36px #2c43570a;
 }
 .paths .primaryPath {
-  border-color: #95c5df;
+  border-color: #a6cec8;
   background: linear-gradient(145deg, #f7f9fc, #fff 60%);
   box-shadow: 0 20px 55px #2c435712;
 }
@@ -106,14 +106,14 @@
 }
 .primaryPath .pathIcon {
   background: #e3edff;
-  color: #2277a9;
+  color: #2f7f76;
 }
 .pathIcon svg {
   width: 20px;
 }
 .paths small {
   margin-top: 40px;
-  color: #2277a9;
+  color: #2f7f76;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -195,7 +195,7 @@
     transform 0.16s;
 }
 .dropZone.dragging {
-  border-color: #2277a9;
+  border-color: #2f7f76;
   background: #f0f5ff;
   transform: translateY(-2px);
 }
@@ -205,7 +205,7 @@
   height: 48px;
   place-content: center;
   border-radius: 13px;
-  background: #f2f9fd;
+  background: #f4faf8;
   color: #177d69;
 }
 .dropZone svg {
@@ -242,7 +242,7 @@
   border-radius: 11px;
   padding: 13px 15px;
   background: #f2f6ff;
-  color: #2277a9;
+  color: #2f7f76;
   font-size: 13px;
   font-weight: 700;
 }
@@ -272,7 +272,7 @@
   gap: 7px;
 }
 .boundary span {
-  color: #2277a9;
+  color: #2f7f76;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }

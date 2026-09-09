@@ -9,8 +9,8 @@ export const contentType = "image/png";
 // Brand palette: cool ink, blue signal, pale blue accent.
 const INK = "#182433";
 const MUTED = "#5b6878";
-const SIGNAL = "#2277a9";
-const ACCENT = "#d9efff";
+const SIGNAL = "#2f7f76";
+const ACCENT = "#e1f3ef";
 
 export default async function Image() {
   const logo = await readFile(join(process.cwd(), "public/logo-transparent.png"));

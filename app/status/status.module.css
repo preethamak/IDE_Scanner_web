@@ -7,7 +7,7 @@
   background: linear-gradient(155deg, #fffdfb, #fff8f2 52%, #fafbed);
   color: #292329;
 }
-.page{background:var(--ledger-paper);color:var(--ledger-ink)}.glow{background:radial-gradient(circle,#d9efff,transparent 70%)}.hero{border-bottom-color:var(--ledger-line)}.hero>div>span,.services header span,.incidents header span{color:var(--ledger-signal)}.hero h1 em{color:var(--ledger-signal)}.hero>div>p{color:var(--ledger-muted)}.hero aside,.services article,.incidents article{border-color:var(--ledger-line)!important;background:var(--ledger-white)!important}
+.page{background:var(--ledger-paper);color:var(--ledger-ink)}.glow{background:radial-gradient(circle,#e1f3ef,transparent 70%)}.hero{border-bottom-color:var(--ledger-line)}.hero>div>span,.services header span,.incidents header span{color:var(--ledger-signal)}.hero h1 em{color:var(--ledger-signal)}.hero>div>p{color:var(--ledger-muted)}.hero aside,.services article,.incidents article{border-color:var(--ledger-line)!important;background:var(--ledger-white)!important}
 .glow{background:radial-gradient(circle,#e3d7ff,transparent 70%)}
 .glow {
   position: absolute;
@@ -141,7 +141,7 @@
 }
 .services article > svg {
   width: 22px;
-  color: #2277a9;
+  color: #2f7f76;
 }
 .services h3 {
   margin: 0;
@@ -181,7 +181,7 @@
   color: #a04d6d;
 }
 .incidents article span {
-  color: #2277a9;
+  color: #2f7f76;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -232,7 +232,7 @@
 }
 .machine > svg {
   width: 24px;
-  color: #2277a9;
+  color: #2f7f76;
 }
 .machine strong {
   font-size: 16px;
@@ -250,7 +250,7 @@
   min-height: 43px;
   border: 0;
   border-radius: 8px;
-  background: #2277a9;
+  background: #2f7f76;
   padding: 0 15px;
   color: #fff;
   font-size: 12px;
@@ -267,7 +267,7 @@
   width: 35px;
   height: 35px;
   border: 3px solid #eadce1;
-  border-top-color: #2277a9;
+  border-top-color: #2f7f76;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }

@@ -73,6 +73,13 @@ describe("company site surface", () => {
     expect(consent).toContain("loadGoogleAnalytics");
   });
 
+  it("keeps the feedback launcher above a wrapped consent bar", () => {
+    const chrome = read("./companyChrome.module.css");
+    expect(chrome).toContain("@media (max-width: 760px)");
+    expect(chrome).toContain("@media (min-width: 761px) and (max-width: 980px)");
+    expect(chrome).toContain("bottom: 110px;");
+  });
+
   it("exposes newsletter capture through a rate-limited endpoint", () => {
     const route = read("./api/newsletter/route.ts");
     expect(route).toContain("subscribe_newsletter");

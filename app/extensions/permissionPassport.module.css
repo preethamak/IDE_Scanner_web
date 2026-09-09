@@ -13,14 +13,14 @@
   gap: 30px;
   padding: 28px;
   background:
-    radial-gradient(circle at 8% 0, #eaf5fb 0, transparent 40%),
+    radial-gradient(circle at 8% 0, #edf7f4 0, transparent 40%),
     linear-gradient(120deg, #f5f8ff, #fff 68%);
 }
 .passport header > div:first-child {
   max-width: 690px;
 }
 .passport header span {
-  color: #2277a9;
+  color: #2f7f76;
   font: 800 12px var(--mono);
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -105,7 +105,7 @@
 }
 .categories article > svg {
   width: 21px;
-  color: #2277a9;
+  color: #2f7f76;
 }
 .categories article > div {
   display: grid;
@@ -140,11 +140,11 @@
   width: 12px;
 }
 .categories article[data-state="observed"] {
-  box-shadow: inset 3px 0 #2277a9;
+  box-shadow: inset 3px 0 #2f7f76;
 }
 .categories article[data-state="observed"] em {
-  background: var(--ledger-signal-soft, #eaf5fb);
-  color: var(--ledger-signal-ink, #155b83);
+  background: var(--ledger-signal-soft, #edf7f4);
+  color: var(--ledger-signal-ink, #24645f);
 }
 .passport > footer {
   display: flex;

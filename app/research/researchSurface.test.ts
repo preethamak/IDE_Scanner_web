@@ -29,8 +29,8 @@ describe("research index surface", () => {
   });
 
   it("uses a light responsive and motion-safe surface", () => {
-    expect(styles).toContain("#eaf5fb");
-    expect(styles).toContain("#f2f9fd");
+    expect(styles).toContain("#edf7f4");
+    expect(styles).toContain("#f4faf8");
     expect(styles).toContain("prefers-reduced-motion");
   });
 });

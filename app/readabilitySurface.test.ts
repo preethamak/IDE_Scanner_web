@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const readability = readFileSync(new URL("./readability.css", import.meta.url), "utf8");
 const designSystem = readFileSync(new URL("./design-system.css", import.meta.url), "utf8");
+const lightTheme = readFileSync(new URL("./light-theme.css", import.meta.url), "utf8");
 const workspace = readFileSync(new URL("./workspace/teamWorkspace.module.css", import.meta.url), "utf8");
 const audit = readFileSync(new URL("../scripts/typography-audit.mjs", import.meta.url), "utf8");
 
@@ -15,10 +16,18 @@ describe("cross-site readability contract", () => {
   });
 
   it("keeps legacy accents logo-derived and the workspace navigation light", () => {
-    expect(designSystem).toContain("--green: #2277a9");
-    expect(designSystem).toContain("--acid: #d9efff");
+    expect(designSystem).toContain("--green: #2f815f");
+    expect(designSystem).toContain("--acid: #e1f3ef");
     expect(workspace).toContain("--nav:#ffffff");
     expect(workspace).toContain("border-right:1px solid var(--line);background:var(--nav)");
     expect(workspace).not.toContain("--nav:#17191f");
+  });
+
+  it("keeps primary, brand, and semantic colors distinct", () => {
+    expect(lightTheme).toContain("--ledger-signal: #2f7f76");
+    expect(lightTheme).toContain("--brand-blue: #5d769c");
+    expect(lightTheme).toContain("--brand-pink: #b5748a");
+    expect(lightTheme).toContain("--green: #2f815f");
+    expect(lightTheme).not.toContain("--brand-pink: var(--ledger-signal)");
   });
 });

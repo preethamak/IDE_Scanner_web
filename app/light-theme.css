@@ -1,6 +1,6 @@
 /* Final shared visual language.
    Keep the product surfaces light and calm: slate text, cool white surfaces,
-   and one blue/teal signal. Intentional code and evidence blocks may still use
+   and one restrained teal signal with distinct semantic colors. Intentional code and evidence blocks may still use
    a deeper slate for contrast, but the surrounding UI should never feel dark.
 */
 :root {
@@ -12,12 +12,12 @@
   --ledger-muted: #5b6878;
   --ledger-line: #dfe6ee;
   --ledger-line-strong: #b8c7d5;
-  --ledger-signal: #2277a9;
-  --ledger-signal-soft: #eaf5fb;
-  --ledger-signal-hover: #dbeefa;
-  --ledger-signal-strong: #95c5df;
-  --ledger-signal-ink: #155b83;
-  --ledger-focus: #2277a9;
+  --ledger-signal: #2f7f76;
+  --ledger-signal-soft: #edf7f4;
+  --ledger-signal-hover: #dcefeb;
+  --ledger-signal-strong: #a6cec8;
+  --ledger-signal-ink: #24645f;
+  --ledger-focus: #2f7f76;
   --ledger-amber: #986300;
   --ledger-night: #213447;
 
@@ -29,18 +29,20 @@
   --faint: #7b8896;
   --line: var(--ledger-line);
   --line-dark: #9aacbc;
-  --wash: #f1f5f9;
-  --acid: #d9efff;
+  --wash: #f3f6f5;
+  --acid: #e1f3ef;
   --acid-dark: var(--ledger-signal-ink);
-  --acid-pale: #f2f9fd;
-  --green: #168b76;
-  --green-2: #52b9a3;
-  --allow: #177d69;
-  --allow-bg: #e8f8f3;
-  --allow-line: #9bd8c9;
-  --brand-blue: var(--ledger-signal);
-  --brand-blue-soft: var(--ledger-signal-soft);
-  --blue: var(--ledger-signal);
+  --acid-pale: #f4faf8;
+  --green: #2f815f;
+  --green-2: #75b89a;
+  --allow: #2f815f;
+  --allow-bg: #e9f6ef;
+  --allow-line: #add7bc;
+  --brand-blue: #5d769c;
+  --brand-blue-soft: #f0f3f8;
+  --brand-pink: #b5748a;
+  --brand-pink-soft: #faf0f3;
+  --blue: #5d769c;
   --brand: var(--ledger-signal);
   --brand-soft: var(--ledger-signal-soft);
   --brand-strong: var(--ledger-signal-strong);
@@ -48,17 +50,17 @@
   --brand-contrast: #ffffff;
   --text: var(--ledger-ink);
   --surface: var(--ledger-white);
-  --surface-2: #f1f5f9;
-  --surface-3: #e8f0f6;
+  --surface-2: #f3f6f5;
+  --surface-3: #edf3f2;
   --line-strong: var(--ledger-line-strong);
   --night: var(--ledger-night);
   --neutral-950: var(--ledger-night);
-  --neutral-900: #2c4357;
-  --neutral-800: #40566a;
-  --neutral-600: #6f8090;
-  --neutral-400: #a9b8c5;
-  --neutral-200: #d7e1e9;
-  --neutral-100: #f2f7fa;
+  --neutral-900: #334653;
+  --neutral-800: #4c5e68;
+  --neutral-600: #6f7c82;
+  --neutral-400: #aab8b8;
+  --neutral-200: #d9e5e2;
+  --neutral-100: #f3f8f6;
 }
 
 html,
@@ -145,7 +147,7 @@ body {
   border-color: var(--ledger-signal-strong) !important;
   background: var(--ledger-signal-soft) !important;
   color: var(--ledger-signal-ink) !important;
-  box-shadow: 0 6px 16px rgb(34 119 169 / 10%) !important;
+  box-shadow: 0 6px 16px rgb(47 127 118 / 10%) !important;
 }
 
 .headerProductCta:hover,
@@ -203,7 +205,7 @@ textarea::placeholder {
 
 .siteFooter {
   border-top-color: var(--ledger-line) !important;
-  background: #f1f5f9 !important;
+  background: #f3f6f5 !important;
   color: var(--ledger-ink) !important;
 }
 

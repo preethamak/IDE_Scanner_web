@@ -7,7 +7,7 @@
   background: linear-gradient(180deg, #fff, #fbfcff 62%, #fff);
   color: #182433;
 }
-.page{background:#fbfbff;color:#20212e}.atmosphere i:first-child{background:radial-gradient(circle,#eaf5fb,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#f2f9fd,transparent 70%)}
+.page{background:#fbfbff;color:#20212e}.atmosphere i:first-child{background:radial-gradient(circle,#edf7f4,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#f4faf8,transparent 70%)}
 .atmosphere {
   position: absolute;
   z-index: -1;
@@ -23,14 +23,14 @@
   right: -170px;
   width: 760px;
   height: 760px;
-  background: radial-gradient(circle, #eaf5fb, transparent 69%);
+  background: radial-gradient(circle, #edf7f4, transparent 69%);
 }
 .atmosphere i:last-child {
   top: 550px;
   left: -190px;
   width: 530px;
   height: 530px;
-  background: radial-gradient(circle, #f2f9fd, transparent 70%);
+  background: radial-gradient(circle, #f4faf8, transparent 70%);
 }
 .hero {
   display: grid;
@@ -48,8 +48,8 @@
   border: 1px solid #bfd1ee;
   border-radius: 30px;
   padding: 7px 10px;
-  background: #f2f9fd;
-  color: #2277a9;
+  background: #f4faf8;
+  color: #2f7f76;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -64,7 +64,7 @@
   letter-spacing: -0.066em;
 }
 .hero h1 em {
-  color: #2277a9;
+  color: #2f7f76;
   font-style: normal;
 }
 .hero > div > p {
@@ -121,7 +121,7 @@
 }
 .principles svg {
   width: 17px;
-  color: #2277a9;
+  color: #2f7f76;
 }
 .feature {
   display: grid;
@@ -149,7 +149,7 @@
   align-content: center;
   justify-items: center;
   background: linear-gradient(145deg, #fff3ee, #f7f9fc 53%, #ffeaf2);
-  color: #2277a9;
+  color: #2f7f76;
 }
 .featureArt span {
   font: 900 13px var(--mono);
@@ -166,7 +166,7 @@
 }
 .featureCopy > span,
 .library header span {
-  color: #2277a9;
+  color: #2f7f76;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -187,7 +187,7 @@
   align-items: center;
   gap: 8px;
   margin-top: 25px;
-  color: #2277a9;
+  color: #2f7f76;
   font-size: 13px;
 }
 .featureCopy svg,
@@ -265,7 +265,7 @@
   font: 700 12px var(--mono);
 }
 .library > div > a > svg {
-  color: #2277a9;
+  color: #2f7f76;
 }
 .library > div > a > svg:last-child {
   width: 19px;
@@ -294,11 +294,11 @@
   gap: 50px;
   margin-top: 100px;
   border-radius: 18px;
-  background: linear-gradient(120deg, #f2f9fd, #fff 58%, #fff0f5);
+  background: linear-gradient(120deg, #f4faf8, #fff 58%, #fff0f5);
   padding: 48px;
 }
 .cta small {
-  color: #2277a9;
+  color: #2f7f76;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -320,7 +320,7 @@
   gap: 8px;
   min-height: 46px;
   border-radius: 9px;
-  background: #2277a9;
+  background: #2f7f76;
   padding: 0 17px;
   color: #fff;
   font-size: 13px;

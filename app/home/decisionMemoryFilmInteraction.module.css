@@ -9,21 +9,21 @@
   align-items: center;
   gap: 5px;
   min-height: 28px;
-  border: 1px solid var(--ledger-signal-strong, #95c5df);
+  border: 1px solid var(--ledger-signal-strong, #a6cec8);
   border-radius: 999px;
   padding: 0 9px;
-  background: var(--ledger-signal-soft, #eaf5fb);
-  color: var(--ledger-signal, #2277a9);
+  background: var(--ledger-signal-soft, #edf7f4);
+  color: var(--ledger-signal, #2f7f76);
   font: 800 9px var(--font-mono);
   cursor: pointer;
 }
 
 .captionControls button:hover {
-  background: #dbeefa;
+  background: #dcefeb;
 }
 
 .captionControls button:focus-visible {
-  outline: 2px solid var(--ledger-signal, #2277a9);
+  outline: 2px solid var(--ledger-signal, #2f7f76);
   outline-offset: 2px;
 }
 

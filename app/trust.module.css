@@ -7,9 +7,9 @@
   background: linear-gradient(180deg, #fff, #fbfcff 60%, #fff);
   color: #182433;
 }
-.page{background:var(--ledger-paper);color:var(--ledger-ink)}.atmosphere i:first-child{background:radial-gradient(circle,#d9efff,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#e8f8f3,transparent 70%)}.eyebrow{border:0;border-radius:0;background:transparent;padding:0;color:var(--ledger-signal)}.hero h1 em{color:var(--ledger-signal)}.hero>div:first-child>p{color:var(--ledger-muted)}.actions a,.assurance,.controlGrid article,.boundaryList article,.disclosure{border-color:var(--ledger-line)!important;background:var(--ledger-white)!important}.actions a:first-child{border-radius:999px;background:var(--ledger-ink)!important;color:white}.assurance svg,.controlGrid article svg{color:var(--ledger-signal)!important}
+.page{background:var(--ledger-paper);color:var(--ledger-ink)}.atmosphere i:first-child{background:radial-gradient(circle,#e1f3ef,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#e8f8f3,transparent 70%)}.eyebrow{border:0;border-radius:0;background:transparent;padding:0;color:var(--ledger-signal)}.hero h1 em{color:var(--ledger-signal)}.hero>div:first-child>p{color:var(--ledger-muted)}.actions a,.assurance,.controlGrid article,.boundaryList article,.disclosure{border-color:var(--ledger-line)!important;background:var(--ledger-white)!important}.actions a:first-child{border-radius:999px;background:var(--ledger-ink)!important;color:white}.assurance svg,.controlGrid article svg{color:var(--ledger-signal)!important}
 /* Final palette pass: one accent hue, matching --ledger-signal. */
-.atmosphere i:first-child{background:radial-gradient(circle,#eaf5fb,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#f2f9fd,transparent 70%)}.actions a:first-child{border:1px solid #95c5df;border-radius:11px;background:var(--ledger-signal-soft)!important;color:var(--ledger-signal)!important}
+.atmosphere i:first-child{background:radial-gradient(circle,#edf7f4,transparent 69%)}.atmosphere i:nth-child(2){background:radial-gradient(circle,#f4faf8,transparent 70%)}.actions a:first-child{border:1px solid #a6cec8;border-radius:11px;background:var(--ledger-signal-soft)!important;color:var(--ledger-signal)!important}
 .atmosphere {
   position: absolute;
   z-index: -1;
@@ -25,21 +25,21 @@
   top: -230px;
   width: 670px;
   height: 670px;
-  background: radial-gradient(circle, #eaf5fb, transparent 69%);
+  background: radial-gradient(circle, #edf7f4, transparent 69%);
 }
 .atmosphere i:nth-child(2) {
   left: -220px;
   top: 520px;
   width: 560px;
   height: 560px;
-  background: radial-gradient(circle, #f2f9fd, transparent 70%);
+  background: radial-gradient(circle, #f4faf8, transparent 70%);
 }
 .atmosphere i:last-child {
   right: 30%;
   top: 280px;
   width: 260px;
   height: 260px;
-  background: radial-gradient(circle, #f2f9fd, transparent 70%);
+  background: radial-gradient(circle, #f4faf8, transparent 70%);
 }
 .hero {
   display: grid;
@@ -52,10 +52,10 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid #95c5df;
+  border: 1px solid #a6cec8;
   border-radius: 30px;
   padding: 7px 10px;
-  background: #f2f9fd;
+  background: #f4faf8;
   color: var(--ledger-signal);
   font: 800 12px var(--mono);
   text-transform: uppercase;
@@ -160,7 +160,7 @@
   align-items: center;
   gap: 8px;
   padding: 17px 21px;
-  background: #f2f9fd;
+  background: #f4faf8;
   color: #177d69;
   font-size: 12px;
   font-weight: 800;
@@ -214,7 +214,7 @@
   height: 42px;
   place-content: center;
   border-radius: 11px;
-  background: #f2f9fd;
+  background: #f4faf8;
   color: var(--ledger-signal);
 }
 .controlGrid svg {
@@ -261,7 +261,7 @@
   height: 43px;
   place-content: center;
   border-radius: 11px;
-  background: #f2f9fd;
+  background: #f4faf8;
   color: var(--ledger-signal);
 }
 .boundaryList header svg {
@@ -313,7 +313,7 @@
   border: 1px solid #c7d5e9;
   border-radius: 17px;
   padding: 27px;
-  background: linear-gradient(115deg, #f2f9fd, #fff 62%, #e8f8f3);
+  background: linear-gradient(115deg, #f4faf8, #fff 62%, #e8f8f3);
 }
 .disclosure > span {
   display: grid;
@@ -321,7 +321,7 @@
   height: 52px;
   place-content: center;
   border-radius: 14px;
-  background: #eaf5fb;
+  background: #edf7f4;
   color: var(--ledger-signal);
 }
 .disclosure > span svg {

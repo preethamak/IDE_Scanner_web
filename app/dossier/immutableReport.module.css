@@ -9,7 +9,7 @@
   padding: 10px 12px;
   background: linear-gradient(115deg, #f7f9fc, #fff 62%, #f7faea);
 }
-.immutableBar{border-color:#e3e3ed;background:linear-gradient(115deg,#f4f0ff,#fff 62%,#edfbf7)}.lock{background:#e9e2ff;color:#2277a9}.immutableBar>div:nth-child(2)>span{color:#2277a9}.actions a{border-color:#292b3c;background:#292b3c;border-radius:11px}
+.immutableBar{border-color:#e3e3ed;background:linear-gradient(115deg,#f4f0ff,#fff 62%,#edfbf7)}.lock{background:#e9e2ff;color:#2f7f76}.immutableBar>div:nth-child(2)>span{color:#2f7f76}.actions a{border-color:#292b3c;background:#292b3c;border-radius:11px}
 .lock {
   display: grid;
   width: 32px;
@@ -90,8 +90,8 @@
   white-space: nowrap;
 }
 .actions a {
-  border-color: #2277a9;
-  background: #2277a9;
+  border-color: #2f7f76;
+  background: #2f7f76;
   color: #fff;
   text-decoration: none;
 }
@@ -100,7 +100,7 @@
 }
 .actions button:focus-visible,
 .actions a:focus-visible {
-  outline: 3px solid #2277a93d;
+  outline: 3px solid #2f7f763d;
   outline-offset: 2px;
 }
 @media (max-width: 1050px) {

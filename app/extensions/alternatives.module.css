@@ -7,7 +7,7 @@
   box-shadow: 0 24px 70px #2c435712;
 }
 .alternatives > header span {
-  color: var(--ledger-signal, #2277a9);
+  color: var(--ledger-signal, #2f7f76);
   font: 800 12px var(--mono);
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -41,7 +41,7 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .card:hover {
-  border-color: var(--ledger-signal, #2277a9);
+  border-color: var(--ledger-signal, #2f7f76);
   box-shadow: 0 10px 30px #2c435714;
 }
 .cardBody {
@@ -65,6 +65,6 @@
   font-size: 12px;
 }
 .publisher svg {
-  color: var(--ledger-signal, #2277a9);
+  color: var(--ledger-signal, #2f7f76);
   flex: none;
 }

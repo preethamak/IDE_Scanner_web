@@ -8,9 +8,9 @@
   color: #292329;
 }
 /* Authority Ledger treatment for pricing and solution pages. */
-.page{background:var(--ledger-paper);color:var(--ledger-ink)}.glowOne{background:radial-gradient(circle,#d9efff,transparent 70%)}.glowTwo{background:radial-gradient(circle,#e8f8f3,transparent 70%)}.eyebrow{border:0;border-radius:0;background:transparent;padding:0;color:var(--ledger-signal);letter-spacing:.1em}.hero{border-bottom-color:var(--ledger-line)}.hero h1 em{color:var(--ledger-signal)}.hero p{color:var(--ledger-muted)}.hero aside{border-color:var(--ledger-line);border-radius:18px;background:var(--ledger-white)}.hero aside svg{color:var(--ledger-signal)}.plan{border-color:var(--ledger-line)!important;border-radius:18px!important;background:var(--ledger-white)!important}.featured{border-color:var(--ledger-signal)!important;background:var(--ledger-signal-soft)!important;color:var(--ledger-ink)!important}.featured p,.featured li{color:var(--ledger-muted)!important}.plan a,.cta>a{border:1px solid #95c5df!important;border-radius:999px!important;background:var(--ledger-white)!important;color:var(--ledger-signal)!important}.featured a{background:var(--ledger-white)!important;color:var(--ledger-signal)!important}.steps>div,.outcomes{border-color:var(--ledger-line)!important}.steps article,.outcomes article{background:var(--ledger-white)!important}.cta{border:1px solid var(--ledger-line)!important;background:var(--ledger-signal-soft)!important;color:var(--ledger-ink)!important}.cta>a{background:var(--ledger-white)!important;color:var(--ledger-ink)!important}
+.page{background:var(--ledger-paper);color:var(--ledger-ink)}.glowOne{background:radial-gradient(circle,#e1f3ef,transparent 70%)}.glowTwo{background:radial-gradient(circle,#e8f8f3,transparent 70%)}.eyebrow{border:0;border-radius:0;background:transparent;padding:0;color:var(--ledger-signal);letter-spacing:.1em}.hero{border-bottom-color:var(--ledger-line)}.hero h1 em{color:var(--ledger-signal)}.hero p{color:var(--ledger-muted)}.hero aside{border-color:var(--ledger-line);border-radius:18px;background:var(--ledger-white)}.hero aside svg{color:var(--ledger-signal)}.plan{border-color:var(--ledger-line)!important;border-radius:18px!important;background:var(--ledger-white)!important}.featured{border-color:var(--ledger-signal)!important;background:var(--ledger-signal-soft)!important;color:var(--ledger-ink)!important}.featured p,.featured li{color:var(--ledger-muted)!important}.plan a,.cta>a{border:1px solid #a6cec8!important;border-radius:999px!important;background:var(--ledger-white)!important;color:var(--ledger-signal)!important}.featured a{background:var(--ledger-white)!important;color:var(--ledger-signal)!important}.steps>div,.outcomes{border-color:var(--ledger-line)!important}.steps article,.outcomes article{background:var(--ledger-white)!important}.cta{border:1px solid var(--ledger-line)!important;background:var(--ledger-signal-soft)!important;color:var(--ledger-ink)!important}.cta>a{background:var(--ledger-white)!important;color:var(--ledger-ink)!important}
 /* Final palette pass: the radial washes and the featured plan follow the one brand accent (--ledger-signal). Do not reintroduce a second hue here. */
-.glowOne{background:radial-gradient(circle,#eaf5fb,transparent 70%)}.glowTwo{background:radial-gradient(circle,#f2f9fd,transparent 70%)}.featured{background:linear-gradient(145deg,#f2f9fd,#fff)!important;color:var(--ledger-ink)!important}.featured p,.featured li{color:var(--ledger-muted)!important}.featured a{background:var(--ledger-white)!important;color:var(--ledger-signal)!important}.plan a,.cta>a{border-radius:11px!important}.cta{border:1px solid var(--ledger-line)!important;background:var(--ledger-signal-soft)!important;color:var(--ledger-ink)!important}
+.glowOne{background:radial-gradient(circle,#edf7f4,transparent 70%)}.glowTwo{background:radial-gradient(circle,#f4faf8,transparent 70%)}.featured{background:linear-gradient(145deg,#f4faf8,#fff)!important;color:var(--ledger-ink)!important}.featured p,.featured li{color:var(--ledger-muted)!important}.featured a{background:var(--ledger-white)!important;color:var(--ledger-signal)!important}.plan a,.cta>a{border-radius:11px!important}.cta{border:1px solid var(--ledger-line)!important;background:var(--ledger-signal-soft)!important;color:var(--ledger-ink)!important}
 .glow {
   position: absolute;
   z-index: -1;
@@ -22,7 +22,7 @@
   right: -180px;
   width: 700px;
   height: 700px;
-  background: radial-gradient(circle, #eaf5fb, transparent 70%);
+  background: radial-gradient(circle, #edf7f4, transparent 70%);
 }
 .glowTwo {
   top: 620px;
@@ -108,7 +108,7 @@
   padding: 28px;
 }
 .featured {
-  border-color: #95c5df;
+  border-color: #a6cec8;
   background: linear-gradient(180deg, #f4f9f5, #fff);
 }
 .plan > span,
@@ -287,7 +287,7 @@
   justify-content: space-between;
   gap: 45px;
   border-radius: 18px;
-  background: linear-gradient(120deg, #eaf5fb, #fff3e8 55%, #eef7cc);
+  background: linear-gradient(120deg, #edf7f4, #fff3e8 55%, #eef7cc);
   padding: 45px;
 }
 .cta h2 {
