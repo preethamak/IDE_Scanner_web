@@ -6,7 +6,13 @@ export default defineConfig({
   test: {
     environment: "node",
     clearMocks: true,
-    include: ["app/**/*.test.ts", "lib/**/*.test.ts", "worker/**/*.test.ts", "tests/**/*.test.ts"],
+    include: [
+      "app/**/*.test.ts",
+      "lib/**/*.test.ts",
+      "worker/**/*.test.ts",
+      "cloudflare/**/*.test.ts",
+      "tests/**/*.test.ts",
+    ],
     exclude: ["**/node_modules/**", ".claude/**", ".next/**"],
   },
 });

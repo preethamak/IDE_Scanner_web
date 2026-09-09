@@ -1,0 +1,14 @@
+{
+  "$schema": "../../../node_modules/wrangler/config-schema.json",
+  "name": "abscissa-account-auth-proxy",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-02",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "services": [
+    {
+      "binding": "ORIGIN",
+      "service": "ide-scanner-web"
+    }
+  ]
+}
