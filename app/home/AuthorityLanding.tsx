@@ -7,6 +7,7 @@ import MarketplaceProof from "./MarketplaceProof";
 import TrustProof from "./TrustProof";
 import LandingFaq from "./LandingFaq";
 import IdeCompatibility from "./IdeCompatibility";
+import SarvamProgramNote from "../SarvamProgramNote";
 
 export default function AuthorityLanding() {
   return <main className={styles.page}>
@@ -18,6 +19,7 @@ export default function AuthorityLanding() {
     <section className={styles.researchLink}><p>Case study</p><div><h2>Solidity Pro: a case study in extension supply-chain risk.</h2><Link href="/research/solidity-pro">Read the case study <ArrowRight /></Link></div></section>
     <MarketplaceProof />
     <TrustProof />
+    <SarvamProgramNote />
     <section className={styles.statement}><p className={styles.eyebrow}><i /> Decision context</p><h2>A version change<br /><em>needs a new decision.</em></h2><p>Keep the last review visible, then inspect only the access that changed.</p></section>
     <DecisionMemoryFilm />
     <LandingFaq />

@@ -22,6 +22,7 @@ import "./accessibility.css";
 import "./product-ui.css";
 import "./readability.css";
 import "./authority.css";
+import "./light-theme.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://abscissa.dev"),
@@ -116,6 +117,7 @@ export default function RootLayout({
                 <div>
                   <strong>Company</strong>
                   <Link href="/about">About GuardRails</Link>
+                  <Link href="/#sarvam-ai">Sarvam AI program</Link>
                   <Link href="/contact">Contact</Link>
                   <Link href="/changelog">Changelog</Link>
                   <Link href="/faq">FAQ</Link>
