@@ -1,4 +1,5 @@
 import { publicDb } from "@/lib/supabase";
+import { getPublicRegistrySnapshot } from "@/lib/publicRegistrySnapshot";
 import { unstable_cache } from "next/cache";
 
 export type PublicMetrics = {
@@ -34,26 +35,31 @@ export function getPublicMetrics(): Promise<PublicMetrics> { return cachedPublic
 
 async function fetchPublicMetrics(): Promise<PublicMetrics> {
   const db = publicDb();
-  if (!db) return EMPTY;
-  const [aggregate, refreshes] = await Promise.all([
-    db.rpc("public_intelligence_metrics"),
-    db.from("registry_refreshes").select("registry,completed_at").eq("status", "complete").order("completed_at", { ascending: false }).limit(20)
-  ]);
-  if (aggregate.error || !aggregate.data?.[0]) return EMPTY;
-  const row = aggregate.data[0];
-  const freshness: Record<string, string | null> = { "vs-marketplace": null, openvsx: null };
-  for (const row of refreshes.data || []) if (!freshness[row.registry]) freshness[row.registry] = row.completed_at;
-  return {
-    ...EMPTY,
-    as_of: new Date().toISOString(),
-    indexed_extensions: Number(row.indexed_extensions || 0),
-    exact_releases_indexed: Number(row.exact_releases_indexed || 0),
-    exact_releases_analyzed: Number(row.exact_releases_analyzed || 0),
-    analyzer_complete_reports: Number(row.analyzer_complete_reports || 0),
-    known_bad_artifacts: Number(row.known_bad_artifacts || 0),
-    block_decisions: Number(row.block_decisions || 0),
-    high_risk_reviews: Number(row.high_risk_reviews || 0),
-    freshness,
-    time_to_analysis: Number(row.latency_sample_size || 0) >= 20 ? { sample_size: Number(row.latency_sample_size), median_minutes: Math.round(Number(row.median_minutes)), p95_minutes: Math.round(Number(row.p95_minutes)), status: "measured" } : EMPTY.time_to_analysis,
-  };
+  const mirror = async () => (await getPublicRegistrySnapshot())?.metrics || EMPTY;
+  if (!db) return mirror();
+  try {
+    const [aggregate, refreshes] = await Promise.all([
+      db.rpc("public_intelligence_metrics"),
+      db.from("registry_refreshes").select("registry,completed_at").eq("status", "complete").order("completed_at", { ascending: false }).limit(20)
+    ]);
+    if (aggregate.error || !aggregate.data?.[0]) return mirror();
+    const row = aggregate.data[0];
+    const freshness: Record<string, string | null> = { "vs-marketplace": null, openvsx: null };
+    for (const row of refreshes.data || []) if (!freshness[row.registry]) freshness[row.registry] = row.completed_at;
+    return {
+      ...EMPTY,
+      as_of: new Date().toISOString(),
+      indexed_extensions: Number(row.indexed_extensions || 0),
+      exact_releases_indexed: Number(row.exact_releases_indexed || 0),
+      exact_releases_analyzed: Number(row.exact_releases_analyzed || 0),
+      analyzer_complete_reports: Number(row.analyzer_complete_reports || 0),
+      known_bad_artifacts: Number(row.known_bad_artifacts || 0),
+      block_decisions: Number(row.block_decisions || 0),
+      high_risk_reviews: Number(row.high_risk_reviews || 0),
+      freshness,
+      time_to_analysis: Number(row.latency_sample_size || 0) >= 20 ? { sample_size: Number(row.latency_sample_size), median_minutes: Math.round(Number(row.median_minutes)), p95_minutes: Math.round(Number(row.p95_minutes)), status: "measured" } : EMPTY.time_to_analysis,
+    };
+  } catch {
+    return mirror();
+  }
 }

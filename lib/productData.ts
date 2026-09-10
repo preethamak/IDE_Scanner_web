@@ -1,5 +1,6 @@
 import { publicDb, serviceDb } from "@/lib/supabase";
 import { isConcreteVersion, listMarketplaceVersions, resolveMarketplaceExtension, searchMarketplace } from "@/lib/marketplace";
+import { getPublicRegistryProduct, getPublicRegistrySnapshot } from "@/lib/publicRegistrySnapshot";
 import { unstable_cache } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -40,60 +41,74 @@ export function getPublicInventory(limit = 240): Promise<PublicInventory> { retu
 export function listCatalog(query = "", limit = 50): Promise<CatalogExtension[]> { return cachedCatalog(query, limit); }
 
 async function fetchPublicSecurityFeed(limit = 6): Promise<PublicSecurityFeedItem[]> {
+  const mirror = async () => (await getPublicRegistrySnapshot())?.feed.slice(0, limit) || [];
   const db = publicDb();
-  if (!db) return [];
-  const classification = await activePublicClassification(db);
-  if (!classification) return [];
-  if (classification.scanIds?.length === 0) return [];
-  let request = db.from("scans").select("id,extension_id,version,severity,decision,public_outcome,decision_basis,evidence_confidence,scanned_at,coverage_percent,decision_reason").in("scan_purpose", ["public_intelligence", "benchmark"]).eq("score_schema_version", classification.scoreSchemaVersion).eq("analysis_status", "complete").eq("policy_version", classification.policyVersion).eq("ruleset_version", classification.rulesetVersion).eq("scanner_build", classification.scannerBuild).in("decision", ["review", "block"]).order("scanned_at", { ascending: false }).limit(80);
-  request = classification.scanIds ? request.in("id", classification.scanIds) : request.is("superseded_at", null);
-  const { data: scans } = await request;
-  const rank = (severity: string) => ({ CRITICAL: 5, HIGH: 4, MEDIUM: 3, LOW: 2, INFO: 1 }[severity] || 0);
-  const latest = new Map<string, Record<string, unknown>>();
-  for (const scan of (scans || []) as Array<Record<string, unknown>>) { const key = `${String(scan.extension_id).toLowerCase()}@${scan.version}`; if (!latest.has(key)) latest.set(key, scan); }
-  const rows = [...latest.values()].sort((a, b) => rank(String(b.severity)) - rank(String(a.severity)) || String(b.scanned_at).localeCompare(String(a.scanned_at))).slice(0, limit);
-  const ids = [...new Set(rows.map((item) => String(item.extension_id)))];
-  const { data: extensions } = ids.length ? await db.from("extensions").select("id,display_name").in("id", ids) : { data: [] as Array<{ id: string; display_name: string }> };
-  const names = new Map((extensions || []).map((item) => [String(item.id), String(item.display_name)]));
-  return rows.map((item) => ({ scan_id: String(item.id), extension_id: String(item.extension_id), version: String(item.version), display_name: names.get(String(item.extension_id)) || String(item.extension_id), severity: String(item.severity || "INFO"), decision: normalizeDecision(item.decision), public_outcome: String(item.public_outcome || legacyPublicOutcome(item)), decision_basis: String(item.decision_basis || "legacy_scanner_result"), evidence_confidence: String(item.evidence_confidence || "none"), scanned_at: String(item.scanned_at), coverage_percent: Number(item.coverage_percent || 0), decision_reason: String(item.decision_reason || "Open the exact artifact evidence.") }));
+  if (!db) return mirror();
+  try {
+    const classification = await activePublicClassification(db);
+    if (!classification || classification.scanIds?.length === 0) return mirror();
+    let request = db.from("scans").select("id,extension_id,version,severity,decision,public_outcome,decision_basis,evidence_confidence,scanned_at,coverage_percent,decision_reason").in("scan_purpose", ["public_intelligence", "benchmark"]).eq("score_schema_version", classification.scoreSchemaVersion).eq("analysis_status", "complete").eq("policy_version", classification.policyVersion).eq("ruleset_version", classification.rulesetVersion).eq("scanner_build", classification.scannerBuild).in("decision", ["review", "block"]).order("scanned_at", { ascending: false }).limit(80);
+    request = classification.scanIds ? request.in("id", classification.scanIds) : request.is("superseded_at", null);
+    const { data: scans, error: scanError } = await request;
+    if (scanError) return mirror();
+    const rank = (severity: string) => ({ CRITICAL: 5, HIGH: 4, MEDIUM: 3, LOW: 2, INFO: 1 }[severity] || 0);
+    const latest = new Map<string, Record<string, unknown>>();
+    for (const scan of (scans || []) as Array<Record<string, unknown>>) { const key = `${String(scan.extension_id).toLowerCase()}@${scan.version}`; if (!latest.has(key)) latest.set(key, scan); }
+    const rows = [...latest.values()].sort((a, b) => rank(String(b.severity)) - rank(String(a.severity)) || String(b.scanned_at).localeCompare(String(a.scanned_at))).slice(0, limit);
+    const ids = [...new Set(rows.map((item) => String(item.extension_id)))];
+    const { data: extensions, error: extensionError } = ids.length ? await db.from("extensions").select("id,display_name").in("id", ids) : { data: [] as Array<{ id: string; display_name: string }>, error: null };
+    if (extensionError) return mirror();
+    const names = new Map((extensions || []).map((item) => [String(item.id), String(item.display_name)]));
+    return rows.map((item) => ({ scan_id: String(item.id), extension_id: String(item.extension_id), version: String(item.version), display_name: names.get(String(item.extension_id)) || String(item.extension_id), severity: String(item.severity || "INFO"), decision: normalizeDecision(item.decision), public_outcome: String(item.public_outcome || legacyPublicOutcome(item)), decision_basis: String(item.decision_basis || "legacy_scanner_result"), evidence_confidence: String(item.evidence_confidence || "none"), scanned_at: String(item.scanned_at), coverage_percent: Number(item.coverage_percent || 0), decision_reason: String(item.decision_reason || "Open the exact artifact evidence.") }));
+  } catch {
+    return mirror();
+  }
 }
 
 /** Current-policy reproducible scans only. Development and private work never enter this catalog. */
 async function fetchPublicInventory(limit = 240): Promise<PublicInventory> {
+  const mirror = async () => {
+    const inventory = (await getPublicRegistrySnapshot())?.inventory;
+    return inventory ? { ...inventory, items: inventory.items.slice(0, limit) } : emptyInventory();
+  };
   const db = publicDb();
-  if (!db) return emptyInventory();
-  const classification = await activePublicClassification(db);
-  if (!classification) return emptyInventory();
-  if (classification.scanIds?.length === 0) return emptyInventory();
-  let request = db.from("scans").select("id,extension_id,version,artifact_sha256,severity,decision,decision_reason,public_outcome,decision_basis,evidence_confidence,provenance_tier,expected_profile_id,capability_assessment,score_schema_version,risk_score,malware_score,coverage_percent,scanner_build,ruleset_version,scanned_at").in("scan_purpose", ["public_intelligence", "benchmark"]).eq("score_schema_version", classification.scoreSchemaVersion).eq("analysis_status", "complete").eq("policy_version", classification.policyVersion).eq("ruleset_version", classification.rulesetVersion).eq("scanner_build", classification.scannerBuild).in("decision", ["allow", "review", "block"]).order("scanned_at", { ascending: false }).limit(240);
-  request = classification.scanIds ? request.in("id", classification.scanIds) : request.is("superseded_at", null);
-  const { data: scans, error } = await request;
-  if (error || !scans?.length) return emptyInventory();
-  const latest = new Map<string, (typeof scans)[number]>();
-  for (const scan of scans) {
-    const key = `${String(scan.extension_id).toLowerCase()}@${scan.version}`;
-    if (!latest.has(key)) latest.set(key, scan);
+  if (!db) return mirror();
+  try {
+    const classification = await activePublicClassification(db);
+    if (!classification || classification.scanIds?.length === 0) return mirror();
+    let request = db.from("scans").select("id,extension_id,version,artifact_sha256,severity,decision,decision_reason,public_outcome,decision_basis,evidence_confidence,provenance_tier,expected_profile_id,capability_assessment,score_schema_version,risk_score,malware_score,coverage_percent,scanner_build,ruleset_version,scanned_at").in("scan_purpose", ["public_intelligence", "benchmark"]).eq("score_schema_version", classification.scoreSchemaVersion).eq("analysis_status", "complete").eq("policy_version", classification.policyVersion).eq("ruleset_version", classification.rulesetVersion).eq("scanner_build", classification.scannerBuild).in("decision", ["allow", "review", "block"]).order("scanned_at", { ascending: false }).limit(240);
+    request = classification.scanIds ? request.in("id", classification.scanIds) : request.is("superseded_at", null);
+    const { data: scans, error } = await request;
+    if (error || !scans?.length) return mirror();
+    const latest = new Map<string, (typeof scans)[number]>();
+    for (const scan of scans) {
+      const key = `${String(scan.extension_id).toLowerCase()}@${scan.version}`;
+      if (!latest.has(key)) latest.set(key, scan);
+    }
+    const selectedScans = [...latest.values()].slice(0, Math.min(limit, 240));
+    const ids = [...new Set(selectedScans.map((row) => String(row.extension_id)))];
+    const { data: stored, error: storedError } = await db.from("extensions").select("id,display_name,publisher,description,icon_url,publisher_verified").in("id", ids);
+    if (storedError) return mirror();
+    const metadata = new Map((stored || []).map((item) => [String(item.id), item]));
+    const items: PublicInventoryItem[] = selectedScans.map((row) => {
+      const extension = metadata.get(String(row.extension_id));
+      const assessment = objectValue(row.capability_assessment);
+      const matched = Array.isArray(assessment.matched) ? assessment.matched.map(String) : [];
+      return {
+        scan_id: String(row.id), extension_id: String(row.extension_id), version: String(row.version), artifact_sha256: String(row.artifact_sha256),
+        display_name: String(extension?.display_name || row.extension_id), publisher: String(extension?.publisher || String(row.extension_id).split(".")[0]),
+        description: matched.length ? `Expected: ${matched.map(humanize).join(", ")}` : String(row.decision_reason || extension?.description || "Open the exact artifact evidence."),
+        icon_url: String(extension?.icon_url || ""), publisher_verified: Boolean(extension?.publisher_verified), severity: String(row.severity || "INFO"),
+        decision: normalizeDecision(row.decision), public_outcome: String(row.public_outcome || legacyPublicOutcome(row)), decision_basis: String(row.decision_basis || "legacy_scanner_result"),
+        evidence_confidence: String(row.evidence_confidence || "none"), provenance_tier: String(row.provenance_tier || "unknown"), expected_profile_id: String(row.expected_profile_id || ""), capability_assessment: assessment,
+        scanned_at: String(row.scanned_at), coverage_percent: Number(row.coverage_percent || 0), decision_reason: String(row.decision_reason || "Open the exact artifact evidence."),
+        risk_score: Number(row.risk_score || 0), malware_score: Number(row.malware_score || 0), scanner_build: String(row.scanner_build || "unknown"), ruleset_version: String(row.ruleset_version || "unknown"), score_schema_version: String(row.score_schema_version || "1"),
+      };
+    });
+    return { items, totals: { extensions: new Set(items.map((item) => item.extension_id)).size, releases: items.length, complete: items.filter((item) => item.public_outcome !== "incomplete").length, allowed: items.filter((item) => item.decision === "allow").length, expected: items.filter((item) => item.public_outcome === "expected_capability").length, investigate: items.filter((item) => item.public_outcome === "investigate").length, review: items.filter((item) => item.decision === "review").length, blocked: items.filter((item) => item.decision === "block").length, lastScannedAt: items[0]?.scanned_at || null } };
+  } catch {
+    return mirror();
   }
-  const selectedScans = [...latest.values()].slice(0, Math.min(limit, 240));
-  const ids = [...new Set(selectedScans.map((row) => String(row.extension_id)))];
-  const { data: stored } = await db.from("extensions").select("id,display_name,publisher,description,icon_url,publisher_verified").in("id", ids);
-  const metadata = new Map((stored || []).map((item) => [String(item.id), item]));
-  const items: PublicInventoryItem[] = selectedScans.map((row) => {
-    const extension = metadata.get(String(row.extension_id));
-    const assessment = objectValue(row.capability_assessment);
-    const matched = Array.isArray(assessment.matched) ? assessment.matched.map(String) : [];
-    return {
-      scan_id: String(row.id), extension_id: String(row.extension_id), version: String(row.version), artifact_sha256: String(row.artifact_sha256),
-      display_name: String(extension?.display_name || row.extension_id), publisher: String(extension?.publisher || String(row.extension_id).split(".")[0]),
-      description: matched.length ? `Expected: ${matched.map(humanize).join(", ")}` : String(row.decision_reason || extension?.description || "Open the exact artifact evidence."),
-      icon_url: String(extension?.icon_url || ""), publisher_verified: Boolean(extension?.publisher_verified), severity: String(row.severity || "INFO"),
-      decision: normalizeDecision(row.decision), public_outcome: String(row.public_outcome || legacyPublicOutcome(row)), decision_basis: String(row.decision_basis || "legacy_scanner_result"),
-      evidence_confidence: String(row.evidence_confidence || "none"), provenance_tier: String(row.provenance_tier || "unknown"), expected_profile_id: String(row.expected_profile_id || ""), capability_assessment: assessment,
-      scanned_at: String(row.scanned_at), coverage_percent: Number(row.coverage_percent || 0), decision_reason: String(row.decision_reason || "Open the exact artifact evidence."),
-      risk_score: Number(row.risk_score || 0), malware_score: Number(row.malware_score || 0), scanner_build: String(row.scanner_build || "unknown"), ruleset_version: String(row.ruleset_version || "unknown"), score_schema_version: String(row.score_schema_version || "1"),
-    };
-  });
-  return { items, totals: { extensions: new Set(items.map((item) => item.extension_id)).size, releases: items.length, complete: items.filter((item) => item.public_outcome !== "incomplete").length, allowed: items.filter((item) => item.decision === "allow").length, expected: items.filter((item) => item.public_outcome === "expected_capability").length, investigate: items.filter((item) => item.public_outcome === "investigate").length, review: items.filter((item) => item.decision === "review").length, blocked: items.filter((item) => item.decision === "block").length, lastScannedAt: items[0]?.scanned_at || null } };
 }
 
 async function fetchCatalog(query = "", limit = 50): Promise<CatalogExtension[]> {
@@ -104,6 +119,11 @@ async function fetchCatalog(query = "", limit = 50): Promise<CatalogExtension[]>
     const { data, error } = await request;
     if (!error && data?.length) return data.map((row) => normalizeCatalogRow(row as Record<string, unknown>));
   }
+  const snapshot = await getPublicRegistrySnapshot();
+  if (snapshot) {
+    const needle = query.trim().toLowerCase();
+    return snapshot.catalog.filter((item) => !needle || [item.id, item.display_name, item.publisher].some((value) => value.toLowerCase().includes(needle))).slice(0, Math.min(limit, 100));
+  }
   if (!query.trim()) return [];
   const registry = await searchMarketplace(query, limit);
   return registry.map((item, index) => ({ id: item.extension_id, name: item.extension_id.split(".").slice(1).join("."), display_name: item.display_name, publisher: item.publisher, description: item.short_description, registry: item.registry || "vs-marketplace", publisher_verified: item.publisher_verified, installs: item.install_count, rating: item.rating_average, icon_url: item.icon_url, repository_url: "", last_published_at: item.last_updated || null, catalog_rank: index + 1, latest_version: item.version, latest_scan: null }));
@@ -112,41 +132,48 @@ async function fetchCatalog(query = "", limit = 50): Promise<CatalogExtension[]>
 export async function getExtensionProduct(id: string, client?: SupabaseClient): Promise<{ extension: CatalogExtension; versions: Array<Record<string, unknown>>; scan: Record<string, unknown> | null } | null> {
   const db = client || publicDb();
   if (db) {
-    const storedId = await resolveStoredExtensionId(db, id);
-    if (!storedId) return registryProduct(id);
-    const [{ data: extension }, { data: versions }] = await Promise.all([
-      db.from("extensions").select("*").eq("id", storedId).maybeSingle(),
-      db.from("extension_versions").select("*").eq("extension_id", storedId).order("published_at", { ascending: false, nullsFirst: false }),
-    ]);
-    if (extension) {
-      let versionRows = versions || [];
-      if (versionRows.length <= 1) {
-        const registryVersions = await cachedVersions(storedId).catch(() => []);
-        const persisted = new Map(versionRows.map((item) => [String(item.version), item]));
-        versionRows = registryVersions.map((item) => ({ ...item, ...(persisted.get(item.version) || {}) }));
-        if (!versionRows.length) versionRows = versions || [];
+    try {
+      const storedId = await resolveStoredExtensionId(db, id);
+      if (storedId) {
+        const [{ data: extension }, { data: versions }] = await Promise.all([
+          db.from("extensions").select("*").eq("id", storedId).maybeSingle(),
+          db.from("extension_versions").select("*").eq("extension_id", storedId).order("published_at", { ascending: false, nullsFirst: false }),
+        ]);
+        if (extension) {
+          let versionRows = versions || [];
+          if (versionRows.length <= 1) {
+            const registryVersions = await cachedVersions(storedId).catch(() => []);
+            const persisted = new Map(versionRows.map((item) => [String(item.version), item]));
+            versionRows = registryVersions.map((item) => ({ ...item, ...(persisted.get(item.version) || {}) }));
+            if (!versionRows.length) versionRows = versions || [];
+          }
+          versionRows = dedupeVersions(versionRows);
+          const latest = versionRows.find((item) => item.is_latest) || versionRows[0];
+          let scan: Record<string, unknown> | null = null;
+          if (versionRows.length) {
+            const scansByVersion = await getVisibleScansByVersion(db, storedId);
+            versionRows = versionRows.map((item) => {
+              const versionScan = scansByVersion.get(String(item.version));
+              return {
+                ...item,
+                latest_scan_id: versionScan?.id || null,
+                scan_state: versionScan ? String(versionScan.analysis_status || "complete") : "not_scanned",
+                decision: versionScan?.decision || null,
+                coverage_percent: versionScan?.coverage_percent ?? null,
+                scanned_at: versionScan?.scanned_at || null,
+              };
+            });
+            scan = scansByVersion.get(String(latest?.version || "")) || null;
+          }
+          return { extension: normalizeCatalogRow(extension as Record<string, unknown>), versions: dedupeVersions(versionRows), scan };
+        }
       }
-      versionRows = dedupeVersions(versionRows);
-      const latest = versionRows.find((item) => item.is_latest) || versionRows[0];
-      let scan: Record<string, unknown> | null = null;
-      if (versionRows.length) {
-        const scansByVersion = await getVisibleScansByVersion(db, storedId);
-        versionRows = versionRows.map((item) => {
-          const versionScan = scansByVersion.get(String(item.version));
-          return {
-            ...item,
-            latest_scan_id: versionScan?.id || null,
-            scan_state: versionScan ? String(versionScan.analysis_status || "complete") : "not_scanned",
-            decision: versionScan?.decision || null,
-            coverage_percent: versionScan?.coverage_percent ?? null,
-            scanned_at: versionScan?.scanned_at || null,
-          };
-        });
-        scan = scansByVersion.get(String(latest?.version || "")) || null;
-      }
-      return { extension: normalizeCatalogRow(extension as Record<string, unknown>), versions: dedupeVersions(versionRows), scan };
+    } catch {
+      // The public mirror is used while Supabase REST is restricted.
     }
   }
+  const mirrored = await mirroredExtensionProduct(id);
+  if (mirrored) return mirrored;
   return registryProduct(id);
 }
 
@@ -163,28 +190,40 @@ async function registryProduct(id: string): Promise<{ extension: CatalogExtensio
 export async function getVersionProduct(id: string, version: string, client?: SupabaseClient): Promise<Record<string, unknown> | null> {
   const db = client || publicDb();
   if (!db) return null;
-  const storedId = await resolveStoredExtensionId(db, id);
-  if (!storedId) return null;
-  const { data: versionRow } = await db.from("extension_versions").select("*").eq("extension_id", storedId).eq("version", version).maybeSingle();
-  if (!versionRow) return null;
-  const scan = (await getVisibleScansByVersion(db, storedId, version)).get(version);
-  const visibleVersion = {
-    ...versionRow,
-    latest_scan_id: scan?.id || null,
-    scan_state: scan ? String(scan.analysis_status || "complete") : "not_scanned",
-  };
-  if (!scan?.id) return { version: visibleVersion, scan: null, findings: [], files: [], dependencies: [] };
-  return loadVersionScan(db, storedId, version, String(scan.id), visibleVersion);
+  try {
+    const storedId = await resolveStoredExtensionId(db, id);
+    if (storedId) {
+      const { data: versionRow } = await db.from("extension_versions").select("*").eq("extension_id", storedId).eq("version", version).maybeSingle();
+      if (versionRow) {
+        const scan = (await getVisibleScansByVersion(db, storedId, version)).get(version);
+        const visibleVersion = {
+          ...versionRow,
+          latest_scan_id: scan?.id || null,
+          scan_state: scan ? String(scan.analysis_status || "complete") : "not_scanned",
+        };
+        if (!scan?.id) return { version: visibleVersion, scan: null, findings: [], files: [], dependencies: [] };
+        return loadVersionScan(db, storedId, version, String(scan.id), visibleVersion);
+      }
+    }
+  } catch {
+    // Fall through to the read-only mirror.
+  }
+  return mirroredVersionProduct(id, version);
 }
 
 export async function getVersionScanProduct(id: string, version: string, scanId: string, client?: SupabaseClient): Promise<Record<string, unknown> | null> {
   const db = client || publicDb();
   if (!db) return null;
-  const storedId = await resolveStoredExtensionId(db, id);
-  if (!storedId) return null;
-  const { data: versionRow } = await db.from("extension_versions").select("*").eq("extension_id", storedId).eq("version", version).maybeSingle();
-  if (!versionRow) return null;
-  return loadVersionScan(db, storedId, version, scanId, versionRow);
+  try {
+    const storedId = await resolveStoredExtensionId(db, id);
+    if (storedId) {
+      const { data: versionRow } = await db.from("extension_versions").select("*").eq("extension_id", storedId).eq("version", version).maybeSingle();
+      if (versionRow) return loadVersionScan(db, storedId, version, scanId, versionRow);
+    }
+  } catch {
+    // Fall through to the read-only mirror.
+  }
+  return mirroredScanProduct(id, version, scanId);
 }
 
 async function loadVersionScan(db: SupabaseClient, id: string, version: string, scanId: string, versionRow: Record<string, unknown>): Promise<Record<string, unknown> | null> {
@@ -199,6 +238,38 @@ async function loadVersionScan(db: SupabaseClient, id: string, version: string, 
   const available = new Map((previews.data || []).map((item) => [String(item.path), item]));
   const fileRows = (files.data || []).map((item) => ({ ...item, preview_available: available.has(String(item.path)), preview: available.get(String(item.path)) || null }));
   return { version: versionRow, scan: scan.data, findings: findings.data || [], files: fileRows, dependencies: dependencies.data || [] };
+}
+
+async function mirroredExtensionProduct(id: string): Promise<{ extension: CatalogExtension; versions: Array<Record<string, unknown>>; scan: Record<string, unknown> | null } | null> {
+  const product = await getPublicRegistryProduct(id);
+  if (!product) return null;
+  const latest = product.versions.find((item) => item.is_latest) || product.versions[0];
+  const scan = product.scans.find((item) => item.version === String(latest?.version || ""))?.scan || null;
+  return { extension: product.extension, versions: product.versions, scan };
+}
+
+async function mirroredVersionProduct(id: string, version: string): Promise<Record<string, unknown> | null> {
+  const product = await getPublicRegistryProduct(id);
+  if (!product) return null;
+  const versionRow = product.versions.find((item) => String(item.version) === version);
+  if (!versionRow) return null;
+  const scan = product.scans.find((item) => item.version === version);
+  return {
+    version: versionRow,
+    scan: scan?.scan || null,
+    findings: scan?.findings || [],
+    files: scan?.files || [],
+    dependencies: scan?.dependencies || [],
+  };
+}
+
+async function mirroredScanProduct(id: string, version: string, scanId: string): Promise<Record<string, unknown> | null> {
+  const product = await getPublicRegistryProduct(id);
+  if (!product) return null;
+  const versionRow = product.versions.find((item) => String(item.version) === version);
+  const scan = product.scans.find((item) => item.version === version && String(item.scan.id) === scanId);
+  if (!versionRow || !scan) return null;
+  return { version: versionRow, scan: scan.scan, findings: scan.findings, files: scan.files, dependencies: scan.dependencies };
 }
 
 export async function seedExtensionFromRegistry(id: string): Promise<CatalogExtension> {
@@ -481,28 +552,57 @@ export function getVersionBadgeDecision(id: string, version: string): Promise<Ba
 }
 
 async function fetchBadgeDecision(rawId: string, version: string | null): Promise<BadgeDecision> {
+  const mirror = async () => mirroredBadgeDecision(rawId, version);
   const db = publicDb();
-  if (!db) return emptyBadgeDecision();
-  const storedId = await resolveStoredExtensionId(db, rawId);
-  if (!storedId) return emptyBadgeDecision();
-  const classification = await activePublicClassification(db).catch(() => null);
-  let request = db.from("scans").select("id,extension_id,version,decision,verdict,public_outcome,analysis_status,analysis_coverage,capability_assessment,scanned_at")
-    .eq("extension_id", storedId)
-    .in("scan_purpose", ["public_intelligence", "benchmark"])
-    .eq("analysis_status", "complete")
-    .is("superseded_at", null)
-    .order("scanned_at", { ascending: false })
-    .limit(1);
-  if (version) request = request.eq("version", version);
-  if (classification?.scanIds) request = request.in("id", classification.scanIds);
-  const { data } = await request;
-  const row = (data || [])[0] as Record<string, unknown> | undefined;
-  if (!row) return { ...emptyBadgeDecision(true), extension_id: storedId };
+  if (!db) return mirror();
+  try {
+    const storedId = await resolveStoredExtensionId(db, rawId);
+    if (!storedId) return mirror();
+    const classification = await activePublicClassification(db).catch(() => null);
+    let request = db.from("scans").select("id,extension_id,version,decision,verdict,public_outcome,analysis_status,analysis_coverage,capability_assessment,scanned_at")
+      .eq("extension_id", storedId)
+      .in("scan_purpose", ["public_intelligence", "benchmark"])
+      .eq("analysis_status", "complete")
+      .is("superseded_at", null)
+      .order("scanned_at", { ascending: false })
+      .limit(1);
+    if (version) request = request.eq("version", version);
+    if (classification?.scanIds) request = request.in("id", classification.scanIds);
+    const { data, error } = await request;
+    if (error) return mirror();
+    const row = (data || [])[0] as Record<string, unknown> | undefined;
+    if (!row) return { ...emptyBadgeDecision(true), extension_id: storedId };
+    const decision = normalizeDecision(row.decision);
+    return {
+      found: true,
+      extension_id: storedId,
+      version: String(row.version || ""),
+      decision: decision === "incomplete" ? null : decision,
+      verdict: row.verdict ? String(row.verdict) : null,
+      public_outcome: row.public_outcome ? String(row.public_outcome) : null,
+      analysis_status: String(row.analysis_status || "incomplete"),
+      capability_assessment: objectValue(row.capability_assessment),
+      analysis_coverage: objectValue(row.analysis_coverage),
+      scanned_at: row.scanned_at ? String(row.scanned_at) : null,
+    };
+  } catch {
+    return mirror();
+  }
+}
+
+async function mirroredBadgeDecision(id: string, version: string | null): Promise<BadgeDecision> {
+  const product = await getPublicRegistryProduct(id);
+  if (!product) return emptyBadgeDecision();
+  const scan = product.scans
+    .filter((item) => !version || item.version === version)
+    .sort((left, right) => String(right.scan.scanned_at || "").localeCompare(String(left.scan.scanned_at || "")))[0];
+  if (!scan) return { ...emptyBadgeDecision(true), extension_id: product.extension.id };
+  const row = scan.scan;
   const decision = normalizeDecision(row.decision);
   return {
     found: true,
-    extension_id: storedId,
-    version: String(row.version || ""),
+    extension_id: product.extension.id,
+    version: String(row.version || scan.version),
     decision: decision === "incomplete" ? null : decision,
     verdict: row.verdict ? String(row.verdict) : null,
     public_outcome: row.public_outcome ? String(row.public_outcome) : null,

@@ -1,0 +1,267 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
+import { Client } from "pg";
+
+const output = resolve("public/registry-snapshot.json");
+
+function connectionString() {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  const password = String(process.env.SUPABASE_PASSWORD || "").trim();
+  if (!password) throw new Error("DATABASE_URL or SUPABASE_PASSWORD is required for the public registry export.");
+  return `postgresql://postgres.kmdujtabqaxgoeltbxpq:${encodeURIComponent(password)}@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres?uselibpqcompat=true&sslmode=require`;
+}
+
+const client = new Client({ connectionString: connectionString() });
+await client.connect();
+
+try {
+  const generatedAt = new Date().toISOString();
+  const releaseResult = await client.query(`
+    select id, policy_version, ruleset_version, score_schema_version, scanner_build
+    from public.scan_publication_releases
+    where active = true
+    order by activated_at desc
+    limit 1
+  `);
+  const release = releaseResult.rows[0];
+  if (!release) throw new Error("No active public scan publication release exists.");
+
+  const memberResult = await client.query(
+    `select scan_id::text from public.scan_publication_release_scans where release_id = $1`,
+    [release.id],
+  );
+  const scanIds = memberResult.rows.map((row) => String(row.scan_id));
+  const scans = scanIds.length
+    ? (await client.query(`
+        select to_jsonb(s) - 'job_id' as scan
+        from public.scans s
+        where s.id = any($1::uuid[])
+          and s.scan_purpose in ('public_intelligence', 'benchmark')
+          and s.analysis_status = 'complete'
+          and s.policy_version = $2
+          and s.ruleset_version = $3
+          and s.score_schema_version = $4
+          and s.scanner_build = $5
+          and s.superseded_at is null
+        order by s.scanned_at desc
+      `, [scanIds, release.policy_version, release.ruleset_version, release.score_schema_version, release.scanner_build])).rows.map((row) => row.scan)
+    : [];
+
+  const extensions = (await client.query(`
+    select to_jsonb(e) as extension
+    from public.extensions e
+    order by e.catalog_rank asc nulls last, e.display_name asc
+  `)).rows.map((row) => row.extension);
+  const extensionIds = extensions.map((row) => String(row.id));
+  const versions = extensionIds.length
+    ? (await client.query(`
+        select to_jsonb(v) as version
+        from public.extension_versions v
+        where v.extension_id = any($1::text[])
+        order by v.extension_id, v.is_latest desc, v.published_at desc nulls last, v.version desc
+      `, [extensionIds])).rows.map((row) => row.version)
+    : [];
+
+  const related = await loadRelated(client, scanIds);
+  const catalog = extensions.map((extension) => normalizeCatalog(extension, versions.filter((row) => String(row.extension_id) === String(extension.id))));
+  const extensionById = new Map(extensions.map((row) => [String(row.id).toLowerCase(), row]));
+  const versionByExtension = groupBy(versions, (row) => String(row.extension_id).toLowerCase());
+  const scanRows = scans.filter((row) => ["allow", "review", "block"].includes(String(row.decision)));
+  const inventoryRows = latestByArtifact(scanRows).slice(0, 240);
+  const inventoryItems = inventoryRows.map((scan) => normalizeInventory(scan, extensionById.get(String(scan.extension_id).toLowerCase())));
+  const inventory = {
+    items: inventoryItems,
+    totals: {
+      extensions: new Set(inventoryItems.map((item) => item.extension_id)).size,
+      releases: inventoryItems.length,
+      complete: inventoryItems.filter((item) => item.public_outcome !== "incomplete").length,
+      allowed: inventoryItems.filter((item) => item.decision === "allow").length,
+      expected: inventoryItems.filter((item) => item.public_outcome === "expected_capability").length,
+      investigate: inventoryItems.filter((item) => item.public_outcome === "investigate").length,
+      review: inventoryItems.filter((item) => item.decision === "review").length,
+      blocked: inventoryItems.filter((item) => item.decision === "block").length,
+      lastScannedAt: inventoryItems[0]?.scanned_at || null,
+    },
+  };
+  const feed = latestByArtifact(scanRows.filter((row) => ["review", "block"].includes(String(row.decision))))
+    .sort((left, right) => severityRank(right.severity) - severityRank(left.severity) || String(right.scanned_at || "").localeCompare(String(left.scanned_at || "")))
+    .slice(0, 80)
+    .map((scan) => normalizeFeed(scan, extensionById.get(String(scan.extension_id).toLowerCase())));
+  const products = Object.fromEntries(extensions.map((extension) => {
+    const id = String(extension.id);
+    const extensionVersions = versionByExtension.get(id.toLowerCase()) || [];
+    const extensionScans = scans.filter((scan) => String(scan.extension_id).toLowerCase() === id.toLowerCase()).map((scan) => ({
+      version: String(scan.version),
+      scan,
+      findings: related.findings.get(String(scan.id)) || [],
+      files: related.files.get(String(scan.id)) || [],
+      dependencies: related.dependencies.get(String(scan.id)) || [],
+    }));
+    return [id.toLowerCase(), { extension: normalizeCatalog(extension, extensionVersions), versions: extensionVersions, scans: extensionScans }];
+  }));
+
+  const metricRow = (await client.query(`select * from public.public_intelligence_metrics()`)).rows[0] || {};
+  const freshnessRows = (await client.query(`
+    select distinct on (registry) registry, completed_at
+    from public.registry_refreshes
+    where status = 'complete'
+    order by registry, completed_at desc
+  `)).rows;
+  const freshness = { "vs-marketplace": null, openvsx: null };
+  for (const row of freshnessRows) if (row.registry in freshness) freshness[row.registry] = toIso(row.completed_at);
+  const metrics = {
+    as_of: generatedAt,
+    indexed_extensions: number(metricRow.indexed_extensions),
+    exact_releases_indexed: number(metricRow.exact_releases_indexed),
+    exact_releases_analyzed: number(metricRow.exact_releases_analyzed),
+    analyzer_complete_reports: number(metricRow.analyzer_complete_reports),
+    known_bad_artifacts: number(metricRow.known_bad_artifacts),
+    block_decisions: number(metricRow.block_decisions),
+    high_risk_reviews: number(metricRow.high_risk_reviews),
+    freshness,
+    time_to_analysis: number(metricRow.latency_sample_size) >= 20
+      ? { sample_size: number(metricRow.latency_sample_size), median_minutes: Math.round(number(metricRow.median_minutes)), p95_minutes: Math.round(number(metricRow.p95_minutes)), status: "measured" }
+      : { sample_size: 0, median_minutes: null, p95_minutes: null, status: "not_measured" },
+    definitions: {
+      exact_release: "One registry, extension ID, version, and SHA-256 artifact identity.",
+      analyzer_complete: "A latest operational report with complete required analysis; coverage is not a safety guarantee.",
+      known_bad: "An exact artifact matched authoritative malicious intelligence; REVIEW findings are excluded.",
+      latency: "Registry discovery to canonical scan completion. Published only after enough dated release records exist.",
+    },
+  };
+
+  const snapshot = { schema_version: 1, generated_at: generatedAt, metrics, feed, inventory, catalog, products };
+  await mkdir(dirname(output), { recursive: true });
+  await writeFile(output, `${JSON.stringify(snapshot)}\n`, "utf8");
+  console.log(JSON.stringify({ output, extensions: extensions.length, releases: versions.length, scans: scans.length, inventory: inventoryItems.length, bytes: Buffer.byteLength(JSON.stringify(snapshot)) }));
+} finally {
+  await client.end();
+}
+
+async function loadRelated(db, ids) {
+  const result = { findings: new Map(), files: new Map(), dependencies: new Map() };
+  if (!ids.length) return result;
+  const queries = [
+    ["findings", `select scan_id::text, to_jsonb(f) - 'scan_id' as item from public.findings f where f.scan_id = any($1::uuid[])`],
+    ["files", `select scan_id::text, to_jsonb(f) - 'scan_id' as item from public.artifact_files f where f.scan_id = any($1::uuid[]) order by f.path`],
+    ["dependencies", `select scan_id::text, to_jsonb(d) - 'scan_id' as item from public.dependencies d where d.scan_id = any($1::uuid[]) order by d.relationship, d.name`],
+  ];
+  for (const [name, sql] of queries) {
+    const rows = (await db.query(sql, [ids])).rows;
+    for (const row of rows) {
+      const items = result[name].get(row.scan_id) || [];
+      items.push(row.item);
+      result[name].set(row.scan_id, items);
+    }
+  }
+  return result;
+}
+
+function normalizeCatalog(row, versions) {
+  const latest = versions.find((item) => item.is_latest) || versions[0];
+  return {
+    id: String(row.id),
+    name: String(row.name || ""),
+    display_name: String(row.display_name || row.name || row.id),
+    publisher: String(row.publisher || String(row.id).split(".")[0]),
+    description: String(row.description || ""),
+    registry: String(row.registry || "vs-marketplace"),
+    publisher_verified: Boolean(row.publisher_verified),
+    installs: number(row.installs),
+    rating: number(row.rating),
+    icon_url: String(row.icon_url || ""),
+    repository_url: String(row.repository_url || ""),
+    last_published_at: toIso(row.last_published_at),
+    catalog_rank: row.catalog_rank == null ? null : number(row.catalog_rank),
+    ...(latest ? { latest_version: String(latest.version || "") } : {}),
+    latest_scan: null,
+  };
+}
+
+function normalizeFeed(scan, extension) {
+  return {
+    scan_id: String(scan.id),
+    extension_id: String(scan.extension_id),
+    version: String(scan.version),
+    display_name: String(extension?.display_name || scan.extension_id),
+    severity: String(scan.severity || "INFO"),
+    decision: normalizeDecision(scan.decision),
+    public_outcome: String(scan.public_outcome || legacyOutcome(scan)),
+    decision_basis: String(scan.decision_basis || "legacy_scanner_result"),
+    evidence_confidence: String(scan.evidence_confidence || "none"),
+    scanned_at: toIso(scan.scanned_at),
+    coverage_percent: number(scan.coverage_percent),
+    decision_reason: String(scan.decision_reason || "Open the exact artifact evidence."),
+  };
+}
+
+function normalizeInventory(scan, extension) {
+  const assessment = objectValue(scan.capability_assessment);
+  const matched = Array.isArray(assessment.matched) ? assessment.matched.map(String) : [];
+  return {
+    ...normalizeFeed(scan, extension),
+    publisher: String(extension?.publisher || String(scan.extension_id).split(".")[0]),
+    publisher_verified: Boolean(extension?.publisher_verified),
+    description: matched.length ? `Expected: ${matched.map((item) => item.replaceAll("_", " ")).join(", ")}` : String(scan.decision_reason || extension?.description || "Open the exact artifact evidence."),
+    icon_url: String(extension?.icon_url || ""),
+    risk_score: number(scan.risk_score),
+    malware_score: number(scan.malware_score),
+    artifact_sha256: String(scan.artifact_sha256 || ""),
+    provenance_tier: String(scan.provenance_tier || "unknown"),
+    expected_profile_id: String(scan.expected_profile_id || ""),
+    capability_assessment: assessment,
+    scanner_build: String(scan.scanner_build || "unknown"),
+    ruleset_version: String(scan.ruleset_version || "unknown"),
+    score_schema_version: String(scan.score_schema_version || "1"),
+  };
+}
+
+function latestByArtifact(rows) {
+  const latest = new Map();
+  for (const row of rows) {
+    const key = `${String(row.extension_id).toLowerCase()}@${row.version}`;
+    if (!latest.has(key)) latest.set(key, row);
+  }
+  return [...latest.values()];
+}
+
+function groupBy(rows, key) {
+  const groups = new Map();
+  for (const row of rows) {
+    const group = groups.get(key(row)) || [];
+    group.push(row);
+    groups.set(key(row), group);
+  }
+  return groups;
+}
+
+function normalizeDecision(value) {
+  return ["allow", "review", "block"].includes(String(value)) ? String(value) : "incomplete";
+}
+
+function legacyOutcome(row) {
+  if (row.decision === "allow") return "clear";
+  if (row.decision === "review") return "investigate";
+  if (row.decision === "block" && row.verdict === "malicious") return "confirmed_threat";
+  if (row.decision === "block") return "preventive_block";
+  return "incomplete";
+}
+
+function objectValue(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function severityRank(value) {
+  return ({ CRITICAL: 5, HIGH: 4, MEDIUM: 3, LOW: 2, INFO: 1 })[String(value)] || 0;
+}
+
+function number(value) {
+  const parsed = Number(value || 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function toIso(value) {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(String(value));
+  return Number.isNaN(date.getTime()) ? String(value) : date.toISOString();
+}
