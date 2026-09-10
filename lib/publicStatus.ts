@@ -1,4 +1,5 @@
 import { getDeepScanHealth } from "@/lib/deepScanHealth";
+import { getPublicRegistrySnapshot } from "@/lib/publicRegistrySnapshot";
 import { serviceDb } from "@/lib/supabase";
 import { unstable_cache } from "next/cache";
 
@@ -33,6 +34,7 @@ type HealthInput = {
   scanFailureRate: number | null;
   notificationFailureRate: number | null;
   databaseReachable: boolean;
+  publicMirrorAvailable?: boolean;
   incidents?: PublicIncident[];
   now?: Date;
 };
@@ -68,11 +70,15 @@ export function evaluatePublicStatus(input: HealthInput): PublicStatus {
         ? "operational"
         : input.runner.accepting_requests
           ? "degraded"
+          : input.publicMirrorAvailable
+            ? "degraded"
           : "outage",
       input.runner.status === "ready"
         ? "Runner heartbeat is current and requests are accepted."
         : input.runner.accepting_requests
           ? "Requests are accepted, but the latest runner heartbeat is delayed."
+          : input.publicMirrorAvailable
+            ? "Public registry reads are available from the mirror; scan requests wait for the primary data store."
           : "Deep Scan is not currently configured to accept requests.",
       checkedAt,
     ),
@@ -96,9 +102,15 @@ export function evaluatePublicStatus(input: HealthInput): PublicStatus {
       "api",
       "Public API and data store",
       "Availability of the database used by public product routes.",
-      input.databaseReachable ? "operational" : "outage",
+      input.databaseReachable
+        ? "operational"
+        : input.publicMirrorAvailable
+          ? "degraded"
+          : "outage",
       input.databaseReachable
         ? "The public status check reached the data store."
+        : input.publicMirrorAvailable
+          ? "The primary data store is restricted, but the read-only public registry mirror is serving data."
         : "The data store did not answer this status check.",
       checkedAt,
     ),
@@ -190,6 +202,20 @@ async function fetchPublicStatus(): Promise<PublicStatus> {
       incidents: incidents.error ? [] : (incidents.data as PublicIncident[]),
     });
   } catch {
+    const mirror = await getPublicRegistrySnapshot();
+    if (mirror) {
+      const refreshes = Object.values(mirror.metrics.freshness).filter(
+        (value): value is string => Boolean(value),
+      );
+      return evaluatePublicStatus({
+        runner,
+        databaseReachable: false,
+        publicMirrorAvailable: true,
+        newestRegistryRefresh: refreshes.sort().at(-1) || mirror.generated_at,
+        scanFailureRate: null,
+        notificationFailureRate: null,
+      });
+    }
     return evaluatePublicStatus({
       runner,
       databaseReachable: false,
