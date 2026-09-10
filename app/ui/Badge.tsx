@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
-import styles from "./primitives.module.css";
+import { cn } from "@/lib/ui/cn";
+import styles from "./system.module.css";
 
-export default function Badge({children,tone="neutral",icon}:{children:ReactNode;tone?:"neutral"|"brand"|"info"|"allow"|"review"|"block";icon?:ReactNode}) {
-  return <span className={`${styles.badge} ${styles[tone]}`}>{icon}{children}</span>;
+export type BadgeTone = "neutral" | "brand" | "info" | "allow" | "review" | "block";
+export default function Badge({ children, tone = "neutral", icon, className }: { children: ReactNode; tone?: BadgeTone; icon?: ReactNode; className?: string }) {
+  return <span className={cn(styles.badge, tone !== "neutral" && styles[tone], className)}>{icon}{children}</span>;
 }
