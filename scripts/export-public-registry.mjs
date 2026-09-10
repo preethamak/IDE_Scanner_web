@@ -33,7 +33,7 @@ try {
   const scanIds = memberResult.rows.map((row) => String(row.scan_id));
   const scans = scanIds.length
     ? (await client.query(`
-        select to_jsonb(s) - 'job_id' as scan
+        select to_jsonb(s) - 'job_id' - 'canonical_report' - 'intelligence_snapshot' as scan
         from public.scans s
         where s.id = any($1::uuid[])
           and s.scan_purpose in ('public_intelligence', 'benchmark')
@@ -53,19 +53,38 @@ try {
     order by e.catalog_rank asc nulls last, e.display_name asc
   `)).rows.map((row) => row.extension);
   const extensionIds = extensions.map((row) => String(row.id));
-  const versions = extensionIds.length
+  const latestVersions = extensionIds.length
     ? (await client.query(`
-        select to_jsonb(v) as version
-        from public.extension_versions v
-        where v.extension_id = any($1::text[])
-        order by v.extension_id, v.is_latest desc, v.published_at desc nulls last, v.version desc
+        with ranked as (
+          select v.*, row_number() over (partition by v.extension_id order by v.is_latest desc, v.published_at desc nulls last, v.version desc) as rank
+          from public.extension_versions v
+          where v.extension_id = any($1::text[])
+        )
+        select to_jsonb(ranked) - 'rank' as version
+        from ranked
+        where rank = 1
       `, [extensionIds])).rows.map((row) => row.version)
+    : [];
+  const scannedExtensionIds = [...new Set(scans.map((row) => String(row.extension_id)))];
+  const scannedVersions = [...new Set(scans.map((row) => String(row.version)))];
+  const productVersions = scannedExtensionIds.length
+    ? (await client.query(`
+        with ranked as (
+          select v.*, row_number() over (partition by v.extension_id order by v.is_latest desc, v.published_at desc nulls last, v.version desc) as rank
+          from public.extension_versions v
+          where v.extension_id = any($1::text[])
+        )
+        select to_jsonb(ranked) - 'rank' as version
+        from ranked
+        where rank <= 40 or is_latest or version = any($2::text[])
+        order by extension_id, is_latest desc, published_at desc nulls last, version desc
+      `, [scannedExtensionIds, scannedVersions])).rows.map((row) => row.version)
     : [];
 
   const related = await loadRelated(client, scanIds);
-  const catalog = extensions.map((extension) => normalizeCatalog(extension, versions.filter((row) => String(row.extension_id) === String(extension.id))));
+  const catalog = extensions.map((extension) => normalizeCatalog(extension, latestVersions.filter((row) => String(row.extension_id) === String(extension.id))));
   const extensionById = new Map(extensions.map((row) => [String(row.id).toLowerCase(), row]));
-  const versionByExtension = groupBy(versions, (row) => String(row.extension_id).toLowerCase());
+  const versionByExtension = groupBy(productVersions, (row) => String(row.extension_id).toLowerCase());
   const scanRows = scans.filter((row) => ["allow", "review", "block"].includes(String(row.decision)));
   const inventoryRows = latestByArtifact(scanRows).slice(0, 240);
   const inventoryItems = inventoryRows.map((scan) => normalizeInventory(scan, extensionById.get(String(scan.extension_id).toLowerCase())));
@@ -87,7 +106,7 @@ try {
     .sort((left, right) => severityRank(right.severity) - severityRank(left.severity) || String(right.scanned_at || "").localeCompare(String(left.scanned_at || "")))
     .slice(0, 80)
     .map((scan) => normalizeFeed(scan, extensionById.get(String(scan.extension_id).toLowerCase())));
-  const products = Object.fromEntries(extensions.map((extension) => {
+  const products = Object.fromEntries(extensions.filter((extension) => scannedExtensionIds.includes(String(extension.id))).map((extension) => {
     const id = String(extension.id);
     const extensionVersions = versionByExtension.get(id.toLowerCase()) || [];
     const extensionScans = scans.filter((scan) => String(scan.extension_id).toLowerCase() === id.toLowerCase()).map((scan) => ({
@@ -133,7 +152,7 @@ try {
   const snapshot = { schema_version: 1, generated_at: generatedAt, metrics, feed, inventory, catalog, products };
   await mkdir(dirname(output), { recursive: true });
   await writeFile(output, `${JSON.stringify(snapshot)}\n`, "utf8");
-  console.log(JSON.stringify({ output, extensions: extensions.length, releases: versions.length, scans: scans.length, inventory: inventoryItems.length, bytes: Buffer.byteLength(JSON.stringify(snapshot)) }));
+  console.log(JSON.stringify({ output, extensions: extensions.length, releases: latestVersions.length, product_releases: productVersions.length, scans: scans.length, inventory: inventoryItems.length, bytes: Buffer.byteLength(JSON.stringify(snapshot)) }));
 } finally {
   await client.end();
 }
@@ -143,7 +162,7 @@ async function loadRelated(db, ids) {
   if (!ids.length) return result;
   const queries = [
     ["findings", `select scan_id::text, to_jsonb(f) - 'scan_id' as item from public.findings f where f.scan_id = any($1::uuid[])`],
-    ["files", `select scan_id::text, to_jsonb(f) - 'scan_id' as item from public.artifact_files f where f.scan_id = any($1::uuid[]) order by f.path`],
+    ["files", `with ranked as (select f.*, row_number() over (partition by f.scan_id order by f.path) as rank from public.artifact_files f where f.scan_id = any($1::uuid[])) select scan_id::text, to_jsonb(ranked) - 'scan_id' - 'rank' as item from ranked where rank <= 5000 order by path`],
     ["dependencies", `select scan_id::text, to_jsonb(d) - 'scan_id' as item from public.dependencies d where d.scan_id = any($1::uuid[]) order by d.relationship, d.name`],
   ];
   for (const [name, sql] of queries) {
