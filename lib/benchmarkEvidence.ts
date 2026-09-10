@@ -1,4 +1,5 @@
 import { publicDb } from "@/lib/supabase";
+import { getPublicRegistrySnapshot } from "@/lib/publicRegistrySnapshot";
 import { unstable_cache } from "next/cache";
 import { benchmarkRows } from "@/lib/websiteBenchmarkRows";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -27,34 +28,42 @@ const cachedBenchmark=unstable_cache(async()=>fetchReproducibleBenchmark(),["pub
 export function getReproducibleBenchmark(): Promise<{ rows: ReproducibleBenchmarkRow[]; published: number; awaiting: number }> { return cachedBenchmark(); }
 
 async function fetchReproducibleBenchmark(): Promise<{ rows: ReproducibleBenchmarkRow[]; published: number; awaiting: number }> {
-  const db = publicDb();
-  if (!db) return { rows: benchmarkRows.map((row) => ({ ...row, scan: null })), published: 0, awaiting: benchmarkRows.length };
-  const release = await activeBenchmarkPublication(db);
-  // A benchmark is evidence for a particular published decision system. Never
-  // substitute an older report when the current release has not scanned it.
-  if (!release || release.scanIds?.length === 0) {
+  const mirror = async () => {
+    const snapshot = await getPublicRegistrySnapshot();
+    if (snapshot?.benchmark) return snapshot.benchmark as { rows: ReproducibleBenchmarkRow[]; published: number; awaiting: number };
     return { rows: benchmarkRows.map((row) => ({ ...row, scan: null })), published: 0, awaiting: benchmarkRows.length };
+  };
+  const db = publicDb();
+  if (!db) return mirror();
+  try {
+    const release = await activeBenchmarkPublication(db);
+    // A benchmark is evidence for a particular published decision system. Never
+    // substitute an older report when the current release has not scanned it.
+    if (!release || release.scanIds?.length === 0) return mirror();
+    const ids = [...new Set(benchmarkRows.map((row) => row.id))];
+    const identityFilter = ids.map((id) => `extension_id.ilike.${id}`).join(",");
+    let request = db.from("scans").select("id,extension_id,version,artifact_sha256,public_outcome,decision,decision_reason,policy_version,scanner_build,ruleset_version,coverage_percent,scanned_at,score_schema_version,severity,malware_score,risk_score,superseded_at").in("scan_purpose", ["public_intelligence", "benchmark"]).eq("analysis_status", "complete").eq("policy_version", release.policyVersion).eq("ruleset_version", release.rulesetVersion).eq("score_schema_version", release.scoreSchemaVersion).eq("scanner_build", release.scannerBuild).or(identityFilter).order("scanned_at", { ascending: false });
+    request = release.scanIds ? request.in("id", release.scanIds) : request.is("superseded_at", null);
+    const { data, error } = await request;
+    if (error) return mirror();
+    const byArtifact = new Map<string, Record<string, unknown>>();
+    for (const scan of selectBenchmarkScansForRelease((data || []) as BenchmarkScan[], release)) {
+      const key = artifactKey(String(scan.extension_id), String(scan.version), String(scan.artifact_sha256));
+      if (!byArtifact.has(key) && Number(scan.coverage_percent) === 100 && String(scan.scanner_build || "") && String(scan.ruleset_version || "")) byArtifact.set(key, scan);
+    }
+    const rows: ReproducibleBenchmarkRow[] = benchmarkRows.map((row) => {
+      const scan = byArtifact.get(artifactKey(row.id, row.version, row.sha256));
+      return { ...row, scan: scan ? {
+        id: String(scan.id), public_outcome: String(scan.public_outcome || "incomplete"), decision: String(scan.decision || "incomplete"), decision_reason: String(scan.decision_reason || ""), artifact_sha256: String(scan.artifact_sha256),
+        scanner_build: String(scan.scanner_build), ruleset_version: String(scan.ruleset_version), coverage_percent: Number(scan.coverage_percent), scanned_at: String(scan.scanned_at), score_schema_version: String(scan.score_schema_version || "1"),
+        severity: String(scan.severity || "INFO"), malware_score: Number(scan.malware_score || 0), risk_score: Number(scan.risk_score || 0),
+      } : null };
+    });
+    const published = rows.filter((row) => row.scan).length;
+    return { rows, published, awaiting: rows.length - published };
+  } catch {
+    return mirror();
   }
-  const ids = [...new Set(benchmarkRows.map((row) => row.id))];
-  const identityFilter = ids.map((id) => `extension_id.ilike.${id}`).join(",");
-  let request = db.from("scans").select("id,extension_id,version,artifact_sha256,public_outcome,decision,decision_reason,policy_version,scanner_build,ruleset_version,coverage_percent,scanned_at,score_schema_version,severity,malware_score,risk_score,superseded_at").in("scan_purpose", ["public_intelligence", "benchmark"]).eq("analysis_status", "complete").eq("policy_version", release.policyVersion).eq("ruleset_version", release.rulesetVersion).eq("score_schema_version", release.scoreSchemaVersion).eq("scanner_build", release.scannerBuild).or(identityFilter).order("scanned_at", { ascending: false });
-  request = release.scanIds ? request.in("id", release.scanIds) : request.is("superseded_at", null);
-  const { data } = await request;
-  const byArtifact = new Map<string, Record<string, unknown>>();
-  for (const scan of selectBenchmarkScansForRelease((data || []) as BenchmarkScan[], release)) {
-    const key = artifactKey(String(scan.extension_id), String(scan.version), String(scan.artifact_sha256));
-    if (!byArtifact.has(key) && Number(scan.coverage_percent) === 100 && String(scan.scanner_build || "") && String(scan.ruleset_version || "")) byArtifact.set(key, scan);
-  }
-  const rows: ReproducibleBenchmarkRow[] = benchmarkRows.map((row) => {
-    const scan = byArtifact.get(artifactKey(row.id, row.version, row.sha256));
-    return { ...row, scan: scan ? {
-      id: String(scan.id), public_outcome: String(scan.public_outcome || "incomplete"), decision: String(scan.decision || "incomplete"), decision_reason: String(scan.decision_reason || ""), artifact_sha256: String(scan.artifact_sha256),
-      scanner_build: String(scan.scanner_build), ruleset_version: String(scan.ruleset_version), coverage_percent: Number(scan.coverage_percent), scanned_at: String(scan.scanned_at), score_schema_version: String(scan.score_schema_version || "1"),
-      severity: String(scan.severity || "INFO"), malware_score: Number(scan.malware_score || 0), risk_score: Number(scan.risk_score || 0),
-    } : null };
-  });
-  const published = rows.filter((row) => row.scan).length;
-  return { rows, published, awaiting: rows.length - published };
 }
 
 /**

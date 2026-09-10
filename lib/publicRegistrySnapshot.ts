@@ -28,6 +28,11 @@ export type PublicRegistrySnapshot = {
   feed: PublicSecurityFeedItem[];
   inventory: PublicInventory;
   catalog: CatalogExtension[];
+  benchmark: {
+    rows: Array<Record<string, unknown>>;
+    published: number;
+    awaiting: number;
+  };
   products: Record<string, PublicRegistryProduct>;
 };
 
@@ -57,6 +62,8 @@ export async function getPublicRegistrySnapshot(): Promise<PublicRegistrySnapsho
       !Array.isArray(body.feed) ||
       !body.inventory ||
       !Array.isArray(body.catalog) ||
+      !body.benchmark ||
+      !Array.isArray(body.benchmark.rows) ||
       !body.products ||
       typeof body.products !== "object"
     ) {

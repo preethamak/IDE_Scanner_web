@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { Client } from "pg";
+import { benchmarkRows } from "../lib/websiteBenchmarkRows.ts";
 
 const output = resolve("public/registry-snapshot.json");
 
@@ -106,6 +107,21 @@ try {
     .sort((left, right) => severityRank(right.severity) - severityRank(left.severity) || String(right.scanned_at || "").localeCompare(String(left.scanned_at || "")))
     .slice(0, 80)
     .map((scan) => normalizeFeed(scan, extensionById.get(String(scan.extension_id).toLowerCase())));
+  const scansByArtifact = new Map(scans.map((scan) => [artifactKey(scan), scan]));
+  const benchmarkRowsWithScans = benchmarkRows.map((row) => {
+    const scan = scansByArtifact.get(`${row.id.toLowerCase()}@${row.version}@${row.sha256.toLowerCase()}`);
+    return {
+      ...row,
+      scan: scan && number(scan.coverage_percent) === 100 && String(scan.scanner_build || "") && String(scan.ruleset_version || "")
+        ? {
+            id: String(scan.id), public_outcome: String(scan.public_outcome || "incomplete"), decision: String(scan.decision || "incomplete"), decision_reason: String(scan.decision_reason || ""), artifact_sha256: String(scan.artifact_sha256),
+            scanner_build: String(scan.scanner_build), ruleset_version: String(scan.ruleset_version), coverage_percent: number(scan.coverage_percent), scanned_at: toIso(scan.scanned_at), score_schema_version: String(scan.score_schema_version || "1"),
+            severity: String(scan.severity || "INFO"), malware_score: number(scan.malware_score), risk_score: number(scan.risk_score),
+          }
+        : null,
+    };
+  });
+  const benchmark = { rows: benchmarkRowsWithScans, published: benchmarkRowsWithScans.filter((row) => row.scan).length, awaiting: benchmarkRowsWithScans.filter((row) => !row.scan).length };
   const products = Object.fromEntries(extensions.filter((extension) => scannedExtensionIds.includes(String(extension.id))).map((extension) => {
     const id = String(extension.id);
     const extensionVersions = versionByExtension.get(id.toLowerCase()) || [];
@@ -149,7 +165,7 @@ try {
     },
   };
 
-  const snapshot = { schema_version: 1, generated_at: generatedAt, metrics, feed, inventory, catalog, products };
+  const snapshot = { schema_version: 1, generated_at: generatedAt, metrics, feed, inventory, catalog, benchmark, products };
   await mkdir(dirname(output), { recursive: true });
   await writeFile(output, `${JSON.stringify(snapshot)}\n`, "utf8");
   console.log(JSON.stringify({ output, extensions: extensions.length, releases: latestVersions.length, product_releases: productVersions.length, scans: scans.length, inventory: inventoryItems.length, bytes: Buffer.byteLength(JSON.stringify(snapshot)) }));
@@ -242,6 +258,10 @@ function latestByArtifact(rows) {
     if (!latest.has(key)) latest.set(key, row);
   }
   return [...latest.values()];
+}
+
+function artifactKey(row) {
+  return `${String(row.extension_id).toLowerCase()}@${String(row.version)}@${String(row.artifact_sha256).toLowerCase()}`;
 }
 
 function groupBy(rows, key) {
