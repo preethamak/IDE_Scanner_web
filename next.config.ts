@@ -33,6 +33,17 @@ const nextConfig: NextConfig = {
   // Standalone output is for the Docker image; Vercel does its own output tracing
   // and Next 16.3 standalone builds break Vercel's onBuildComplete nft step.
   output: process.env.VERCEL ? undefined : "standalone",
+  // Next 16's Node 26 typecheck handoff is not parseable in the local runtime.
+  // The Cloudflare script runs `tsc --noEmit` first, then skips only Next's
+  // duplicate handoff. CI and the normal build keep the strict Next check.
+  typescript: {
+    ignoreBuildErrors: process.env.CLOUDFLARE_BUILD === "1",
+  },
+  experimental: {
+    // Avoid Next 16's Node 26 CLI --showConfig handoff. The project-local
+    // TypeScript compiler API remains the supported checker for this app.
+    useTypeScriptCli: false,
+  },
   poweredByHeader: false,
   turbopack: {
     root: process.cwd()
