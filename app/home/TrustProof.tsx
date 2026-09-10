@@ -9,24 +9,25 @@ export default async function TrustProof() {
     getPublicMetrics(),
     getPublicSecurityFeed(24),
   ]);
+  const dataAvailable = metrics.as_of !== null;
   const stats = [
     {
-      value: formatCount(metrics.exact_releases_indexed),
+      value: dataAvailable ? formatCount(metrics.exact_releases_indexed) : "—",
       label: "Exact releases indexed",
       icon: Database,
     },
     {
-      value: formatCount(metrics.exact_releases_analyzed),
+      value: dataAvailable ? formatCount(metrics.exact_releases_analyzed) : "—",
       label: "Releases with complete analysis",
       icon: ShieldCheck,
     },
     {
-      value: formatCount(metrics.known_bad_artifacts),
+      value: dataAvailable ? formatCount(metrics.known_bad_artifacts) : "—",
       label: "Known-bad artifacts confirmed",
       icon: Bug,
     },
     {
-      value: String(detections.length),
+      value: dataAvailable ? String(detections.length) : "—",
       label: "Extensions currently flagged",
       icon: Radar,
     },
@@ -36,7 +37,7 @@ export default async function TrustProof() {
     <section className={styles.trust} aria-labelledby="trust-heading">
       <header>
         <span id="trust-heading">The evidence is public. Check our work.</span>
-        <small>Live from the GuardRails registry</small>
+        <small>{dataAvailable ? "Live from the GuardRails registry" : "Registry data temporarily unavailable"}</small>
       </header>
       <div>
         {stats.map(({ value, label, icon: Icon }) => (
