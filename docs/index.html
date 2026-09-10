@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="GuardRails checks VS Code-compatible extensions before you install them.">
+    <title>GuardRails — Check IDE extensions before you install them</title>
+    <style>
+      :root { color-scheme: dark; --bg: #080b0a; --panel: #101513; --line: #26312c; --muted: #9aa9a0; --text: #f4f7f4; --green: #72e0c0; --green-soft: #15352f; --amber: #e9c36e; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: radial-gradient(circle at 80% -10%, #173b32 0, transparent 36rem), var(--bg); color: var(--text); font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      a { color: inherit; }
+      .shell { width: min(1120px, calc(100% - 40px)); margin: auto; }
+      header { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 24px 0; border-bottom: 1px solid var(--line); }
+      .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-weight: 800; letter-spacing: .12em; font-size: 13px; }
+      .mark { display: inline-grid; grid-template-columns: 4px 8px 4px; gap: 3px; align-items: center; width: 24px; height: 24px; border-radius: 6px; padding: 5px; background: var(--green); }
+      .mark i, .mark b { display: block; width: 100%; height: 100%; background: #0a100e; }
+      .mark b { height: 4px; align-self: center; }
+      nav { display: flex; gap: 18px; color: var(--muted); font-size: 14px; }
+      nav a { text-decoration: none; }
+      nav a:hover { color: var(--green); }
+      main { padding: 92px 0 110px; }
+      .eyebrow { color: var(--green); font: 700 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .12em; text-transform: uppercase; }
+      h1 { max-width: 790px; margin: 18px 0 22px; font-size: clamp(48px, 8vw, 92px); line-height: .96; letter-spacing: -.06em; }
+      .intro { max-width: 650px; margin: 0; color: var(--muted); font-size: 20px; }
+      .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+      .button { display: inline-flex; align-items: center; min-height: 44px; border: 1px solid var(--green); border-radius: 6px; padding: 0 16px; background: var(--green); color: #08100d; font-weight: 800; text-decoration: none; }
+      .button.secondary { border-color: var(--line); background: var(--panel); color: var(--text); }
+      .notice { display: flex; gap: 12px; align-items: flex-start; max-width: 760px; margin-top: 54px; border: 1px solid #544a2b; border-radius: 8px; padding: 16px 18px; background: #1d1b12; color: #e8dcae; }
+      .notice strong { color: var(--amber); }
+      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 78px; }
+      article { min-height: 190px; border: 1px solid var(--line); border-radius: 10px; padding: 22px; background: #0d1210cc; }
+      article span { display: block; margin-bottom: 34px; color: var(--green); font: 700 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+      article h2 { margin: 0 0 8px; font-size: 20px; letter-spacing: -.02em; }
+      article p { margin: 0; color: var(--muted); font-size: 14px; }
+      footer { border-top: 1px solid var(--line); padding: 22px 0 32px; color: var(--muted); font-size: 13px; }
+      @media (max-width: 720px) { .shell { width: min(100% - 28px, 560px); } header { align-items: flex-start; } nav { gap: 10px; font-size: 13px; } main { padding-top: 62px; } h1 { font-size: clamp(46px, 15vw, 72px); } .intro { font-size: 17px; } .grid { grid-template-columns: 1fr; margin-top: 54px; } article { min-height: auto; } article span { margin-bottom: 22px; } }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <a class="brand" href="./"><span class="mark" aria-hidden="true"><i></i><b></b><i></i></span>GUARDRAILS</a>
+        <nav aria-label="Resources"><a href="https://github.com/preethamak/IDE_Scanner_web">Source</a><a href="https://github.com/preethamak/IDE_Scanner_web/tree/main/docs">Docs</a></nav>
+      </header>
+      <main>
+        <div class="eyebrow">IDE extension intelligence</div>
+        <h1>Know what an extension can do before it runs.</h1>
+        <p class="intro">GuardRails checks VS Code-compatible extensions against their declared capabilities, release evidence, and security posture before installation.</p>
+        <div class="actions"><a class="button" href="https://github.com/preethamak/IDE_Scanner_web">Browse the project</a><a class="button secondary" href="https://github.com/preethamak/IDE_Scanner_web/tree/main/docs">Read the documentation</a></div>
+        <div class="notice"><strong>Temporary public mode</strong><span>The interactive scanner is being restored. This lightweight page is served independently so the project remains reachable while the application host is repaired.</span></div>
+        <section class="grid" aria-label="Product capabilities">
+          <article><span>01 / DISCOVER</span><h2>Public catalog</h2><p>Explore version-specific extension identity, release history, and publisher context.</p></article>
+          <article><span>02 / PREFLIGHT</span><h2>Capability signals</h2><p>See bounded hosted-static hints before granting an extension access to your workspace.</p></article>
+          <article><span>03 / DEEP SCAN</span><h2>Evidence-led reports</h2><p>Review native, AST, Semgrep, YARA, and dependency-intelligence findings when a scan is available.</p></article>
+        </section>
+      </main>
+      <footer>GuardRails · Public, version-specific security intelligence for IDE extensions.</footer>
+    </div>
+  </body>
+</html>
