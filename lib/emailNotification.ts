@@ -2,7 +2,7 @@ export function isNotificationEmail(value: string) { return /^[^\s@]+@[^\s@]+\.[
 export function emailDeliveryConfigured() { return Boolean(process.env.RESEND_API_KEY && process.env.NOTIFICATION_FROM_EMAIL); }
 export function emailPayload(alert: Record<string, unknown>, recipient: string) {
   const extension = String(alert.extension_id || "extension"); const version = String(alert.version || ""); const severity = String(alert.severity || "INFORMATIONAL"); const metadata = object(alert.metadata);
-  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://ide-scanner.vercel.app";
+  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://abscissa.dev";
   if (metadata.release_event === true) {
     const baseline = String(metadata.baseline_version || "reviewed baseline"); const state = String(metadata.release_state || "release_detected");
     const summary = state === "analysis_incomplete" ? "Analysis is incomplete. This release is not approved." : state === "analysis_failed" ? "Analysis failed before a comparison could be produced." : `New release detected. Comparing ${baseline} to ${version} after Deep Scan completes.`;

@@ -28,7 +28,7 @@ const EMPTY: PublicMetrics = {
   }
 };
 
-const cachedPublicMetrics=unstable_cache(async()=>fetchPublicMetrics(),["public-metrics-v1"],{revalidate:300,tags:["public-intel"]});
+const cachedPublicMetrics=unstable_cache(async()=>fetchPublicMetrics().catch(() => EMPTY),["public-metrics-v1"],{revalidate:300,tags:["public-intel"]});
 
 export function getPublicMetrics(): Promise<PublicMetrics> { return cachedPublicMetrics(); }
 

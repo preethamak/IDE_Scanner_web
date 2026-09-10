@@ -10,15 +10,15 @@ The product has three independently truthful modes:
 
 ## Free hosted architecture
 
-- Vercel hosts the Next.js UI and signed ingestion APIs.
+- Cloudflare Workers hosts the Next.js UI and signed ingestion APIs at `https://abscissa.dev`.
 - Supabase Free provides Postgres, Auth, and RLS-protected personal data.
 - Standard GitHub-hosted runners in the public scanner repository execute exact-version Deep Scans.
 - The weekly catalog workflow retains the top 250 extensions, lists registry versions, and gradually scans the latest four versions.
 
-Apply [`supabase/migrations/001_product_intelligence.sql`](supabase/migrations/001_product_intelligence.sql) to a new Supabase project, then configure Vercel:
+Apply [`supabase/migrations/001_product_intelligence.sql`](supabase/migrations/001_product_intelligence.sql) to a Supabase project, then configure the Cloudflare Worker:
 
 ```bash
-NEXT_PUBLIC_SITE_URL=https://ide-scanner-web.vercel.app
+NEXT_PUBLIC_SITE_URL=https://abscissa.dev
 NEXT_PUBLIC_SUPABASE_URL=https://PROJECT.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...
 SUPABASE_SECRET_KEY=... # server-only; sb_secret_... preferred
@@ -44,7 +44,22 @@ The secret key and workflow token are server-only. Never expose them through `NE
 
 The site-wide Feedback button stores private submissions in `feedback_submissions` and sends a plain-text notification through Resend. Apply the latest Supabase migration before enabling it in production. `FEEDBACK_TO_EMAIL` is optional when the company inbox is `hello@abscissa.dev`; set it explicitly for another inbox. If Resend is temporarily unavailable, the submission remains stored and is marked for operator follow-up.
 
-Configure Supabase Auth with site URL `https://ide-scanner.vercel.app` and redirect URLs `https://ide-scanner.vercel.app/auth/callback` and `http://localhost:8765/auth/callback`. Google and GitHub OAuth use callback `https://PROJECT.supabase.co/auth/v1/callback`. Enable the corresponding production UI with `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true` and `NEXT_PUBLIC_GITHUB_AUTH_ENABLED=true` only after its provider is configured in Supabase.
+Configure Supabase Auth with site URL `https://abscissa.dev` and redirect URLs `https://abscissa.dev/auth/callback` and `http://localhost:8765/auth/callback`. Google and GitHub OAuth use callback `https://PROJECT.supabase.co/auth/v1/callback`. Enable the corresponding production UI with `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true` and `NEXT_PUBLIC_GITHUB_AUTH_ENABLED=true` only after its provider is configured in Supabase.
+
+### Cloudflare deployment
+
+Build and deploy the production Worker with:
+
+```bash
+npm run cf:build
+npx wrangler deploy --config wrangler.jsonc
+```
+
+`wrangler.jsonc` routes `abscissa.dev/*` to the `abscissa-web-production` Worker. Vercel is not required for production and may remain paused.
+
+### Automatic GitHub deployments
+
+In Cloudflare Dashboard, open **Workers & Pages → abscissa-web-production → Settings → Builds → Connect** and select `preethamak/IDE_Scanner_web`. Use `main` as the production branch, `npm run cf:build` as the build command, and `npx wrangler deploy --config wrangler.jsonc` as the deploy command. After the one-time connection, every push to `main` creates a new Cloudflare deployment.
 
 Email sign-in uses a six-digit one-time password so users can request the code in one browser and enter it in another. In Supabase Dashboard, open **Authentication → Email Templates → Magic Link**, use `{{ .Token }}` in the message body (not `{{ .ConfirmationURL }}`), and update the subject to describe a sign-in code. Keep the code expiry short. Supabase's default sender is intended for limited development use; for a zero-cost launch, make GitHub OAuth the primary sign-in path and retain email OTP only while its delivery and template configuration are verified.
 

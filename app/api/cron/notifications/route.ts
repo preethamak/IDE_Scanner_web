@@ -286,7 +286,7 @@ async function finishTeam(
 }
 function slackMessage(alert: Row) {
   const site =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://ide-scanner.vercel.app";
+    process.env.NEXT_PUBLIC_SITE_URL || "https://abscissa.dev";
   const extension = String(alert.extension_id);
   const version = String(alert.version);
   const severity = String(alert.severity || "INFORMATIONAL");

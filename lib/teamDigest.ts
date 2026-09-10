@@ -148,7 +148,7 @@ export async function deliverWeeklyTeamDigests(db: Db, now: string) {
 
 export function slackDigestPayload(snapshot: TeamDigestSnapshot) {
   const site =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://ide-scanner.vercel.app";
+    process.env.NEXT_PUBLIC_SITE_URL || "https://abscissa.dev";
   const facts = `*${snapshot.release_changes}* release changes · *${snapshot.needs_review}* need review · *${snapshot.decisions_recorded}* decisions`;
   const highlights = snapshot.highlights.length
     ? snapshot.highlights
@@ -205,7 +205,7 @@ export function emailDigestPayload(
   recipient: string,
 ) {
   const site =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://ide-scanner.vercel.app";
+    process.env.NEXT_PUBLIC_SITE_URL || "https://abscissa.dev";
   const highlights = snapshot.highlights.length
     ? snapshot.highlights
         .map((item) => `- ${item.extension_id}@${item.version}: ${item.title}`)

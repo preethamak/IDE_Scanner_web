@@ -28,8 +28,8 @@ export type PublicSecurityFeedItem = { scan_id: string; extension_id: string; ve
 export type PublicInventoryItem = PublicSecurityFeedItem & { publisher: string; publisher_verified: boolean; description: string; icon_url: string; risk_score: number; malware_score: number; artifact_sha256: string; provenance_tier: string; expected_profile_id: string; capability_assessment: Record<string, unknown>; scanner_build: string; ruleset_version: string; score_schema_version: string };
 export type PublicInventory = { items: PublicInventoryItem[]; totals: { extensions: number; releases: number; complete: number; allowed: number; expected: number; investigate: number; review: number; blocked: number; lastScannedAt: string | null } };
 
-const cachedSecurityFeed=unstable_cache(async(limit:number)=>fetchPublicSecurityFeed(limit),["public-feed-v1"],{revalidate:300,tags:["public-intel"]});
-const cachedPublicInventory=unstable_cache(async(limit:number)=>fetchPublicInventory(limit),["public-inventory-v1"],{revalidate:300,tags:["public-intel"]});
+const cachedSecurityFeed=unstable_cache(async(limit:number)=>fetchPublicSecurityFeed(limit).catch(() => []),["public-feed-v1"],{revalidate:300,tags:["public-intel"]});
+const cachedPublicInventory=unstable_cache(async(limit:number)=>fetchPublicInventory(limit).catch(() => emptyInventory()),["public-inventory-v1"],{revalidate:300,tags:["public-intel"]});
 const cachedCatalog=unstable_cache(async(query:string,limit:number)=>fetchCatalog(query,limit),["public-catalog-v1"],{revalidate:300,tags:["public-intel","catalog"]});
 
 export function getPublicSecurityFeed(limit = 6): Promise<PublicSecurityFeedItem[]> { return cachedSecurityFeed(limit); }

@@ -1,0 +1,36 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "abscissa-web-production",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-10",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "allow_importable_env",
+    "global_fetch_strictly_public"
+  ],
+  "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "abscissa.dev/*",
+      "zone_name": "abscissa.dev"
+    }
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "abscissa-web-production"
+    },
+    {
+      "binding": "DEFAULT_WORKER",
+      "service": "ide-scanner-web-server",
+      "environment": "production"
+    }
+  ]
+}

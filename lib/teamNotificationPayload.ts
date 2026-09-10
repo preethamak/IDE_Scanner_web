@@ -3,7 +3,7 @@ import { isIP } from "node:net";
 type Alert = Record<string, unknown>;
 
 export function genericWebhookMessage(alert: Alert) {
-  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://ide-scanner.vercel.app";
+  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://abscissa.dev";
   const extensionId = String(alert.extension_id || ""); const version = String(alert.version || "");
   return {
     event: "guardrails.monitoring_alert",
