@@ -120,7 +120,11 @@ export async function listMarketplaceVersions(extensionId: string): Promise<Arra
   const marketplace = await registryFetch(GALLERY_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json;api-version=7.2-preview.1" },
-    body: JSON.stringify({ filters: [{ criteria: [{ filterType: 7, value: normalized }], pageNumber: 1, pageSize: 1 }], flags: 402 }),
+    // The version list is enough for the release timeline. Do not request the
+    // package assets for every historical version; large extensions can return
+    // several megabytes here and make an edge-rendered profile exceed Worker
+    // CPU limits before the page can be sent.
+    body: JSON.stringify({ filters: [{ criteria: [{ filterType: 7, value: normalized }], pageNumber: 1, pageSize: 1 }], flags: 1 }),
     cache: "no-store",
   }).then(async (response) => response.ok ? response.json() as Promise<{ results?: Array<{ extensions?: GalleryExtension[] }> }> : null).catch(() => null);
   const raw = marketplace?.results?.[0]?.extensions?.[0];

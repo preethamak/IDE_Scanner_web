@@ -5,6 +5,7 @@ import { unstable_cache } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const cachedVersions=unstable_cache(async(id:string)=>listMarketplaceVersions(id),["registry-versions-v2"],{revalidate:21600,tags:["registry-versions"]});
+const MAX_RENDERED_VERSION_HISTORY = 120;
 
 export type CatalogExtension = {
   id: string;
@@ -147,7 +148,7 @@ export async function getExtensionProduct(id: string, client?: SupabaseClient): 
             versionRows = registryVersions.map((item) => ({ ...item, ...(persisted.get(item.version) || {}) }));
             if (!versionRows.length) versionRows = versions || [];
           }
-          versionRows = dedupeVersions(versionRows);
+          versionRows = limitVersionHistory(dedupeVersions(versionRows));
           const latest = versionRows.find((item) => item.is_latest) || versionRows[0];
           let scan: Record<string, unknown> | null = null;
           if (versionRows.length) {
@@ -180,7 +181,7 @@ export async function getExtensionProduct(id: string, client?: SupabaseClient): 
 async function registryProduct(id: string): Promise<{ extension: CatalogExtension; versions: Array<Record<string, unknown>>; scan: Record<string, unknown> | null } | null> {
   try {
     const item = await resolveMarketplaceExtension(id);
-    const versions = await cachedVersions(item.extension_id);
+    const versions = limitVersionHistory(await cachedVersions(item.extension_id));
     return { extension: { id: item.extension_id, name: item.extension_id.split(".").slice(1).join("."), display_name: item.display_name, publisher: item.publisher, description: item.short_description, registry: item.registry || "vs-marketplace", publisher_verified: item.publisher_verified, installs: item.install_count, rating: item.rating_average, icon_url: item.icon_url, repository_url: "", last_published_at: item.last_updated || null, catalog_rank: null, latest_version: item.version, latest_scan: null }, versions: versions.length ? versions : [{ extension_id: item.extension_id, version: item.version, registry: item.registry, published_at: item.last_updated, is_latest: true, scan_state: "not_scanned" }], scan: null };
   } catch {
     return null;
@@ -320,6 +321,13 @@ async function resolveStoredExtensionId(db: SupabaseClient, id: string): Promise
 
 function dedupeVersions(rows: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
   return [...new Map(rows.filter((row) => isConcreteVersion(String(row.version || ""))).map((row) => [String(row.version), row])).values()];
+}
+
+function limitVersionHistory<T>(rows: T[]): T[] {
+  const latest = rows.find((row) => Boolean((row as { is_latest?: unknown }).is_latest));
+  const visible = rows.slice(0, MAX_RENDERED_VERSION_HISTORY);
+  if (latest && !visible.includes(latest)) visible.unshift(latest);
+  return visible;
 }
 
 async function activePublicClassification(

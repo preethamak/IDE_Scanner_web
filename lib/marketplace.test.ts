@@ -17,6 +17,8 @@ describe("listMarketplaceVersions", () => {
     const versions = await listMarketplaceVersions("Anthropic.claude-code");
     expect(versions.map((item) => item.version)).toEqual(["2.1.218", "2.1.217"]);
     expect(versions.filter((item) => item.is_latest)).toHaveLength(1);
+    const body = JSON.parse(String((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body));
+    expect(body.flags).toBe(1);
   });
 
   it("rejects registry channel aliases as exact versions", () => {
