@@ -29,15 +29,21 @@ export type ScanDecision = "allow" | "review" | "block" | "incomplete";
 export type PublicSecurityFeedItem = { scan_id: string; extension_id: string; version: string; display_name: string; severity: string; decision: ScanDecision; public_outcome: string; decision_basis: string; evidence_confidence: string; scanned_at: string; coverage_percent: number; decision_reason: string };
 export type PublicInventoryItem = PublicSecurityFeedItem & { publisher: string; publisher_verified: boolean; description: string; icon_url: string; risk_score: number; malware_score: number; artifact_sha256: string; provenance_tier: string; expected_profile_id: string; capability_assessment: Record<string, unknown>; scanner_build: string; ruleset_version: string; score_schema_version: string };
 export type PublicInventory = { items: PublicInventoryItem[]; totals: { extensions: number; releases: number; complete: number; allowed: number; expected: number; investigate: number; review: number; blocked: number; lastScannedAt: string | null } };
+export type PublicAnalysisHistory = { items: PublicInventoryItem[]; total: number; complete: number; pending: number };
 
 const cachedSecurityFeed=unstable_cache(async(limit:number)=>fetchPublicSecurityFeed(limit).catch(() => []),["public-feed-v1"],{revalidate:300,tags:["public-intel"]});
 const cachedPublicInventory=unstable_cache(async(limit:number)=>fetchPublicInventory(limit).catch(() => emptyInventory()),["public-inventory-v1"],{revalidate:300,tags:["public-intel"]});
+const cachedPublicAnalysisHistory=unstable_cache(async(limit:number,offset:number)=>fetchPublicAnalysisHistory(limit,offset).catch(() => emptyAnalysisHistory()),["public-analysis-history-v1"],{revalidate:300,tags:["public-intel"]});
 const cachedCatalog=unstable_cache(async(query:string,limit:number)=>fetchCatalog(query,limit),["public-catalog-v1"],{revalidate:300,tags:["public-intel","catalog"]});
 
 export function getPublicSecurityFeed(limit = 6): Promise<PublicSecurityFeedItem[]> { return cachedSecurityFeed(limit); }
 
 /** Current-policy reproducible scans only. Development and private work never enter this catalog. */
 export function getPublicInventory(limit = 240): Promise<PublicInventory> { return cachedPublicInventory(limit); }
+
+export function getPublicAnalysisHistory(limit = 24, offset = 0): Promise<PublicAnalysisHistory> {
+  return cachedPublicAnalysisHistory(Math.min(Math.max(limit, 1), 100), Math.max(offset, 0));
+}
 
 export function listCatalog(query = "", limit = 50): Promise<CatalogExtension[]> { return cachedCatalog(query, limit); }
 
@@ -110,6 +116,55 @@ async function fetchPublicInventory(limit = 240): Promise<PublicInventory> {
   } catch {
     return mirror();
   }
+}
+
+async function fetchPublicAnalysisHistory(limit = 24, offset = 0): Promise<PublicAnalysisHistory> {
+  const mirror = async () => {
+    const history = (await getPublicRegistrySnapshot())?.history || [];
+    return summarizeAnalysisHistory(history.slice(offset, offset + limit), history.length, history);
+  };
+  const db = publicDb();
+  if (!db) return mirror();
+  try {
+    const { data, error } = await db.from("scans")
+      .select("id,extension_id,version,artifact_sha256,severity,decision,decision_reason,public_outcome,decision_basis,evidence_confidence,provenance_tier,expected_profile_id,capability_assessment,score_schema_version,risk_score,malware_score,coverage_percent,scanner_build,ruleset_version,scanned_at")
+      .in("scan_purpose", ["public_intelligence", "benchmark"])
+      .in("analysis_status", ["complete", "incomplete"])
+      .is("superseded_at", null)
+      .order("scanned_at", { ascending: false })
+      .limit(1000);
+    if (error || !data?.length) return mirror();
+    const rows = latestByExactArtifact((data || []) as Array<Record<string, unknown>>);
+    const ids = [...new Set(rows.map((row) => String(row.extension_id)))];
+    const { data: stored, error: storedError } = ids.length
+      ? await db.from("extensions").select("id,display_name,publisher,description,icon_url,publisher_verified").in("id", ids)
+      : { data: [], error: null };
+    if (storedError) return mirror();
+    const metadata = new Map((stored || []).map((item) => [String(item.id), item as Record<string, unknown>]));
+    const items = rows.map((row) => inventoryItemFromRow(row, metadata.get(String(row.extension_id))));
+    return summarizeAnalysisHistory(items.slice(offset, offset + limit), items.length, items);
+  } catch {
+    return mirror();
+  }
+}
+
+function summarizeAnalysisHistory(items: PublicInventoryItem[], total = items.length, allItems = items): PublicAnalysisHistory {
+  return { items, total, complete: allItems.filter((item) => item.decision !== "incomplete").length, pending: allItems.filter((item) => item.decision === "incomplete").length };
+}
+
+function inventoryItemFromRow(row: Record<string, unknown>, extension?: Record<string, unknown>): PublicInventoryItem {
+  const assessment = objectValue(row.capability_assessment);
+  const matched = Array.isArray(assessment.matched) ? assessment.matched.map(String) : [];
+  return {
+    scan_id: String(row.id), extension_id: String(row.extension_id), version: String(row.version), artifact_sha256: String(row.artifact_sha256 || ""),
+    display_name: String(extension?.display_name || row.extension_id), publisher: String(extension?.publisher || String(row.extension_id).split(".")[0]),
+    description: matched.length ? `Expected: ${matched.map(humanize).join(", ")}` : String(row.decision_reason || extension?.description || "Open the exact artifact evidence."),
+    icon_url: String(extension?.icon_url || ""), publisher_verified: Boolean(extension?.publisher_verified), severity: String(row.severity || "INFO"),
+    decision: normalizeDecision(row.decision), public_outcome: String(row.public_outcome || legacyPublicOutcome(row)), decision_basis: String(row.decision_basis || "legacy_scanner_result"),
+    evidence_confidence: String(row.evidence_confidence || "none"), provenance_tier: String(row.provenance_tier || "unknown"), expected_profile_id: String(row.expected_profile_id || ""), capability_assessment: assessment,
+    scanned_at: String(row.scanned_at), coverage_percent: Number(row.coverage_percent || 0), decision_reason: String(row.decision_reason || "Open the exact artifact evidence."),
+    risk_score: Number(row.risk_score || 0), malware_score: Number(row.malware_score || 0), scanner_build: String(row.scanner_build || "unknown"), ruleset_version: String(row.ruleset_version || "unknown"), score_schema_version: String(row.score_schema_version || "1"),
+  };
 }
 
 async function fetchCatalog(query = "", limit = 50): Promise<CatalogExtension[]> {
@@ -328,6 +383,15 @@ function limitVersionHistory<T>(rows: T[]): T[] {
   const visible = rows.slice(0, MAX_RENDERED_VERSION_HISTORY);
   if (latest && !visible.includes(latest)) visible.unshift(latest);
   return visible;
+}
+
+function latestByExactArtifact(rows: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
+  const latest = new Map<string, Record<string, unknown>>();
+  for (const row of rows) {
+    const key = `${String(row.extension_id || "").toLowerCase()}@${String(row.version || "")}@${String(row.artifact_sha256 || "").toLowerCase()}`;
+    if (!latest.has(key)) latest.set(key, row);
+  }
+  return [...latest.values()];
 }
 
 async function activePublicClassification(
@@ -624,4 +688,8 @@ async function mirroredBadgeDecision(id: string, version: string | null): Promis
 
 function emptyInventory(): PublicInventory {
   return { items: [], totals: { extensions: 0, releases: 0, complete: 0, allowed: 0, expected: 0, investigate: 0, review: 0, blocked: 0, lastScannedAt: null } };
+}
+
+function emptyAnalysisHistory(): PublicAnalysisHistory {
+  return { items: [], total: 0, complete: 0, pending: 0 };
 }

@@ -47,6 +47,36 @@ try {
         order by s.scanned_at desc
       `, [scanIds, release.policy_version, release.ruleset_version, release.score_schema_version, release.scanner_build])).rows.map((row) => row.scan)
     : [];
+  const historyScans = (await client.query(`
+    select jsonb_build_object(
+      'id', s.id,
+      'extension_id', s.extension_id,
+      'version', s.version,
+      'artifact_sha256', s.artifact_sha256,
+      'severity', s.severity,
+      'decision', s.decision,
+      'decision_reason', s.decision_reason,
+      'public_outcome', s.public_outcome,
+      'decision_basis', s.decision_basis,
+      'evidence_confidence', s.evidence_confidence,
+      'provenance_tier', s.provenance_tier,
+      'expected_profile_id', s.expected_profile_id,
+      'capability_assessment', s.capability_assessment,
+      'score_schema_version', s.score_schema_version,
+      'risk_score', s.risk_score,
+      'malware_score', s.malware_score,
+      'coverage_percent', s.coverage_percent,
+      'scanner_build', s.scanner_build,
+      'ruleset_version', s.ruleset_version,
+      'scanned_at', s.scanned_at
+    ) as scan
+    from public.scans s
+    where s.scan_purpose in ('public_intelligence', 'benchmark')
+      and s.analysis_status in ('complete', 'incomplete')
+      and s.superseded_at is null
+    order by s.scanned_at desc
+    limit 5000
+  `)).rows.map((row) => row.scan);
 
   const extensions = (await client.query(`
     select to_jsonb(e) as extension
@@ -89,6 +119,7 @@ try {
   const scanRows = scans.filter((row) => ["allow", "review", "block"].includes(String(row.decision)));
   const inventoryRows = latestByArtifact(scanRows).slice(0, 240);
   const inventoryItems = inventoryRows.map((scan) => normalizeInventory(scan, extensionById.get(String(scan.extension_id).toLowerCase())));
+  const historyItems = latestByExactArtifact(historyScans).slice(0, 1000).map((scan) => normalizeInventory(scan, extensionById.get(String(scan.extension_id).toLowerCase())));
   const inventory = {
     items: inventoryItems,
     totals: {
@@ -165,10 +196,10 @@ try {
     },
   };
 
-  const snapshot = { schema_version: 1, generated_at: generatedAt, metrics, feed, inventory, catalog, benchmark, products };
+  const snapshot = { schema_version: 1, generated_at: generatedAt, metrics, feed, inventory, history: historyItems, catalog, benchmark, products };
   await mkdir(dirname(output), { recursive: true });
   await writeFile(output, `${JSON.stringify(snapshot)}\n`, "utf8");
-  console.log(JSON.stringify({ output, extensions: extensions.length, releases: latestVersions.length, product_releases: productVersions.length, scans: scans.length, inventory: inventoryItems.length, bytes: Buffer.byteLength(JSON.stringify(snapshot)) }));
+  console.log(JSON.stringify({ output, extensions: extensions.length, releases: latestVersions.length, product_releases: productVersions.length, scans: scans.length, inventory: inventoryItems.length, history: historyItems.length, bytes: Buffer.byteLength(JSON.stringify(snapshot)) }));
 } finally {
   await client.end();
 }
@@ -255,6 +286,15 @@ function latestByArtifact(rows) {
   const latest = new Map();
   for (const row of rows) {
     const key = `${String(row.extension_id).toLowerCase()}@${row.version}`;
+    if (!latest.has(key)) latest.set(key, row);
+  }
+  return [...latest.values()];
+}
+
+function latestByExactArtifact(rows) {
+  const latest = new Map();
+  for (const row of rows) {
+    const key = artifactKey(row);
     if (!latest.has(key)) latest.set(key, row);
   }
   return [...latest.values()];

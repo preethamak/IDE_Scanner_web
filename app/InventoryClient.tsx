@@ -14,7 +14,7 @@ const labels = { allow: "Analyzed", review: "Attention", block: "Flagged by poli
 // Rendering every report at once produced a ~37,000px page. Page in batches.
 const PAGE_SIZE = 24;
 
-export default function InventoryClient({ inventory }: { inventory: PublicInventory }) {
+export default function InventoryClient({ inventory, totalCount, resultDescription }: { inventory: PublicInventory; totalCount?: number; resultDescription?: string }) {
   const [query, setQuery] = useState("");
   const [outcome, setOutcome] = useState<(typeof outcomes)[number]>("all");
   const [severity, setSeverity] = useState<(typeof severities)[number]>("all");
@@ -35,7 +35,7 @@ export default function InventoryClient({ inventory }: { inventory: PublicInvent
       <label className={styles.filterSearch}><Search/><input value={query} onChange={(event)=>setQuery(event.target.value)} placeholder="Filter these public reports" aria-label="Filter public extension reports"/></label>
       <div className={styles.selects}><label><span>Outcome</span><select value={outcome} onChange={(event)=>setOutcome(event.target.value as typeof outcome)}>{outcomes.map(value=><option key={value} value={value}>{value === "all" ? "All outcomes" : labels[value]}</option>)}</select></label><label><span>Severity</span><select value={severity} onChange={(event)=>setSeverity(event.target.value as typeof severity)}>{severities.map(value=><option key={value} value={value}>{value === "all" ? "All severities" : title(value)}</option>)}</select></label><label><span>Sort</span><select value={sort} onChange={(event)=>setSort(event.target.value as typeof sort)}><option value="recent">Recently analyzed</option><option value="severity">Highest severity</option><option value="name">Extension name</option></select></label></div>
     </div>
-    <div className={styles.resultMeta}><span><SlidersHorizontal/> {rows.length} of {inventory.items.length} reports</span>{activeFilters ? <button onClick={()=>{setQuery("");setOutcome("all");setSeverity("all")}}>Clear {activeFilters} filter{activeFilters===1?"":"s"}</button>:<span>Latest completed public result per exact artifact</span>}</div>
+    <div className={styles.resultMeta}><span><SlidersHorizontal/> {rows.length} of {(totalCount ?? inventory.items.length).toLocaleString()} reports</span>{activeFilters ? <button onClick={()=>{setQuery("");setOutcome("all");setSeverity("all")}}>Clear {activeFilters} filter{activeFilters===1?"":"s"}</button>:<span>{resultDescription || "Latest completed public result per exact artifact"}</span>}</div>
     <div className={styles.cards} aria-live="polite">{shown.map(item=><RegistryCard item={item} key={item.scan_id}/>)}</div>
     {rows.length > visible ? <div className={styles.showMore}><button onClick={()=>setVisible(count=>count+PAGE_SIZE)}>Show {Math.min(PAGE_SIZE, rows.length-visible)} more of {rows.length} reports</button></div> : null}
     {!rows.length ? <div className={styles.empty}><ShieldAlert/><h3>No reports match this view.</h3><p>Clear the active filters, or search the registry above to find an extension that has not been analyzed yet.</p><button onClick={()=>{setQuery("");setOutcome("all");setSeverity("all")}}>Clear filters</button></div>:null}

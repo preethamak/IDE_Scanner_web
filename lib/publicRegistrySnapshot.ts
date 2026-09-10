@@ -2,6 +2,7 @@ import type { PublicMetrics } from "@/lib/publicMetrics";
 import type {
   CatalogExtension,
   PublicInventory,
+  PublicInventoryItem,
   PublicSecurityFeedItem,
 } from "@/lib/productData";
 
@@ -27,6 +28,7 @@ export type PublicRegistrySnapshot = {
   metrics: PublicMetrics;
   feed: PublicSecurityFeedItem[];
   inventory: PublicInventory;
+  history?: PublicInventoryItem[];
   catalog: CatalogExtension[];
   benchmark: {
     rows: Array<Record<string, unknown>>;

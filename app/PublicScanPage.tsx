@@ -2,15 +2,23 @@ import Link from "next/link";
 import { ArrowRight, PackageCheck, ScanSearch, ShieldCheck } from "lucide-react";
 import ExtensionSearch from "@/app/ExtensionSearch";
 import InventoryClient from "@/app/InventoryClient";
-import { getPublicInventory } from "@/lib/productData";
+import { getPublicAnalysisHistory, getPublicInventory } from "@/lib/productData";
+import { getPublicMetrics } from "@/lib/publicMetrics";
 import { deriveTrustTier } from "@/lib/trustTiers";
 import styles from "@/app/registry/registry.module.css";
 
 const popular = ["GitHub Copilot", "Cline", "Continue", "ESLint", "Docker"];
 
-export default async function ExtensionRegistryPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const { q } = await searchParams;
+const HISTORY_PAGE_SIZE = 24;
+
+export default async function ExtensionRegistryPage({ searchParams }: { searchParams: Promise<{ q?: string; view?: string; page?: string }> }) {
+  const { q, view, page: rawPage } = await searchParams;
+  const historyView = view === "history";
+  const page = Math.max(1, Number.parseInt(rawPage || "1", 10) || 1);
   const inventory = await getPublicInventory();
+  const metrics = await getPublicMetrics();
+  const history = historyView ? await getPublicAnalysisHistory(HISTORY_PAGE_SIZE, (page - 1) * HISTORY_PAGE_SIZE) : null;
+  const reportInventory = history ? { ...inventory, items: history.items } : inventory;
   const reviewCount = inventory.items.filter((item) => item.decision === "review" || item.decision === "block").length;
   const spotlight = inventory.items.find((item) => item.decision === "review" || item.decision === "block") || inventory.items[0];
   return <main className={styles.page}>
@@ -20,9 +28,9 @@ export default async function ExtensionRegistryPage({ searchParams }: { searchPa
     </section>
 
     <section className={styles.snapshot} aria-label="Registry snapshot">
-      <div><span>Public intelligence</span><strong>{inventory.totals.extensions.toLocaleString()}</strong><small>extensions analyzed</small></div>
-      <div><span>Exact artifacts</span><strong>{inventory.totals.releases.toLocaleString()}</strong><small>versioned reports</small></div>
-      <div><span>Needs attention</span><strong>{reviewCount.toLocaleString()}</strong><small>review or block outcomes</small></div>
+      <div><span>Public intelligence</span><strong>{inventory.totals.extensions.toLocaleString()}</strong><small>current public reports</small></div>
+      <div><span>Exact artifacts</span><strong>{(metrics.exact_releases_analyzed ?? inventory.totals.releases).toLocaleString()}</strong><small>releases analyzed across history</small></div>
+      <div><span>Needs attention</span><strong>{reviewCount.toLocaleString()}</strong><small>current public outcomes</small></div>
       <div><span>Last refreshed</span><strong>{relativeTime(inventory.totals.lastScannedAt)}</strong><small>latest completed analysis</small></div>
     </section>
 
@@ -32,8 +40,10 @@ export default async function ExtensionRegistryPage({ searchParams }: { searchPa
     </section>:null}
 
     <section className={styles.catalog}>
-      <header className={styles.catalogHeader}><div><span className={styles.eyebrow}><i/> Public reports</span><h2>Recently analyzed<br/>extensions.</h2></div><p>Every report covers one exact release. Open an extension to see its versions and what changed between them.</p></header>
-      <InventoryClient inventory={inventory}/>
+      <header className={styles.catalogHeader}><div><span className={styles.eyebrow}><i/> {historyView ? "Analysis history" : "Current public set"}</span><h2>{historyView ? <>All analyzed<br/>releases.</> : <>Recently analyzed<br/>extensions.</>}</h2></div><p>{historyView ? "Browse the complete analysis index, including earlier scanner builds. These historical results remain tied to their exact artifact and are not presented as the current publication set." : "Every report covers one exact release. The current public set is the immutable evidence cohort; browse analysis history for earlier completed results."}</p></header>
+      <nav className={styles.viewTabs} aria-label="Registry report view"><Link className={!historyView ? styles.viewTabActive : ""} href="/registry">Current public reports <strong>{inventory.items.length.toLocaleString()}</strong></Link><Link className={historyView ? styles.viewTabActive : ""} href="/registry?view=history">All analyzed history <strong>{history?.total.toLocaleString() || "Browse"}</strong></Link></nav>
+      <InventoryClient inventory={reportInventory} totalCount={history?.total} resultDescription={historyView ? "Historical results are pinned to their exact artifact." : "Latest completed public result per exact artifact"}/>
+      {history && history.total > HISTORY_PAGE_SIZE ? <nav className={styles.pageNav} aria-label="Analysis history pages"><span>Page {page} of {Math.ceil(history.total / HISTORY_PAGE_SIZE)}</span>{page > 1 ? <Link href={`/registry?view=history&page=${page - 1}`}>Previous</Link> : null}{page * HISTORY_PAGE_SIZE < history.total ? <Link href={`/registry?view=history&page=${page + 1}`}>Next</Link> : null}</nav> : null}
     </section>
 
     <section className={styles.trustStrip}><PackageCheck/><div><span>Version-specific</span><strong>A decision never silently follows an extension update.</strong><p>“Analyzed” describes only the analyzed artifact and available evidence. It is not a guarantee of safety.</p></div><Link href="/research">How analysis works <ArrowRight/></Link></section>
