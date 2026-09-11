@@ -14,10 +14,15 @@ export type CloudflareWorkspaceState = {
   preferences: Record<string, unknown>;
   audit: Array<Record<string, unknown>>;
   invitations: Array<Record<string, unknown>>;
+  inventory: {
+    devices: Array<Record<string, unknown>>;
+    installations: Array<Record<string, unknown>>;
+    last_import_at: string | null;
+  };
 };
 
 export const defaultWorkspaceState: CloudflareWorkspaceState = {
-  watchlist: [], alerts: [], decisions: [], members: [], channels: [], deliveries: [], digest_deliveries: [], audit: [], invitations: [],
+  watchlist: [], alerts: [], decisions: [], members: [], channels: [], deliveries: [], digest_deliveries: [], audit: [], invitations: [], inventory: { devices: [], installations: [], last_import_at: null },
   preferences: { release_alerts: true, scan_alerts: true, decision_alerts: true, high_evidence_alerts: true, provenance_alerts: true, coverage_alerts: true, due_alerts: true, weekly_digest: false, digest_weekday: 1, digest_hour_utc: 9 },
 };
 
@@ -26,7 +31,7 @@ export async function getWorkspaceState(teamId: string): Promise<CloudflareWorks
   return {
     ...defaultWorkspaceState,
     ...raw,
-    watchlist: array(raw.watchlist), alerts: array(raw.alerts), decisions: array(raw.decisions), members: array(raw.members), channels: array(raw.channels), deliveries: array(raw.deliveries), digest_deliveries: array(raw.digest_deliveries), audit: array(raw.audit), invitations: array(raw.invitations), preferences: { ...defaultWorkspaceState.preferences, ...jsonValue(raw.preferences) },
+    watchlist: array(raw.watchlist), alerts: array(raw.alerts), decisions: array(raw.decisions), members: array(raw.members), channels: array(raw.channels), deliveries: array(raw.deliveries), digest_deliveries: array(raw.digest_deliveries), audit: array(raw.audit), invitations: array(raw.invitations), inventory: inventory(raw.inventory), preferences: { ...defaultWorkspaceState.preferences, ...jsonValue(raw.preferences) },
   };
 }
 export async function saveState(teamId: string, state: CloudflareWorkspaceState): Promise<void> {
@@ -59,4 +64,9 @@ export async function enqueueWebhookDelivery(teamId: string, payload: Record<str
 
 function array(value: unknown): Array<Record<string, unknown>> {
   return Array.isArray(value) ? value.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object" && !Array.isArray(item))) : [];
+}
+
+function inventory(value: unknown): CloudflareWorkspaceState["inventory"] {
+  const raw = jsonValue(value);
+  return { devices: array(raw.devices), installations: array(raw.installations), last_import_at: typeof raw.last_import_at === "string" ? raw.last_import_at : null };
 }

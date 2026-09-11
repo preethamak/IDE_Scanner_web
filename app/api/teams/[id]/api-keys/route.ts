@@ -13,9 +13,10 @@ const MAX_KEYS_PER_TEAM = 10;
 
 export async function GET(request: Request, context: Context) {
   try {
-    const { user } = await authenticated(request);
+    const { user, provider } = await authenticated(request);
     const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst", "viewer"]);
+    if (provider === "cloudflare") return NextResponse.json({ api_keys: [] }, { headers: { "Cache-Control": "private, no-store" } });
     const db = serviceDb();
     const { data, error } = await db
       .from("api_keys")
@@ -35,9 +36,11 @@ export async function GET(request: Request, context: Context) {
 
 export async function POST(request: Request, context: Context) {
   try {
-    const { user } = await authenticated(request);
+    const { user, provider } = await authenticated(request);
     const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin"]);
+
+    if (provider === "cloudflare") return NextResponse.json({ error: "API keys are available on the Team plan and above. Upgrade to generate one." }, { status: 403 });
 
     const entitlements = await workspaceEntitlements(id);
     if (entitlements.plan === "free") {
@@ -83,12 +86,13 @@ export async function POST(request: Request, context: Context) {
 
 export async function DELETE(request: Request, context: Context) {
   try {
-    const { user } = await authenticated(request);
+    const { user, provider } = await authenticated(request);
     const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin"]);
     const url = new URL(request.url);
     const keyId = url.searchParams.get("key_id") || "";
     if (!keyId) return NextResponse.json({ error: "key_id is required." }, { status: 400 });
+    if (provider === "cloudflare") return NextResponse.json({ error: "Active API key not found in this workspace." }, { status: 404 });
     const db = serviceDb();
     const { data, error } = await db
       .from("api_keys")
