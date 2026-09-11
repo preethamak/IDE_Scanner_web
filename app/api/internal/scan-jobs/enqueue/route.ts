@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { validRunnerSecret } from "@/lib/internalRunnerAuth";
 import { serviceDb } from "@/lib/supabase";
 import { benchmarkRows } from "@/lib/websiteBenchmarkRows";
+import { cloudflarePrivateAvailable, enqueueCloudflareCanonicalJobs } from "@/lib/cloudflareDeepScan";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,6 +35,15 @@ export async function POST(request: Request) {
     if (job.scan_purpose !== "benchmark") continue;
     const frozen = benchmarkRows.find((row) => row.id.toLowerCase() === job.extension_id.toLowerCase() && row.version === job.version);
     if (!frozen) return NextResponse.json({ error: `Benchmark artifact is not frozen: ${job.extension_id}@${job.version}` }, { status: 400 });
+  }
+
+  if (cloudflarePrivateAvailable()) {
+    try {
+      const queued = await enqueueCloudflareCanonicalJobs(normalized);
+      return NextResponse.json({ jobs: queued });
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof Error ? error.message : "Canonical scan jobs could not be queued." }, { status: 503 });
+    }
   }
 
   const db = serviceDb();

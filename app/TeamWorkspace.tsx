@@ -252,7 +252,17 @@ export default function TeamWorkspace(
   });
 
   const token = useCallback(
-    async () => (await db?.auth.getSession())?.data.session?.access_token || "",
+    async () => {
+      const accessToken = (await db?.auth.getSession())?.data.session?.access_token;
+      if (accessToken) return accessToken;
+      const response = await fetch("/api/auth/session", { cache: "no-store" });
+      const body = await response.json().catch(() => ({}));
+      // D1 sessions are carried by the HttpOnly gr_session cookie. The
+      // non-empty marker keeps existing mutation helpers from treating a
+      // valid Cloudflare session as signed out; the server ignores it and
+      // authenticates from the cookie.
+      return response.ok && body.user ? "cloudflare-session" : "";
+    },
     [db],
   );
   const loadTeams = useCallback(async () => {
@@ -448,7 +458,9 @@ export default function TeamWorkspace(
     }
   }
   async function signOut() {
-    await db?.auth.signOut();
+    const accessToken = (await db?.auth.getSession())?.data.session?.access_token;
+    if (accessToken) await db?.auth.signOut();
+    else await fetch("/api/auth/logout", { method: "POST" });
     router.replace("/");
   }
 

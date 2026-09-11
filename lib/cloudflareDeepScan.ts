@@ -5,12 +5,54 @@ import { gunzipSync } from "node:zlib";
 import { privateDb, newId, nowIso, type AppAuthUser } from "@/lib/cloudflarePrivate";
 import { runtimeEnv } from "@/lib/runtimeEnv";
 import { resolveMarketplaceExtension } from "@/lib/marketplace";
+import { getCloudflareRegistryProduct } from "@/lib/cloudflareRegistry";
 
 type Row = Record<string, unknown>;
 type Bundle = { metadata?: Row; extensions?: Row | Row[] };
+export type CloudflareCanonicalJobInput = {
+  extension_id: string;
+  version: string;
+  scan_purpose: "benchmark" | "public_intelligence";
+  scanner_build: string;
+  target_platform: string;
+};
 
 export function cloudflarePrivateAvailable(): boolean {
   try { privateDb(); return true; } catch { return false; }
+}
+
+export async function enqueueCloudflareCanonicalJobs(jobs: readonly CloudflareCanonicalJobInput[]): Promise<Row[]> {
+  const db = privateDb();
+  const queued: Row[] = [];
+  for (const requested of jobs) {
+    const product = await getCloudflareRegistryProduct<{ extension?: Row }>(requested.extension_id);
+    let canonicalExtensionId = String(product?.extension?.id || product?.extension?.extension_id || requested.extension_id);
+    if (!product?.extension) {
+      try { canonicalExtensionId = (await resolveMarketplaceExtension(requested.extension_id)).extension_id; } catch { /* validation below returns a useful error */ }
+    }
+    if (!canonicalExtensionId) throw new Error(`Extension ${requested.extension_id} is not available in the public registry.`);
+    const active = await db.prepare("SELECT * FROM app_scan_jobs WHERE extension_id=? AND version=? AND profile='deep' AND status IN ('queued','running') ORDER BY created_at DESC LIMIT 1").bind(canonicalExtensionId, requested.version).first<Row>();
+    if (active) {
+      const activeBuild = String(active.expected_scanner_build || "");
+      const activeTargetPlatform = String(active.target_platform || "");
+      if (activeBuild === requested.scanner_build && activeTargetPlatform === requested.target_platform) {
+        queued.push({ ...active, deduplicated: true });
+        continue;
+      }
+      if (String(active.status) === "running") throw new Error(`A different scanner build or target platform is already analyzing ${canonicalExtensionId}@${requested.version}.`);
+      const now = nowIso();
+      await db.prepare("UPDATE app_scan_jobs SET expected_scanner_build=?,scan_purpose=?,target_platform=?,requester_hash=?,updated_at=?,last_event_at=? WHERE id=? AND status='queued'").bind(requested.scanner_build, requested.scan_purpose, requested.target_platform, `canonical-${requested.scan_purpose}`, now, now, String(active.id)).run();
+      await addCloudflareScanEvent(String(active.id), "queued", "rebound", { scanner_build: requested.scanner_build, scan_purpose: requested.scan_purpose, target_platform: requested.target_platform });
+      queued.push({ ...active, expected_scanner_build: requested.scanner_build, scan_purpose: requested.scan_purpose, target_platform: requested.target_platform, deduplicated: true });
+      continue;
+    }
+    const id = newId();
+    const now = nowIso();
+    await db.prepare(`INSERT INTO app_scan_jobs(id,extension_id,version,profile,status,lifecycle_stage,requester_hash,scan_purpose,expected_scanner_build,target_platform,created_at,updated_at,last_event_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id, canonicalExtensionId, requested.version, "deep", "queued", "queued", `canonical-${requested.scan_purpose}`, requested.scan_purpose, requested.scanner_build, requested.target_platform, now, now, now).run();
+    await addCloudflareScanEvent(id, "queued", "canonical_created", { extension_id: canonicalExtensionId, version: requested.version, scan_purpose: requested.scan_purpose, scanner_build: requested.scanner_build });
+    queued.push({ id, extension_id: canonicalExtensionId, version: requested.version, scan_purpose: requested.scan_purpose, status: "queued", deduplicated: false });
+  }
+  return queued;
 }
 
 export async function queueCloudflareDeepScan(extensionId: string, requestedVersion: string | undefined, request: Request, user: AppAuthUser, force = false): Promise<Row> {
@@ -197,7 +239,7 @@ async function subscribeCloudflareJob(jobId: string, userId: string): Promise<vo
   await privateDb().prepare("INSERT OR IGNORE INTO app_scan_job_subscribers(job_id,user_id,created_at) VALUES(?,?,?)").bind(jobId, userId, nowIso()).run();
 }
 
-async function addCloudflareScanEvent(jobId: string, stage: string, eventType: string, detail: Row): Promise<void> {
+export async function addCloudflareScanEvent(jobId: string, stage: string, eventType: string, detail: Row): Promise<void> {
   await privateDb().prepare("INSERT INTO app_scan_job_events(job_id,stage,event_type,detail_json,created_at) VALUES(?,?,?,?,?)").bind(jobId, stage, eventType, JSON.stringify(detail), nowIso()).run();
 }
 
