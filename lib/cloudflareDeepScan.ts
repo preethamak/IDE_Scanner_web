@@ -5,7 +5,7 @@ import { gunzipSync } from "node:zlib";
 import { privateDb, newId, nowIso, type AppAuthUser } from "@/lib/cloudflarePrivate";
 import { runtimeEnv } from "@/lib/runtimeEnv";
 import { resolveMarketplaceExtension } from "@/lib/marketplace";
-import { getCloudflareRegistryProduct } from "@/lib/cloudflareRegistry";
+import { getCloudflareRegistryCatalogExtension, getCloudflareRegistryProduct } from "@/lib/cloudflareRegistry";
 
 type Row = Record<string, unknown>;
 type Bundle = { metadata?: Row; extensions?: Row | Row[] };
@@ -57,9 +57,10 @@ export async function enqueueCloudflareCanonicalJobs(jobs: readonly CloudflareCa
 
 export async function queueCloudflareDeepScan(extensionId: string, requestedVersion: string | undefined, request: Request, user: AppAuthUser, force = false): Promise<Row> {
   const db = privateDb();
-  const item = await resolveMarketplaceExtension(extensionId);
-  const canonicalExtensionId = item.extension_id;
-  const version = requestedVersion || item.version;
+  const catalog = await getCloudflareRegistryCatalogExtension<{ id?: string; latest_version?: string }>(extensionId);
+  const marketplace = catalog ? null : await resolveMarketplaceExtension(extensionId);
+  const canonicalExtensionId = String(catalog?.id || marketplace?.extension_id || extensionId);
+  const version = requestedVersion || String(catalog?.latest_version || marketplace?.version || "");
   if (!version) throw new Error("No published version is available for this extension.");
   const active = await db.prepare("SELECT * FROM app_scan_jobs WHERE extension_id=? AND version=? AND profile='deep' AND status IN ('queued','running') ORDER BY created_at DESC LIMIT 1").bind(canonicalExtensionId, version).first<Row>();
   if (active) {
@@ -102,7 +103,7 @@ export async function dispatchCloudflareDeepScan(jobId: string, minimumIntervalS
   if (minimumIntervalSeconds > 0 && Number(job.dispatch_count || 0) > 0 && Date.now() - last < minimumIntervalSeconds * 1000) return false;
   const owner = runtimeEnv("GITHUB_REPO_OWNER") || "preethamak";
   const repository = runtimeEnv("GITHUB_SCANNER_REPO") || "IDE_Scanner";
-  const response = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/actions/workflows/deep-scan.yml/dispatches`, { method: "POST", headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" }, body: JSON.stringify({ ref: "main", inputs: { job_id: jobId } }), cache: "no-store" });
+  const response = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/actions/workflows/deep-scan.yml/dispatches`, { method: "POST", headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" }, body: JSON.stringify({ ref: "main", inputs: { job_id: jobId } }), cache: "no-store", signal: AbortSignal.timeout(8_000) });
   if (!response.ok) throw new Error(`Deep Scan dispatch failed (${response.status}).`);
   const now = nowIso();
   await db.prepare("UPDATE app_scan_jobs SET dispatch_count=dispatch_count+1,lifecycle_stage='dispatched',updated_at=?,last_event_at=? WHERE id=?").bind(now, now, jobId).run();

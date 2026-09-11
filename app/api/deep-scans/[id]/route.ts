@@ -3,7 +3,7 @@ import { dispatchDeepScan } from "@/lib/deepScan";
 import { serviceDb } from "@/lib/supabase";
 import { serverDb } from "@/lib/supabaseServer";
 import { scanProgressColumns, scanProgressPayload } from "@/lib/scanProgress";
-import { cloudflarePrivateAvailable, cloudflareScanProgress, dispatchCloudflareDeepScan } from "@/lib/cloudflareDeepScan";
+import { cloudflarePrivateAvailable, cloudflareScanProgress } from "@/lib/cloudflareDeepScan";
 import { privateDb, userFromSession } from "@/lib/cloudflarePrivate";
 
 export const dynamic = "force-dynamic";
@@ -26,8 +26,6 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       if (!subscription) return NextResponse.json({ error: "Scan job not found." }, { status: 404 });
       let job = await db.prepare("SELECT * FROM app_scan_jobs WHERE id=?").bind(id).first<Record<string, unknown>>();
       if (!job) return NextResponse.json({ error: "Scan job not found." }, { status: 404 });
-      if (String(job.status) === "queued") await dispatchCloudflareDeepScan(id, 120).catch(() => false);
-      job = await db.prepare("SELECT * FROM app_scan_jobs WHERE id=?").bind(id).first<Record<string, unknown>>() || job;
       return NextResponse.json(await cloudflareScanProgress(job));
     }
     const db=await serverDb(); const {data:{user}}=await db.auth.getUser(); if(!user)return NextResponse.json({error:"Sign in to view scan progress."},{status:401});
