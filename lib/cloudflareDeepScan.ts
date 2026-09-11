@@ -123,8 +123,10 @@ export async function cloudflareScanProgress(job: Row): Promise<Row> {
 
 export async function claimCloudflareJob(input: { runnerId: string; jobId: string | null; githubRunId: number | null; githubSha: string }): Promise<Row | null> {
   const db = privateDb();
-  const where = input.jobId ? "id=? AND status='queued'" : "status='queued'";
-  const values = input.jobId ? [input.jobId] : [];
+  const where = input.jobId
+    ? "id=? AND status='queued' AND (expected_scanner_build IS NULL OR lower(expected_scanner_build)=lower(?))"
+    : "status='queued' AND (expected_scanner_build IS NULL OR lower(expected_scanner_build)=lower(?))";
+  const values = input.jobId ? [input.jobId, input.githubSha] : [input.githubSha];
   const job = await db.prepare(`SELECT * FROM app_scan_jobs WHERE ${where} ORDER BY created_at LIMIT 1`).bind(...values).first<Row>();
   if (!job) return null;
   const now = nowIso();
