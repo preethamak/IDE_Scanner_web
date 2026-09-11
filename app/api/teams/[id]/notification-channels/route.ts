@@ -33,7 +33,7 @@ export async function GET(request: Request, context: Context) {
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst", "viewer"]);
     if (provider === "cloudflare") {
       const state = await getWorkspaceState(id);
-      return NextResponse.json({ configured: state.channels.length > 0, channels: state.channels.map(({ target: _target, ...channel }) => channel), deliveries: state.deliveries, digest_deliveries: state.digest_deliveries });
+      return NextResponse.json({ configured: outboundNotificationsConfigured(), channels: state.channels.map(({ target: _target, ...channel }) => channel), deliveries: state.deliveries, digest_deliveries: state.digest_deliveries });
     }
     const db = serviceDb();
     const [channelResult, deliveryResult, digestResult] = await Promise.all([
