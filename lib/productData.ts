@@ -188,7 +188,7 @@ async function fetchCatalog(query = "", limit = 50): Promise<CatalogExtension[]>
 }
 
 export async function getExtensionProduct(id: string, client?: SupabaseClient): Promise<{ extension: CatalogExtension; versions: Array<Record<string, unknown>>; scan: Record<string, unknown> | null } | null> {
-  const cloudflareProduct = await getCloudflareRegistryProduct<{ extension: Record<string, unknown>; versions: Array<Record<string, unknown>>; scan: Record<string, unknown> | null }>(id);
+  const cloudflareProduct = await getCloudflareRegistryProduct<{ extension: CatalogExtension; versions: Array<Record<string, unknown>>; scan: Record<string, unknown> | null }>(id);
   if (cloudflareProduct?.extension) return cloudflareProduct;
   const cloudflareCatalog = await getCloudflareRegistryCatalogExtension<Record<string, unknown>>(id);
   if (cloudflareCatalog) {
