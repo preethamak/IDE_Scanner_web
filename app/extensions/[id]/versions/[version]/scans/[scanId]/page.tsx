@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import AnalysisReport from "@/app/ExtensionDossier";
 import { getExtensionProduct, getVersionScanProduct } from "@/lib/productData";
 import { parseExtensionDossierData } from "@/lib/reportContract";
+import { cloudflarePrivateAvailable } from "@/lib/cloudflareDeepScan";
+import { cloudflareSessionActive } from "@/lib/cloudflareSession";
 import { serverDb } from "@/lib/supabaseServer";
 
 export const dynamic = "force-dynamic";
@@ -15,11 +17,11 @@ export default async function ImmutableScanPage({
   const id = decodeURIComponent(route.id);
   const version = decodeURIComponent(route.version);
   const scanId = decodeURIComponent(route.scanId);
-  const db = await serverDb();
+  const cloudflare = cloudflarePrivateAvailable();
   const [claims, extensionProduct, versionProduct] = await Promise.all([
-    db.auth.getClaims(),
-    getExtensionProduct(id, db),
-    getVersionScanProduct(id, version, scanId, db),
+    cloudflare ? cloudflareSessionActive() : serverDb().then((db) => db.auth.getClaims().then((result) => Boolean(result.data?.claims))).catch(() => false),
+    getExtensionProduct(id),
+    getVersionScanProduct(id, version, scanId),
   ]);
   if (!extensionProduct || !versionProduct?.scan) notFound();
   let data = null;
@@ -52,5 +54,5 @@ export default async function ImmutableScanPage({
       </main>
     );
   }
-  return <AnalysisReport data={data} signedIn={Boolean(claims.data?.claims)} />;
+  return <AnalysisReport data={data} signedIn={claims} />;
 }

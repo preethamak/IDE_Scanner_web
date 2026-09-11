@@ -1,6 +1,7 @@
 import { publicDb, serviceDb } from "@/lib/supabase";
 import { isConcreteVersion, listMarketplaceVersions, resolveMarketplaceExtension, searchMarketplace } from "@/lib/marketplace";
 import { getPublicRegistryProduct, getPublicRegistrySnapshot } from "@/lib/publicRegistrySnapshot";
+import { getCloudflareRegistryCatalogExtension, getCloudflareRegistryProduct } from "@/lib/cloudflareRegistry";
 import { unstable_cache } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCloudflareScanProduct } from "@/lib/cloudflareDeepScan";
@@ -187,6 +188,20 @@ async function fetchCatalog(query = "", limit = 50): Promise<CatalogExtension[]>
 }
 
 export async function getExtensionProduct(id: string, client?: SupabaseClient): Promise<{ extension: CatalogExtension; versions: Array<Record<string, unknown>>; scan: Record<string, unknown> | null } | null> {
+  const cloudflareProduct = await getCloudflareRegistryProduct<{ extension: Record<string, unknown>; versions: Array<Record<string, unknown>>; scan: Record<string, unknown> | null }>(id);
+  if (cloudflareProduct?.extension) return cloudflareProduct;
+  const cloudflareCatalog = await getCloudflareRegistryCatalogExtension<Record<string, unknown>>(id);
+  if (cloudflareCatalog) {
+    const versions = await cachedVersions(id).catch(() => []);
+    const fallbackVersions = versions.length
+      ? versions
+      : [{ extension_id: id, version: String(cloudflareCatalog.latest_version || ""), registry: String(cloudflareCatalog.registry || "vs-marketplace"), is_latest: true, scan_state: "not_scanned" }];
+    return {
+      extension: normalizeCatalogRow({ ...cloudflareCatalog, extension_versions: fallbackVersions }),
+      versions: limitVersionHistory(dedupeVersions(fallbackVersions)),
+      scan: null,
+    };
+  }
   const db = client || publicDb();
   if (db) {
     try {
@@ -245,6 +260,14 @@ async function registryProduct(id: string): Promise<{ extension: CatalogExtensio
 }
 
 export async function getVersionProduct(id: string, version: string, client?: SupabaseClient): Promise<Record<string, unknown> | null> {
+  const cloudflareProduct = await getCloudflareRegistryProduct<{ versions?: Array<Record<string, unknown>>; scans?: Array<{ version?: string; scan?: Record<string, unknown>; findings?: Array<Record<string, unknown>>; files?: Array<Record<string, unknown>>; dependencies?: Array<Record<string, unknown>> }> }>(id);
+  const cloudflareVersions = cloudflareProduct?.versions || (await getCloudflareRegistryCatalogExtension<Record<string, unknown>>(id) ? await cachedVersions(id).catch(() => []) : []);
+  if (cloudflareVersions.length) {
+    const versionRow = cloudflareVersions.find((item) => String(item.version || "") === version);
+    if (!versionRow) return null;
+    const scan = cloudflareProduct?.scans?.find((item) => String(item.version || "") === version);
+    return { version: versionRow, scan: scan?.scan || null, findings: scan?.findings || [], files: scan?.files || [], dependencies: scan?.dependencies || [] };
+  }
   const db = client || publicDb();
   if (!db) return null;
   try {
@@ -271,6 +294,12 @@ export async function getVersionProduct(id: string, version: string, client?: Su
 export async function getVersionScanProduct(id: string, version: string, scanId: string, client?: SupabaseClient): Promise<Record<string, unknown> | null> {
   const cloudflareReport = await getCloudflareScanProduct(id, version, scanId).catch(() => null);
   if (cloudflareReport) return cloudflareReport;
+  const cloudflareProduct = await getCloudflareRegistryProduct<{ versions?: Array<Record<string, unknown>>; scans?: Array<{ version?: string; scan?: Record<string, unknown>; findings?: Array<Record<string, unknown>>; files?: Array<Record<string, unknown>>; dependencies?: Array<Record<string, unknown>> }> }>(id);
+  if (cloudflareProduct) {
+    const scan = cloudflareProduct.scans?.find((item) => String(item.version || "") === version && String(item.scan?.id || "") === scanId);
+    return scan ? { version: cloudflareProduct.versions?.find((item) => String(item.version || "") === version) || { extension_id: id, version }, scan: scan.scan, findings: scan.findings || [], files: scan.files || [], dependencies: scan.dependencies || [] } : null;
+  }
+  if (await getCloudflareRegistryCatalogExtension<Record<string, unknown>>(id)) return null;
   const db = client || publicDb();
   if (!db) return null;
   try {
