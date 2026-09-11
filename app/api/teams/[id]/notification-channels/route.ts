@@ -87,7 +87,9 @@ export async function POST(request: Request, context: Context) {
     const { user, provider } = await authenticated(request);
     const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin"]);
-    await requireEntitlement(id, "notification_channels", 1);
+    // Cloudflare-backed workspaces use the free D1 product path. Supabase
+    // entitlements are only consulted by the compatibility provider.
+    if (provider !== "cloudflare") await requireEntitlement(id, "notification_channels", 1);
     if (!outboundNotificationsConfigured())
       return NextResponse.json(
         {

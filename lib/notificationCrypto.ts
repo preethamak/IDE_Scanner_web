@@ -1,7 +1,10 @@
+import "server-only";
+
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import { runtimeEnv } from "@/lib/runtimeEnv";
 
 function key(): Buffer {
-  const value = process.env.MONITORING_ENCRYPTION_KEY || "";
+  const value = runtimeEnv("MONITORING_ENCRYPTION_KEY");
   if (!value) throw new Error("Outbound notification encryption is not configured.");
   return createHash("sha256").update(value, "utf8").digest();
 }
@@ -22,5 +25,5 @@ export function decryptTarget(value: string): string {
 }
 
 export function outboundNotificationsConfigured(): boolean {
-  return Boolean(process.env.MONITORING_ENCRYPTION_KEY && process.env.NOTIFICATION_CRON_SECRET);
+  return Boolean(runtimeEnv("MONITORING_ENCRYPTION_KEY") && runtimeEnv("NOTIFICATION_CRON_SECRET"));
 }

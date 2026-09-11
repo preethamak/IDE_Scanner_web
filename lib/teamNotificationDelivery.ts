@@ -5,6 +5,7 @@ import {
   parseJiraTarget,
 } from "@/lib/jiraNotification";
 import { decryptTarget } from "@/lib/notificationCrypto";
+import { runtimeEnv } from "@/lib/runtimeEnv";
 import {
   genericWebhookMessage,
   isSafeWebhookUrl,
@@ -16,7 +17,11 @@ export type DeliverableTeamChannel = {
 };
 
 export async function deliverTeamChannelTest(channel: DeliverableTeamChannel) {
-  const target = decryptTarget(channel.target_encrypted);
+  return deliverTeamChannelTestTarget({ kind: channel.kind, target: decryptTarget(channel.target_encrypted) });
+}
+
+export async function deliverTeamChannelTestTarget(channel: { kind: string; target: string }) {
+  const target = channel.target;
   const alert = testAlert();
   let destination = target;
   let payload: unknown;
@@ -44,7 +49,7 @@ export async function deliverTeamChannelTest(channel: DeliverableTeamChannel) {
       );
     destination = "https://api.resend.com/emails";
     payload = emailPayload(alert, target);
-    authorization = `Bearer ${process.env.RESEND_API_KEY}`;
+    authorization = `Bearer ${runtimeEnv("RESEND_API_KEY")}`;
   } else {
     throw new Error("This notification provider is not supported.");
   }

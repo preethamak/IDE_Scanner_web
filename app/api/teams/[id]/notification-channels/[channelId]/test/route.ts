@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { authenticated } from "@/lib/auth";
 import { requireTeamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
-import { deliverTeamChannelTest } from "@/lib/teamNotificationDelivery";
+import { deliverTeamChannelTest, deliverTeamChannelTestTarget } from "@/lib/teamNotificationDelivery";
 import { teamApiError } from "@/lib/teamApiError";
 import { getWorkspaceState, saveState } from "@/lib/cloudflareWorkspace";
 import { cloudflarePrivateAvailable } from "@/lib/cloudflareDeepScan";
@@ -24,11 +24,9 @@ export async function POST(request: Request, context: Context) {
       const channel = state.channels.find((item) => String(item.id) === channelId);
       if (!channel) return NextResponse.json({ error: "Notification channel not found." }, { status: 404 });
       if (channel.enabled === false) return NextResponse.json({ error: "Enable this channel before sending a test." }, { status: 409 });
-      const response = await fetch(String(channel.target || ""), { method: "POST", headers: { "Content-Type": "application/json", "User-Agent": "GuardRails-Notification-Validator/1.0" }, body: JSON.stringify({ text: "GuardRails team notifications connected." }), signal: AbortSignal.timeout(10_000) });
-      const validatedAt = new Date().toISOString();
-      if (!response.ok) { channel.last_error = `Notification endpoint returned ${response.status}`; await saveState(id, state); return NextResponse.json({ error: channel.last_error }, { status: 502 }); }
-      channel.last_validated_at = validatedAt; channel.last_error = null; await saveState(id, state);
-      return NextResponse.json({ ok: true, provider: String(channel.kind), delivered_at: validatedAt });
+      const result = await deliverTeamChannelTestTarget({ kind: String(channel.kind || ""), target: String(channel.target || "") });
+      channel.last_validated_at = result.delivered_at; channel.last_error = null; await saveState(id, state);
+      return NextResponse.json({ ok: true, provider: result.provider, delivered_at: result.delivered_at });
     }
     const db = serviceDb();
     const { data: channel, error } = await db
