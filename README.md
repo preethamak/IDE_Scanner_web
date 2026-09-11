@@ -11,7 +11,8 @@ The product has three independently truthful modes:
 ## Free hosted architecture
 
 - Cloudflare Workers hosts the Next.js UI and signed ingestion APIs at `https://abscissa.dev`.
-- Supabase Free provides Postgres, Auth, and RLS-protected personal data.
+- Cloudflare D1 stores the public registry mirror used by live catalog, history, metrics, and product pages.
+- Supabase Free remains the migration source for Postgres/Auth and RLS-protected workspace data until the private-data phase is complete.
 - Standard GitHub-hosted runners in the public scanner repository execute exact-version Deep Scans.
 - The weekly catalog workflow retains the top 250 extensions, lists registry versions, and gradually scans the latest four versions.
 
@@ -60,6 +61,17 @@ npx wrangler deploy --config wrangler.jsonc
 ### Automatic GitHub deployments
 
 In Cloudflare Dashboard, open **Workers & Pages → abscissa-web-production → Settings → Builds → Connect** and select `preethamak/IDE_Scanner_web`. Use `main` as the production branch, `npm run cf:build` as the build command, and `npx wrangler deploy --config wrangler.jsonc` as the deploy command. After the one-time connection, every push to `main` creates a new Cloudflare deployment.
+
+The repository also contains a GitHub Actions deployment path in
+`.github/workflows/cloudflare-deploy.yml`. It applies the tracked D1 migrations
+and deploys the Worker when the `CLOUDFLARE_API_TOKEN` repository secret is
+present. The catalog refresh workflow mirrors the generated public snapshot
+into D1 using `scripts/import-public-registry-d1.mjs`.
+
+The first Cloudflare migration is intentionally read-only for application
+behavior: public routes prefer D1 and fall back to the GitHub snapshot if D1 is
+unavailable. Workspace authentication, teams, billing, and private tables still
+use Supabase until their separate Cloudflare Access/D1 migration is completed.
 
 Email sign-in uses a six-digit one-time password so users can request the code in one browser and enter it in another. In Supabase Dashboard, open **Authentication → Email Templates → Magic Link**, use `{{ .Token }}` in the message body (not `{{ .ConfirmationURL }}`), and update the subject to describe a sign-in code. Keep the code expiry short. Supabase's default sender is intended for limited development use; for a zero-cost launch, make GitHub OAuth the primary sign-in path and retain email OTP only while its delivery and template configuration are verified.
 

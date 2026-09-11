@@ -5,6 +5,10 @@ import type {
   PublicInventoryItem,
   PublicSecurityFeedItem,
 } from "@/lib/productData";
+import {
+  getCloudflareRegistryProduct,
+  getCloudflareRegistrySnapshot,
+} from "@/lib/cloudflareRegistry";
 
 const DEFAULT_SNAPSHOT_URL =
   "https://raw.githubusercontent.com/preethamak/IDE_Scanner_web/main/public/registry-snapshot.json";
@@ -49,6 +53,13 @@ let cached: { expiresAt: number; value: PublicRegistrySnapshot | null } | null =
 export async function getPublicRegistrySnapshot(): Promise<PublicRegistrySnapshot | null> {
   if (cached && cached.expiresAt > Date.now()) return cached.value;
 
+  const cloudflareSnapshot = await getCloudflareRegistrySnapshot<PublicRegistrySnapshot>();
+  if (cloudflareSnapshot) {
+    const value = cloudflareSnapshot as PublicRegistrySnapshot;
+    cached = { expiresAt: Date.now() + SNAPSHOT_TTL_MS, value };
+    return value;
+  }
+
   const url = process.env.PUBLIC_REGISTRY_SNAPSHOT_URL || DEFAULT_SNAPSHOT_URL;
   try {
     const response = await fetch(url, {
@@ -82,6 +93,8 @@ export async function getPublicRegistrySnapshot(): Promise<PublicRegistrySnapsho
 export async function getPublicRegistryProduct(
   id: string,
 ): Promise<PublicRegistryProduct | null> {
+  const cloudflareProduct = await getCloudflareRegistryProduct<PublicRegistryProduct>(id);
+  if (cloudflareProduct) return cloudflareProduct;
   const snapshot = await getPublicRegistrySnapshot();
   if (!snapshot) return null;
   const key = Object.keys(snapshot.products).find(

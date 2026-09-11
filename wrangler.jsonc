@@ -19,6 +19,14 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "d1_databases": [
+    {
+      "binding": "ABSCISSA_REGISTRY",
+      "database_name": "abscissa-registry",
+      "database_id": "00dc29ae-0815-4393-a915-d0cc07b36556",
+      "migrations_dir": "d1/migrations"
+    }
+  ],
   "observability": {
     "enabled": true
   },
