@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { serverDb } from "@/lib/supabaseServer";
+import { cloudflarePrivateAvailable, getCloudflareSourcePreview } from "@/lib/cloudflareDeepScan";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,11 +12,19 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   const requestedScanId = new URL(request.url).searchParams.get("scan") || "";
   const { id, version } = await context.params;
   if (!path || path.length > 300 || path.includes("\\") || path.split("/").some((part) => !part || part === "." || part === "..") || !TEXT_FILE.test(path)) return NextResponse.json({ error: "This path cannot be previewed safely." }, { status: 400 });
+  const extensionId = decodeURIComponent(id);
+  const releaseVersion = decodeURIComponent(version);
+  if (cloudflarePrivateAvailable()) {
+    const preview = await getCloudflareSourcePreview(extensionId, releaseVersion, requestedScanId || null, path);
+    if (!preview) return NextResponse.json({ error: "No stored source snapshot exists for this exact artifact. Re-scan this version to capture a verified preview." }, { status: 404 });
+    if (Buffer.byteLength(String(preview.content)) > MAX_PREVIEW_BYTES) return NextResponse.json({ error: "This source preview exceeds the display limit." }, { status: 422 });
+    return NextResponse.json({ path, content: preview.content, content_sha256: String(preview.content_sha256 || "recorded in report"), truncated: Boolean(preview.truncated), source: "cloudflare-d1" });
+  }
   // Use the request-bound client: public reports remain public through RLS,
   // while an authenticated owner can also read the exact private report they
   // just created. The old anonymous client made every private README fail.
   const db = await serverDb();
-  let scanQuery = db.from("scans").select("id,canonical_report").eq("extension_id", decodeURIComponent(id)).eq("version", decodeURIComponent(version));
+  let scanQuery = db.from("scans").select("id,canonical_report").eq("extension_id", extensionId).eq("version", releaseVersion);
   if (requestedScanId) scanQuery = scanQuery.eq("id", requestedScanId);
   else scanQuery = scanQuery.is("superseded_at", null).order("scanned_at", { ascending: false }).limit(1);
   const { data: scan } = await scanQuery.maybeSingle();
@@ -31,7 +40,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   const report = scan.canonical_report && typeof scan.canonical_report === "object" ? scan.canonical_report as Record<string, unknown> : {};
   const extensions = report.extensions;
   const details = Array.isArray(extensions) ? extensions : extensions && typeof extensions === "object" ? Object.values(extensions) : [];
-  const requestedId = decodeURIComponent(id);
+  const requestedId = extensionId;
   const detail = details.find((value): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && (value.extension_id === requestedId || (value.artifact_identity && typeof value.artifact_identity === "object" && (value.artifact_identity as Record<string, unknown>).extension_id === requestedId))) || {};
   const inventory = detail.artifact_inventory && typeof detail.artifact_inventory === "object" ? detail.artifact_inventory as Record<string, unknown> : {};
   const snapshots = Array.isArray(inventory.source_previews) ? inventory.source_previews : [];

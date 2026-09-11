@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckSquare } from "lucide-react";
 import { trackProductEvent } from "@/lib/analyticsEvents";
 import { browserDb } from "@/lib/supabase";
+import { browserAuthHeaders } from "@/lib/browserAuth";
 
 type Team = { id: string; name: string; role: string };
 type Member = { user_id: string; role: string; profiles?: { display_name?: string | null } | Array<{ display_name?: string | null }> | null };
@@ -19,16 +20,13 @@ export default function TeamDecisionAction({ scanId, extensionId }: { scanId: st
   const [assignee, setAssignee] = useState("");
   const [dueAt, setDueAt] = useState("");
 
-  const token = useCallback(async () => {
-    const session = await db?.auth.getSession();
-    return session?.data.session?.access_token || "";
-  }, [db]);
+  const token = useCallback(async () => browserAuthHeaders(db), [db]);
   useEffect(() => {
     void (async () => {
       try {
-        const accessToken = await token();
-        if (!accessToken) return;
-        const response = await fetch("/api/teams", { headers: { Authorization: `Bearer ${accessToken}` } });
+        const headers = await token();
+        if (!headers.Authorization) return;
+        const response = await fetch("/api/teams", { headers });
         const body = await response.json();
         const available = Array.isArray(body.teams) ? body.teams.filter((team: Team) => ["owner", "admin", "analyst"].includes(team.role)) : [];
         if (response.ok && available.length) { setTeams(available); setTeamId(available[0].id); setState("ready"); }
@@ -39,8 +37,8 @@ export default function TeamDecisionAction({ scanId, extensionId }: { scanId: st
     if (!teamId) return;
     void (async () => {
       try {
-        const accessToken = await token();
-        const response = await fetch(`/api/teams/${encodeURIComponent(teamId)}/members`, { headers: { Authorization: `Bearer ${accessToken}` } });
+        const headers = await token();
+        const response = await fetch(`/api/teams/${encodeURIComponent(teamId)}/members`, { headers });
         const body = await response.json();
         if (response.ok) setMembers(Array.isArray(body.members) ? body.members : []);
       } catch { setMembers([]); }
@@ -50,8 +48,8 @@ export default function TeamDecisionAction({ scanId, extensionId }: { scanId: st
     if (!teamId) return;
     setState("saving");
     try {
-      const accessToken = await token();
-      const response = await fetch(`/api/teams/${encodeURIComponent(teamId)}/decisions`, { method: "POST", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: scanId, decision, assigned_to: assignee || null, due_at: dueAt ? new Date(dueAt).toISOString() : null }) });
+      const headers = await token();
+      const response = await fetch(`/api/teams/${encodeURIComponent(teamId)}/decisions`, { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: scanId, decision, assigned_to: assignee || null, due_at: dueAt ? new Date(dueAt).toISOString() : null }) });
       if (response.ok) {
         trackProductEvent({ name: "decision_created", source_route: window.location.pathname, decision: decision as "allow" | "review" | "block" | "exception" });
         setState("saved");

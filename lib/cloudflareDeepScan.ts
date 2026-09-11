@@ -213,6 +213,28 @@ export async function getCloudflareScanProduct(extensionId: string, version: str
   return { version: { extension_id: extensionId, version, latest_scan_id: scanId, scan_state: report.analysis_status }, scan: report, findings, files, dependencies };
 }
 
+export async function getCloudflareSourcePreview(extensionId: string, version: string, scanId: string | null, path: string): Promise<Row | null> {
+  if (!cloudflarePrivateAvailable()) return null;
+  const row = await privateDb().prepare(`
+    SELECT
+      json_extract(preview.value, '$.content') AS content,
+      json_extract(preview.value, '$.content_sha256') AS content_sha256,
+      json_extract(preview.value, '$.truncated') AS truncated
+    FROM app_scan_reports report
+    JOIN json_each(report.report_json, '$.extensions') extension
+    JOIN json_each(json_extract(extension.value, '$.artifact_inventory.source_previews')) preview
+      ON true
+    WHERE report.extension_id=?
+      AND report.version=?
+      AND (?='' OR report.scan_id=?)
+      AND json_extract(preview.value, '$.path')=?
+    ORDER BY report.created_at DESC
+    LIMIT 1
+  `).bind(extensionId, version, scanId || "", scanId || "", path).first<Row>();
+  if (!row || typeof row.content !== "string") return null;
+  return row;
+}
+
 export async function failCloudflareScan(jobId: string, error: string): Promise<void> {
   const now = nowIso();
   await privateDb().prepare("UPDATE app_scan_jobs SET status='failed',lifecycle_stage='failed',error=?,callback_error=?,completed_at=?,updated_at=?,last_event_at=? WHERE id=?").bind(error.slice(0, 2000), error.slice(0, 2000), now, now, now, jobId).run();

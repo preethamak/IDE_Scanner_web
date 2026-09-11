@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getVersionScanProduct } from "@/lib/productData";
 import { serverDb } from "@/lib/supabaseServer";
+import { cloudflarePrivateAvailable } from "@/lib/cloudflareDeepScan";
+import { userFromSession } from "@/lib/cloudflarePrivate";
 import {
   createEvidenceReviewBrief,
   SarvamConfigurationError,
@@ -32,11 +34,21 @@ export async function POST(
   const length = Number(request.headers.get("content-length") || "0");
   if (Number.isFinite(length) && length > MAX_BODY_BYTES) return errorResponse("Request body too large.", 413);
 
-  const db = await serverDb();
-  const { data: { user } } = await db.auth.getUser();
-  if (!user) return errorResponse("Sign in to generate an evidence brief.", 401, "auth_required");
+  const cloudflare = cloudflarePrivateAvailable();
+  let db: Awaited<ReturnType<typeof serverDb>> | undefined;
+  let userId = "";
+  if (cloudflare) {
+    const user = await userFromSession(request);
+    if (!user) return errorResponse("Sign in to generate an evidence brief.", 401, "auth_required");
+    userId = user.id;
+  } else {
+    db = await serverDb();
+    const { data: { user } } = await db.auth.getUser();
+    if (!user) return errorResponse("Sign in to generate an evidence brief.", 401, "auth_required");
+    userId = user.id;
+  }
 
-  const bucketKey = `${user.id}:${extensionId.toLowerCase()}:${version}`;
+  const bucketKey = `${userId}:${extensionId.toLowerCase()}:${version}`;
   const limit = checkRateLimit(bucketKey);
   if (!limit.allowed) {
     return new NextResponse(JSON.stringify({ error: "Brief generation is temporarily rate limited.", code: "rate_limited" }), {

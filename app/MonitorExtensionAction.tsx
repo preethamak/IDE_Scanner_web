@@ -5,6 +5,7 @@ import { BellRing, Check, ChevronRight, LoaderCircle, ShieldCheck } from "lucide
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { browserDb } from "@/lib/supabase";
 import { trackProductEvent } from "@/lib/analyticsEvents";
+import { browserAuthHeaders } from "@/lib/browserAuth";
 
 type Team = { id: string; name: string; role: string };
 
@@ -14,13 +15,13 @@ export default function MonitorExtensionAction({ extensionId, version, scanId }:
   const [teamId, setTeamId] = useState("");
   const [state, setState] = useState<"loading" | "ready" | "signed-out" | "empty" | "saving" | "saved" | "error">("loading");
   const [message, setMessage] = useState("");
-  const token = useCallback(async () => (await db?.auth.getSession())?.data.session?.access_token || "", [db]);
+  const token = useCallback(async () => browserAuthHeaders(db), [db]);
 
   useEffect(() => {
     void (async () => {
-      const accessToken = await token();
-      if (!accessToken) { setState("signed-out"); return; }
-      const response = await fetch("/api/teams", { headers: { Authorization: `Bearer ${accessToken}` } });
+      const headers = await token();
+      if (!headers.Authorization) { setState("signed-out"); return; }
+      const response = await fetch("/api/teams", { headers });
       const body = await response.json().catch(() => ({})) as { teams?: Team[]; error?: string };
       const writable = response.ok && Array.isArray(body.teams) ? body.teams.filter((team) => ["owner", "admin", "analyst"].includes(team.role)) : [];
       setTeams(writable); setTeamId(writable[0]?.id || "");
@@ -32,10 +33,10 @@ export default function MonitorExtensionAction({ extensionId, version, scanId }:
   async function enableMonitoring() {
     if (!teamId) return;
     setState("saving"); setMessage("");
-    const accessToken = await token();
+    const headers = await token();
     const response = await fetch(`/api/teams/${encodeURIComponent(teamId)}/watchlist`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      headers: { ...headers, "Content-Type": "application/json" },
       body: JSON.stringify({ extension_id: extensionId, baseline_scan_id: scanId }),
     });
     const body = await response.json().catch(() => ({})) as { error?: string };
