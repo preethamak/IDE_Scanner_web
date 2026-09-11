@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { resolveMarketplaceExtension } from "@/lib/marketplace";
 import { serviceDb } from "@/lib/supabase";
 import { getDeepScanHealth } from "@/lib/deepScanHealth";
+import { cloudflarePrivateAvailable, dispatchCloudflareDeepScan, queueCloudflareDeepScan } from "@/lib/cloudflareDeepScan";
+import { runtimeEnv } from "@/lib/runtimeEnv";
 
 export class DeepScanUnavailableError extends Error {
   constructor(message: string) {
@@ -11,6 +13,9 @@ export class DeepScanUnavailableError extends Error {
 }
 
 export async function queueDeepScan(extensionId: string, requestedVersion: string | undefined, request: Request, requestedBy: string, force = false): Promise<Record<string, unknown>> {
+  if (cloudflarePrivateAvailable()) {
+    return queueCloudflareDeepScan(extensionId, requestedVersion, request, { id: requestedBy, email: "", display_name: "", provider: "github", provider_subject: requestedBy, user_metadata: {}, app_metadata: { provider: "github" } }, force);
+  }
   const health = await getDeepScanHealth();
   if (!health.accepting_requests) throw new DeepScanUnavailableError("Deep Scan is not configured to accept requests.");
   const db = serviceDb();
@@ -92,9 +97,10 @@ export function withReportUrl<T extends Record<string, unknown>>(result: T): T &
 }
 
 export async function dispatchDeepScan(jobId: string, minimumIntervalSeconds = 0): Promise<boolean> {
-  const token = process.env.GITHUB_ACTIONS_TOKEN;
-  const owner = process.env.GITHUB_REPO_OWNER || "preethamak";
-  const repository = process.env.GITHUB_SCANNER_REPO || "IDE_Scanner";
+  if (cloudflarePrivateAvailable()) return dispatchCloudflareDeepScan(jobId, minimumIntervalSeconds);
+  const token = runtimeEnv("GITHUB_ACTIONS_TOKEN");
+  const owner = runtimeEnv("GITHUB_REPO_OWNER") || "preethamak";
+  const repository = runtimeEnv("GITHUB_SCANNER_REPO") || "IDE_Scanner";
   if (!token) throw new Error("Deep Scan dispatch is not configured.");
   const db = serviceDb();
   const reservation = await db.rpc("reserve_deep_scan_dispatch", {
@@ -134,9 +140,9 @@ async function subscribeToJob(jobId: string, userId: string): Promise<void> {
 }
 
 async function currentScannerBuild(): Promise<string | null> {
-  const token = process.env.GITHUB_ACTIONS_TOKEN;
-  const owner = process.env.GITHUB_REPO_OWNER || "preethamak";
-  const repository = process.env.GITHUB_SCANNER_REPO || "IDE_Scanner";
+  const token = runtimeEnv("GITHUB_ACTIONS_TOKEN");
+  const owner = runtimeEnv("GITHUB_REPO_OWNER") || "preethamak";
+  const repository = runtimeEnv("GITHUB_SCANNER_REPO") || "IDE_Scanner";
   if (!token) return null;
   const response = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/commits/main`, {
     headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, "X-GitHub-Api-Version": "2022-11-28" },
@@ -150,5 +156,5 @@ async function currentScannerBuild(): Promise<string | null> {
 
 function hashRequester(request: Request): string {
   const raw = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  return createHash("sha256").update(`${process.env.SCAN_RATE_LIMIT_SECRET || "ide-scanner"}:${raw}`).digest("hex");
+  return createHash("sha256").update(`${runtimeEnv("SCAN_RATE_LIMIT_SECRET") || "ide-scanner"}:${raw}`).digest("hex");
 }

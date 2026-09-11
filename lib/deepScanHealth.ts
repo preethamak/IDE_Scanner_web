@@ -1,4 +1,6 @@
 import { serviceDb } from "@/lib/supabase";
+import { cloudflarePrivateAvailable } from "@/lib/cloudflareDeepScan";
+import { runtimeEnv } from "@/lib/runtimeEnv";
 
 export type DeepScanHealth = {
   accepting_requests: boolean;
@@ -7,6 +9,10 @@ export type DeepScanHealth = {
 };
 
 export async function getDeepScanHealth(): Promise<DeepScanHealth> {
+  if (cloudflarePrivateAvailable()) {
+    if (!runtimeEnv("GITHUB_ACTIONS_TOKEN")) return { accepting_requests: false, status: "configuration_unavailable", last_seen_at: null };
+    return { accepting_requests: true, status: "runner_delayed", last_seen_at: null };
+  }
   if (!process.env.SCAN_RUNNER_SECRET || !process.env.GITHUB_ACTIONS_TOKEN) {
     return { accepting_requests: false, status: "configuration_unavailable", last_seen_at: null };
   }

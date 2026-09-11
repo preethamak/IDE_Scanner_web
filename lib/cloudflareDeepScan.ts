@@ -1,0 +1,212 @@
+import "server-only";
+
+import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { gunzipSync } from "node:zlib";
+import { privateDb, newId, nowIso, type AppAuthUser } from "@/lib/cloudflarePrivate";
+import { runtimeEnv } from "@/lib/runtimeEnv";
+import { resolveMarketplaceExtension } from "@/lib/marketplace";
+
+type Row = Record<string, unknown>;
+type Bundle = { metadata?: Row; extensions?: Row | Row[] };
+
+export function cloudflarePrivateAvailable(): boolean {
+  try { privateDb(); return true; } catch { return false; }
+}
+
+export async function queueCloudflareDeepScan(extensionId: string, requestedVersion: string | undefined, request: Request, user: AppAuthUser, force = false): Promise<Row> {
+  const db = privateDb();
+  const item = await resolveMarketplaceExtension(extensionId);
+  const canonicalExtensionId = item.extension_id;
+  const version = requestedVersion || item.version;
+  if (!version) throw new Error("No published version is available for this extension.");
+  const active = await db.prepare("SELECT * FROM app_scan_jobs WHERE extension_id=? AND version=? AND profile='deep' AND status IN ('queued','running') ORDER BY created_at DESC LIMIT 1").bind(canonicalExtensionId, version).first<Row>();
+  if (active) {
+    await subscribeCloudflareJob(String(active.id), user.id);
+    if (String(active.status) === "queued") await dispatchCloudflareDeepScan(String(active.id), 120);
+    return withCloudflareReportUrl({ ...active, deduplicated: true });
+  }
+  if (!force) {
+    const complete = await db.prepare("SELECT scan_id FROM app_scan_reports WHERE extension_id=? AND version=? ORDER BY created_at DESC LIMIT 1").bind(canonicalExtensionId, version).first<Row>();
+    if (complete?.scan_id) return withCloudflareReportUrl({ status: "complete", scan_id: String(complete.scan_id), reused: true, extension_id: canonicalExtensionId, version });
+  }
+  const since = new Date(Date.now() - 86_400_000).toISOString();
+  const usage = await db.prepare("SELECT COUNT(*) AS count FROM app_scan_jobs WHERE requested_by=? AND created_at>=?").bind(user.id, since).first<Row>();
+  if (Number(usage?.count || 0) >= 10) throw new Error("Daily Deep Scan limit reached.");
+  const id = randomUUID();
+  const createdAt = nowIso();
+  const requester = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const requesterHash = createHash("sha256").update(`${runtimeEnv("SCAN_RATE_LIMIT_SECRET") || "ide-scanner"}:${requester}`).digest("hex");
+  await db.prepare(`INSERT INTO app_scan_jobs(id,extension_id,version,profile,status,lifecycle_stage,requested_by,requester_hash,scan_purpose,created_at,updated_at,last_event_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id, canonicalExtensionId, version, "deep", "queued", "queued", user.id, requesterHash, "user_request", createdAt, createdAt, createdAt).run();
+  await subscribeCloudflareJob(id, user.id);
+  await addCloudflareScanEvent(id, "queued", "created", { extension_id: canonicalExtensionId, version, requested_by: user.id });
+  try {
+    await dispatchCloudflareDeepScan(id);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "The Deep Scan worker could not be started.";
+    await db.prepare("UPDATE app_scan_jobs SET status='failed',lifecycle_stage='failed',error=?,callback_error=?,completed_at=?,updated_at=?,last_event_at=? WHERE id=?").bind(message, message, nowIso(), nowIso(), nowIso(), id).run();
+    await addCloudflareScanEvent(id, "failed", "dispatch_failed", { error: message });
+    throw new Error(message);
+  }
+  return withCloudflareReportUrl({ id, extension_id: canonicalExtensionId, version, profile: "deep", status: "queued", lifecycle_stage: "dispatched", dispatch: "started" });
+}
+
+export async function dispatchCloudflareDeepScan(jobId: string, minimumIntervalSeconds = 0): Promise<boolean> {
+  const token = runtimeEnv("GITHUB_ACTIONS_TOKEN");
+  if (!token) throw new Error("Deep Scan dispatch is not configured.");
+  const db = privateDb();
+  const job = await db.prepare("SELECT dispatch_count,updated_at,status FROM app_scan_jobs WHERE id=?").bind(jobId).first<Row>();
+  if (!job) throw new Error("Scan job was not found.");
+  const last = job.updated_at ? new Date(String(job.updated_at)).getTime() : 0;
+  if (minimumIntervalSeconds > 0 && Number(job.dispatch_count || 0) > 0 && Date.now() - last < minimumIntervalSeconds * 1000) return false;
+  const owner = runtimeEnv("GITHUB_REPO_OWNER") || "preethamak";
+  const repository = runtimeEnv("GITHUB_SCANNER_REPO") || "IDE_Scanner";
+  const response = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/actions/workflows/deep-scan.yml/dispatches`, { method: "POST", headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" }, body: JSON.stringify({ ref: "main", inputs: { job_id: jobId } }), cache: "no-store" });
+  if (!response.ok) throw new Error(`Deep Scan dispatch failed (${response.status}).`);
+  const now = nowIso();
+  await db.prepare("UPDATE app_scan_jobs SET dispatch_count=dispatch_count+1,lifecycle_stage='dispatched',updated_at=?,last_event_at=? WHERE id=?").bind(now, now, jobId).run();
+  await addCloudflareScanEvent(jobId, "dispatched", "dispatch_accepted", { repository: `${owner}/${repository}` });
+  return true;
+}
+
+export async function cloudflareScanProgress(job: Row): Promise<Row> {
+  const db = privateDb();
+  const events = await db.prepare("SELECT stage,event_type,detail_json,created_at FROM app_scan_job_events WHERE job_id=? ORDER BY created_at DESC LIMIT 12").bind(String(job.id)).all<Row>();
+  const report = await db.prepare("SELECT scan_id FROM app_scan_reports WHERE job_id=? LIMIT 1").bind(String(job.id)).first<Row>();
+  const runId = Number(job.github_run_id || 0);
+  const owner = runtimeEnv("GITHUB_REPO_OWNER") || "preethamak";
+  const repository = runtimeEnv("GITHUB_SCANNER_REPO") || "IDE_Scanner";
+  const eventsPayload = events.results.map((event) => ({ ...event, detail: parseJson(event.detail_json) }));
+  return withCloudflareReportUrl({ ...job, scan_id: report?.scan_id ? String(report.scan_id) : null, queue_position: 0, github_run_url: Number.isSafeInteger(runId) && runId > 0 ? `https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/actions/runs/${runId}` : null, events: eventsPayload });
+}
+
+export async function claimCloudflareJob(input: { runnerId: string; jobId: string | null; githubRunId: number | null; githubSha: string }): Promise<Row | null> {
+  const db = privateDb();
+  const where = input.jobId ? "id=? AND status='queued'" : "status='queued'";
+  const values = input.jobId ? [input.jobId] : [];
+  const job = await db.prepare(`SELECT * FROM app_scan_jobs WHERE ${where} ORDER BY created_at LIMIT 1`).bind(...values).first<Row>();
+  if (!job) return null;
+  const now = nowIso();
+  await db.prepare("UPDATE app_scan_jobs SET status='running',lifecycle_stage='running',expected_scanner_build=COALESCE(expected_scanner_build,?),runner_id=?,github_run_id=?,attempt_count=attempt_count+1,started_at=COALESCE(started_at,?),updated_at=?,last_event_at=? WHERE id=? AND status='queued'").bind(input.githubSha, input.runnerId, input.githubRunId, now, now, now, String(job.id)).run();
+  const updated = await db.prepare("SELECT * FROM app_scan_jobs WHERE id=?").bind(String(job.id)).first<Row>();
+  await addCloudflareScanEvent(String(job.id), "running", "claimed", { runner_id: input.runnerId, scanner_build: input.githubSha });
+  return updated;
+}
+
+export async function saveCloudflareScanResult(jobId: string, bundle: Bundle): Promise<string> {
+  const db = privateDb();
+  const job = await db.prepare("SELECT * FROM app_scan_jobs WHERE id=? LIMIT 1").bind(jobId).first<Row>();
+  if (!job) throw new Error("Scan job was not found.");
+  const detail = singleExtension(bundle.extensions);
+  if (!detail) throw new Error("Scanner bundle must contain exactly one extension detail.");
+  const identity = jsonObject(detail.artifact_identity);
+  const extensionId = String(detail.extension_id || identity.extension_id || job.extension_id || "");
+  const version = String(detail.version || identity.version || job.version || "");
+  const artifactSha = String(identity.sha256 || detail.artifact_sha256 || "");
+  if (!extensionId || !version || !artifactSha) throw new Error("Bundle is missing immutable artifact identity.");
+  if (String(job.extension_id).toLowerCase() !== extensionId.toLowerCase() || String(job.version) !== version) throw new Error("Scanner result does not match the claimed artifact.");
+  const scanId = randomUUID();
+  const now = nowIso();
+  await db.batch([
+    db.prepare("INSERT INTO app_scan_reports(scan_id,job_id,extension_id,version,artifact_sha256,report_json,created_at) VALUES(?,?,?,?,?,?,?)").bind(scanId, jobId, extensionId, version, artifactSha, JSON.stringify(bundle), now),
+    db.prepare("UPDATE app_scan_jobs SET status='complete',lifecycle_stage='completed',result_received_at=?,completed_at=?,updated_at=?,last_event_at=? WHERE id=?").bind(now, now, now, now, jobId),
+  ]);
+  await addCloudflareScanEvent(jobId, "completed", "result_published", { scan_id: scanId });
+  return scanId;
+}
+
+export async function getCloudflareScanProduct(extensionId: string, version: string, scanId: string): Promise<Row | null> {
+  if (!cloudflarePrivateAvailable()) return null;
+  const row = await privateDb().prepare("SELECT report_json,artifact_sha256,created_at FROM app_scan_reports WHERE scan_id=? AND extension_id=? AND version=? LIMIT 1").bind(scanId, extensionId, version).first<Row>();
+  if (!row?.report_json) return null;
+  let bundle: Bundle;
+  try { bundle = JSON.parse(String(row.report_json)) as Bundle; } catch { return null; }
+  const detail = singleExtension(bundle.extensions);
+  if (!detail) return null;
+  const metadata = jsonObject(bundle.metadata);
+  const coverage = jsonObject(detail.analysis_coverage);
+  const identity = jsonObject(detail.artifact_identity);
+  const report = {
+    id: scanId,
+    job_id: null,
+    extension_id: extensionId,
+    version,
+    artifact_sha256: String(row.artifact_sha256 || identity.sha256 || ""),
+    profile: String(metadata.profile || "deep"),
+    schema_version: String(metadata.schema_version || "unknown"),
+    scanner_version: String(metadata.scanner_version || "unknown"),
+    scanner_build: String(metadata.scanner_build || "unknown"),
+    ruleset_version: String(metadata.ruleset_version || "unknown"),
+    analysis_status: String(detail.analysis_status || "complete"),
+    decision: String(detail.decision || "incomplete"),
+    decision_reason: String(detail.decision_reason || detail.verdict_reason || "Review scan evidence."),
+    public_outcome: String(detail.public_outcome || "investigate"),
+    decision_basis: String(detail.decision_basis || "deep_scan"),
+    evidence_confidence: String(detail.evidence_confidence || "none"),
+    capability_assessment: jsonObject(detail.capability_assessment),
+    capabilities: jsonObject(detail.capabilities),
+    security_dimensions: jsonObject(detail.security_dimensions),
+    manifest: jsonObject(detail.manifest),
+    artifact_inventory: jsonObject(detail.artifact_inventory),
+    baseline_diff: jsonObject(detail.baseline_diff),
+    verdict: String(detail.verdict || "review"),
+    severity: String(detail.severity || "INFO"),
+    risk_score: Number(detail.risk_score || 0),
+    malware_score: Number(detail.malware_score || 0),
+    coverage_percent: Number(coverage.coverage_percent || 0),
+    provider_coverage: jsonObject(coverage.providers),
+    canonical_report: bundle,
+    scanned_at: String(metadata.created_at || row.created_at || nowIso()),
+  };
+  const findings = array(detail.findings).map((item, index) => { const value = jsonObject(item); return { id: `${String(value.finding_id || value.rule_id || "finding")}-${index}`, rule_id: String(value.rule_id || "unknown"), category: String(value.category || "unknown"), severity: String(value.effective_severity || value.severity || "INFO"), confidence: Number(value.confidence || 0), evidence_class: String(value.evidence_class || "weak"), actionability: String(value.actionability || "contextual"), summary: String(value.evidence_summary || "Scanner evidence"), recommendation: String(value.recommendation || ""), file_refs: Array.isArray(value.file_refs) ? value.file_refs : [], evidence: jsonObject(value.evidence) }; });
+  const inventory = jsonObject(detail.artifact_inventory);
+  const files = array(inventory.files).map((item) => { const value = jsonObject(item); return { path: String(value.path || ""), sha256: String(value.sha256 || ""), size_bytes: Number(value.size_bytes || 0), kind: String(value.kind || "file") }; }).filter((item) => item.path);
+  const dependencies = array(detail.dependency_inventory).map((item) => { const value = jsonObject(item); return { name: String(value.name || ""), version: String(value.version || "unknown"), ecosystem: String(value.ecosystem || "npm"), relationship: String(value.relationship || "transitive"), advisories: Array.isArray(value.advisories) ? value.advisories : [] }; }).filter((item) => item.name);
+  return { version: { extension_id: extensionId, version, latest_scan_id: scanId, scan_state: report.analysis_status }, scan: report, findings, files, dependencies };
+}
+
+export async function failCloudflareScan(jobId: string, error: string): Promise<void> {
+  const now = nowIso();
+  await privateDb().prepare("UPDATE app_scan_jobs SET status='failed',lifecycle_stage='failed',error=?,callback_error=?,completed_at=?,updated_at=?,last_event_at=? WHERE id=?").bind(error.slice(0, 2000), error.slice(0, 2000), now, now, now, jobId).run();
+  await addCloudflareScanEvent(jobId, "failed", "worker_failed", { error: error.slice(0, 2000) });
+}
+
+export async function verifyCloudflareCallback(body: Uint8Array, signature: string): Promise<boolean> {
+  const secret = runtimeEnv("SCAN_CALLBACK_SECRET");
+  if (!secret || !signature) return false;
+  const expected = createHmac("sha256", secret).update(body).digest("hex");
+  return signature.length === expected.length && timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+}
+
+export function decodeCloudflareCallback(body: Uint8Array, encoding: string | null): Record<string, unknown> {
+  const decoded = encoding === "gzip" ? gunzipSync(body).toString("utf8") : Buffer.from(body).toString("utf8");
+  const parsed = JSON.parse(decoded) as unknown;
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Scan callback payload must be an object.");
+  return parsed as Record<string, unknown>;
+}
+
+export function withCloudflareReportUrl<T extends Row>(result: T): T & { report_url?: string } {
+  const extensionId = String(result.extension_id || "");
+  const version = String(result.version || "");
+  const scanId = String(result.scan_id || "");
+  if (!extensionId || !version || !["complete", "incomplete"].includes(String(result.status))) return result;
+  const base = `/extensions/${encodeURIComponent(extensionId)}/versions/${encodeURIComponent(version)}`;
+  return { ...result, report_url: scanId ? `${base}/scans/${encodeURIComponent(scanId)}` : base };
+}
+
+async function subscribeCloudflareJob(jobId: string, userId: string): Promise<void> {
+  await privateDb().prepare("INSERT OR IGNORE INTO app_scan_job_subscribers(job_id,user_id,created_at) VALUES(?,?,?)").bind(jobId, userId, nowIso()).run();
+}
+
+async function addCloudflareScanEvent(jobId: string, stage: string, eventType: string, detail: Row): Promise<void> {
+  await privateDb().prepare("INSERT INTO app_scan_job_events(job_id,stage,event_type,detail_json,created_at) VALUES(?,?,?,?,?)").bind(jobId, stage, eventType, JSON.stringify(detail), nowIso()).run();
+}
+
+function singleExtension(value: Bundle["extensions"]): Row | null {
+  const entries = Array.isArray(value) ? value : value && typeof value === "object" ? Object.values(value) : [];
+  const valid = entries.filter((item): item is Row => Boolean(item && typeof item === "object" && !Array.isArray(item)));
+  return valid.length === 1 ? valid[0] : null;
+}
+
+function jsonObject(value: unknown): Row { return value && typeof value === "object" && !Array.isArray(value) ? value as Row : {}; }
+function array(value: unknown): unknown[] { return Array.isArray(value) ? value : []; }
+function parseJson(value: unknown): unknown { try { return JSON.parse(String(value || "{}")); } catch { return {}; } }

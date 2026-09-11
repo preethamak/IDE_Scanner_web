@@ -3,6 +3,8 @@ import { dispatchDeepScan } from "@/lib/deepScan";
 import { serviceDb } from "@/lib/supabase";
 import { serverDb } from "@/lib/supabaseServer";
 import { scanProgressColumns, scanProgressPayload } from "@/lib/scanProgress";
+import { cloudflarePrivateAvailable, cloudflareScanProgress, dispatchCloudflareDeepScan } from "@/lib/cloudflareDeepScan";
+import { privateDb, userFromSession } from "@/lib/cloudflarePrivate";
 
 export const dynamic = "force-dynamic";
 
@@ -13,9 +15,21 @@ export const dynamic = "force-dynamic";
 // watching UI its own backstop even if no GitHub worker ever fires.
 const QUEUE_GRACE_MINUTES = 20;
 
-export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
   try {
+    if (cloudflarePrivateAvailable()) {
+      const user = await userFromSession(request);
+      if (!user) return NextResponse.json({ error: "Sign in to view scan progress." }, { status: 401 });
+      const db = privateDb();
+      const subscription = await db.prepare("SELECT job_id FROM app_scan_job_subscribers WHERE job_id=? AND user_id=?").bind(id, user.id).first<Record<string, unknown>>();
+      if (!subscription) return NextResponse.json({ error: "Scan job not found." }, { status: 404 });
+      let job = await db.prepare("SELECT * FROM app_scan_jobs WHERE id=?").bind(id).first<Record<string, unknown>>();
+      if (!job) return NextResponse.json({ error: "Scan job not found." }, { status: 404 });
+      if (String(job.status) === "queued") await dispatchCloudflareDeepScan(id, 120).catch(() => false);
+      job = await db.prepare("SELECT * FROM app_scan_jobs WHERE id=?").bind(id).first<Record<string, unknown>>() || job;
+      return NextResponse.json(await cloudflareScanProgress(job));
+    }
     const db=await serverDb(); const {data:{user}}=await db.auth.getUser(); if(!user)return NextResponse.json({error:"Sign in to view scan progress."},{status:401});
     const service = serviceDb();
     const subscription = await service.from("scan_job_subscribers").select("job_id").eq("job_id", id).eq("user_id", user.id).maybeSingle();

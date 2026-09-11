@@ -14,6 +14,8 @@ import { requireTeamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
 import { isSafeWebhookUrl } from "@/lib/teamNotificationPayload";
 import { requireEntitlement } from "@/lib/entitlements";
+import { getWorkspaceState, saveState } from "@/lib/cloudflareWorkspace";
+import { newId, nowIso } from "@/lib/cloudflarePrivate";
 
 const severities = new Set([
   "CRITICAL",
@@ -26,9 +28,13 @@ type Context = { params: Promise<{ id: string }> };
 
 export async function GET(request: Request, context: Context) {
   try {
-    const { user } = await authenticated(request);
+    const { user, provider } = await authenticated(request);
     const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst", "viewer"]);
+    if (provider === "cloudflare") {
+      const state = await getWorkspaceState(id);
+      return NextResponse.json({ configured: state.channels.length > 0, channels: state.channels.map(({ target: _target, ...channel }) => channel), deliveries: state.deliveries, digest_deliveries: state.digest_deliveries });
+    }
     const db = serviceDb();
     const [channelResult, deliveryResult, digestResult] = await Promise.all([
       db
@@ -78,7 +84,7 @@ export async function GET(request: Request, context: Context) {
 
 export async function POST(request: Request, context: Context) {
   try {
-    const { user } = await authenticated(request);
+    const { user, provider } = await authenticated(request);
     const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin"]);
     await requireEntitlement(id, "notification_channels", 1);
@@ -137,6 +143,15 @@ export async function POST(request: Request, context: Context) {
         : kind === "email_resend"
           ? email
           : url;
+    if (provider === "cloudflare") {
+      const state = await getWorkspaceState(id);
+      const createdAt = nowIso();
+      const channel = { id: newId(), kind, label, enabled: true, minimum_severity: severity, last_validated_at: createdAt, last_error: null, created_at: createdAt, target };
+      state.channels.push(channel);
+      await saveState(id, state);
+      const { target: _target, ...safeChannel } = channel;
+      return NextResponse.json(safeChannel, { status: 201 });
+    }
     const { data, error } = await serviceDb()
       .from("team_notification_channels")
       .insert({
@@ -167,7 +182,7 @@ export async function POST(request: Request, context: Context) {
 
 export async function DELETE(request: Request, context: Context) {
   try {
-    const { user } = await authenticated(request);
+    const { user, provider } = await authenticated(request);
     const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin"]);
     const channelId = new URL(request.url).searchParams.get("channel_id") || "";
@@ -176,6 +191,14 @@ export async function DELETE(request: Request, context: Context) {
         { error: "A valid channel id is required." },
         { status: 400 },
       );
+    if (provider === "cloudflare") {
+      const state = await getWorkspaceState(id);
+      const before = state.channels.length;
+      state.channels = state.channels.filter((channel) => String(channel.id) !== channelId);
+      if (before === state.channels.length) return NextResponse.json({ error: "Notification channel not found." }, { status: 404 });
+      await saveState(id, state);
+      return new NextResponse(null, { status: 204 });
+    }
     const { data, error } = await serviceDb()
       .from("team_notification_channels")
       .delete()

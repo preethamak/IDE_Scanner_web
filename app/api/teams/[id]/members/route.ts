@@ -3,14 +3,23 @@ import { authenticated } from "@/lib/auth";
 import { asUuid, requireTeamRole, teamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
 import { teamApiError } from "@/lib/teamApiError";
+import { getWorkspaceState, saveState } from "@/lib/cloudflareWorkspace";
 
 type Context = { params: Promise<{ id: string }> };
 
 export async function GET(request: Request, context: Context) {
   try {
-    const { user } = await authenticated(request);
+    const { user, provider } = await authenticated(request);
     const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst", "viewer"]);
+    if (provider === "cloudflare") {
+      const state = await getWorkspaceState(id);
+      if (!state.members.some((member) => String(member.user_id) === user.id)) {
+        state.members.unshift({ user_id: user.id, role: "owner", profiles: { display_name: user.display_name || user.email } });
+        await saveState(id, state);
+      }
+      return NextResponse.json({ members: state.members });
+    }
     const db = serviceDb();
     const { data, error } = await db
       .from("team_members")

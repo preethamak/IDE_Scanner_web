@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { validRunnerSecret } from "@/lib/internalRunnerAuth";
 import { serviceDb } from "@/lib/supabase";
+import { claimCloudflareJob, cloudflarePrivateAvailable } from "@/lib/cloudflareDeepScan";
+import { runtimeEnv } from "@/lib/runtimeEnv";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,6 +18,12 @@ export async function POST(request: Request) {
   if (githubRunId !== null && (!Number.isSafeInteger(githubRunId) || githubRunId <= 0)) return NextResponse.json({ error: "Invalid GitHub run identity." }, { status: 400 });
   const githubSha = String(payload.github_sha || "").trim().toLowerCase();
   if (!/^[0-9a-f]{40}$/.test(githubSha)) return NextResponse.json({ error: "Invalid GitHub build identity." }, { status: 400 });
+
+  if (cloudflarePrivateAvailable()) {
+    const job = await claimCloudflareJob({ runnerId, jobId, githubRunId, githubSha });
+    if (!job) return new NextResponse(null, { status: 204 });
+    return NextResponse.json({ id: job.id, extension_id: job.extension_id, version: job.version, target_platform: String(job.target_platform || ""), callback_url: `${runtimeEnv("NEXT_PUBLIC_SITE_URL") || "https://abscissa.dev"}/api/internal/scan-results` });
+  }
 
   const result = await serviceDb().rpc("claim_deep_scan_job", { p_runner_id: runnerId, p_scanner_build: githubSha, p_job_id: jobId, p_github_run_id: githubRunId });
   if (result.error) return NextResponse.json({ error: "The scan queue could not be claimed." }, { status: 503 });

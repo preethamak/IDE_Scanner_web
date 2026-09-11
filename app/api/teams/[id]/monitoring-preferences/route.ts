@@ -3,6 +3,7 @@ import { authenticated } from "@/lib/auth";
 import { teamApiError } from "@/lib/teamApiError";
 import { requireTeamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
+import { getWorkspaceState, saveState } from "@/lib/cloudflareWorkspace";
 
 const booleanFields = [
   "release_alerts",
@@ -34,9 +35,10 @@ type Context = { params: Promise<{ id: string }> };
 
 export async function GET(request: Request, context: Context) {
   try {
-    const { user } = await authenticated(request);
+    const { user, provider } = await authenticated(request);
     const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst", "viewer"]);
+    if (provider === "cloudflare") return NextResponse.json({ team_id: id, ...defaults, ...(await getWorkspaceState(id)).preferences });
     const { data, error } = await serviceDb()
       .from("team_monitoring_preferences")
       .select("*")
@@ -58,7 +60,7 @@ export async function GET(request: Request, context: Context) {
 
 export async function PATCH(request: Request, context: Context) {
   try {
-    const { user } = await authenticated(request);
+    const { user, provider } = await authenticated(request);
     const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin"]);
     const body = await request.json().catch(() => ({}));
@@ -101,6 +103,12 @@ export async function PATCH(request: Request, context: Context) {
         { error: "At least one monitoring preference is required." },
         { status: 400 },
       );
+    if (provider === "cloudflare") {
+      const state = await getWorkspaceState(id);
+      state.preferences = { ...state.preferences, ...patch, updated_at: new Date().toISOString() };
+      await saveState(id, state);
+      return NextResponse.json({ team_id: id, ...state.preferences });
+    }
     const { data, error } = await serviceDb()
       .from("team_monitoring_preferences")
       .upsert(

@@ -1,5 +1,6 @@
 import { serviceDb } from "@/lib/supabase";
 import { TeamAuthorizationError } from "@/lib/teamApiError";
+import { privateDb } from "@/lib/cloudflarePrivate";
 
 export const teamRoles = ["owner", "admin", "analyst", "viewer"] as const;
 export const teamDecisions = ["allow", "review", "block", "exception"] as const;
@@ -15,6 +16,18 @@ export function teamDecision(value: unknown): TeamDecision | null {
 }
 
 export async function requireTeamRole(teamId: string, userId: string, allowed: readonly TeamRole[]): Promise<TeamRole> {
+  let cloudflare;
+  try {
+    cloudflare = privateDb();
+  } catch {
+    cloudflare = null;
+  }
+  if (cloudflare) {
+    const row = await cloudflare.prepare("SELECT role FROM app_team_members WHERE team_id=? AND user_id=?").bind(teamId, userId).first<{ role?: unknown }>();
+    const role = teamRole(row?.role);
+    if (!role || !allowed.includes(role)) throw new TeamAuthorizationError();
+    return role;
+  }
   const { data, error } = await serviceDb().from("team_members").select("role").eq("team_id", teamId).eq("user_id", userId).maybeSingle();
   if (error) throw error;
   const role = teamRole(data?.role);
@@ -23,6 +36,16 @@ export async function requireTeamRole(teamId: string, userId: string, allowed: r
 }
 
 export async function teamExists(teamId: string): Promise<boolean> {
+  let cloudflare;
+  try {
+    cloudflare = privateDb();
+  } catch {
+    cloudflare = null;
+  }
+  if (cloudflare) {
+    const row = await cloudflare.prepare("SELECT id FROM app_teams WHERE id=?").bind(teamId).first<{ id?: unknown }>();
+    return Boolean(row?.id);
+  }
   const { data, error } = await serviceDb().from("teams").select("id").eq("id", teamId).maybeSingle();
   if (error) throw error;
   return Boolean(data);

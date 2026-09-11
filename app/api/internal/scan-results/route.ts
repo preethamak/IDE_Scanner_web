@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import { isTransientScanCallbackError } from "@/lib/scanCallbackError";
 import { incompleteArtifactReason, ingestScanBundle } from "@/lib/scanIngest";
 import { serviceDb } from "@/lib/supabase";
+import { cloudflarePrivateAvailable, failCloudflareScan, saveCloudflareScanResult } from "@/lib/cloudflareDeepScan";
+import { runtimeEnv } from "@/lib/runtimeEnv";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +22,7 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Scan callback payload is too large." }, { status: 413 });
   }
-  const secret = process.env.SCAN_CALLBACK_SECRET || "";
+  const secret = runtimeEnv("SCAN_CALLBACK_SECRET");
   const supplied = request.headers.get("x-ide-scanner-signature") || "";
   const expected = createHmac("sha256", secret).update(body).digest("hex");
   if (!secret || supplied.length !== expected.length || !timingSafeEqual(Buffer.from(supplied), Buffer.from(expected))) return NextResponse.json({ error: "Invalid scan callback signature." }, { status: 401 });
@@ -61,6 +63,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "bundle is required for a completed scan." }, { status: 400 });
     }
     callbackJobId = payload.job_id;
+    if (cloudflarePrivateAvailable()) {
+      if (payload.error !== undefined) {
+        await failCloudflareScan(payload.job_id, String(payload.error));
+        return NextResponse.json({ status: "failed" });
+      }
+      const scanId = await saveCloudflareScanResult(payload.job_id, payload.bundle as Record<string, unknown>);
+      return NextResponse.json({ scan_id: scanId });
+    }
     const db = serviceDb();
     const job = await db.from("scan_jobs").select("id,extension_id,version").eq("id", payload.job_id).maybeSingle();
     if (job.error) throw job.error;

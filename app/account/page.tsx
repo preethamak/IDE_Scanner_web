@@ -23,7 +23,10 @@ type AccountState = {
   profile: Record<string, unknown> | null;
 };
 const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
-const githubEnabled = process.env.NEXT_PUBLIC_GITHUB_AUTH_ENABLED === "true";
+// GitHub OAuth is handled by the Cloudflare Worker and does not depend on the
+// Supabase project. Keep the Supabase flags for local compatibility, but always
+// expose the working Cloudflare path in production.
+const githubEnabled = true;
 export default function AccountPage() {
   const db = useMemo(() => browserDb(), []);
   const [email, setEmail] = useState("");
@@ -62,13 +65,24 @@ export default function AccountPage() {
         ? "Continue with this exact public report."
         : "Continue to your workspace.";
   useEffect(() => {
-    if (!db) {
-      const timer = window.setTimeout(() => setLoading(false), 0);
-      return () => window.clearTimeout(timer);
-    }
-    void db.auth
-      .getSession()
-      .then(async ({ data }) => {
+    void (async () => {
+      try {
+        const cloudflare = await fetch("/api/auth/session", { cache: "no-store" });
+        const cloudflareBody = await cloudflare.json().catch(() => ({}));
+        if (cloudflare.ok && cloudflareBody.user) {
+          setAccount({
+            email: String(cloudflareBody.user.email || ""),
+            token: "",
+            profile: cloudflareBody.profile || null,
+          });
+          setLoading(false);
+          return;
+        }
+        if (!db) {
+          setLoading(false);
+          return;
+        }
+        const { data } = await db.auth.getSession();
         const session = data.session;
         if (!session) {
           setLoading(false);
@@ -78,14 +92,12 @@ export default function AccountPage() {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
         const body = await response.json();
-        setAccount({
-          email: session.user.email || "",
-          token: session.access_token,
-          profile: body.profile || null,
-        });
+        setAccount({ email: session.user.email || "", token: session.access_token, profile: body.profile || null });
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      } catch {
+        setLoading(false);
+      }
+    })();
   }, [db]);
   useEffect(() => {
     // Clear the error from the URL so a reload or later navigation starts clean.
@@ -110,6 +122,11 @@ export default function AccountPage() {
     );
   }
   async function oauth(provider: "google" | "github") {
+    if (provider === "github") {
+      const next = new URLSearchParams(window.location.search).get("next") || "/workspace";
+      window.location.assign(`/api/auth/github?next=${encodeURIComponent(next)}`);
+      return;
+    }
     if (!db)
       return setMessage(
         "Sign-in is temporarily unavailable. Public extension intelligence remains accessible.",
@@ -211,7 +228,8 @@ export default function AccountPage() {
     }
   }
   async function signOut() {
-    await db?.auth.signOut();
+    if (account?.token) await db?.auth.signOut();
+    else await fetch("/api/auth/logout", { method: "POST" });
     setAccount(null);
   }
   if (loading)
@@ -402,12 +420,12 @@ export default function AccountPage() {
             <GitHubMark /> Continue with GitHub <ArrowRight />
           </button>
         ) : null}
-        {googleEnabled || githubEnabled ? (
+        {db && (googleEnabled || githubEnabled) ? (
           <div className="authDivider">
             <span>or use email</span>
           </div>
         ) : null}
-        <form
+        {db ? <form
           className="emailOtp"
           onSubmit={(event) => {
             event.preventDefault();
@@ -464,7 +482,7 @@ export default function AccountPage() {
               {emailAuthPending ? "Sending…" : "Email me a code"}
             </button>
           )}
-        </form>
+        </form> : <p className="authMessage" role="status">Email-code sign-in is temporarily unavailable while the Cloudflare private auth path is active. Continue with GitHub above.</p>}
         {message ? (
           <p className="authMessage" role="status">
             {message}

@@ -9,6 +9,9 @@
     "global_fetch_strictly_public"
   ],
   "workers_dev": true,
+  "vars": {
+    "GITHUB_OAUTH_CLIENT_ID": "Ov23liWQ5kElxVniE4tx"
+  },
   "routes": [
     {
       "pattern": "abscissa.dev/*",

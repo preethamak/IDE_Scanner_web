@@ -10,6 +10,7 @@ import { teamApiError } from "@/lib/teamApiError";
 import { requireTeamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
 import { requireEntitlement } from "@/lib/entitlements";
+import { getWorkspaceState } from "@/lib/cloudflareWorkspace";
 
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
@@ -17,7 +18,7 @@ type Row = Record<string, unknown>;
 
 export async function GET(request: Request, context: Context) {
   try {
-    const { user } = await authenticated(request);
+    const { user, provider } = await authenticated(request);
     const { id } = await context.params;
     const role = await requireTeamRole(id, user.id, [
       "owner",
@@ -45,6 +46,14 @@ export async function GET(request: Request, context: Context) {
         { error: "Viewer access does not include audit export." },
         { status: 403 },
       );
+    }
+    if (provider === "cloudflare") {
+      const workspace = await getWorkspaceState(id);
+      const events = filterTeamAuditEvents(workspace.audit as TeamAuditEvent[], filters);
+      const visibleEvents = role === "analyst" || role === "viewer" ? events.filter((event) => ["decision", "monitoring"].includes(event.object_type)) : events;
+      const manifest = auditManifest(id, visibleEvents);
+      if (format === "csv") return new Response(teamAuditCsv(visibleEvents), { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="guardrails-audit-${id}.csv"`, "X-GuardRails-SHA256": manifest.sha256, "Cache-Control": "private, no-store" } });
+      return NextResponse.json({ manifest, events: visibleEvents }, { headers: { "Cache-Control": "private, no-store" } });
     }
     if (wantsDownload) await requireEntitlement(id, "audit_export");
 

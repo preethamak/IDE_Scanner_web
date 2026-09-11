@@ -260,12 +260,11 @@ export default function TeamWorkspace(
     setError("");
     try {
       const accessToken = await token();
-      if (!accessToken)
-        throw new Error("Your session expired. Sign in again to continue.");
-      const [{ data: user }, response] = await Promise.all([
-        db!.auth.getUser(),
+      const [{ data: user }, cloudflareSession, response] = await Promise.all([
+        db ? db.auth.getUser() : Promise.resolve({ data: { user: null } }),
+        fetch("/api/auth/session", { cache: "no-store" }).then((item) => item.json().catch(() => ({}))),
         fetch("/api/teams", {
-          headers: { Authorization: `Bearer ${accessToken}` },
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
         }),
       ]);
       const body = await response.json().catch(() => ({}));
@@ -279,8 +278,8 @@ export default function TeamWorkspace(
         available.find((team) =>
           window.localStorage.getItem(`guardrails:setup:${team.id}`),
         )?.id || "";
-      setUserEmail(user.user?.email || "Signed-in user");
-      setUserId(user.user?.id || "");
+      setUserEmail(cloudflareSession.user?.email || user.user?.email || "Signed-in user");
+      setUserId(cloudflareSession.user?.id || user.user?.id || "");
       setTeams(available);
       setActiveTeamId((current) => current || pending || first);
       setSetupTeamId(pending);

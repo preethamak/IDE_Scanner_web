@@ -4,11 +4,18 @@ import { requireTeamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
 import { baselineEligible } from "@/lib/teamMonitoring";
 import { requireEntitlement } from "@/lib/entitlements";
+import { getWorkspaceState, saveState } from "@/lib/cloudflareWorkspace";
+import { getCloudflareRegistryProduct } from "@/lib/cloudflareRegistry";
+import { nowIso } from "@/lib/cloudflarePrivate";
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const { user } = await authenticated(request); const { id } = await context.params;
+    const { user, provider } = await authenticated(request); const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst", "viewer"]);
+    if (provider === "cloudflare") {
+      const state = await getWorkspaceState(id);
+      return NextResponse.json({ items: state.watchlist, health: { status: "healthy", last_checked_at: nowIso(), next_check_at: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(), cadence_hours: 6, error: null } });
+    }
     const db=serviceDb();
     const [{ data, error }, refreshResult] = await Promise.all([
       db.from("team_watchlist_items").select("extension_id,created_at,baseline_version,baseline_artifact_sha256,monitoring_state,last_observed_version,last_event_at,extensions(display_name,icon_url)").eq("team_id", id).order("created_at", { ascending: false }),
@@ -25,12 +32,24 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const { user } = await authenticated(request); const { id } = await context.params;
+    const { user, provider } = await authenticated(request); const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst"]);
     const body = await request.json(); const extensionId = typeof body.extension_id === "string" ? body.extension_id.trim() : "";
     const baselineScanId = typeof body.baseline_scan_id === "string" ? body.baseline_scan_id.trim() : "";
     if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+$/.test(extensionId)) return NextResponse.json({ error: "A valid extension id is required." }, { status: 400 });
     if (baselineScanId && !/^[0-9a-f-]{36}$/i.test(baselineScanId)) return NextResponse.json({ error: "A valid completed baseline scan is required." }, { status: 400 });
+    if (provider === "cloudflare") {
+      const product = await getCloudflareRegistryProduct<{ extension?: Record<string, unknown>; versions?: Array<Record<string, unknown>> }>(extensionId);
+      if (!product?.extension) return NextResponse.json({ error: "Add this extension to the registry before monitoring it." }, { status: 404 });
+      const state = await getWorkspaceState(id);
+      const existing = state.watchlist.find((item) => String(item.extension_id).toLowerCase() === extensionId.toLowerCase());
+      if (existing) return NextResponse.json(existing, { status: 200 });
+      const latest = product.versions?.find((version) => version.is_latest) || product.versions?.[0];
+      const item = { extension_id: extensionId, created_at: nowIso(), baseline_version: latest?.version ? String(latest.version) : null, monitoring_state: "monitoring", last_observed_version: latest?.version ? String(latest.version) : null, last_event_at: nowIso(), extensions: { display_name: String(product.extension.display_name || extensionId), icon_url: String(product.extension.icon_url || "") } };
+      state.watchlist.unshift(item);
+      await saveState(id, state);
+      return NextResponse.json(item, { status: 201 });
+    }
     const db = serviceDb(); const { data: extension, error: extensionError } = await db.from("extensions").select("id").ilike("id", extensionId).maybeSingle();
     if (extensionError) throw extensionError;
     if (!extension) return NextResponse.json({ error: "Add this extension to the registry before monitoring it." }, { status: 404 });
@@ -55,10 +74,18 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
 
 export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const { user } = await authenticated(request); const { id } = await context.params;
+    const { user, provider } = await authenticated(request); const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst"]);
     const extensionId = new URL(request.url).searchParams.get("extension_id") || "";
     if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+$/.test(extensionId)) return NextResponse.json({ error: "A valid extension id is required." }, { status: 400 });
+    if (provider === "cloudflare") {
+      const state = await getWorkspaceState(id);
+      const before = state.watchlist.length;
+      state.watchlist = state.watchlist.filter((item) => String(item.extension_id).toLowerCase() !== extensionId.toLowerCase());
+      if (state.watchlist.length === before) return NextResponse.json({ error: "Team watchlist item not found." }, { status: 404 });
+      await saveState(id, state);
+      return new NextResponse(null, { status: 204 });
+    }
     const { data, error } = await serviceDb().from("team_watchlist_items").delete().eq("team_id", id).ilike("extension_id", extensionId).select("extension_id").maybeSingle();
     if (error) throw error;
     if (!data) return NextResponse.json({ error: "Team watchlist item not found." }, { status: 404 });

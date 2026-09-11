@@ -1,7 +1,8 @@
 import { createHash, timingSafeEqual } from "node:crypto";
+import { runtimeEnv } from "@/lib/runtimeEnv";
 
 export function validRunnerSecret(authorization: string | null): boolean {
-  return validBearerSecret(authorization, process.env.SCAN_RUNNER_SECRET || "");
+  return validBearerSecret(authorization, runtimeEnv("SCAN_RUNNER_SECRET"));
 }
 
 export function validBearerSecret(authorization: string | null, expected: string): boolean {

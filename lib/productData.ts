@@ -3,6 +3,7 @@ import { isConcreteVersion, listMarketplaceVersions, resolveMarketplaceExtension
 import { getPublicRegistryProduct, getPublicRegistrySnapshot } from "@/lib/publicRegistrySnapshot";
 import { unstable_cache } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getCloudflareScanProduct } from "@/lib/cloudflareDeepScan";
 
 const cachedVersions=unstable_cache(async(id:string)=>listMarketplaceVersions(id),["registry-versions-v2"],{revalidate:21600,tags:["registry-versions"]});
 const MAX_RENDERED_VERSION_HISTORY = 120;
@@ -268,6 +269,8 @@ export async function getVersionProduct(id: string, version: string, client?: Su
 }
 
 export async function getVersionScanProduct(id: string, version: string, scanId: string, client?: SupabaseClient): Promise<Record<string, unknown> | null> {
+  const cloudflareReport = await getCloudflareScanProduct(id, version, scanId).catch(() => null);
+  if (cloudflareReport) return cloudflareReport;
   const db = client || publicDb();
   if (!db) return null;
   try {

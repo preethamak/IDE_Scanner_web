@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import { authenticated, AuthenticationError } from "@/lib/auth";
 import { serviceDb } from "@/lib/supabase";
+import { newId, nowIso, privateDb } from "@/lib/cloudflarePrivate";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const { user } = await authenticated(request);
+    const { user, provider } = await authenticated(request);
+    if (provider === "cloudflare") {
+      const rows = await privateDb().prepare("SELECT t.id,t.name,t.slug,t.created_at,m.role FROM app_team_members m JOIN app_teams t ON t.id=m.team_id WHERE m.user_id=? ORDER BY t.created_at").bind(user.id).all<Record<string, unknown>>();
+      return NextResponse.json({ teams: rows.results.map((row) => ({ id: String(row.id), name: String(row.name), slug: String(row.slug), created_at: String(row.created_at), role: String(row.role) })) });
+    }
     const { data, error } = await serviceDb().from("team_members").select("role,teams(id,name,slug,created_at)").eq("user_id", user.id).order("created_at", { referencedTable: "teams" });
     if (error) throw error;
     return NextResponse.json({ teams: (data || []).map((row) => ({ ...(Array.isArray(row.teams) ? row.teams[0] : row.teams), role: row.role })).filter((team) => team.id) });
@@ -18,10 +23,26 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { user } = await authenticated(request);
+    const { user, provider } = await authenticated(request);
     const body = await request.json();
     const name = typeof body.name === "string" ? body.name.trim().slice(0, 80) : "";
     if (!name) return NextResponse.json({ error: "A team name is required." }, { status: 400 });
+    if (provider === "cloudflare") {
+      const db = privateDb();
+      if (body.onboarding === true) {
+        const existing = await db.prepare("SELECT t.id,t.name,t.slug,t.created_at FROM app_team_members m JOIN app_teams t ON t.id=m.team_id WHERE m.user_id=? AND m.role='owner' ORDER BY t.created_at LIMIT 1").bind(user.id).first<Record<string, unknown>>();
+        if (existing) return NextResponse.json({ id: String(existing.id), name: String(existing.name), slug: String(existing.slug), created_at: String(existing.created_at), role: "owner", reused: true });
+      }
+      const id = newId();
+      const slug = `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "team"}-${id.slice(0, 6)}`;
+      const createdAt = nowIso();
+      await db.batch([
+        db.prepare("INSERT INTO app_teams(id,name,slug,created_by,created_at) VALUES(?,?,?,?,?)").bind(id, name, slug, user.id, createdAt),
+        db.prepare("INSERT INTO app_team_members(team_id,user_id,role,created_at) VALUES(?,?,?,?)").bind(id, user.id, "owner", createdAt),
+        db.prepare("INSERT INTO app_team_state(team_id,state_json,updated_at) VALUES(?,?,?)").bind(id, JSON.stringify({}), createdAt),
+      ]);
+      return NextResponse.json({ id, name, slug, created_at: createdAt, role: "owner" }, { status: 201 });
+    }
     const db = serviceDb();
     // Onboarding retries are common after an interrupted network response. The
     // first owner workspace is the durable outcome, so return it rather than
