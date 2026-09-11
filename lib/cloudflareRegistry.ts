@@ -58,6 +58,16 @@ export async function getCloudflareRegistryProduct<T>(
   }
 }
 
+export async function getCloudflareRegistryCatalogExtension<T>(
+  extensionId: string,
+): Promise<T | null> {
+  const catalog = await getCloudflareRegistrySection<{ catalog?: Array<Record<string, unknown>> }>("catalog");
+  const match = catalog?.catalog?.find(
+    (item) => String(item.id || "").toLowerCase() === extensionId.toLowerCase(),
+  );
+  return (match || null) as T | null;
+}
+
 export async function getCloudflareRegistrySnapshot<T extends Record<string, unknown>>(): Promise<T | null> {
   const sections = await Promise.all(
     ["metrics", "feed", "inventory", "history", "catalog", "benchmark"].map(async (section) => [

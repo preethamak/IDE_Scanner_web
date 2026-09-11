@@ -90,6 +90,7 @@ export default function WorkspaceSetup({
           : null;
       const payload: Record<string, string> = {
         extension_id: selected.extension_id,
+        version: selected.version,
       };
       if (scan?.id) payload.baseline_scan_id = String(scan.id);
       let response = await fetch(
