@@ -24,7 +24,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       const db = privateDb();
       const subscription = await db.prepare("SELECT job_id FROM app_scan_job_subscribers WHERE job_id=? AND user_id=?").bind(id, user.id).first<Record<string, unknown>>();
       if (!subscription) return NextResponse.json({ error: "Scan job not found." }, { status: 404 });
-      let job = await db.prepare("SELECT * FROM app_scan_jobs WHERE id=?").bind(id).first<Record<string, unknown>>();
+      const job = await db.prepare("SELECT * FROM app_scan_jobs WHERE id=?").bind(id).first<Record<string, unknown>>();
       if (!job) return NextResponse.json({ error: "Scan job not found." }, { status: 404 });
       return NextResponse.json(await cloudflareScanProgress(job));
     }
