@@ -34,6 +34,7 @@ import RawEvidenceSection from "@/app/dossier/RawEvidenceSection";
 import AlertsSection from "@/app/dossier/AlertsSection";
 import ChangesSection from "@/app/dossier/ChangesSection";
 import OverviewSection from "@/app/dossier/OverviewSection";
+import EvidenceReviewBrief from "@/app/EvidenceReviewBrief";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
 import {
   coveragePresentation,
@@ -78,7 +79,7 @@ const sections: Array<{ id: Section; label: string; icon: typeof Radar }> = [
   { id: "raw", label: "Raw evidence", icon: Terminal },
 ];
 
-export default function AnalysisReport({ data }: Props) {
+export default function AnalysisReport({ data, signedIn = false }: Props & { signedIn?: boolean }) {
   const {
     id,
     version,
@@ -200,6 +201,12 @@ export default function AnalysisReport({ data }: Props) {
         <span>{String(extension.registry || "Registry not reported")}</span>
         <span>Version {version}</span>
       </div>
+      <EvidenceReviewBrief
+        extensionId={id}
+        version={version}
+        scanId={String(scan.id || "")}
+        signedIn={signedIn}
+      />
       <div className={`dossierLayout ${reportStyles.layout}`}>
         <DossierNavigation
           items={sections}

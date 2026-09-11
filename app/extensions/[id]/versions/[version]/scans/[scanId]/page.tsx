@@ -16,7 +16,8 @@ export default async function ImmutableScanPage({
   const version = decodeURIComponent(route.version);
   const scanId = decodeURIComponent(route.scanId);
   const db = await serverDb();
-  const [extensionProduct, versionProduct] = await Promise.all([
+  const [claims, extensionProduct, versionProduct] = await Promise.all([
+    db.auth.getClaims(),
     getExtensionProduct(id, db),
     getVersionScanProduct(id, version, scanId, db),
   ]);
@@ -51,5 +52,5 @@ export default async function ImmutableScanPage({
       </main>
     );
   }
-  return <AnalysisReport data={data} />;
+  return <AnalysisReport data={data} signedIn={Boolean(claims.data?.claims)} />;
 }
