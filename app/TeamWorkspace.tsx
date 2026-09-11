@@ -253,15 +253,21 @@ export default function TeamWorkspace(
 
   const token = useCallback(
     async () => {
-      const accessToken = (await db?.auth.getSession())?.data.session?.access_token;
-      if (accessToken) return accessToken;
       const response = await fetch("/api/auth/session", { cache: "no-store" });
       const body = await response.json().catch(() => ({}));
+      if (response.ok && body.user) return "cloudflare-session";
+      try {
+        const accessToken = (await db?.auth.getSession())?.data.session?.access_token;
+        if (accessToken) return accessToken;
+      } catch {
+        // Supabase is an optional compatibility provider. A Cloudflare D1
+        // session must remain usable when that provider is unavailable.
+      }
       // D1 sessions are carried by the HttpOnly gr_session cookie. The
       // non-empty marker keeps existing mutation helpers from treating a
       // valid Cloudflare session as signed out; the server ignores it and
       // authenticates from the cookie.
-      return response.ok && body.user ? "cloudflare-session" : "";
+      return "";
     },
     [db],
   );
@@ -270,13 +276,19 @@ export default function TeamWorkspace(
     setError("");
     try {
       const accessToken = await token();
-      const [{ data: user }, cloudflareSession, response] = await Promise.all([
-        db ? db.auth.getUser() : Promise.resolve({ data: { user: null } }),
-        fetch("/api/auth/session", { cache: "no-store" }).then((item) => item.json().catch(() => ({}))),
-        fetch("/api/teams", {
-          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-        }),
-      ]);
+      const cloudflareResponse = await fetch("/api/auth/session", { cache: "no-store" });
+      const cloudflareSession = await cloudflareResponse.json().catch(() => ({}));
+      let supabaseUser: { id?: string; email?: string } | null = null;
+      if (!cloudflareSession.user) {
+        try {
+          supabaseUser = (await db?.auth.getUser())?.data.user || null;
+        } catch {
+          supabaseUser = null;
+        }
+      }
+      const response = await fetch("/api/teams", {
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+      });
       const body = await response.json().catch(() => ({}));
       if (!response.ok)
         throw new Error(
@@ -288,8 +300,8 @@ export default function TeamWorkspace(
         available.find((team) =>
           window.localStorage.getItem(`guardrails:setup:${team.id}`),
         )?.id || "";
-      setUserEmail(cloudflareSession.user?.email || user.user?.email || "Signed-in user");
-      setUserId(cloudflareSession.user?.id || user.user?.id || "");
+      setUserEmail(cloudflareSession.user?.email || supabaseUser?.email || "Signed-in user");
+      setUserId(cloudflareSession.user?.id || supabaseUser?.id || "");
       setTeams(available);
       setActiveTeamId((current) => current || pending || first);
       setSetupTeamId(pending);
@@ -458,9 +470,24 @@ export default function TeamWorkspace(
     }
   }
   async function signOut() {
-    const accessToken = (await db?.auth.getSession())?.data.session?.access_token;
-    if (accessToken) await db?.auth.signOut();
-    else await fetch("/api/auth/logout", { method: "POST" });
+    let cloudflareSignedIn = false;
+    try {
+      const response = await fetch("/api/auth/session", { cache: "no-store" });
+      cloudflareSignedIn = Boolean((await response.json().catch(() => ({}))).user);
+    } catch {
+      cloudflareSignedIn = false;
+    }
+    if (cloudflareSignedIn) {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } else {
+      try {
+        const accessToken = (await db?.auth.getSession())?.data.session?.access_token;
+        if (accessToken) await db?.auth.signOut();
+        else await fetch("/api/auth/logout", { method: "POST" });
+      } catch {
+        await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
+      }
+    }
     router.replace("/");
   }
 
