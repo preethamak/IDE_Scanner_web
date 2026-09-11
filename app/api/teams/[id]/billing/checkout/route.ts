@@ -9,9 +9,10 @@ type Context = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, context: Context) {
   try {
-    const { user } = await authenticated(request);
+    const { user, provider } = await authenticated(request);
     const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner"]);
+    if (provider === "cloudflare") return NextResponse.json({ error: "Billing is not enabled for the free Cloudflare workspace." }, { status: 503 });
     const price = process.env.STRIPE_TEAM_PRICE_ID;
     if (!price) throw new BillingConfigurationError();
     const db = serviceDb();

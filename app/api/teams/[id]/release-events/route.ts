@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { authenticated } from "@/lib/auth";
 import { requireTeamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
+import { getWorkspaceState } from "@/lib/cloudflareWorkspace";
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const { user } = await authenticated(request); const { id } = await context.params;
+    const { user, provider } = await authenticated(request); const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst", "viewer"]);
+    if (provider === "cloudflare") return NextResponse.json({ events: (await getWorkspaceState(id)).release_events.filter((event) => String(event.state) !== "superseded") });
     // The queue only renders event fields. Avoid embedding a named foreign-key
     // relationship here: PostgREST rejects that query whenever the deployed
     // schema cache has not yet learned the new relationship.

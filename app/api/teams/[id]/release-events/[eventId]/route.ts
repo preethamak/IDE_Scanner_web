@@ -3,12 +3,18 @@ import { authenticated } from "@/lib/auth";
 import { asUuid, requireTeamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
 import { compareScanEvidence, evidenceAttribution, summarizeScan, type EvidenceRow, type ScanEvidence } from "@/lib/extensionComparison";
+import { getWorkspaceState } from "@/lib/cloudflareWorkspace";
 
 export async function GET(request: Request, context: { params: Promise<{ id: string; eventId: string }> }) {
   try {
-    const { user } = await authenticated(request); const { id, eventId } = await context.params;
+    const { user, provider } = await authenticated(request); const { id, eventId } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst", "viewer"]);
     if (!asUuid(eventId)) return NextResponse.json({ error: "A valid release event id is required." }, { status: 400 });
+    if (provider === "cloudflare") {
+      const event = (await getWorkspaceState(id)).release_events.find((item) => String(item.id) === eventId);
+      if (!event) return NextResponse.json({ error: "Release event not found." }, { status: 404 });
+      return NextResponse.json({ event, comparison_available: false, comparison_error: "Comparison is not available until the target scan completes." });
+    }
     const db = serviceDb();
     const { data, error } = await db.from("team_release_events").select("id,team_id,extension_id,baseline_scan_id,target_scan_id,baseline_version,target_version,state,materiality,error,created_at,updated_at").eq("id", eventId).eq("team_id", id).maybeSingle();
     if (error) throw error;
