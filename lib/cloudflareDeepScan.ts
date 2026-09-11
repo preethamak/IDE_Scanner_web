@@ -170,6 +170,12 @@ export async function getCloudflareScanProduct(extensionId: string, version: str
   const metadata = jsonObject(bundle.metadata);
   const coverage = jsonObject(detail.analysis_coverage);
   const identity = jsonObject(detail.artifact_identity);
+  const inventory = jsonObject(detail.artifact_inventory);
+  // Source previews are retained in D1 for on-demand retrieval, but they are
+  // not needed to render the report shell. Keeping them out of the server
+  // component payload prevents large VSIX reports from exceeding Worker CPU
+  // limits during React Flight serialization.
+  const renderInventory = Object.fromEntries(Object.entries(inventory).filter(([key]) => key !== "source_previews"));
   const report = {
     id: scanId,
     job_id: null,
@@ -191,7 +197,7 @@ export async function getCloudflareScanProduct(extensionId: string, version: str
     capabilities: jsonObject(detail.capabilities),
     security_dimensions: jsonObject(detail.security_dimensions),
     manifest: jsonObject(detail.manifest),
-    artifact_inventory: jsonObject(detail.artifact_inventory),
+    artifact_inventory: renderInventory,
     baseline_diff: jsonObject(detail.baseline_diff),
     verdict: String(detail.verdict || "review"),
     severity: String(detail.severity || "INFO"),
@@ -199,11 +205,9 @@ export async function getCloudflareScanProduct(extensionId: string, version: str
     malware_score: Number(detail.malware_score || 0),
     coverage_percent: Number(coverage.coverage_percent || 0),
     provider_coverage: jsonObject(coverage.providers),
-    canonical_report: bundle,
     scanned_at: String(metadata.created_at || row.created_at || nowIso()),
   };
   const findings = array(detail.findings).map((item, index) => { const value = jsonObject(item); return { id: `${String(value.finding_id || value.rule_id || "finding")}-${index}`, rule_id: String(value.rule_id || "unknown"), category: String(value.category || "unknown"), severity: String(value.effective_severity || value.severity || "INFO"), confidence: Number(value.confidence || 0), evidence_class: String(value.evidence_class || "weak"), actionability: String(value.actionability || "contextual"), summary: String(value.evidence_summary || "Scanner evidence"), recommendation: String(value.recommendation || ""), file_refs: Array.isArray(value.file_refs) ? value.file_refs : [], evidence: jsonObject(value.evidence) }; });
-  const inventory = jsonObject(detail.artifact_inventory);
   const files = array(inventory.files).map((item) => { const value = jsonObject(item); return { path: String(value.path || ""), sha256: String(value.sha256 || ""), size_bytes: Number(value.size_bytes || 0), kind: String(value.kind || "file") }; }).filter((item) => item.path);
   const dependencies = array(detail.dependency_inventory).map((item) => { const value = jsonObject(item); return { name: String(value.name || ""), version: String(value.version || "unknown"), ecosystem: String(value.ecosystem || "npm"), relationship: String(value.relationship || "transitive"), advisories: Array.isArray(value.advisories) ? value.advisories : [] }; }).filter((item) => item.name);
   return { version: { extension_id: extensionId, version, latest_scan_id: scanId, scan_state: report.analysis_status }, scan: report, findings, files, dependencies };
