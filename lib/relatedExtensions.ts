@@ -16,6 +16,8 @@ export type RelatedCandidate = {
   icon_url: string;
   decision: string;
   severity: string;
+  coverage_percent?: number;
+  risk_score?: number;
 };
 
 const STOPWORDS = new Set([
@@ -70,15 +72,22 @@ export function rankRelatedExtensions(
     const id = String(candidate.extension_id || "").toLowerCase();
     if (!id || id === currentId) continue;
     if (safetyRank(candidate.decision, candidate.severity) > currentSafety) continue;
+    // Hard gate: incomplete coverage (<60) should never be recommended.
+    if (typeof candidate.coverage_percent === "number" && candidate.coverage_percent < 60) continue;
     const tokens = tokenizeForMatch(`${candidate.display_name} ${candidate.description}`);
     let overlap = 0;
     for (const token of tokens) if (currentTokens.has(token)) overlap += 1;
     if (overlap === 0) continue;
+    const coverage = typeof candidate.coverage_percent === "number" ? candidate.coverage_percent : null;
+    const coverageBonus = coverage === null ? 0 : coverage >= 90 ? 2 : coverage >= 70 ? 1 : -2;
+    const riskBonus = typeof candidate.risk_score === "number" && candidate.risk_score <= 20 ? 1 : 0;
     const score =
       overlap * 10 +
       (String(candidate.decision).toLowerCase() === "allow" ? 6 : 0) +
-      (candidate.publisher_verified ? 3 : 0) +
-      (5 - severityRank(candidate.severity));
+      (candidate.publisher_verified ? 5 : 0) +
+      (5 - severityRank(candidate.severity)) +
+      coverageBonus +
+      riskBonus;
     const existing = best.get(id);
     if (!existing || score > existing.score) best.set(id, { candidate, score });
   }
