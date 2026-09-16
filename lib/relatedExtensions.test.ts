@@ -111,4 +111,49 @@ describe("rankRelatedExtensions", () => {
     const result = rankRelatedExtensions(unscanned, [candidate({})]);
     expect(result).toHaveLength(1);
   });
+
+  it("prefers verified allow with high coverage over unverified review", () => {
+    const verifiedHigh = candidate({
+      extension_id: "verified.python",
+      publisher_verified: true,
+      decision: "allow",
+      severity: "INFO",
+      coverage_percent: 95,
+      risk_score: 10,
+    });
+    const unverifiedReview = candidate({
+      extension_id: "unverified.python",
+      publisher_verified: false,
+      decision: "review",
+      severity: "MEDIUM",
+      coverage_percent: 75,
+      risk_score: 40,
+    });
+    const result = rankRelatedExtensions(current, [unverifiedReview, verifiedHigh]);
+    expect(result[0].extension_id).toBe("verified.python");
+  });
+
+  it("excludes candidates with coverage_percent below 60", () => {
+    const lowCoverage = candidate({
+      extension_id: "low.python",
+      coverage_percent: 45,
+      decision: "allow",
+      severity: "INFO",
+    });
+    const highCoverage = candidate({
+      extension_id: "high.python",
+      coverage_percent: 92,
+      decision: "allow",
+      severity: "INFO",
+    });
+    const result = rankRelatedExtensions(current, [lowCoverage, highCoverage]);
+    expect(result.map((item) => item.extension_id)).toEqual(["high.python"]);
+  });
+
+  it("caps results at explicit limit 2 even with many valid ties", () => {
+    const many = Array.from({ length: 7 }, (_, i) =>
+      candidate({ extension_id: `tie${i}.python`, coverage_percent: 85, risk_score: 10 }),
+    );
+    expect(rankRelatedExtensions(current, many, 2)).toHaveLength(2);
+  });
 });
