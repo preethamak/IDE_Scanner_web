@@ -195,6 +195,7 @@ CREATE TABLE app_scan_report_chunks (scan_id TEXT NOT NULL, chunk_index INTEGER 
 CREATE TABLE app_scan_report_previews (scan_id TEXT NOT NULL, path TEXT NOT NULL, content TEXT NOT NULL, content_sha256 TEXT NOT NULL, truncated INTEGER NOT NULL, created_at TEXT NOT NULL, PRIMARY KEY(scan_id, path));
 `);
   const child = spawn("sqlite3", ["-separator", separator, database, "SELECT scan_id,report_json,created_at FROM app_scan_reports ORDER BY scan_id;"], { stdio: ["ignore", "pipe", "pipe"] });
+  const childExit = new Promise((resolve) => child.once("close", resolve));
   let stderr = "";
   child.stderr.setEncoding("utf8");
   child.stderr.on("data", (chunk) => { stderr += chunk; });
@@ -233,7 +234,7 @@ CREATE TABLE app_scan_report_previews (scan_id TEXT NOT NULL, path TEXT NOT NULL
     pendingBytes += bytes;
     reportCount += 1;
   }
-  const exitCode = await new Promise((resolve) => child.once("close", resolve));
+  const exitCode = await childExit;
   if (exitCode !== 0) throw new Error(`sqlite3 report stream failed: ${stderr || `exit ${exitCode}`}`);
   flush();
   runSqlite(database, `
@@ -261,6 +262,7 @@ async function dumpIntoParts(database, partsDir, maxPartBytes) {
   }
 
   const child = spawn("sqlite3", [database, ".dump"], { stdio: ["ignore", "pipe", "pipe"] });
+  const childExit = new Promise((resolve) => child.once("close", resolve));
   let stderr = "";
   child.stderr.setEncoding("utf8");
   child.stderr.on("data", (chunk) => { stderr += chunk; });
@@ -290,7 +292,7 @@ async function dumpIntoParts(database, partsDir, maxPartBytes) {
   }
   flush();
 
-  const exitCode = await new Promise((resolve) => child.once("close", resolve));
+  const exitCode = await childExit;
   if (exitCode !== 0) throw new Error(`sqlite3 dump failed: ${stderr || `exit ${exitCode}`}`);
   if (!files.length) throw new Error("No application rows were found in the migration subset.");
   return files;
