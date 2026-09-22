@@ -35,6 +35,13 @@ describe("research index surface", () => {
     expect(research).toContain("does not claim GuardRails discovered the campaign first");
   });
 
+  it("publishes the exact-artifact EDR Tester case without claiming first discovery", () => {
+    const research = readFileSync(new URL("../../lib/research.ts", import.meta.url), "utf8");
+    expect(research).toContain('slug: "edrtester-1-0-4-exact-artifact"');
+    expect(research).toContain("d4101a5bc86747f499ef347548e92eb3e1b09ce6acaf34bd1ee07f66400b18af");
+    expect(research).toContain("not an ecosystem accuracy claim");
+  });
+
   it("publishes the exact-release Nx Console case without generalizing by publisher", () => {
     const research = readFileSync(new URL("../../lib/research.ts", import.meta.url), "utf8");
     expect(research).toContain('slug: "nx-console-18-95-0"');
