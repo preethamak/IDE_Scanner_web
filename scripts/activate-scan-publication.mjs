@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
 import { assertAccuracyGate } from "./accuracy-gate.mjs";
 import { validatePublicationManifest } from "./publication-manifest.mjs";
-import { publicationRowMismatch, singleExtensionDetail } from "./publication-canonical.mjs";
+import { publicCanonicalMismatch, publicationRowMismatch, singleExtensionDetail } from "./publication-canonical.mjs";
 import { publicationRuntimeMismatch } from "./publication-runtime.mjs";
 
 const arguments_ = process.argv.slice(2);
@@ -82,6 +82,15 @@ for (const wanted of expected) {
   const coverage = objectValue(actual.analysis_coverage);
   const providers = objectValue(coverage.providers);
   const canonicalReport = objectValue(actual.canonical_report);
+  const canonicalMismatch = publicCanonicalMismatch({
+    reportedSchemaVersion: objectValue(canonicalReport.metadata).schema_version,
+    detail: singleExtensionDetail(canonicalReport.extensions),
+    metadata: objectValue(canonicalReport.metadata),
+    expectedScannerBuild: scannerBuild,
+    expectedExtensionId: wanted.extension_id,
+    expectedVersion: wanted.version,
+  });
+  if (canonicalMismatch) mismatches.push(`${key_}: ${canonicalMismatch}`);
   const runtimeMismatch = publicationRuntimeMismatch({
     profile: objectValue(canonicalReport.metadata).profile,
     metadata: objectValue(canonicalReport.metadata),
