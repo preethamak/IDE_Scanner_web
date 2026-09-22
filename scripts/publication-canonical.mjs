@@ -189,6 +189,12 @@ export function activeRegistryRowMismatch({ row, detail, metadata, release }) {
     return "registry report score schema does not match the active release";
   }
   const coverage = object(report.analysis_coverage);
+  const runtimeMismatch = publicationRuntimeMismatch({
+    profile: metadata.profile,
+    metadata,
+    analysisCoverage: coverage,
+  });
+  if (runtimeMismatch) return runtimeMismatch;
   if (String(report.analysis_status || "") !== "complete"
     || coverage.status !== "complete"
     || coverage.required_providers_complete !== true

@@ -134,6 +134,7 @@ describe("active registry release binding", () => {
     ["policy", { policy_version: "old-policy" }, "registry report policy_version"],
     ["ruleset", { ruleset_version: "old-rules" }, "registry report ruleset_version"],
     ["coverage", { executable_file_coverage_percent: 99 }, "100% executable coverage"],
+    ["runtime coverage", { profile: "standard" }, "deep runtime-enabled profile"],
     ["artifact identity", { artifact_identity: { extension_id: "other.extension", version: "1.0.0", sha256: artifact } }, "identity fields disagree"],
     ["unverified registry artifact", { artifact_identity: { extension_id: "publisher.extension", version: "1.0.0", sha256: artifact, registry_integrity_mismatch: true } }, "unverified registry artifact integrity"],
   ])("rejects active release %s drift", (_, mutation, message) => {

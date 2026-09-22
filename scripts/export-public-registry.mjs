@@ -2,6 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { Client } from "pg";
 import { benchmarkRows } from "../lib/websiteBenchmarkRows.ts";
+import { activeRegistryRowMismatch, singleExtensionDetail } from "./publication-canonical.mjs";
 
 const output = resolve("public/registry-snapshot.json");
 
@@ -38,7 +39,7 @@ try {
   const scanIds = memberResult.rows.map((row) => String(row.scan_id));
   const scans = scanIds.length
     ? (await client.query(`
-        select to_jsonb(s) - 'job_id' - 'canonical_report' - 'intelligence_snapshot' as scan
+        select to_jsonb(s) - 'job_id' - 'intelligence_snapshot' as scan
         from public.scans s
         where s.id = any($1::uuid[])
           and s.scan_purpose in ('public_intelligence', 'benchmark')
@@ -51,6 +52,23 @@ try {
         order by s.scanned_at desc
       `, [scanIds, release.policy_version, release.ruleset_version, release.score_schema_version, release.scanner_build])).rows.map((row) => row.scan)
     : [];
+  if (scans.length !== scanIds.length) {
+    throw new Error(`Active public release returned ${scans.length} complete reports for ${scanIds.length} exact members.`);
+  }
+  for (const scan of scans) {
+    const report = objectValue(scan.canonical_report);
+    const detail = singleExtensionDetail(report.extensions);
+    const mismatch = activeRegistryRowMismatch({
+      row: scan,
+      detail,
+      metadata: objectValue(report.metadata),
+      release,
+    });
+    if (mismatch) {
+      throw new Error(`Active public release report failed canonical validation for ${scan.extension_id}@${scan.version}: ${mismatch}.`);
+    }
+    delete scan.canonical_report;
+  }
   const historyScans = scanIds.length ? (await client.query(`
     select jsonb_build_object(
       'id', s.id,
