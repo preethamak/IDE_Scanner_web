@@ -66,6 +66,28 @@ describe("evidence intelligence compiler", () => {
     expect(context.blast_radius.overall).toBe("unknown");
     expect(context.coverage_boundaries).toContain("No findings were supplied; that does not prove the absence of risky behavior.");
   });
+
+  it("keeps contextual detector severity out of reviewer-facing context", () => {
+    const context = compileEvidenceIntelligenceContext({ ...product(), findings: [{
+        id: "finding-contextual-high",
+        rule_id: "encoded-dynamic-execution",
+        category: "code",
+        severity: "HIGH",
+        effective_severity: "INFO",
+        evidence_class: "weak",
+        actionability: "contextual",
+        summary: "Encoded execution markers.",
+        file_refs: ["extension.js"],
+      }],
+    });
+
+    const serialized = JSON.parse(context.serialized) as { report_detail: { findings: Array<Record<string, unknown>> } };
+    expect(serialized.report_detail.findings[0]).toMatchObject({
+      rule_id: "encoded-dynamic-execution",
+      severity: "INFO",
+      actionability: "contextual",
+    });
+  });
 });
 
 describe("evidence intelligence output validation", () => {

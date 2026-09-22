@@ -343,7 +343,11 @@ export function compileEvidenceIntelligenceContext(product: RecordValue): Eviden
       ref,
       rule_id: safeText(finding.rule_id, 160) || "unknown",
       category: safeText(finding.category, 120) || "unknown",
-      severity: safeText(finding.severity || finding.effective_severity, 60) || "INFO",
+      // Reports retain detector severity for auditability, but reviewer-facing
+      // context must use the policy-normalized severity first. Otherwise a
+      // contextual raw HIGH can be reintroduced as an actionable-sounding AI
+      // input after the deterministic scanner correctly downgraded it.
+      severity: safeText(finding.effective_severity || finding.severity, 60) || "INFO",
       confidence: finiteNumber(finding.confidence),
       evidence_class: safeText(finding.evidence_class, 100) || "unknown",
       actionability: safeText(finding.actionability, 100) || "contextual",
