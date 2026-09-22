@@ -10,7 +10,7 @@ describe("Cloudflare registry snapshot builder", () => {
     expect(source).toContain("if (!rows.length || rows.length !== Number(activeRelease.expected_reports || rows.length))");
     expect(source).toContain("accuracy_gate_sha256");
     expect(source).toContain("defaultMarketplacePageCount");
-    expect(source).toContain("Math.min(100");
+    expect(source).toContain("marketplace-pagination.mjs");
   });
 
   it("does not duplicate unbounded report evidence into the catalogue", () => {

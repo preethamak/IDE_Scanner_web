@@ -1,4 +1,5 @@
 import { createPostgresClient } from "../lib/postgresDb.ts";
+import { defaultMarketplacePageCount } from "./marketplace-pagination.mjs";
 
 const gallery = "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery?api-version=7.2-preview.1";
 const MARKETPLACE_RETRIES = 4;
@@ -245,10 +246,6 @@ function boundedInteger(name, fallback, minimum, maximum) {
     throw new Error(`${name} must be an integer between ${minimum} and ${maximum}.`);
   }
   return value;
-}
-
-function defaultMarketplacePageCount(candidateCount) {
-  return Math.min(100, Math.max(3, Math.ceil(candidateCount / 100)));
 }
 
 async function currentScannerBuild() {

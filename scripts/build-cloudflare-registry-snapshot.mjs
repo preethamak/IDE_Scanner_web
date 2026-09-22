@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { writeFile } from "node:fs/promises";
 import { activeRegistryRowMismatch } from "./publication-canonical.mjs";
+import { defaultMarketplacePageCount } from "./marketplace-pagination.mjs";
 
 const VALID_DECISIONS = new Set(["allow", "review", "block"]);
 const scanDatabase = process.env.CLOUDFLARE_SCAN_DATABASE || "abscissa-scan-data";
@@ -324,10 +325,6 @@ function boundedInteger(name, fallback, minimum, maximum) {
   const value = raw ? Number(raw) : fallback;
   if (!Number.isSafeInteger(value) || value < minimum || value > maximum) throw new Error(`${name} must be an integer between ${minimum} and ${maximum}.`);
   return value;
-}
-
-function defaultMarketplacePageCount(reportCount) {
-  return Math.min(100, Math.max(3, Math.ceil(Math.min(Math.max(reportCount, 1), 10_000) / 100)));
 }
 
 function sql(value) { return `'${String(value).replaceAll("'", "''")}'`; }

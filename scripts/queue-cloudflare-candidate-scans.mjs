@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
+import { defaultMarketplacePageCount } from "./marketplace-pagination.mjs";
 
 const scannerBuild = String(process.env.SCANNER_BUILD || "").trim().toLowerCase();
 const scanDatabase = process.env.CLOUDFLARE_SCAN_DATABASE || "abscissa-scan-data";
@@ -143,13 +144,6 @@ function boundedInteger(name, fallback, minimum, maximum) {
     throw new Error(`${name} must be an integer between ${minimum} and ${maximum}.`);
   }
   return value;
-}
-
-function defaultMarketplacePageCount(candidateCount) {
-  // The Marketplace API returns at most 100 ranked extensions per page. When
-  // the D1 mirror is partial, automatically fetch enough pages to fill the
-  // requested cohort instead of silently capping a 10k run at the old 300.
-  return Math.min(100, Math.max(3, Math.ceil(candidateCount / 100)));
 }
 
 function sql(value) {
