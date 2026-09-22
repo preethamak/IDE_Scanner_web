@@ -82,7 +82,10 @@ describe("Cloudflare publication D1 revalidation", () => {
       extensions: [item],
       rows: [row({ artifact_sha256: "e".repeat(64) })],
       scannerBuild: build,
-    })).toEqual([expect.stringContaining("D1 artifact hash does not match the manifest"), expect.stringContaining("canonical report no longer matches the release manifest")]);
+    })).toEqual(expect.arrayContaining([
+      expect.stringContaining("D1 artifact hash does not match the manifest"),
+      expect.stringContaining("canonical report no longer matches the release manifest"),
+    ]));
   });
 
   it("rejects a changed canonical decision", () => {
@@ -92,7 +95,10 @@ describe("Cloudflare publication D1 revalidation", () => {
       extensions: [item],
       rows: [row({ report_json: JSON.stringify(changed) })],
       scannerBuild: build,
-    })).toEqual([expect.stringContaining("canonical report no longer matches the release manifest")]);
+    })).toEqual(expect.arrayContaining([
+      expect.stringContaining("database decision does not match the canonical report"),
+      expect.stringContaining("canonical report no longer matches the release manifest"),
+    ]));
   });
 
   it("rejects a report whose job is not complete or not public", () => {

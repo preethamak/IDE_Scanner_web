@@ -72,6 +72,58 @@ export function publicCanonicalMismatch({ reportedSchemaVersion, detail, metadat
   return null;
 }
 
+/**
+ * Verify that the database row and canonical JSON report describe the same
+ * immutable scan. Release builders must not publish a row whose scalar
+ * columns disagree with its report, even if both values look valid alone.
+ */
+export function publicationRowMismatch({ row, detail }) {
+  const database = object(row);
+  const report = object(detail);
+  const identity = object(report.artifact_identity);
+  const reportHash = String(identity.sha256 || report.artifact_sha256 || "").trim().toLowerCase();
+  const databaseHash = String(database.artifact_sha256 || "").trim().toLowerCase();
+  if (databaseHash !== reportHash) return "database artifact SHA-256 does not match the canonical report";
+
+  for (const field of ["extension_id", "version", "decision", "severity"]) {
+    if (database[field] !== undefined && String(database[field] || "") !== String(report[field] || "")) {
+      return `database ${field} does not match the canonical report`;
+    }
+  }
+
+  if (database.analysis_status !== undefined) {
+    if (String(database.analysis_status || "") !== canonicalAnalysisStatus(report)) {
+      return "database analysis_status does not match the canonical report";
+    }
+  }
+
+  if (database.coverage_percent !== undefined) {
+    const coverage = object(report.analysis_coverage);
+    const reportCoverage = coverage.coverage_percent ?? coverage.executable_file_coverage_percent;
+    if (typeof reportCoverage !== "number" || Number(database.coverage_percent) !== reportCoverage) {
+      return "database coverage_percent does not match the canonical report";
+    }
+  }
+
+  if (database.analysis_coverage !== undefined) {
+    const databaseCoverage = object(database.analysis_coverage);
+    const reportCoverage = object(report.analysis_coverage);
+    for (const field of ["status", "required_providers_complete"]) {
+      if (databaseCoverage[field] !== undefined && databaseCoverage[field] !== reportCoverage[field]) {
+        return `database analysis_coverage.${field} does not match the canonical report`;
+      }
+    }
+    const databaseDynamic = object(object(databaseCoverage.providers).dynamic_sandbox);
+    const reportDynamic = object(object(reportCoverage.providers).dynamic_sandbox);
+    for (const field of ["required", "status", "execution", "policy", "executed", "external_syscall_trace"]) {
+      if (databaseDynamic[field] !== undefined && databaseDynamic[field] !== reportDynamic[field]) {
+        return `database dynamic_sandbox.${field} does not match the canonical report`;
+      }
+    }
+  }
+  return null;
+}
+
 export function singleExtensionDetail(value) {
   const entries = Array.isArray(value)
     ? value.filter((item) => item && typeof item === "object" && !Array.isArray(item))

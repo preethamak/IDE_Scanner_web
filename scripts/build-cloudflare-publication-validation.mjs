@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import { assertAccuracyGate } from "./accuracy-gate.mjs";
 import { MAX_PUBLICATION_REPORTS, validatePublicationManifest } from "./publication-manifest.mjs";
-import { publicCanonicalMismatch, singleExtensionDetail } from "./publication-canonical.mjs";
+import { publicCanonicalMismatch, publicationRowMismatch, singleExtensionDetail } from "./publication-canonical.mjs";
 import { publicationRuntimeMismatch } from "./publication-runtime.mjs";
 
 const args = process.argv.slice(2);
@@ -74,6 +74,7 @@ for (const row of rows) {
     });
     continue;
   }
+  const rowMismatch = publicationRowMismatch({ row, detail });
   if (canonicalMismatch
     || String(metadata.scanner_build || "") !== scannerBuild
     || String(identity.sha256 || "").length !== 64
@@ -81,8 +82,9 @@ for (const row of rows) {
     || String(rules.policy_version || "") !== String(metadata.policy_version || "")
     || String(rules.ruleset_version || "") !== String(metadata.ruleset_version || "")
     || ruleRows.length === 0
-    || runtimeMismatch) {
-    failures.push(`${key(row)}: ${canonicalMismatch || runtimeMismatch || "report failed immutable publication checks"}`);
+    || runtimeMismatch
+    || rowMismatch) {
+    failures.push(`${key(row)}: ${canonicalMismatch || runtimeMismatch || rowMismatch || "report failed immutable publication checks"}`);
     continue;
   }
   const candidate = {

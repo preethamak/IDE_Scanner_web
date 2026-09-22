@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
 import { assertAccuracyGate } from "./accuracy-gate.mjs";
 import { validatePublicationManifest } from "./publication-manifest.mjs";
+import { publicationRowMismatch, singleExtensionDetail } from "./publication-canonical.mjs";
 import { publicationRuntimeMismatch } from "./publication-runtime.mjs";
 
 const arguments_ = process.argv.slice(2);
@@ -87,6 +88,8 @@ for (const wanted of expected) {
     analysisCoverage: coverage,
   });
   if (runtimeMismatch) mismatches.push(`${key_}: ${runtimeMismatch}`);
+  const rowMismatch = publicationRowMismatch({ row: actual, detail: singleExtensionDetail(canonicalReport.extensions) });
+  if (rowMismatch) mismatches.push(`${key_}: ${rowMismatch}`);
   const expectedCoverage = objectValue(wanted.analysis_coverage);
   const expectedProviders = objectValue(expectedCoverage.providers);
   for (const provider of ["semgrep", "yara", "dependency_intelligence"]) {

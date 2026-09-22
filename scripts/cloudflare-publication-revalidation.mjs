@@ -1,4 +1,4 @@
-import { publicCanonicalMismatch, singleExtensionDetail } from "./publication-canonical.mjs";
+import { publicCanonicalMismatch, publicationRowMismatch, singleExtensionDetail } from "./publication-canonical.mjs";
 
 /**
  * Revalidate the rows that are about to become the active D1 release.
@@ -51,6 +51,8 @@ export function cloudflarePublicationMismatches({ extensions, rows, scannerBuild
       expectedVersion: item.version,
     });
     if (canonicalMismatch) mismatches.push(`${item.extension_id}@${item.version}: ${canonicalMismatch}`);
+    const rowMismatch = publicationRowMismatch({ row, detail });
+    if (rowMismatch) mismatches.push(`${item.extension_id}@${item.version}: ${rowMismatch}`);
     if (String(detail.artifact_identity?.sha256 || "").toLowerCase() !== String(row.artifact_sha256 || "").toLowerCase()
       || String(detail.decision || "") !== String(item.decision || "")) {
       mismatches.push(`${item.extension_id}@${item.version}: canonical report no longer matches the release manifest`);

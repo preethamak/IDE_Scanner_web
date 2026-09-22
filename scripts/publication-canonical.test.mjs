@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { publicCanonicalMismatch } from "./publication-canonical.mjs";
+import { publicCanonicalMismatch, publicationRowMismatch } from "./publication-canonical.mjs";
 
 const build = "a".repeat(40);
 const artifact = "d".repeat(64);
@@ -82,5 +82,30 @@ describe("publication canonical contract", () => {
     const report = validReport();
     mutate(report);
     expect(mismatch(report)).toContain(message);
+  });
+});
+
+describe("publication database-row binding", () => {
+  it.each([
+    ["artifact hash", { artifact_sha256: "e".repeat(64) }, "database artifact SHA-256"],
+    ["decision", { artifact_sha256: artifact, decision: "block" }, "database decision"],
+    ["analysis status", { artifact_sha256: artifact, analysis_status: "incomplete" }, "database analysis_status"],
+    ["coverage", { artifact_sha256: artifact, coverage_percent: 99 }, "database coverage_percent"],
+    ["provider coverage", { artifact_sha256: artifact, analysis_coverage: { status: "incomplete" } }, "database analysis_coverage.status"],
+  ])("rejects a database %s drift", (_, row, message) => {
+    expect(publicationRowMismatch({ row, detail: validReport().detail })).toContain(message);
+  });
+
+  it("accepts a row whose scalar fields match the canonical report", () => {
+    expect(publicationRowMismatch({
+      row: {
+        artifact_sha256: artifact,
+        extension_id: "publisher.extension",
+        version: "1.0.0",
+        decision: "allow",
+        coverage_percent: 100,
+      },
+      detail: validReport().detail,
+    })).toBeNull();
   });
 });

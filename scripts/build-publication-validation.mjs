@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import { assertAccuracyGate } from "./accuracy-gate.mjs";
 import { validatePublicationManifest } from "./publication-manifest.mjs";
-import { publicCanonicalMismatch, singleExtensionDetail } from "./publication-canonical.mjs";
+import { publicCanonicalMismatch, publicationRowMismatch, singleExtensionDetail } from "./publication-canonical.mjs";
 import { publicationRuntimeMismatch } from "./publication-runtime.mjs";
 
 const args = process.argv.slice(2);
@@ -64,8 +64,9 @@ for (const row of rows) {
     metadata: object(report.metadata),
     analysisCoverage: row.analysis_coverage,
   });
-  if (canonicalMismatch || runtimeMismatch) {
-    failures.push(`${key}: ${canonicalMismatch || runtimeMismatch}`);
+  const rowMismatch = publicationRowMismatch({ row, detail });
+  if (canonicalMismatch || runtimeMismatch || rowMismatch) {
+    failures.push(`${key}: ${canonicalMismatch || runtimeMismatch || rowMismatch}`);
     continue;
   }
   const rules = object(report.rules);
