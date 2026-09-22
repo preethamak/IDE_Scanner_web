@@ -20,9 +20,8 @@ assertAccuracyGate(accuracyGate, { scanner_build: scannerBuild });
 
 const sql = `
   with active as (
-    select distinct s.extension_id, s.version
+    select distinct r.scan_id, r.extension_id, r.version, r.artifact_sha256
     from scan_publication_release_scans r
-    join scans s on s.id = r.scan_id
     join scan_publication_releases p on p.id = r.release_id
     where p.active = true
   )
@@ -31,7 +30,11 @@ const sql = `
          s.policy_version,s.ruleset_version,s.score_schema_version,
          s.scanner_build,s.scanned_at,s.canonical_report
   from active a
-  join scans s on s.extension_id = a.extension_id and s.version = a.version
+  join scans s
+    on s.id = a.scan_id
+   and lower(s.extension_id) = lower(a.extension_id)
+   and s.version = a.version
+   and lower(s.artifact_sha256) = lower(a.artifact_sha256)
   where s.scan_purpose = 'public_intelligence'
     and s.scanner_build = '${scannerBuild}'
     and s.analysis_status = 'complete'
