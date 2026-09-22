@@ -7,6 +7,7 @@ const harness = vi.hoisted(() => ({
   } | null,
   privateDb: vi.fn(),
   runnerCompleted: vi.fn(),
+  runnerError: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -21,7 +22,7 @@ vi.mock("@/lib/cloudflarePrivate", () => ({
 vi.mock("@/lib/cloudflareRunnerStatus", () => ({
   markCloudflareRunnerClaimed: vi.fn(),
   markCloudflareRunnerCompleted: harness.runnerCompleted,
-  markCloudflareRunnerError: vi.fn(),
+  markCloudflareRunnerError: harness.runnerError,
   recordCloudflareRunnerHeartbeat: vi.fn(),
 }));
 vi.mock("@/lib/runtimeEnv", () => ({ runtimeEnv: vi.fn(() => "") }));
@@ -32,7 +33,7 @@ vi.mock("@/lib/cloudflareRegistry", () => ({
 }));
 vi.mock("@/lib/cloudflareGithubDispatch", () => ({ dispatchGithubDeepScan: vi.fn() }));
 
-import { claimCloudflareJob, saveCloudflareScanResult } from "@/lib/cloudflareDeepScan";
+import { claimCloudflareJob, failCloudflareScan, saveCloudflareScanResult } from "@/lib/cloudflareDeepScan";
 
 const build = "a".repeat(40);
 const artifactSha = "d".repeat(64);
@@ -103,7 +104,9 @@ describe("Cloudflare canonical scan callback", () => {
   beforeEach(() => {
     harness.privateDb.mockReset();
     harness.runnerCompleted.mockReset();
+    harness.runnerError.mockReset();
     harness.runnerCompleted.mockResolvedValue(undefined);
+    harness.runnerError.mockResolvedValue(undefined);
   });
 
   it("rejects a forged public result before it can enter D1", async () => {
@@ -160,5 +163,18 @@ describe("Cloudflare canonical scan callback", () => {
       githubSha: build,
     })).resolves.toBeNull();
     expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not let a late failure callback overwrite a completed report", async () => {
+    const run = vi.fn().mockResolvedValue({ meta: { changes: 0 } });
+    const db = {
+      prepare: vi.fn(() => ({ bind: vi.fn(() => ({ run })) })),
+    };
+    harness.privateDb.mockReturnValue(db);
+
+    await expect(failCloudflareScan("job-1", "stale worker failure")).resolves.toBeUndefined();
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(harness.runnerError).not.toHaveBeenCalled();
+    expect(db.prepare).toHaveBeenCalledWith(expect.stringContaining("status IN ('queued','running')"));
   });
 });

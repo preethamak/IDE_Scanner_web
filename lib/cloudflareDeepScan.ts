@@ -472,7 +472,11 @@ export async function getCloudflareSourcePreview(extensionId: string, version: s
 export async function failCloudflareScan(jobId: string, error: string): Promise<void> {
   const now = nowIso();
   const db = privateDb();
-  await db.prepare("UPDATE app_scan_jobs SET status='failed',lifecycle_stage='failed',error=?,callback_error=?,completed_at=?,updated_at=?,last_event_at=? WHERE id=?").bind(error.slice(0, 2000), error.slice(0, 2000), now, now, now, jobId).run();
+  // A worker can report a failure after a retry has already committed the
+  // result. Never let that late callback regress a durable success back to
+  // failed; only the queued/running owner may make this transition.
+  const result = await db.prepare("UPDATE app_scan_jobs SET status='failed',lifecycle_stage='failed',error=?,callback_error=?,completed_at=?,updated_at=?,last_event_at=? WHERE id=? AND status IN ('queued','running') AND NOT EXISTS (SELECT 1 FROM app_scan_reports WHERE job_id=?)").bind(error.slice(0, 2000), error.slice(0, 2000), now, now, now, jobId, jobId).run();
+  if (Number(result.meta?.changes || 0) === 0) return;
   try { await markCloudflareRunnerError(db, error, now); } catch { /* preserve the terminal job state */ }
   await addCloudflareScanEvent(jobId, "failed", "worker_failed", { error: error.slice(0, 2000) });
 }
