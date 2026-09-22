@@ -84,6 +84,13 @@ describe("public canonical schema enforcement", () => {
           policy: "capability-gated-v1",
           external_syscall_trace: false,
         },
+        extension_advisories: {
+          provider: "extension_advisories",
+          status: "completed",
+          required: true,
+          snapshot_version: "2026-09-22.1",
+          sha256: "e".repeat(64),
+        },
       },
     },
   };
@@ -101,6 +108,11 @@ describe("public canonical schema enforcement", () => {
         runtime_policy: "capability-gated-v1",
         external_syscall_trace: false,
         external_syscall_trace_available: true,
+      },
+      extension_advisories: {
+        status: "completed",
+        snapshot_version: "2026-09-22.1",
+        sha256: "e".repeat(64),
       },
       registry: {
         sha256: "c".repeat(64),
@@ -208,6 +220,32 @@ describe("public canonical schema enforcement", () => {
       { ...goodMeta, intelligence_snapshot: { dynamic_sandbox: goodMeta.intelligence_snapshot.dynamic_sandbox } },
       build,
     )).toContain("registry intelligence identity");
+  });
+
+  it("rejects a public report without a completed advisory snapshot", () => {
+    expect(publicCanonicalError(
+      true,
+      "2.3",
+      goodDetail,
+      { ...goodMeta, intelligence_snapshot: { ...goodMeta.intelligence_snapshot, extension_advisories: undefined } },
+      build,
+    )).toContain("completed immutable extension-advisory snapshot");
+  });
+
+  it("rejects advisory provider identity drift", () => {
+    expect(publicCanonicalError(
+      true,
+      "2.3",
+      goodDetail,
+      {
+        ...goodMeta,
+        intelligence_snapshot: {
+          ...goodMeta.intelligence_snapshot,
+          extension_advisories: { ...goodMeta.intelligence_snapshot.extension_advisories, sha256: "f".repeat(64) },
+        },
+      },
+      build,
+    )).toContain("provider coverage matching the report snapshot");
   });
 
   it("rejects a digest without replayable registry evidence", () => {

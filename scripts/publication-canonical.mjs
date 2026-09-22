@@ -50,6 +50,8 @@ export function publicCanonicalMismatch({ reportedSchemaVersion, detail, metadat
   if (runtimeMismatch) return runtimeMismatch;
 
   const intelligence = object(metadata.intelligence_snapshot);
+  const advisoryMismatch = extensionAdvisoryMismatch(intelligence, object(detail.analysis_coverage));
+  if (advisoryMismatch) return advisoryMismatch;
   const registry = object(intelligence.registry);
   if (!SHA256.test(String(registry.sha256 || ""))) return "public report requires immutable registry intelligence identity";
   const payload = object(registry.payload);
@@ -195,6 +197,8 @@ export function activeRegistryRowMismatch({ row, detail, metadata, release }) {
     analysisCoverage: coverage,
   });
   if (runtimeMismatch) return runtimeMismatch;
+  const advisoryMismatch = extensionAdvisoryMismatch(object(metadata.intelligence_snapshot), coverage);
+  if (advisoryMismatch) return advisoryMismatch;
   if (String(report.analysis_status || "") !== "complete"
     || coverage.status !== "complete"
     || coverage.required_providers_complete !== true
@@ -232,4 +236,20 @@ function registryIntegrityMismatch(detail, identity) {
   const packageIntegrity = object(signature.package_integrity);
   return identity.registry_integrity_mismatch === true
     || packageIntegrity.metadata_mismatch === true;
+}
+
+function extensionAdvisoryMismatch(intelligence, coverage) {
+  const snapshot = object(intelligence.extension_advisories);
+  const provider = object(object(coverage.providers).extension_advisories);
+  const snapshotSha = String(snapshot.sha256 || "").trim();
+  const providerSha = String(provider.sha256 || "").trim();
+  const snapshotVersion = String(snapshot.snapshot_version || "").trim();
+  const providerVersion = String(provider.snapshot_version || "").trim();
+  if (snapshot.status !== "completed" || !SHA256.test(snapshotSha) || !snapshotVersion) {
+    return "public report requires a completed immutable extension-advisory snapshot";
+  }
+  if (provider.required !== true || provider.status !== "completed" || providerSha !== snapshotSha || providerVersion !== snapshotVersion) {
+    return "public report extension-advisory provider coverage does not match the report snapshot";
+  }
+  return null;
 }

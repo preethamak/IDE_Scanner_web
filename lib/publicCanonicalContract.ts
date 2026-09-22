@@ -62,6 +62,8 @@ export function publicCanonicalError(
   if (!Array.isArray(registryPayload.findings) || !Array.isArray(registryPayload.errors)) {
     return "Public scans require replayable registry intelligence evidence.";
   }
+  const advisoryError = extensionAdvisoryError(intelligence, objectValue(detail.analysis_coverage));
+  if (advisoryError) return advisoryError;
   const scannerBuild = String(metadata.scanner_build || "");
   if (!expectedScannerBuild) return "Public scans require a job-bound scanner build.";
   if (scannerBuild !== expectedScannerBuild) return "Scanner build does not match the build bound to this job.";
@@ -99,4 +101,20 @@ function registryIntegrityMismatch(detail: ValueMap, identity: ValueMap): boolea
   const signature = objectValue(identity.signature || inventory.vsix_signature);
   const packageIntegrity = objectValue(signature.package_integrity);
   return identity.registry_integrity_mismatch === true || packageIntegrity.metadata_mismatch === true;
+}
+
+function extensionAdvisoryError(intelligence: ValueMap, coverage: ValueMap): string | null {
+  const snapshot = objectValue(intelligence.extension_advisories);
+  const provider = objectValue(objectValue(coverage.providers).extension_advisories);
+  const snapshotSha = String(snapshot.sha256 || "").trim();
+  const providerSha = String(provider.sha256 || "").trim();
+  const snapshotVersion = String(snapshot.snapshot_version || "").trim();
+  const providerVersion = String(provider.snapshot_version || "").trim();
+  if (snapshot.status !== "completed" || !isSha256(snapshotSha) || !snapshotVersion) {
+    return "Public scans require a completed immutable extension-advisory snapshot.";
+  }
+  if (provider.required !== true || provider.status !== "completed" || providerSha !== snapshotSha || providerVersion !== snapshotVersion) {
+    return "Public scans require extension-advisory provider coverage matching the report snapshot.";
+  }
+  return null;
 }

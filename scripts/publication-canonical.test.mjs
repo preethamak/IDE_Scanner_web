@@ -25,6 +25,11 @@ function validReport() {
           external_syscall_trace: false,
           external_syscall_trace_available: true,
         },
+        extension_advisories: {
+          status: "completed",
+          snapshot_version: "2026-09-22.1",
+          sha256: "e".repeat(64),
+        },
         registry: {
           sha256: "c".repeat(64),
           payload: { findings: [], errors: [] },
@@ -50,6 +55,12 @@ function validReport() {
             policy: "capability-gated-v1",
             executed: false,
             external_syscall_trace: false,
+          },
+          extension_advisories: {
+            required: true,
+            status: "completed",
+            snapshot_version: "2026-09-22.1",
+            sha256: "e".repeat(64),
           },
         },
       },
@@ -79,6 +90,8 @@ describe("publication canonical contract", () => {
     ["artifact identity disagreement", (report) => { report.detail.artifact_sha256 = "e".repeat(64); }, "artifact SHA-256 fields disagree"],
     ["unverified registry artifact", (report) => { report.detail.artifact_identity.registry_integrity_mismatch = true; }, "unverified registry artifact integrity"],
     ["registry replay evidence", (report) => { report.metadata.intelligence_snapshot.registry.payload = {}; }, "replayable registry intelligence evidence"],
+    ["advisory snapshot", (report) => { delete report.metadata.intelligence_snapshot.extension_advisories; }, "completed immutable extension-advisory snapshot"],
+    ["advisory provider identity", (report) => { report.detail.analysis_coverage.providers.extension_advisories.sha256 = "f".repeat(64); }, "provider coverage does not match the report snapshot"],
     ["analysis coverage", (report) => { report.detail.analysis_coverage.executable_file_coverage_percent = undefined; }, "executable-file coverage"],
     ["partial executable coverage", (report) => { report.detail.analysis_coverage.executable_file_coverage_percent = 99; }, "100% executable-file coverage"],
     ["approval on incomplete analysis", (report) => { report.detail.analysis_status = "incomplete"; report.detail.analysis_coverage.status = "incomplete"; report.detail.decision = "review"; }, "incomplete public report has an approval decision"],

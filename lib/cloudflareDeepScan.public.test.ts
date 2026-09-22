@@ -72,6 +72,11 @@ function validBundle() {
           external_syscall_trace: false,
           external_syscall_trace_available: true,
         },
+        extension_advisories: {
+          status: "completed",
+          snapshot_version: "2026-09-22.1",
+          sha256: "e".repeat(64),
+        },
         registry: {
           sha256: "c".repeat(64),
           payload: { findings: [], errors: [] },
@@ -89,16 +94,22 @@ function validBundle() {
         status: "complete",
         executable_file_coverage_percent: 100,
         required_providers_complete: true,
-        providers: {
-          dynamic_sandbox: {
+          providers: {
+            dynamic_sandbox: {
             status: "not-applicable",
             execution: "policy-gated",
             executed: false,
             required: false,
             policy: "capability-gated-v1",
-            external_syscall_trace: false,
+              external_syscall_trace: false,
+            },
+            extension_advisories: {
+              status: "completed",
+              required: true,
+              snapshot_version: "2026-09-22.1",
+              sha256: "e".repeat(64),
+            },
           },
-        },
       },
     }],
   };
