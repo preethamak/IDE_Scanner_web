@@ -19,7 +19,7 @@ await client.connect();
 try {
   const generatedAt = new Date().toISOString();
   const releaseResult = await client.query(`
-    select id, policy_version, ruleset_version, score_schema_version, scanner_build,
+    select id, policy_version, ruleset_version, score_schema_version, scanner_build, expected_reports,
            accuracy_gate_corpus_id, accuracy_gate_corpus_version, accuracy_gate_sha256
     from public.scan_publication_releases
     where active = true
@@ -37,6 +37,10 @@ try {
     [release.id],
   );
   const scanIds = memberResult.rows.map((row) => String(row.scan_id));
+  const expectedReports = Number(release.expected_reports || 0);
+  if (!Number.isSafeInteger(expectedReports) || expectedReports < 1 || scanIds.length !== expectedReports) {
+    throw new Error(`Active public release declares ${expectedReports} reports but has ${scanIds.length} exact members.`);
+  }
   const scans = scanIds.length
     ? (await client.query(`
         select to_jsonb(s) - 'job_id' - 'intelligence_snapshot' as scan
