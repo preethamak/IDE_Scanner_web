@@ -81,11 +81,17 @@ describe("evidence intelligence compiler", () => {
       }],
     });
 
-    const serialized = JSON.parse(context.serialized) as { report_detail: { findings: Array<Record<string, unknown>> } };
+    const serialized = JSON.parse(context.serialized) as { report_detail: { findings: Array<Record<string, unknown>> }; report_inventory: Record<string, number> };
     expect(serialized.report_detail.findings[0]).toMatchObject({
       rule_id: "encoded-dynamic-execution",
       severity: "INFO",
       actionability: "contextual",
+    });
+    expect(serialized.report_inventory).toMatchObject({
+      finding_count: 1,
+      actionable_finding_count: 0,
+      contextual_finding_count: 1,
+      low_finding_count: 0,
     });
   });
 });

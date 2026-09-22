@@ -193,6 +193,9 @@ export type EvidenceIntelligenceContext = {
   release_delta: ReleaseDelta;
   report_inventory: {
     finding_count: number;
+    actionable_finding_count: number;
+    contextual_finding_count: number;
+    low_finding_count: number;
     file_count: number;
     dependency_count: number;
     capability_count: number;
@@ -300,6 +303,9 @@ export function compileEvidenceIntelligenceContext(product: RecordValue): Eviden
   const findings = recordArray(product.findings);
   const files = recordArray(product.files);
   const dependencies = recordArray(product.dependencies);
+  const actionableFindingCount = findings.filter((finding) => ["review", "investigate", "block"].includes(String(finding.actionability || ""))).length;
+  const contextualFindingCount = findings.filter((finding) => String(finding.actionability || "contextual") === "contextual").length;
+  const lowFindingCount = findings.filter((finding) => String(finding.actionability || "") === "low").length;
 
   const evidence: EvidenceReference[] = [];
   const facts: EvidenceFact[] = [];
@@ -384,8 +390,8 @@ export function compileEvidenceIntelligenceContext(product: RecordValue): Eviden
 
   addFact({ ref: "scan.capabilities", label: "Recorded capability families", value: String(capabilityRecords.length), certainty: capabilityRecords.length ? "observed" : "unknown", evidence_refs: capabilityRecords.map((item) => item.evidence_ref).filter(Boolean) });
   addEvidence({ ref: "scan.capabilities", kind: "capability", label: "Recorded capability families", detail: `${capabilityRecords.length} capability family(ies) normalized from the report`, section: "capabilities" });
-  addFact({ ref: "scan.inventory", label: "Report inventory", value: `${findings.length} findings · ${files.length} files · ${dependencies.length} dependencies`, certainty: "observed", evidence_refs: ["scan.identity"] });
-  addEvidence({ ref: "scan.inventory", kind: "scan", label: "Report inventory", detail: `${findings.length} findings · ${files.length} files · ${dependencies.length} dependencies`, section: "overview" });
+  addFact({ ref: "scan.inventory", label: "Report inventory", value: `${findings.length} observations · ${actionableFindingCount} action-level findings · ${contextualFindingCount} context-only observations · ${files.length} files · ${dependencies.length} dependencies`, certainty: "observed", evidence_refs: ["scan.identity"] });
+  addEvidence({ ref: "scan.inventory", kind: "scan", label: "Report inventory", detail: `${findings.length} observations · ${actionableFindingCount} action-level findings · ${contextualFindingCount} context-only observations`, section: "overview" });
 
   const coverageBoundaries = deriveCoverageBoundaries(scan, product, findings, files);
   addEvidence({ ref: "scan.coverage_boundaries", kind: "coverage", label: "Coverage boundaries", detail: coverageBoundaries.join(" ").slice(0, MAX_STRING), section: "coverage" });
@@ -423,6 +429,9 @@ export function compileEvidenceIntelligenceContext(product: RecordValue): Eviden
     release_delta: releaseDelta,
     report_inventory: {
       finding_count: findings.length,
+      actionable_finding_count: actionableFindingCount,
+      contextual_finding_count: contextualFindingCount,
+      low_finding_count: lowFindingCount,
       file_count: files.length,
       dependency_count: dependencies.length,
       capability_count: capabilityRecords.length,
