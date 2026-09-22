@@ -128,8 +128,7 @@ export async function queueCloudflareDeepScan(extensionId: string, requestedVers
     dispatched = await dispatchCloudflareDeepScan(id);
   } catch (error) {
     const message = error instanceof Error ? error.message : "The Deep Scan worker could not be started.";
-    await db.prepare("UPDATE app_scan_jobs SET status='failed',lifecycle_stage='failed',error=?,callback_error=?,completed_at=?,updated_at=?,last_event_at=? WHERE id=?").bind(message, message, nowIso(), nowIso(), nowIso(), id).run();
-    await addCloudflareScanEvent(id, "failed", "dispatch_failed", { error: message });
+    await failCloudflareDispatch(db, id, message);
     throw new Error(message);
   }
   return withCloudflareReportUrl({ id, extension_id: canonicalExtensionId, version, profile: "deep", status: "queued", lifecycle_stage: dispatched ? "dispatched" : "queued", dispatch: dispatched ? "started" : "scheduled" });
@@ -171,8 +170,7 @@ export async function queueCloudflareGuestDeepScan(extensionId: string, requeste
     dispatched = await dispatchCloudflareDeepScan(id);
   } catch (error) {
     const message = error instanceof Error ? error.message : "The Deep Scan worker could not be started.";
-    await db.prepare("UPDATE app_scan_jobs SET status='failed',lifecycle_stage='failed',error=?,callback_error=?,completed_at=?,updated_at=?,last_event_at=? WHERE id=?").bind(message, message, nowIso(), nowIso(), nowIso(), id).run();
-    await addCloudflareScanEvent(id, "failed", "dispatch_failed", { error: message });
+    await failCloudflareDispatch(db, id, message);
     throw new Error(message);
   }
   return { id, extension_id: canonicalExtensionId, version, profile: "deep", status: "queued", lifecycle_stage: dispatched ? "dispatched" : "queued", dispatch: dispatched ? "started" : "scheduled", trial_remaining: Math.max(0, trial.remaining - 1) };
@@ -479,6 +477,16 @@ export async function failCloudflareScan(jobId: string, error: string): Promise<
   if (Number(result.meta?.changes || 0) === 0) return;
   try { await markCloudflareRunnerError(db, error, now); } catch { /* preserve the terminal job state */ }
   await addCloudflareScanEvent(jobId, "failed", "worker_failed", { error: error.slice(0, 2000) });
+}
+
+async function failCloudflareDispatch(db: ReturnType<typeof privateDb>, jobId: string, error: string): Promise<void> {
+  const now = nowIso();
+  // The dispatch request may have reached GitHub even when its response was
+  // lost. Preserve a job claimed or completed by that worker instead of
+  // converting an accepted dispatch into a false failure.
+  const result = await db.prepare("UPDATE app_scan_jobs SET status='failed',lifecycle_stage='failed',error=?,callback_error=?,completed_at=?,updated_at=?,last_event_at=? WHERE id=? AND status='queued' AND NOT EXISTS (SELECT 1 FROM app_scan_reports WHERE job_id=?)").bind(error.slice(0, 2000), error.slice(0, 2000), now, now, now, jobId, jobId).run();
+  if (Number(result.meta?.changes || 0) === 0) return;
+  await addCloudflareScanEvent(jobId, "failed", "dispatch_failed", { error: error.slice(0, 2000) });
 }
 
 export async function verifyCloudflareCallback(body: Uint8Array, signature: string): Promise<boolean> {

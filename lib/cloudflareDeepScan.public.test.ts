@@ -8,6 +8,10 @@ const harness = vi.hoisted(() => ({
   privateDb: vi.fn(),
   runnerCompleted: vi.fn(),
   runnerError: vi.fn(),
+  catalogExtension: vi.fn(),
+  marketplaceExtension: vi.fn(),
+  githubDispatch: vi.fn(),
+  runtimeEnv: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -25,15 +29,15 @@ vi.mock("@/lib/cloudflareRunnerStatus", () => ({
   markCloudflareRunnerError: harness.runnerError,
   recordCloudflareRunnerHeartbeat: vi.fn(),
 }));
-vi.mock("@/lib/runtimeEnv", () => ({ runtimeEnv: vi.fn(() => "") }));
-vi.mock("@/lib/marketplace", () => ({ resolveMarketplaceExtension: vi.fn() }));
+vi.mock("@/lib/runtimeEnv", () => ({ runtimeEnv: harness.runtimeEnv }));
 vi.mock("@/lib/cloudflareRegistry", () => ({
-  getCloudflareRegistryCatalogExtension: vi.fn(),
+  getCloudflareRegistryCatalogExtension: harness.catalogExtension,
   getCloudflareRegistryProduct: vi.fn(),
 }));
-vi.mock("@/lib/cloudflareGithubDispatch", () => ({ dispatchGithubDeepScan: vi.fn() }));
+vi.mock("@/lib/marketplace", () => ({ resolveMarketplaceExtension: harness.marketplaceExtension }));
+vi.mock("@/lib/cloudflareGithubDispatch", () => ({ dispatchGithubDeepScan: harness.githubDispatch }));
 
-import { claimCloudflareJob, failCloudflareScan, saveCloudflareScanResult } from "@/lib/cloudflareDeepScan";
+import { claimCloudflareJob, failCloudflareScan, queueCloudflareDeepScan, saveCloudflareScanResult } from "@/lib/cloudflareDeepScan";
 
 const build = "a".repeat(40);
 const artifactSha = "d".repeat(64);
@@ -105,8 +109,15 @@ describe("Cloudflare canonical scan callback", () => {
     harness.privateDb.mockReset();
     harness.runnerCompleted.mockReset();
     harness.runnerError.mockReset();
+    harness.catalogExtension.mockReset();
+    harness.marketplaceExtension.mockReset();
+    harness.githubDispatch.mockReset();
+    harness.runtimeEnv.mockReset();
     harness.runnerCompleted.mockResolvedValue(undefined);
     harness.runnerError.mockResolvedValue(undefined);
+    harness.catalogExtension.mockResolvedValue(null);
+    harness.marketplaceExtension.mockResolvedValue({ extension_id: "publisher.extension", version: "1.0.0" });
+    harness.runtimeEnv.mockReturnValue("");
   });
 
   it("rejects a forged public result before it can enter D1", async () => {
@@ -176,5 +187,37 @@ describe("Cloudflare canonical scan callback", () => {
     expect(run).toHaveBeenCalledTimes(1);
     expect(harness.runnerError).not.toHaveBeenCalled();
     expect(db.prepare).toHaveBeenCalledWith(expect.stringContaining("status IN ('queued','running')"));
+  });
+
+  it("does not mark a job failed when dispatch acknowledgement is lost", async () => {
+    harness.runtimeEnv.mockImplementation((key: string) => key === "GITHUB_ACTIONS_TOKEN" ? "github-token" : "");
+    harness.githubDispatch.mockRejectedValue(new Error("dispatch response timeout"));
+    const statements: string[] = [];
+    const db = {
+      prepare: vi.fn((query: string) => {
+        statements.push(query);
+        return {
+          bind: vi.fn(() => ({
+            first: vi.fn().mockResolvedValue(
+              query.includes("COUNT(*)")
+                ? { count: 0 }
+                : query.includes("dispatch_count")
+                  ? { dispatch_count: 0, status: "queued", updated_at: null }
+                  : null,
+            ),
+            run: vi.fn().mockResolvedValue({ meta: { changes: 0 } }),
+          })),
+        };
+      }),
+    };
+    harness.privateDb.mockReturnValue(db);
+
+    await expect(queueCloudflareDeepScan(
+      "publisher.extension",
+      "1.0.0",
+      new Request("https://example.test"),
+      { id: "user-1" } as never,
+    )).rejects.toThrow("dispatch response timeout");
+    expect(statements.some((query) => query.includes("status='failed'") && query.includes("status='queued'") && query.includes("app_scan_reports"))).toBe(true);
   });
 });
