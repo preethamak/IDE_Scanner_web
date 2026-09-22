@@ -10,5 +10,8 @@ describe("Supabase public registry export", () => {
     expect(source).toContain("declares ${expectedReports} reports");
     expect(source).toContain("Active public release returned");
     expect(source).toContain("delete scan.canonical_report");
+    expect(source).toContain('detail_state: "summary_only"');
+    expect(source).toContain("this contract bounded");
+    expect(source).not.toContain("loadRelated(client, scanIds)");
   });
 });

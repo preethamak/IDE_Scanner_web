@@ -143,7 +143,6 @@ try {
       `, [scannedExtensionIds, scannedVersions])).rows.map((row) => row.version)
     : [];
 
-  const related = await loadRelated(client, scanIds);
   const catalog = extensions.map((extension) => normalizeCatalog(extension, latestVersions.filter((row) => String(row.extension_id) === String(extension.id))));
   const extensionById = new Map(extensions.map((row) => [String(row.id).toLowerCase(), row]));
   const versionByExtension = groupBy(productVersions, (row) => String(row.extension_id).toLowerCase());
@@ -203,11 +202,15 @@ try {
     const extensionScans = scans.filter((scan) => String(scan.extension_id).toLowerCase() === id.toLowerCase()).map((scan) => ({
       version: String(scan.version),
       scan,
-      findings: related.findings.get(String(scan.id)) || [],
-      files: related.files.get(String(scan.id)) || [],
-      dependencies: related.dependencies.get(String(scan.id)) || [],
+      // The emergency mirror is an indexed catalogue, not a second copy of
+      // every report. Exact findings, files, and dependencies remain in the
+      // database and are loaded through the immutable report route. Keeping
+      // this contract bounded is what makes a 10k-release snapshot viable.
+      findings: [],
+      files: [],
+      dependencies: [],
     }));
-    return [id.toLowerCase(), { extension: normalizeCatalog(extension, extensionVersions), versions: extensionVersions, scans: extensionScans }];
+    return [id.toLowerCase(), { detail_state: "summary_only", extension: normalizeCatalog(extension, extensionVersions), versions: extensionVersions, scans: extensionScans }];
   }));
 
   const metricRow = (await client.query(`select * from public.public_intelligence_metrics()`)).rows[0] || {};
@@ -246,25 +249,6 @@ try {
   console.log(JSON.stringify({ output, extensions: extensions.length, releases: latestVersions.length, product_releases: productVersions.length, scans: scans.length, inventory: inventoryItems.length, history: historyItems.length, bytes: Buffer.byteLength(JSON.stringify(snapshot)) }));
 } finally {
   await client.end();
-}
-
-async function loadRelated(db, ids) {
-  const result = { findings: new Map(), files: new Map(), dependencies: new Map() };
-  if (!ids.length) return result;
-  const queries = [
-    ["findings", `select scan_id::text, to_jsonb(f) - 'scan_id' as item from public.findings f where f.scan_id = any($1::uuid[])`],
-    ["files", `with ranked as (select f.*, row_number() over (partition by f.scan_id order by f.path) as rank from public.artifact_files f where f.scan_id = any($1::uuid[])) select scan_id::text, to_jsonb(ranked) - 'scan_id' - 'rank' as item from ranked where rank <= 5000 order by path`],
-    ["dependencies", `select scan_id::text, to_jsonb(d) - 'scan_id' as item from public.dependencies d where d.scan_id = any($1::uuid[]) order by d.relationship, d.name`],
-  ];
-  for (const [name, sql] of queries) {
-    const rows = (await db.query(sql, [ids])).rows;
-    for (const row of rows) {
-      const items = result[name].get(row.scan_id) || [];
-      items.push(row.item);
-      result[name].set(row.scan_id, items);
-    }
-  }
-  return result;
 }
 
 function normalizeCatalog(row, versions) {
