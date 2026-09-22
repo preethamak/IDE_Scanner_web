@@ -16,7 +16,7 @@ function databaseConnectionString() {
 const db = createPostgresClient(databaseConnectionString());
 const scanLimit = boundedInteger("SCAN_BATCH_LIMIT", 1000, 1, 10000);
 const cohortLimit = boundedInteger("CATALOG_COHORT_LIMIT", 1000, 1, 10000);
-const marketplacePageCount = boundedInteger("MARKETPLACE_PAGE_COUNT", 3, 1, 50);
+const marketplacePageCount = boundedInteger("MARKETPLACE_PAGE_COUNT", defaultMarketplacePageCount(cohortLimit), 1, 100);
 const refreshStartedAt = new Date().toISOString();
 const scannerBuild = process.env.SCANNER_BUILD_SHA || await currentScannerBuild();
 const chunks = (items, size = 60) => Array.from({ length: Math.ceil(items.length / size) }, (_, index) => items.slice(index * size, (index + 1) * size));
@@ -245,6 +245,10 @@ function boundedInteger(name, fallback, minimum, maximum) {
     throw new Error(`${name} must be an integer between ${minimum} and ${maximum}.`);
   }
   return value;
+}
+
+function defaultMarketplacePageCount(candidateCount) {
+  return Math.min(100, Math.max(3, Math.ceil(candidateCount / 100)));
 }
 
 async function currentScannerBuild() {

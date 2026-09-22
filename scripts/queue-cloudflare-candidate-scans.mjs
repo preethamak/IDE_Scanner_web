@@ -7,7 +7,8 @@ const scannerBuild = String(process.env.SCANNER_BUILD || "").trim().toLowerCase(
 const scanDatabase = process.env.CLOUDFLARE_SCAN_DATABASE || "abscissa-scan-data";
 const batchLimit = boundedInteger("SCAN_BATCH_LIMIT", 100, 1, 10_000);
 const cohortLimit = boundedInteger("COHORT_LIMIT", 250, 1, 10_000);
-const marketplacePageCount = boundedInteger("MARKETPLACE_PAGE_COUNT", 3, 1, 50);
+const requestedCandidateCount = Math.min(batchLimit, cohortLimit);
+const marketplacePageCount = boundedInteger("MARKETPLACE_PAGE_COUNT", defaultMarketplacePageCount(requestedCandidateCount), 1, 100);
 const requireActiveRelease = String(process.env.REQUIRE_ACTIVE_RELEASE || "").trim().toLowerCase() === "true";
 if (!/^[0-9a-f]{40}$/.test(scannerBuild)) {
   throw new Error("SCANNER_BUILD must be a full 40-character scanner commit SHA.");
@@ -142,6 +143,13 @@ function boundedInteger(name, fallback, minimum, maximum) {
     throw new Error(`${name} must be an integer between ${minimum} and ${maximum}.`);
   }
   return value;
+}
+
+function defaultMarketplacePageCount(candidateCount) {
+  // The Marketplace API returns at most 100 ranked extensions per page. When
+  // the D1 mirror is partial, automatically fetch enough pages to fill the
+  // requested cohort instead of silently capping a 10k run at the old 300.
+  return Math.min(100, Math.max(3, Math.ceil(candidateCount / 100)));
 }
 
 function sql(value) {

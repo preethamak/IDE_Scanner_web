@@ -6,7 +6,6 @@ const VALID_DECISIONS = new Set(["allow", "review", "block"]);
 const scanDatabase = process.env.CLOUDFLARE_SCAN_DATABASE || "abscissa-scan-data";
 
 const output = valueAfter("--out") || "public/registry-snapshot.json";
-const marketplacePageCount = boundedInteger("MARKETPLACE_PAGE_COUNT", 3, 1, 50);
 const activeRelease = queryD1(`
   SELECT id,policy_version,ruleset_version,score_schema_version,scanner_build,expected_reports,
          accuracy_gate_corpus_id,accuracy_gate_corpus_version,accuracy_gate_sha256
@@ -15,6 +14,12 @@ const activeRelease = queryD1(`
   LIMIT 1
 `)[0];
 if (!activeRelease) throw new Error("No active Cloudflare scan publication release exists.");
+const marketplacePageCount = boundedInteger(
+  "MARKETPLACE_PAGE_COUNT",
+  defaultMarketplacePageCount(Number(activeRelease.expected_reports || 0)),
+  1,
+  100,
+);
 
 const rows = queryD1(`
   SELECT p.extension_id,p.version,p.artifact_sha256,r.scan_id,r.created_at,r.report_json
@@ -319,6 +324,10 @@ function boundedInteger(name, fallback, minimum, maximum) {
   const value = raw ? Number(raw) : fallback;
   if (!Number.isSafeInteger(value) || value < minimum || value > maximum) throw new Error(`${name} must be an integer between ${minimum} and ${maximum}.`);
   return value;
+}
+
+function defaultMarketplacePageCount(reportCount) {
+  return Math.min(100, Math.max(3, Math.ceil(Math.min(Math.max(reportCount, 1), 10_000) / 100)));
 }
 
 function sql(value) { return `'${String(value).replaceAll("'", "''")}'`; }

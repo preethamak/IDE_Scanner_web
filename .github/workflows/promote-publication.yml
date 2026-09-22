@@ -47,9 +47,9 @@ on:
         default: "250"
         type: string
       marketplace_page_count:
-        description: Marketplace pages of 100 extensions to ingest
-        required: true
-        default: "3"
+        description: Marketplace pages of 100 extensions to ingest; blank auto-sizes to the requested cohort
+        required: false
+        default: ""
         type: string
 
 permissions:
