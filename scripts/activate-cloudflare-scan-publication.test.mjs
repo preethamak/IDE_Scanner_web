@@ -31,4 +31,12 @@ describe("Cloudflare publication activation boundary", () => {
     expect(source).toContain("cloudflarePublicationMismatches");
     expect(source).toContain("Cloudflare activation revalidation failed");
   });
+
+  it("flips the active release with one atomic SQLite update", () => {
+    expect(source).toContain("if it fails, the previous");
+    expect(source).toContain("SET active=CASE WHEN id=");
+    expect(source).toContain("WHERE active=1 OR id=");
+    expect(source).not.toContain("UPDATE app_scan_publication_releases SET active=0 WHERE active=1;");
+    expect(source).not.toContain("SET active=1,activated_at=");
+  });
 });
