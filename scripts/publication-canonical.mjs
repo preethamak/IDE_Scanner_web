@@ -66,6 +66,7 @@ export function publicCanonicalMismatch({ reportedSchemaVersion, detail, metadat
     return "public report analysis status disagrees with coverage status";
   }
   if (typeof coverage.executable_file_coverage_percent !== "number") return "public report requires executable-file coverage";
+  if (coverage.executable_file_coverage_percent !== 100) return "public report requires 100% executable-file coverage";
   if (status === "complete" && coverage.required_providers_complete !== true) return "complete public report lacks required provider completion";
   if (status === "complete" && !PUBLIC_DECISIONS.has(decision)) return "complete public report has no valid publication decision";
   if (status !== "complete" && !["incomplete", "block"].includes(decision)) return "incomplete public report has an approval decision";

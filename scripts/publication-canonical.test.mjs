@@ -76,6 +76,7 @@ describe("publication canonical contract", () => {
     ["artifact identity disagreement", (report) => { report.detail.artifact_sha256 = "e".repeat(64); }, "artifact SHA-256 fields disagree"],
     ["registry replay evidence", (report) => { report.metadata.intelligence_snapshot.registry.payload = {}; }, "replayable registry intelligence evidence"],
     ["analysis coverage", (report) => { report.detail.analysis_coverage.executable_file_coverage_percent = undefined; }, "executable-file coverage"],
+    ["partial executable coverage", (report) => { report.detail.analysis_coverage.executable_file_coverage_percent = 99; }, "100% executable-file coverage"],
     ["approval on incomplete analysis", (report) => { report.detail.analysis_status = "incomplete"; report.detail.analysis_coverage.status = "incomplete"; report.detail.decision = "review"; }, "incomplete public report has an approval decision"],
     ["database identity binding", (report) => { report.detail.extension_id = "other.extension"; report.detail.artifact_identity.extension_id = "other.extension"; }, "extension identity does not match the database row"],
   ])("rejects %s", (_, mutate, message) => {
