@@ -113,6 +113,39 @@ try {
 } finally {
   await rm(temp, { recursive: true, force: true });
 }
+const verificationSql = `
+  select r.id,r.active,r.expected_reports,r.report_count_at_activation,
+         r.scanner_build,r.policy_version,r.ruleset_version,r.score_schema_version,
+         count(distinct rr.scan_id) as release_report_count
+  from app_scan_publication_releases r
+  left join app_scan_publication_release_reports rr on rr.release_id=r.id
+  where r.active=1
+  group by r.id
+`;
+const verificationRaw = execFileSync("npx", ["wrangler", "d1", "execute", scanDatabase, "--remote", "--command", verificationSql, "--json"], {
+  encoding: "utf8",
+  maxBuffer: 16 * 1024 * 1024,
+});
+let verificationPayload;
+try {
+  verificationPayload = JSON.parse(verificationRaw);
+} catch (error) {
+  throw new Error(`Cloudflare activation could not parse the post-write verification response: ${error instanceof Error ? error.message : String(error)}`);
+}
+const activeRows = Array.isArray(verificationPayload?.[0]?.results) ? verificationPayload[0].results : [];
+const active = activeRows.length === 1 ? activeRows[0] : null;
+if (!active
+  || String(active.id || "") !== releaseId
+  || Number(active.active) !== 1
+  || Number(active.expected_reports) !== extensions.length
+  || Number(active.report_count_at_activation) !== extensions.length
+  || Number(active.release_report_count) !== extensions.length
+  || String(active.scanner_build || "") !== scannerBuild
+  || String(active.policy_version || "") !== policyVersion
+  || String(active.ruleset_version || "") !== rulesetVersion
+  || String(active.score_schema_version || "") !== scoreSchemaVersion) {
+  throw new Error(`Cloudflare activation post-write verification failed: expected exactly one complete active release, received ${JSON.stringify(activeRows)}`);
+}
 console.log(JSON.stringify({ ...summary, status: "activated" }, null, 2));
 
 function valueAfter(flag) {

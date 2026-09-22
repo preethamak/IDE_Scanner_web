@@ -39,4 +39,12 @@ describe("Cloudflare publication activation boundary", () => {
     expect(source).not.toContain("UPDATE app_scan_publication_releases SET active=0 WHERE active=1;");
     expect(source).not.toContain("SET active=1,activated_at=");
   });
+
+  it("verifies the active release and exact member count after the D1 write", () => {
+    expect(source).toContain("post-write verification");
+    expect(source).toContain("count(distinct rr.scan_id) as release_report_count");
+    expect(source).toContain("activeRows.length === 1");
+    expect(source).toContain("Number(active.release_report_count) !== extensions.length");
+    expect(source).toContain("Cloudflare activation post-write verification failed");
+  });
 });
