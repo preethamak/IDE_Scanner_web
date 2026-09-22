@@ -133,10 +133,13 @@ describe("active registry release binding", () => {
     ["policy", { policy_version: "old-policy" }, "registry report policy_version"],
     ["ruleset", { ruleset_version: "old-rules" }, "registry report ruleset_version"],
     ["coverage", { executable_file_coverage_percent: 99 }, "100% executable coverage"],
+    ["artifact identity", { artifact_identity: { extension_id: "other.extension", version: "1.0.0", sha256: artifact } }, "identity fields disagree"],
   ])("rejects active release %s drift", (_, mutation, message) => {
     const value = validRegistryRow();
     if ("executable_file_coverage_percent" in mutation) {
       value.detail.analysis_coverage.executable_file_coverage_percent = mutation.executable_file_coverage_percent;
+    } else if ("artifact_identity" in mutation) {
+      value.detail.artifact_identity = mutation.artifact_identity;
     } else {
       Object.assign(value.metadata, mutation);
     }

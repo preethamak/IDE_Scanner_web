@@ -135,7 +135,23 @@ export function activeRegistryRowMismatch({ row, detail, metadata, release }) {
   const report = object(detail);
   const identity = object(report.artifact_identity);
   const active = object(release);
+  const identityExtensionId = String(identity.extension_id || "");
+  const detailExtensionId = String(report.extension_id || "");
+  const identityVersion = String(identity.version || "");
+  const detailVersion = String(report.version || "");
+  if (identityExtensionId && detailExtensionId
+    && identityExtensionId.toLowerCase() !== detailExtensionId.toLowerCase()) {
+    return "registry report extension identity fields disagree";
+  }
+  if (identityVersion && detailVersion && identityVersion !== detailVersion) {
+    return "registry report version fields disagree";
+  }
   const reportHash = String(identity.sha256 || report.artifact_sha256 || "").trim().toLowerCase();
+  const detailHash = String(report.artifact_sha256 || "").trim().toLowerCase();
+  if (identity.sha256 && detailHash && String(identity.sha256).toLowerCase() !== detailHash) {
+    return "registry report artifact SHA-256 fields disagree";
+  }
+  if (!SHA256.test(reportHash)) return "registry report requires a canonical artifact SHA-256";
   if (String(database.artifact_sha256 || "").trim().toLowerCase() !== reportHash) {
     return "registry row artifact SHA-256 does not match the canonical report";
   }
@@ -145,6 +161,13 @@ export function activeRegistryRowMismatch({ row, detail, metadata, release }) {
     if ((field === "extension_id" ? databaseValue.toLowerCase() : databaseValue)
       !== (field === "extension_id" ? reportValue.toLowerCase() : reportValue)) {
       return `registry row ${field} does not match the canonical report`;
+    }
+    const identityValue = field === "extension_id" ? identityExtensionId : identityVersion;
+    if (identityValue
+      && (field === "extension_id"
+        ? identityValue.toLowerCase() !== databaseValue.toLowerCase()
+        : identityValue !== databaseValue)) {
+      return `registry row ${field} does not match the artifact identity`;
     }
   }
   if (String(metadata.schema_version || "") !== "2.3") return "registry report schema is not 2.3";
