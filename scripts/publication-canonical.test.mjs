@@ -1,5 +1,8 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { activeRegistryRowMismatch, publicCanonicalMismatch, publicationRowMismatch } from "./publication-canonical.mjs";
+
+const supabaseValidationSource = readFileSync(new URL("./build-publication-validation.mjs", import.meta.url), "utf8");
 
 const build = "a".repeat(40);
 const artifact = "d".repeat(64);
@@ -151,5 +154,13 @@ describe("active registry release binding", () => {
 
   it("accepts a report bound to the active release", () => {
     expect(activeRegistryRowMismatch({ ...validRegistryRow(), release })).toBeNull();
+  });
+});
+
+describe("Supabase publication member binding", () => {
+  it("validates the exact immutable release scan and artifact member", () => {
+    expect(supabaseValidationSource).toContain("join scans s");
+    expect(supabaseValidationSource).toContain("s.id = a.scan_id");
+    expect(supabaseValidationSource).toContain("lower(s.artifact_sha256) = lower(a.artifact_sha256)");
   });
 });
