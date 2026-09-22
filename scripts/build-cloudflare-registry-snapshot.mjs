@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { writeFile } from "node:fs/promises";
+import { activeRegistryRowMismatch } from "./publication-canonical.mjs";
 
 const VALID_DECISIONS = new Set(["allow", "review", "block"]);
 const scanDatabase = process.env.CLOUDFLARE_SCAN_DATABASE || "abscissa-scan-data";
@@ -108,6 +109,15 @@ function parseReleaseRow(row) {
   const detail = singleExtensionDetail(bundle.extensions);
   const coverage = object(detail.analysis_coverage);
   const identity = object(detail.artifact_identity);
+  const releaseMismatch = activeRegistryRowMismatch({
+    row,
+    detail,
+    metadata,
+    release: activeRelease,
+  });
+  if (releaseMismatch) {
+    throw new Error(`Active release report failed registry identity validation for ${row.extension_id}@${row.version}: ${releaseMismatch}.`);
+  }
   if (String(detail.analysis_status) !== "complete" || coverage.status !== "complete" || coverage.required_providers_complete !== true) {
     throw new Error(`Active release contains an incomplete report for ${row.extension_id}@${row.version}.`);
   }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { publicCanonicalMismatch, publicationRowMismatch } from "./publication-canonical.mjs";
+import { activeRegistryRowMismatch, publicCanonicalMismatch, publicationRowMismatch } from "./publication-canonical.mjs";
 
 const build = "a".repeat(40);
 const artifact = "d".repeat(64);
@@ -108,5 +108,42 @@ describe("publication database-row binding", () => {
       },
       detail: validReport().detail,
     })).toBeNull();
+  });
+});
+
+describe("active registry release binding", () => {
+  const release = {
+    scanner_build: build,
+    policy_version: "3.0.0",
+    ruleset_version: "rules-1",
+    score_schema_version: "2",
+  };
+
+  function validRegistryRow() {
+    const report = validReport();
+    return {
+      row: { extension_id: "publisher.extension", version: "1.0.0", artifact_sha256: artifact },
+      detail: report.detail,
+      metadata: report.metadata,
+    };
+  }
+
+  it.each([
+    ["scanner build", { scanner_build: "b".repeat(40) }, "registry report scanner_build"],
+    ["policy", { policy_version: "old-policy" }, "registry report policy_version"],
+    ["ruleset", { ruleset_version: "old-rules" }, "registry report ruleset_version"],
+    ["coverage", { executable_file_coverage_percent: 99 }, "100% executable coverage"],
+  ])("rejects active release %s drift", (_, mutation, message) => {
+    const value = validRegistryRow();
+    if ("executable_file_coverage_percent" in mutation) {
+      value.detail.analysis_coverage.executable_file_coverage_percent = mutation.executable_file_coverage_percent;
+    } else {
+      Object.assign(value.metadata, mutation);
+    }
+    expect(activeRegistryRowMismatch({ ...value, release })).toContain(message);
+  });
+
+  it("accepts a report bound to the active release", () => {
+    expect(activeRegistryRowMismatch({ ...validRegistryRow(), release })).toBeNull();
   });
 });

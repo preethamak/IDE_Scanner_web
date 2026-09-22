@@ -23,6 +23,7 @@ describe("Cloudflare registry snapshot builder", () => {
   });
 
   it("rejects incomplete or non-canonical report members", () => {
+    expect(source).toContain("activeRegistryRowMismatch");
     expect(source).toContain('String(detail.analysis_status) !== "complete"');
     expect(source).toContain('coverage.required_providers_complete !== true');
     expect(source).toContain("VALID_DECISIONS.has(String(detail.decision))");

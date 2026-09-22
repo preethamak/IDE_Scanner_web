@@ -125,6 +125,50 @@ export function publicationRowMismatch({ row, detail }) {
   return null;
 }
 
+/**
+ * Revalidate a report while exporting the public registry. The active release
+ * is the attested identity boundary; every exported row must still match it
+ * after the release was activated.
+ */
+export function activeRegistryRowMismatch({ row, detail, metadata, release }) {
+  const database = object(row);
+  const report = object(detail);
+  const identity = object(report.artifact_identity);
+  const active = object(release);
+  const reportHash = String(identity.sha256 || report.artifact_sha256 || "").trim().toLowerCase();
+  if (String(database.artifact_sha256 || "").trim().toLowerCase() !== reportHash) {
+    return "registry row artifact SHA-256 does not match the canonical report";
+  }
+  for (const field of ["extension_id", "version"]) {
+    const databaseValue = String(database[field] || "");
+    const reportValue = String(report[field] || "");
+    if ((field === "extension_id" ? databaseValue.toLowerCase() : databaseValue)
+      !== (field === "extension_id" ? reportValue.toLowerCase() : reportValue)) {
+      return `registry row ${field} does not match the canonical report`;
+    }
+  }
+  if (String(metadata.schema_version || "") !== "2.3") return "registry report schema is not 2.3";
+  for (const field of ["scanner_build", "policy_version", "ruleset_version"]) {
+    if (String(metadata[field] || "") !== String(active[field] || "")) {
+      return `registry report ${field} does not match the active release`;
+    }
+  }
+  if (String(report.score_schema_version || "") !== String(active.score_schema_version || "")) {
+    return "registry report score schema does not match the active release";
+  }
+  const coverage = object(report.analysis_coverage);
+  if (String(report.analysis_status || "") !== "complete"
+    || coverage.status !== "complete"
+    || coverage.required_providers_complete !== true
+    || coverage.executable_file_coverage_percent !== 100) {
+    return "registry report does not have complete 100% executable coverage";
+  }
+  if (!PUBLIC_DECISIONS.has(String(report.decision || ""))) {
+    return "registry report has no valid publication decision";
+  }
+  return null;
+}
+
 export function singleExtensionDetail(value) {
   const entries = Array.isArray(value)
     ? value.filter((item) => item && typeof item === "object" && !Array.isArray(item))
