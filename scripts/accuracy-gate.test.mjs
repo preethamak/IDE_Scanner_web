@@ -48,6 +48,25 @@ const validGate = {
     policy_version: "policy-1",
     ruleset_version: "rules-1",
     runtime_evidence: { required: true, runtime_enabled: true, profile: "deep", external_syscall_trace: true },
+    behavior_only: {
+      status: "behavior-only",
+      complete: true,
+      scanner_build: "a".repeat(40),
+      policy_version: "policy-1",
+      ruleset_version: "rules-1",
+      safe_evaluated: 5,
+      malicious_evaluated: 5,
+      required_pass_rate: 1,
+      safe_block_rate: 0,
+      safe_review_rate: 0,
+      malicious_allow_rate: 0,
+      malicious_detection_rate: 1,
+      dynamic_required: 5,
+      dynamic_not_applicable: 5,
+      rule_matrix: { "remote-credential-broker": { fired_on_known_safe: 0, fired_on_known_malicious: 5 } },
+      runtime_evidence: { required: true, runtime_enabled: true, profile: "deep", external_syscall_trace: true },
+      advisory_snapshot: { status: "completed", entry_count: 0, sha256: "c".repeat(64) },
+    },
   },
 };
 
@@ -62,6 +81,14 @@ describe("accuracy publication gate", () => {
       summary: { ...validGate.summary, safe_evaluated: 0 },
     }, { scanner_build: "a".repeat(40) });
     expect(errors).toContain("accuracy gate must evaluate both known-safe and known-malicious fixtures");
+  });
+
+  it("rejects a publication gate without a behavior-only shadow holdout", () => {
+    const withoutShadow = { ...validGate, holdout: { ...validGate.holdout } };
+    delete withoutShadow.holdout.behavior_only;
+    expect(validateAccuracyGate(withoutShadow, { scanner_build: "a".repeat(40) })).toContain(
+      "publication requires a complete behavior-only shadow holdout",
+    );
   });
 
   it("rejects the synthetic regression gate when no fresh holdout is attached", () => {

@@ -149,6 +149,7 @@ const validation = {
     holdout_status: String(accuracyGate.holdout.status),
     holdout_safe_evaluated: accuracyGate.holdout.safe_evaluated,
     holdout_malicious_evaluated: accuracyGate.holdout.malicious_evaluated,
+    behavior_only: accuracyGate.holdout.behavior_only,
   },
   quarantined,
   extensions,

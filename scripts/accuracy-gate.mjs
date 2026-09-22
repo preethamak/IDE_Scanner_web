@@ -2,6 +2,7 @@ export const ACCURACY_GATE_SCHEMA_VERSION = "1.0";
 export const MIN_FRESH_HOLDOUT_SAFE = 5;
 export const MIN_FRESH_HOLDOUT_MALICIOUS = 5;
 export const MAX_SAFE_REVIEW_RATE = 0.2;
+const SHA256 = /^[0-9a-f]{64}$/i;
 
 export function validateAccuracyGate(value, expected = {}) {
   const errors = [];
@@ -10,6 +11,7 @@ export function validateAccuracyGate(value, expected = {}) {
   const checks = object(gate.gate)?.checks;
   const summary = object(gate.summary);
   const holdout = object(gate.holdout);
+  const behaviorOnly = object(holdout.behavior_only);
   const runtimeEvidence = object(holdout.runtime_evidence);
 
   if (String(gate.schema_version || "") !== ACCURACY_GATE_SCHEMA_VERSION) {
@@ -134,6 +136,46 @@ export function validateAccuracyGate(value, expected = {}) {
     if (holdout[field] && String(holdout[field]) !== String(identity[field] || "")) {
       errors.push(`fresh-labeled holdout ${field} does not match the report identity`);
     }
+  }
+
+  if (behaviorOnly.status !== "behavior-only" || behaviorOnly.complete !== true) {
+    errors.push("publication requires a complete behavior-only shadow holdout");
+  }
+  for (const field of ["required_pass_rate", "safe_block_rate", "safe_review_rate", "malicious_allow_rate", "malicious_detection_rate"]) {
+    if (!boundedRate(behaviorOnly[field])) errors.push(`behavior-only holdout ${field} must be a number between 0 and 1`);
+  }
+  if (number(behaviorOnly.required_pass_rate) < 1) errors.push("behavior-only holdout required pass rate is below 100 percent");
+  if (number(behaviorOnly.safe_block_rate) > 0) errors.push("behavior-only holdout has known-safe blocks");
+  if (number(behaviorOnly.safe_review_rate) > MAX_SAFE_REVIEW_RATE) errors.push("behavior-only holdout safe review rate exceeds the 20% noise ceiling");
+  if (number(behaviorOnly.malicious_allow_rate) > 0) errors.push("behavior-only holdout allows known-malicious fixtures");
+  if (number(behaviorOnly.malicious_detection_rate) < 1) errors.push("behavior-only holdout misses a known-malicious artifact");
+  if (number(behaviorOnly.safe_evaluated) !== number(holdout.safe_evaluated)
+    || number(behaviorOnly.malicious_evaluated) !== number(holdout.malicious_evaluated)) {
+    errors.push("behavior-only holdout label counts do not match the primary holdout");
+  }
+  if (number(behaviorOnly.dynamic_required) < 1 || number(behaviorOnly.dynamic_not_applicable) < 1) {
+    errors.push("behavior-only holdout must include both executable-capability and runtime-not-applicable artifacts");
+  }
+  const behaviorRuntime = object(behaviorOnly.runtime_evidence);
+  if (behaviorRuntime.required !== true
+    || behaviorRuntime.runtime_enabled !== true
+    || String(behaviorRuntime.profile || "") !== "deep"
+    || behaviorRuntime.external_syscall_trace !== true) {
+    errors.push("behavior-only holdout must prove a required deep runtime scan with external syscall tracing");
+  }
+  const behaviorSnapshot = object(behaviorOnly.advisory_snapshot);
+  if (behaviorSnapshot.status !== "completed"
+    || behaviorSnapshot.entry_count !== 0
+    || !SHA256.test(String(behaviorSnapshot.sha256 || ""))) {
+    errors.push("behavior-only holdout must prove a completed empty advisory snapshot");
+  }
+  for (const field of ["scanner_build", "policy_version", "ruleset_version"]) {
+    if (behaviorOnly[field] && String(behaviorOnly[field]) !== String(identity[field] || "")) {
+      errors.push(`behavior-only holdout ${field} does not match the report identity`);
+    }
+  }
+  if (!behaviorOnly.rule_matrix || typeof behaviorOnly.rule_matrix !== "object" || Array.isArray(behaviorOnly.rule_matrix) || !Object.keys(behaviorOnly.rule_matrix).length) {
+    errors.push("behavior-only holdout must retain a labelled rule matrix");
   }
 
   return errors;
