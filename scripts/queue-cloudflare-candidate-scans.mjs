@@ -15,13 +15,20 @@ if (!/^[0-9a-f]{40}$/.test(scannerBuild)) {
 
 if (requireActiveRelease) {
   const active = queryD1(`
-    SELECT id,scanner_build,accuracy_gate_corpus_id,accuracy_gate_corpus_version,accuracy_gate_sha256
-    FROM app_scan_publication_releases
-    WHERE active=1
+    SELECT r.id,r.scanner_build,r.expected_reports,r.report_count_at_activation,
+           r.accuracy_gate_corpus_id,r.accuracy_gate_corpus_version,r.accuracy_gate_sha256,
+           (SELECT COUNT(DISTINCT rr.scan_id)
+            FROM app_scan_publication_release_reports rr
+            WHERE rr.release_id=r.id) AS release_report_count
+    FROM app_scan_publication_releases r
+    WHERE r.active=1
     LIMIT 1
   `)[0];
   if (!active
     || String(active.scanner_build || "").toLowerCase() !== scannerBuild
+    || Number(active.expected_reports) < 1
+    || Number(active.report_count_at_activation) !== Number(active.expected_reports)
+    || Number(active.release_report_count) !== Number(active.expected_reports)
     || !String(active.accuracy_gate_corpus_id || "").trim()
     || !String(active.accuracy_gate_corpus_version || "").trim()
     || !/^[0-9a-f]{64}$/i.test(String(active.accuracy_gate_sha256 || ""))) {

@@ -15,6 +15,8 @@ describe("Cloudflare candidate scan queue", () => {
     expect(source).toContain("status IN ('queued','running','complete')");
     expect(source).toContain("Bulk scans require an active accuracy-attested Cloudflare release");
     expect(source).toContain("accuracy_gate_sha256");
+    expect(source).toContain("release_report_count");
+    expect(source).toContain("report_count_at_activation");
   });
 
   it("dispatches the real scanner workers after queueing D1 candidates", () => {
