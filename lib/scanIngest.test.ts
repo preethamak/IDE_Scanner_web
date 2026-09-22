@@ -187,6 +187,19 @@ describe("public canonical schema enforcement", () => {
     expect(publicCanonicalError(true, "2.3", { ...goodDetail, analysis_coverage: executableCoverage }, goodMeta, build)).toContain("completed controlled runtime coverage");
   });
 
+  it("rejects public reports with partial executable-file coverage", () => {
+    expect(publicCanonicalError(
+      true,
+      "2.3",
+      {
+        ...goodDetail,
+        analysis_coverage: { ...goodDetail.analysis_coverage, executable_file_coverage_percent: 99 },
+      },
+      goodMeta,
+      build,
+    )).toContain("100% executable-file coverage");
+  });
+
   it("rejects missing registry intelligence identity", () => {
     expect(publicCanonicalError(
       true,

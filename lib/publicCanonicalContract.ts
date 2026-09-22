@@ -75,6 +75,9 @@ export function publicCanonicalError(
   if (typeof coverage.executable_file_coverage_percent !== "number") {
     return "Public scans require explicit executable-file coverage.";
   }
+  if (coverage.executable_file_coverage_percent !== 100) {
+    return "Public scans require 100% executable-file coverage.";
+  }
   if (status === "complete" && coverage.required_providers_complete !== true) {
     return "A complete scan requires every required analyzer to complete.";
   }
