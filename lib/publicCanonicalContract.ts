@@ -22,6 +22,9 @@ export function publicCanonicalError(
   if (String(detail.score_schema_version || "") !== "2") return "Public scans require canonical score schema v2.";
   if (String(metadata.scanner_version || "").includes("hosted-static")) return "Hosted-static reports cannot be published as canonical scans.";
   const identity = objectValue(detail.artifact_identity);
+  if (registryIntegrityMismatch(detail, identity)) {
+    return "Public scans cannot publish unverified registry artifact integrity metadata.";
+  }
   const identityExtensionId = String(identity.extension_id || "").trim();
   const detailExtensionId = String(detail.extension_id || "").trim();
   const identityVersion = String(identity.version || "").trim();
@@ -86,4 +89,11 @@ function objectValue(value: unknown): ValueMap {
 
 function isSha256(value: string): boolean {
   return /^[0-9a-f]{64}$/i.test(value);
+}
+
+function registryIntegrityMismatch(detail: ValueMap, identity: ValueMap): boolean {
+  const inventory = objectValue(detail.artifact_inventory);
+  const signature = objectValue(identity.signature || inventory.vsix_signature);
+  const packageIntegrity = objectValue(signature.package_integrity);
+  return identity.registry_integrity_mismatch === true || packageIntegrity.metadata_mismatch === true;
 }

@@ -74,6 +74,7 @@ describe("publication canonical contract", () => {
     ["report schema", (report) => { report.metadata.schema_version = "2.2"; }, "schema must be 2.3"],
     ["score schema", (report) => { report.detail.score_schema_version = "1"; }, "score schema must be v2"],
     ["artifact identity disagreement", (report) => { report.detail.artifact_sha256 = "e".repeat(64); }, "artifact SHA-256 fields disagree"],
+    ["unverified registry artifact", (report) => { report.detail.artifact_identity.registry_integrity_mismatch = true; }, "unverified registry artifact integrity"],
     ["registry replay evidence", (report) => { report.metadata.intelligence_snapshot.registry.payload = {}; }, "replayable registry intelligence evidence"],
     ["analysis coverage", (report) => { report.detail.analysis_coverage.executable_file_coverage_percent = undefined; }, "executable-file coverage"],
     ["partial executable coverage", (report) => { report.detail.analysis_coverage.executable_file_coverage_percent = 99; }, "100% executable-file coverage"],
@@ -134,6 +135,7 @@ describe("active registry release binding", () => {
     ["ruleset", { ruleset_version: "old-rules" }, "registry report ruleset_version"],
     ["coverage", { executable_file_coverage_percent: 99 }, "100% executable coverage"],
     ["artifact identity", { artifact_identity: { extension_id: "other.extension", version: "1.0.0", sha256: artifact } }, "identity fields disagree"],
+    ["unverified registry artifact", { artifact_identity: { extension_id: "publisher.extension", version: "1.0.0", sha256: artifact, registry_integrity_mismatch: true } }, "unverified registry artifact integrity"],
   ])("rejects active release %s drift", (_, mutation, message) => {
     const value = validRegistryRow();
     if ("executable_file_coverage_percent" in mutation) {

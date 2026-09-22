@@ -12,6 +12,9 @@ export function publicCanonicalMismatch({ reportedSchemaVersion, detail, metadat
   if (String(metadata.scanner_version || "").includes("hosted-static")) return "hosted-static reports cannot be published";
 
   const identity = object(detail.artifact_identity);
+  if (registryIntegrityMismatch(detail, identity)) {
+    return "public report has unverified registry artifact integrity metadata";
+  }
   const identityExtensionId = String(identity.extension_id || "").trim();
   const detailExtensionId = String(detail.extension_id || "").trim();
   const identityVersion = String(identity.version || "").trim();
@@ -82,6 +85,9 @@ export function publicationRowMismatch({ row, detail }) {
   const database = object(row);
   const report = object(detail);
   const identity = object(report.artifact_identity);
+  if (registryIntegrityMismatch(report, identity)) {
+    return "canonical report has unverified registry artifact integrity metadata";
+  }
   const reportHash = String(identity.sha256 || report.artifact_sha256 || "").trim().toLowerCase();
   const databaseHash = String(database.artifact_sha256 || "").trim().toLowerCase();
   if (databaseHash !== reportHash) return "database artifact SHA-256 does not match the canonical report";
@@ -134,6 +140,9 @@ export function activeRegistryRowMismatch({ row, detail, metadata, release }) {
   const database = object(row);
   const report = object(detail);
   const identity = object(report.artifact_identity);
+  if (registryIntegrityMismatch(report, identity)) {
+    return "registry report has unverified registry artifact integrity metadata";
+  }
   const active = object(release);
   const identityExtensionId = String(identity.extension_id || "");
   const detailExtensionId = String(report.extension_id || "");
@@ -209,4 +218,12 @@ function canonicalAnalysisStatus(detail) {
 
 function object(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function registryIntegrityMismatch(detail, identity) {
+  const inventory = object(detail.artifact_inventory);
+  const signature = object(identity.signature || inventory.vsix_signature);
+  const packageIntegrity = object(signature.package_integrity);
+  return identity.registry_integrity_mismatch === true
+    || packageIntegrity.metadata_mismatch === true;
 }

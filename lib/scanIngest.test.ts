@@ -232,4 +232,14 @@ describe("public canonical schema enforcement", () => {
       build,
     )).toContain("matching artifact SHA-256");
   });
+
+  it("rejects a public report whose registry artifact integrity metadata is unverified", () => {
+    expect(publicCanonicalError(
+      true,
+      "2.3",
+      { ...goodDetail, artifact_identity: { ...goodDetail.artifact_identity, registry_integrity_mismatch: true } },
+      goodMeta,
+      build,
+    )).toContain("unverified registry artifact integrity");
+  });
 });
