@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { catalogFromReleaseReport, normalizeRuleCatalog } from "@/lib/rules";
+import { catalogFromReleaseReport, hasCompletePublicCoverage, normalizeRuleCatalog } from "@/lib/rules";
 
 describe("normalizeRuleCatalog", () => {
   it("keeps only valid scanner-owned rules and normalizes their public fields", () => {
@@ -30,5 +30,48 @@ describe("catalogFromReleaseReport", () => {
     expect(catalogFromReleaseReport({ ...report, rules: { ...report.rules, policy_version: "policy-2" } }, identity)).toBeNull();
     expect(catalogFromReleaseReport({ ...report, rules: { ...report.rules, ruleset_version: "rules-2" } }, identity)).toBeNull();
     expect(catalogFromReleaseReport({ rules: { policy_version: "policy-1", ruleset_version: "rules-1", rules: [] } }, identity)).toBeNull();
+  });
+});
+
+describe("hasCompletePublicCoverage", () => {
+  const completeRuntime = {
+    metadata: {
+      profile: "deep",
+      intelligence_snapshot: {
+        dynamic_sandbox: {
+          status: "executed",
+          execution: "controlled-bubblewrap",
+          runtime_policy: "capability-gated-v1",
+          executed: true,
+          external_syscall_trace_available: true,
+          external_syscall_trace: false,
+        },
+      },
+    },
+    extensions: [{
+      analysis_status: "complete",
+      analysis_coverage: {
+        status: "complete",
+        required_providers_complete: true,
+        providers: {
+          dynamic_sandbox: {
+            required: false,
+            status: "not-applicable",
+            executed: false,
+            policy: "capability-gated-v1",
+            external_syscall_trace: false,
+          },
+        },
+      },
+    }],
+  };
+
+  it("accepts a complete capability-gated runtime decision", () => {
+    expect(hasCompletePublicCoverage(completeRuntime)).toBe(true);
+  });
+
+  it("rejects an incomplete or static-only public report", () => {
+    expect(hasCompletePublicCoverage({ ...completeRuntime, metadata: { profile: "standard" } })).toBe(false);
+    expect(hasCompletePublicCoverage({ ...completeRuntime, extensions: [{ ...completeRuntime.extensions[0], analysis_status: "incomplete" }] })).toBe(false);
   });
 });

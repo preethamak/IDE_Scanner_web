@@ -3,9 +3,8 @@ import "server-only";
 import { serviceDb } from "@/lib/supabase";
 import { cloudflarePrivateAvailable } from "@/lib/cloudflareDeepScan";
 import { privateDb } from "@/lib/cloudflarePrivate";
-import { catalogFromReleaseReport, type ActiveRuleCatalog } from "@/lib/rules";
+import { catalogFromReleaseReport, hasCompletePublicCoverage, type ActiveRuleCatalog } from "@/lib/rules";
 import { hasAccuracyGateAttestation } from "@/lib/publicationHealth";
-import { publicRuntimeError } from "@/lib/publicRuntimeContract";
 
 /**
  * Reads the catalog embedded in the active immutable scanner release. The web
@@ -57,6 +56,7 @@ export async function getActiveRuleCatalog(): Promise<ActiveRuleCatalog | null> 
         || text(scan.score_schema_version) !== scoreSchemaVersion
         || text(scan.scanner_build) !== scannerBuild
       ) return null;
+      if (!hasCompletePublicCoverage(scan.canonical_report)) return null;
       const candidate = catalogFromReleaseReport(scan.canonical_report, expected);
       if (!candidate) return null;
       const candidateFingerprint = JSON.stringify(candidate);
@@ -115,12 +115,7 @@ async function getCloudflareActiveRuleCatalog(): Promise<ActiveRuleCatalog | nul
     const detail = details.length === 1 && details[0] && typeof details[0] === "object" && !Array.isArray(details[0])
       ? details[0] as Record<string, unknown>
       : null;
-    const coverage = objectValue(detail?.analysis_coverage);
-    if (!detail
-      || String(detail.analysis_status || "") !== "complete"
-      || coverage.status !== "complete"
-      || coverage.required_providers_complete !== true
-      || publicRuntimeError(objectValue(bundle.metadata), coverage)) return null;
+    if (!detail || !hasCompletePublicCoverage(bundle)) return null;
     const candidate = catalogFromReleaseReport(bundle, expected);
     if (!candidate) return null;
     const candidateFingerprint = JSON.stringify(candidate);

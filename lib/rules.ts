@@ -1,3 +1,5 @@
+import { publicRuntimeError } from "@/lib/publicRuntimeContract";
+
 export type RuleReference = {
   id: string;
   title: string;
@@ -60,6 +62,22 @@ export function catalogFromReleaseReport(report: unknown, identity: RuleCatalogI
   return rules.length ? rules : null;
 }
 
+/**
+ * Public rule metadata must come from the same complete, runtime-aware report
+ * contract on both publication backends. Keeping this check beside the
+ * catalog parser prevents a Supabase-only path from exposing rules from a
+ * report that Cloudflare would reject.
+ */
+export function hasCompletePublicCoverage(report: unknown): boolean {
+  const value = objectValue(report);
+  const detail = singleExtensionDetail(value.extensions);
+  if (!detail || text(detail.analysis_status) !== "complete") return false;
+  const coverage = objectValue(detail.analysis_coverage);
+  return coverage.status === "complete"
+    && coverage.required_providers_complete === true
+    && publicRuntimeError(objectValue(value.metadata), coverage) === null;
+}
+
 function text(value: unknown, fallback = ""): string {
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
 }
@@ -68,4 +86,11 @@ function objectValue(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
     : {};
+}
+
+function singleExtensionDetail(value: unknown): Record<string, unknown> | null {
+  const entries = Array.isArray(value)
+    ? value.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object" && !Array.isArray(item)))
+    : Object.values(objectValue(value)).filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object" && !Array.isArray(item)));
+  return entries.length === 1 ? entries[0] : null;
 }
