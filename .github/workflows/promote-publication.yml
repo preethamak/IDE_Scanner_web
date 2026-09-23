@@ -59,7 +59,7 @@ permissions:
 # D1 publication is an ordered pointer flip. Never let two validated releases
 # interleave their activation or registry chunk import transactions.
 concurrency:
-  group: guardrails-production-publication
+  group: guardrails-production-operations
   cancel-in-progress: false
 
 jobs:

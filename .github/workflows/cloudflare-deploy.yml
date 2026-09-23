@@ -8,6 +8,13 @@ on:
 permissions:
   contents: read
 
+# Deployment applies D1 migrations. Keep it serialized with publication
+# activation and registry imports so schema changes cannot race the pointer
+# flip or chunk verification.
+concurrency:
+  group: guardrails-production-operations
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
