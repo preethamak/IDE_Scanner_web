@@ -122,6 +122,7 @@ for (const row of rows) {
       execution: String(objectValue(coverage.providers).dynamic_sandbox?.execution || ""),
       runtime_policy: String(objectValue(coverage.providers).dynamic_sandbox?.policy || ""),
       executed: Boolean(objectValue(coverage.providers).dynamic_sandbox?.executed),
+      runtime_run_status: String(objectValue(coverage.providers).dynamic_sandbox?.runtime_run_status || ""),
       external_syscall_trace: Boolean(objectValue(coverage.providers).dynamic_sandbox?.external_syscall_trace),
       external_syscall_trace_available: Boolean(objectValue(metadata.intelligence_snapshot).dynamic_sandbox?.external_syscall_trace_available),
     },

@@ -119,4 +119,22 @@ describe("Cloudflare publication D1 revalidation", () => {
       scannerBuild: build,
     })).toEqual([expect.stringContaining("D1 job identity or completion state is not release-eligible")]);
   });
+
+  it("rechecks the exact runtime receipt before activation", () => {
+    const changed = bundle();
+    changed.metadata.intelligence_snapshot.dynamic_sandbox.external_syscall_trace = true;
+    changed.extensions[0].analysis_coverage.providers.dynamic_sandbox = {
+      required: true,
+      status: "completed",
+      execution: "controlled-bubblewrap",
+      policy: "capability-gated-v1",
+      executed: true,
+      external_syscall_trace: true,
+    };
+    expect(cloudflarePublicationMismatches({
+      extensions: [item],
+      rows: [row({ report_json: JSON.stringify(changed) })],
+      scannerBuild: build,
+    })).toEqual(expect.arrayContaining([expect.stringContaining("required dynamic runtime coverage")]))
+  });
 });

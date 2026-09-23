@@ -1,4 +1,5 @@
 import { publicCanonicalMismatch, publicationRowMismatch, singleExtensionDetail } from "./publication-canonical.mjs";
+import { publicationRuntimeMismatch } from "./publication-runtime.mjs";
 
 /**
  * Revalidate the rows that are about to become the active D1 release.
@@ -51,6 +52,12 @@ export function cloudflarePublicationMismatches({ extensions, rows, scannerBuild
       expectedVersion: item.version,
     });
     if (canonicalMismatch) mismatches.push(`${item.extension_id}@${item.version}: ${canonicalMismatch}`);
+    const runtimeMismatch = publicationRuntimeMismatch({
+      profile: metadata.profile,
+      metadata,
+      analysisCoverage: object(detail.analysis_coverage),
+    });
+    if (runtimeMismatch && runtimeMismatch !== canonicalMismatch) mismatches.push(`${item.extension_id}@${item.version}: ${runtimeMismatch}`);
     const rowMismatch = publicationRowMismatch({ row, detail });
     if (rowMismatch) mismatches.push(`${item.extension_id}@${item.version}: ${rowMismatch}`);
     if (String(detail.artifact_identity?.sha256 || "").toLowerCase() !== String(row.artifact_sha256 || "").toLowerCase()
