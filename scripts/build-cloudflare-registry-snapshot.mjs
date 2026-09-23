@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { writeFile } from "node:fs/promises";
 import { activeRegistryRowMismatch } from "./publication-canonical.mjs";
 import { defaultMarketplacePageCount } from "./marketplace-pagination.mjs";
+import { chunkedCloudflareScanIds, mergeChunkedCloudflareReports } from "./cloudflare-report-storage.mjs";
 
 const VALID_DECISIONS = new Set(["allow", "review", "block"]);
 const scanDatabase = process.env.CLOUDFLARE_SCAN_DATABASE || "abscissa-scan-data";
@@ -22,7 +23,7 @@ const marketplacePageCount = boundedInteger(
   100,
 );
 
-const rows = queryD1(`
+const inlineRows = queryD1(`
   SELECT p.extension_id,p.version,p.artifact_sha256,r.scan_id,r.created_at,r.report_json
   FROM app_scan_publication_release_reports p
   JOIN app_scan_publication_releases release ON release.id=p.release_id
@@ -30,6 +31,16 @@ const rows = queryD1(`
   WHERE release.id=${sql(activeRelease.id)}
   ORDER BY p.extension_id,p.version
 `);
+const chunkRows = [];
+for (const scanIds of batches(chunkedCloudflareScanIds(inlineRows), 100)) {
+  chunkRows.push(...queryD1(`
+    SELECT scan_id,chunk_index,content
+    FROM app_scan_report_chunks
+    WHERE scan_id IN (${scanIds.map(sql).join(",")})
+    ORDER BY scan_id,chunk_index
+  `));
+}
+const rows = mergeChunkedCloudflareReports(inlineRows, chunkRows);
 if (!rows.length || rows.length !== Number(activeRelease.expected_reports || rows.length)) {
   throw new Error(`Active release member count is inconsistent: expected ${activeRelease.expected_reports}, found ${rows.length}.`);
 }
@@ -328,6 +339,11 @@ function boundedInteger(name, fallback, minimum, maximum) {
 }
 
 function sql(value) { return `'${String(value).replaceAll("'", "''")}'`; }
+function batches(values, size) {
+  const result = [];
+  for (let index = 0; index < values.length; index += size) result.push(values.slice(index, index + size));
+  return result;
+}
 function object(value) { return value && typeof value === "object" && !Array.isArray(value) ? value : {}; }
 function singleExtensionDetail(value) {
   const entries = Array.isArray(value) ? value : Object.values(object(value));
