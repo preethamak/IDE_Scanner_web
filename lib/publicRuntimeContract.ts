@@ -23,6 +23,7 @@ export function publicRuntimeError(metadata: ValueMap, analysisCoverage: ValueMa
       || dynamicProvider.executed !== true
       || dynamicProvider.execution !== "controlled-bubblewrap"
       || dynamicProvider.policy !== "capability-gated-v1"
+      || dynamicProvider.runtime_run_status !== "completed"
       || dynamicProvider.external_syscall_trace !== true
       || dynamicRuntime.external_syscall_trace !== true) {
       return "Public scans require completed controlled runtime coverage with external syscall evidence for executable capabilities.";

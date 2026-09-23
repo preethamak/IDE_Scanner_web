@@ -16,6 +16,7 @@ export function publicationRuntimeMismatch({ profile, metadata, analysisCoverage
       || dynamicProvider.executed !== true
       || dynamicProvider.execution !== "controlled-bubblewrap"
       || dynamicProvider.policy !== "capability-gated-v1"
+      || dynamicProvider.runtime_run_status !== "completed"
       || dynamicProvider.external_syscall_trace !== true
       || dynamicRuntime.external_syscall_trace !== true) {
       return "required dynamic runtime coverage did not complete with validated external syscall evidence";

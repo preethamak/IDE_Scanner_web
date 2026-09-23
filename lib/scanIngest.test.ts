@@ -197,6 +197,27 @@ describe("public canonical schema enforcement", () => {
       },
     };
     expect(publicCanonicalError(true, "2.3", { ...goodDetail, analysis_coverage: executableCoverage }, goodMeta, build)).toContain("completed controlled runtime coverage");
+
+    const missingReceiptCoverage = {
+      ...executableCoverage,
+      providers: {
+        dynamic_sandbox: {
+          ...executableCoverage.providers.dynamic_sandbox,
+          status: "completed",
+          external_syscall_trace: true,
+        },
+      },
+    };
+    expect(publicCanonicalError(true, "2.3", { ...goodDetail, analysis_coverage: missingReceiptCoverage }, {
+      ...goodMeta,
+      intelligence_snapshot: {
+        ...goodMeta.intelligence_snapshot,
+        dynamic_sandbox: {
+          ...goodMeta.intelligence_snapshot.dynamic_sandbox,
+          external_syscall_trace: true,
+        },
+      },
+    }, build)).toContain("completed controlled runtime coverage");
   });
 
   it("rejects public reports with partial executable-file coverage", () => {

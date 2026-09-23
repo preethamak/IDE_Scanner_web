@@ -56,6 +56,7 @@ describe("publication runtime contract", () => {
             required: true,
             policy: "capability-gated-v1",
             external_syscall_trace: true,
+            runtime_run_status: "completed",
           },
         },
       },
@@ -75,6 +76,23 @@ describe("publication runtime contract", () => {
         providers: {
           dynamic_sandbox: {
             status: "failed",
+            execution: "controlled-bubblewrap",
+            executed: true,
+            required: true,
+            policy: "capability-gated-v1",
+            external_syscall_trace: true,
+          },
+        },
+      },
+    })).toContain("did not complete");
+
+    expect(publicationRuntimeMismatch({
+      profile: metadata.profile,
+      metadata: requiredMetadata,
+      analysisCoverage: {
+        providers: {
+          dynamic_sandbox: {
+            status: "completed",
             execution: "controlled-bubblewrap",
             executed: true,
             required: true,
