@@ -141,6 +141,8 @@ export function publicationRowMismatch({ row, detail }) {
 export function activeRegistryRowMismatch({ row, detail, metadata, release }) {
   const database = object(row);
   const report = object(detail);
+  const rowMismatch = publicationRowMismatch({ row: database, detail: report });
+  if (rowMismatch) return `registry row does not match the canonical report: ${rowMismatch}`;
   const identity = object(report.artifact_identity);
   if (registryIntegrityMismatch(report, identity)) {
     return "registry report has unverified registry artifact integrity metadata";

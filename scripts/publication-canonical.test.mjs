@@ -168,6 +168,16 @@ describe("active registry release binding", () => {
   it("accepts a report bound to the active release", () => {
     expect(activeRegistryRowMismatch({ ...validRegistryRow(), release })).toBeNull();
   });
+
+  it.each([
+    ["decision", { decision: "block" }, "database decision"],
+    ["severity", { severity: "CRITICAL" }, "database severity"],
+    ["coverage", { coverage_percent: 99 }, "database coverage_percent"],
+  ])("rejects active registry row %s drift", (_, mutation, message) => {
+    const value = validRegistryRow();
+    value.row = { ...value.row, ...mutation };
+    expect(activeRegistryRowMismatch({ ...value, release })).toContain(message);
+  });
 });
 
 describe("Supabase publication member binding", () => {
