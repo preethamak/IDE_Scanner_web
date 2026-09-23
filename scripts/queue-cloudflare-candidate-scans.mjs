@@ -115,7 +115,7 @@ const statements = selected.map((item) => {
     now,
     now,
   ].map(sql);
-  return `INSERT INTO app_scan_jobs(id,extension_id,version,profile,status,lifecycle_stage,requester_hash,scan_purpose,expected_scanner_build,created_at,updated_at,last_event_at) SELECT ${values.join(",")} WHERE NOT EXISTS (SELECT 1 FROM app_scan_jobs WHERE extension_id=${sql(item.extensionId)} AND version=${sql(item.version)} AND scan_purpose='public_intelligence' AND expected_scanner_build=${sql(scannerBuild)} AND status IN ('queued','running','complete'));`;
+  return `INSERT INTO app_scan_jobs(id,extension_id,version,profile,status,lifecycle_stage,requester_hash,scan_purpose,expected_scanner_build,created_at,updated_at,last_event_at) SELECT ${values.join(",")} WHERE NOT EXISTS (SELECT 1 FROM app_scan_jobs WHERE lower(extension_id)=lower(${sql(item.extensionId)}) AND version=${sql(item.version)} AND scan_purpose='public_intelligence' AND expected_scanner_build=${sql(scannerBuild)} AND status IN ('queued','running','complete'));`;
 });
 
 const temp = await mkdtemp(join("/tmp", "guardrails-candidate-d1-"));
@@ -137,7 +137,7 @@ function verifySelectedJobs(items, build) {
   const present = new Set();
   for (const batch of chunks(items, 250)) {
     const identityFilter = batch
-      .map((item) => `(extension_id=${sql(item.extensionId)} AND version=${sql(item.version)})`)
+      .map((item) => `(lower(extension_id)=lower(${sql(item.extensionId)}) AND version=${sql(item.version)})`)
       .join(" OR ");
     const rows = queryD1(`
       SELECT extension_id,version
