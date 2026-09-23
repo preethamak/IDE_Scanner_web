@@ -64,6 +64,7 @@ concurrency:
 
 jobs:
   validate:
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
@@ -251,7 +252,7 @@ jobs:
             -f scanner_build="$SCANNER_BUILD"
 
   activate:
-    if: ${{ inputs.activate == true }}
+    if: ${{ github.ref == 'refs/heads/main' && inputs.activate == true }}
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -299,7 +300,7 @@ jobs:
             --apply
 
   publish-registry:
-    if: ${{ inputs.activate == true }}
+    if: ${{ github.ref == 'refs/heads/main' && inputs.activate == true }}
     needs: activate
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -390,7 +391,7 @@ jobs:
           NODE
 
   queue-bulk-scan:
-    if: ${{ inputs.activate == true && inputs.queue_bulk_scan == true }}
+    if: ${{ github.ref == 'refs/heads/main' && inputs.activate == true && inputs.queue_bulk_scan == true }}
     needs: [activate, publish-registry]
     runs-on: ubuntu-latest
     timeout-minutes: 10

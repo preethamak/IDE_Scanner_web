@@ -5,6 +5,7 @@ const workflow = readFileSync(new URL("../.github/workflows/promote-publication.
 
 describe("publication promotion workflow boundary", () => {
   it("downloads the scanner gate by an explicit run ID and validates its identity", () => {
+    expect(workflow).toContain("if: ${{ github.ref == 'refs/heads/main' }}");
     expect(workflow).toContain("scanner-publication-accuracy-gate");
     expect(workflow).toContain("repository: preethamak/IDE_Scanner");
     expect(workflow).toContain("run-id: ${{ inputs.scanner_run_id }}");
@@ -16,7 +17,7 @@ describe("publication promotion workflow boundary", () => {
   });
 
   it("keeps activation explicit and invokes the immutable activation script only after validation", () => {
-    expect(workflow).toContain("if: ${{ inputs.activate == true }}");
+    expect(workflow).toContain("if: ${{ github.ref == 'refs/heads/main' && inputs.activate == true }}");
     expect(workflow).toContain("needs: validate");
     expect(workflow).toContain("Build Supabase publication validation");
     expect(workflow).toContain("build-publication-validation.mjs");
@@ -29,7 +30,7 @@ describe("publication promotion workflow boundary", () => {
   it("keeps bulk queueing opt-in and downstream of activation", () => {
     expect(workflow).toContain("queue_bulk_scan:");
     expect(workflow).toContain("default: false");
-    expect(workflow).toContain("if: ${{ inputs.activate == true && inputs.queue_bulk_scan == true }}");
+    expect(workflow).toContain("if: ${{ github.ref == 'refs/heads/main' && inputs.activate == true && inputs.queue_bulk_scan == true }}");
     expect(workflow).toContain("needs: activate");
     expect(workflow).toContain("Queue bounded public scans in Cloudflare D1");
     expect(workflow).toContain('REQUIRE_ACTIVE_RELEASE: "true"');
