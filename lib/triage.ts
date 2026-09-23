@@ -31,7 +31,11 @@ export function buildTriageBuckets(extensions: ExtensionSummary[]): TriageBucket
       id: "watch",
       label: "Watch list",
       description: "Clean or low-score extensions with context-only findings.",
-      extensions: extensions.filter((item) => item.verdict === "clean" && (item.risk_score > 0 || item.finding_count > 0))
+      extensions: extensions.filter((item) => {
+        if (item.verdict !== "clean") return false;
+        const hasActionabilityBreakdown = [item.actionable_finding_count, item.low_finding_count, item.contextual_finding_count].some((value) => typeof value === "number");
+        return item.risk_score > 0 || Number(item.actionable_finding_count || 0) > 0 || (!hasActionabilityBreakdown && item.finding_count > 0);
+      })
     }
   ];
 }

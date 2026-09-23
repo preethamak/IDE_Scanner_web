@@ -88,6 +88,9 @@ export type ExtensionSummary = {
   };
   collector_details?: Record<string, unknown>;
   finding_count: number;
+  actionable_finding_count?: number;
+  low_finding_count?: number;
+  contextual_finding_count?: number;
   top_findings: FindingSummary[];
 };
 

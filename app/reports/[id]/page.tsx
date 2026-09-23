@@ -137,7 +137,7 @@ export default function ReportDashboardPage({ params }: { params: Promise<{ id: 
           <span>Coverage</span>
           <span>Baseline</span>
           <span>Severity</span>
-          <span>Findings</span>
+          <span>Signals</span>
           <span />
         </div>
         {rows.map((item, index) => (
@@ -163,7 +163,9 @@ function ExtensionRow({ item, reportId, rank }: { item: BundleExtensionSummary; 
       <b>{item.coverage_percent ?? (item.scan_incomplete ? 0 : 100)}%</b>
       <span>{item.baseline_changed ? "Changed" : "No change"}</span>
       <span><SeverityTag severity={item.severity} /><small>{item.verdict_label || item.verdict}</small></span>
-      <span className="findingTags">{stringFindings(item.top_findings).slice(0, 3).map((finding) => <code key={finding}>{finding}</code>)}</span>
+      <span className="findingTags">
+        {typeof item.actionable_finding_count === "number" ? <><strong>{item.actionable_finding_count} action</strong><small>{item.contextual_finding_count || 0} context</small></> : stringFindings(item.top_findings).slice(0, 3).map((finding) => <code key={finding}>{finding}</code>)}
+      </span>
       <Link className="panelLink" href={`/reports/${reportId}/extensions/${encodeURIComponent(item.extension_id)}`}>Details</Link>
     </article>
   );

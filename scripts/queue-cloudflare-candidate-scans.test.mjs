@@ -15,6 +15,8 @@ describe("Cloudflare candidate scan queue", () => {
     expect(source).toContain("defaultMarketplacePageCount");
     expect(source).toContain("1, 100");
     expect(source).toContain("status IN ('queued','running','complete')");
+    expect(source).toContain("verifySelectedJobs(selected, scannerBuild)");
+    expect(source).toContain("D1 candidate queue verification failed");
     expect(source).toContain("Bulk scans require an active accuracy-attested Cloudflare release");
     expect(source).toContain("accuracy_gate_sha256");
     expect(source).toContain("release_report_count");

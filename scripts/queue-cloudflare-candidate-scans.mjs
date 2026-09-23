@@ -126,7 +126,37 @@ try {
 } finally {
   await rm(temp, { recursive: true, force: true });
 }
+const missing = verifySelectedJobs(selected, scannerBuild);
+if (missing.length) {
+  const sample = missing.slice(0, 10).map((item) => `${item.extensionId}@${item.version}`).join(", ");
+  throw new Error(`D1 candidate queue verification failed for ${missing.length} selected artifacts; sample: ${sample}`);
+}
 console.log(JSON.stringify({ scanner_build: scannerBuild, require_active_release: requireActiveRelease, marketplace_page_count: marketplacePageCount, available: candidates.length, selected: selected.length, candidates: selected }, null, 2));
+
+function verifySelectedJobs(items, build) {
+  const present = new Set();
+  for (const batch of chunks(items, 250)) {
+    const identityFilter = batch
+      .map((item) => `(extension_id=${sql(item.extensionId)} AND version=${sql(item.version)})`)
+      .join(" OR ");
+    const rows = queryD1(`
+      SELECT extension_id,version
+      FROM app_scan_jobs
+      WHERE scan_purpose='public_intelligence'
+        AND expected_scanner_build=${sql(build)}
+        AND status IN ('queued','running','complete')
+        AND (${identityFilter})
+    `);
+    for (const row of rows) present.add(`${String(row.extension_id || "").toLowerCase()}@${String(row.version || "")}`);
+  }
+  return items.filter((item) => !present.has(`${item.extensionId.toLowerCase()}@${item.version}`));
+}
+
+function chunks(items, size) {
+  const result = [];
+  for (let index = 0; index < items.length; index += size) result.push(items.slice(index, index + size));
+  return result;
+}
 
 function queryD1(command) {
   const raw = execFileSync("npx", ["wrangler", "d1", "execute", scanDatabase, "--remote", "--command", command, "--json"], {
