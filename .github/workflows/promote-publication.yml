@@ -348,17 +348,39 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: 26e873c5d55e5e386df482c9dbe8bcd7
         run: |
+          node - <<'NODE'
+          const fs = require("fs");
+          const snapshot = JSON.parse(fs.readFileSync(".tmp/registry-snapshot.json", "utf8"));
+          const chunkSize = 80000;
+          const countChunks = (value) => Math.max(1, Math.ceil(JSON.stringify(value).length / chunkSize));
+          const expectedSectionChunks = ["metrics", "feed", "inventory", "history", "catalog", "benchmark"]
+            .reduce((total, section) => total + countChunks(snapshot[section]), 0);
+          const expectedProductChunks = Object.values(snapshot.products || {})
+            .reduce((total, product) => total + countChunks(product), 0);
+          fs.writeFileSync(".tmp/registry-expected.json", JSON.stringify({
+            expectedSectionChunks,
+            expectedProductChunks,
+            expectedSections: 6,
+            expectedProducts: Object.keys(snapshot.products || {}).length,
+            scannerBuild: snapshot.inventory?.publication?.scanner_build || "",
+          }));
+          NODE
           npx wrangler d1 execute abscissa-registry --remote --json \
-            --command "SELECT s.publication_id, (SELECT COUNT(*) FROM registry_section_chunks_v2 WHERE publication_id=s.publication_id) AS section_chunks, (SELECT COUNT(*) FROM registry_product_chunks_v2 WHERE publication_id=s.publication_id) AS product_chunks FROM registry_publication_state s WHERE s.state_key='active' LIMIT 1;" \
+            --command "SELECT s.publication_id, (SELECT COUNT(*) FROM registry_section_chunks_v2 WHERE publication_id=s.publication_id) AS section_chunks, (SELECT COUNT(DISTINCT section) FROM registry_section_chunks_v2 WHERE publication_id=s.publication_id) AS sections, (SELECT COUNT(*) FROM registry_product_chunks_v2 WHERE publication_id=s.publication_id) AS product_chunks, (SELECT COUNT(DISTINCT extension_id) FROM registry_product_chunks_v2 WHERE publication_id=s.publication_id) AS products FROM registry_publication_state s WHERE s.state_key='active' LIMIT 1;" \
             > .tmp/registry-state.json
           node - <<'NODE'
           const fs = require("node:fs");
+          const expected = JSON.parse(fs.readFileSync(".tmp/registry-expected.json", "utf8"));
           const payload = JSON.parse(fs.readFileSync(".tmp/registry-state.json", "utf8"));
           const row = payload.flatMap((item) => item.results || [])[0];
-          if (!row || !row.publication_id || Number(row.section_chunks) < 6 || Number(row.product_chunks) < 1) {
-            throw new Error(`Active registry publication is incomplete: ${JSON.stringify(row)}`);
+          if (!row || !row.publication_id
+            || Number(row.sections) !== expected.expectedSections
+            || Number(row.section_chunks) !== expected.expectedSectionChunks
+            || Number(row.products) !== expected.expectedProducts
+            || Number(row.product_chunks) !== expected.expectedProductChunks) {
+            throw new Error(`Active registry publication is incomplete or partial: expected ${JSON.stringify(expected)}, received ${JSON.stringify(row)}`);
           }
-          console.log(JSON.stringify(row));
+          console.log(JSON.stringify({ ...row, scanner_build: expected.scannerBuild, expected }));
           NODE
 
   queue-bulk-scan:
