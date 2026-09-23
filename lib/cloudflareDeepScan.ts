@@ -105,13 +105,19 @@ export async function queueCloudflareDeepScan(extensionId: string, requestedVers
   if (!version) throw new Error("No published version is available for this extension.");
   const active = await db.prepare("SELECT * FROM app_scan_jobs WHERE extension_id=? AND version=? AND profile='deep' AND status IN ('queued','running') ORDER BY created_at DESC LIMIT 1").bind(canonicalExtensionId, version).first<Row>();
   if (active) {
-    await subscribeCloudflareJob(String(active.id), user.id);
-    const dispatched = String(active.status) === "queued" ? await dispatchCloudflareDeepScan(String(active.id), 120) : false;
-    return withCloudflareReportUrl({ ...active, deduplicated: true, dispatch: dispatched ? "started" : "scheduled" });
+    const expectedBuild = String(active.expected_scanner_build || "").trim().toLowerCase();
+    const safeToReuse = String(active.status) === "queued" && !expectedBuild
+      ? true
+      : Boolean(expectedBuild && await cloudflareReleaseBuildIsCurrent(db, expectedBuild));
+    if (safeToReuse) {
+      await subscribeCloudflareJob(String(active.id), user.id);
+      const dispatched = String(active.status) === "queued" ? await dispatchCloudflareDeepScan(String(active.id), 120) : false;
+      return withCloudflareReportUrl({ ...active, deduplicated: true, dispatch: dispatched ? "started" : "scheduled" });
+    }
   }
   if (!force) {
-    const complete = await db.prepare("SELECT scan_id FROM app_scan_reports WHERE extension_id=? AND version=? ORDER BY created_at DESC LIMIT 1").bind(canonicalExtensionId, version).first<Row>();
-    if (complete?.scan_id) return withCloudflareReportUrl({ status: "complete", scan_id: String(complete.scan_id), reused: true, extension_id: canonicalExtensionId, version });
+    const scanId = await reusableCloudflareScanId(db, canonicalExtensionId, version);
+    if (scanId) return withCloudflareReportUrl({ status: "complete", scan_id: scanId, reused: true, extension_id: canonicalExtensionId, version });
   }
   const since = new Date(Date.now() - 86_400_000).toISOString();
   const usage = await db.prepare("SELECT COUNT(*) AS count FROM app_scan_jobs WHERE requested_by=? AND created_at>=?").bind(user.id, since).first<Row>();
@@ -151,8 +157,8 @@ export async function queueCloudflareGuestDeepScan(extensionId: string, requeste
   const canonicalExtensionId = String(catalog?.id || marketplace?.extension_id || extensionId);
   const version = requestedVersion || String(catalog?.latest_version || marketplace?.version || "");
   if (!version) throw new Error("No published version is available for this extension.");
-  const complete = !force ? await db.prepare("SELECT scan_id FROM app_scan_reports WHERE extension_id=? AND version=? ORDER BY created_at DESC LIMIT 1").bind(canonicalExtensionId, version).first<Row>() : null;
-  if (complete?.scan_id) return withCloudflareReportUrl({ status: "complete", scan_id: String(complete.scan_id), reused: true, extension_id: canonicalExtensionId, version, trial_remaining: trial.remaining });
+  const scanId = !force ? await reusableCloudflareScanId(db, canonicalExtensionId, version) : null;
+  if (scanId) return withCloudflareReportUrl({ status: "complete", scan_id: scanId, reused: true, extension_id: canonicalExtensionId, version, trial_remaining: trial.remaining });
   if (!trial.available) throw new GuestTrialLimitError();
   const tokenHash = sessionHash(trialToken);
   const active = await db.prepare("SELECT j.* FROM app_scan_jobs j WHERE j.extension_id=? AND j.version=? AND j.profile='deep' AND j.status IN ('queued','running') AND EXISTS (SELECT 1 FROM app_guest_scan_access a WHERE a.job_id=j.id AND a.token_hash=?) ORDER BY j.created_at DESC LIMIT 1").bind(canonicalExtensionId, version, tokenHash).first<Row>();
@@ -514,6 +520,56 @@ export function withCloudflareReportUrl<T extends Row>(result: T): T & { report_
 
 async function subscribeCloudflareJob(jobId: string, userId: string): Promise<void> {
   await privateDb().prepare("INSERT OR IGNORE INTO app_scan_job_subscribers(job_id,user_id,created_at) VALUES(?,?,?)").bind(jobId, userId, nowIso()).run();
+}
+
+async function cloudflareReleaseBuildIsCurrent(db: ReturnType<typeof privateDb>, expectedBuild: string): Promise<boolean> {
+  const release = await db.prepare("SELECT scanner_build FROM app_scan_publication_releases WHERE active=1 LIMIT 1").first<Row>();
+  return Boolean(release?.scanner_build && String(release.scanner_build).trim().toLowerCase() === expectedBuild);
+}
+
+async function reusableCloudflareScanId(db: ReturnType<typeof privateDb>, extensionId: string, version: string): Promise<string | null> {
+  // Only reports that are members of the active publication release may be
+  // reused. A report row alone is not enough: Cloudflare stores the scanner
+  // build, ruleset, analysis status, and coverage inside report_json.
+  const candidates = await db.prepare(`
+    SELECT report.scan_id,report.report_json,release.scanner_build,release.ruleset_version,release.policy_version,release.score_schema_version
+    FROM app_scan_reports report
+    JOIN app_scan_publication_release_reports member ON member.scan_id=report.scan_id
+    JOIN app_scan_publication_releases release ON release.id=member.release_id
+    WHERE lower(report.extension_id)=lower(?)
+      AND report.version=?
+      AND release.active=1
+    ORDER BY report.created_at DESC
+    LIMIT 20
+  `).bind(extensionId, version).all<Row>();
+  for (const candidate of candidates.results) {
+    const scanId = String(candidate.scan_id || "");
+    const reportJson = await loadCloudflareReportJson(scanId, String(candidate.report_json || ""));
+    if (!reportJson) continue;
+    try {
+      const bundle = JSON.parse(reportJson) as Bundle;
+      const detail = singleExtension(bundle.extensions);
+      const metadata = jsonObject(bundle.metadata);
+      const coverage = jsonObject(detail?.analysis_coverage);
+      const identity = jsonObject(detail?.artifact_identity);
+      const scoreSchemaVersion = String(detail?.score_schema_version || metadata.score_schema_version || "");
+      const executableCoverage = Number(coverage.executable_file_coverage_percent ?? coverage.coverage_percent ?? 0);
+      if (!detail
+        || String(metadata.profile || "") !== "deep"
+        || String(metadata.scanner_build || "").trim().toLowerCase() !== String(candidate.scanner_build || "").trim().toLowerCase()
+        || String(metadata.ruleset_version || "") !== String(candidate.ruleset_version || "")
+        || String(metadata.policy_version || "") !== String(candidate.policy_version || "")
+        || scoreSchemaVersion !== String(candidate.score_schema_version || "")
+        || String(detail.analysis_status || "") !== "complete"
+        || String(coverage.status || "") !== "complete"
+        || coverage.required_providers_complete !== true
+        || executableCoverage !== 100
+        || String(identity.extension_id || detail.extension_id || "").toLowerCase() !== extensionId.toLowerCase()
+        || String(identity.version || detail.version || "") !== version) continue;
+      return scanId || null;
+    } catch { /* ignore malformed candidates and try the next release member */ }
+  }
+  return null;
 }
 
 export async function addCloudflareScanEvent(jobId: string, stage: string, eventType: string, detail: Row): Promise<void> {

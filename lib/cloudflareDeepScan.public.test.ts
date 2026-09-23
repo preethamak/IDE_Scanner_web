@@ -216,6 +216,7 @@ describe("Cloudflare canonical scan callback", () => {
                   ? { dispatch_count: 0, status: "queued", updated_at: null }
                   : null,
             ),
+            all: vi.fn().mockResolvedValue({ results: [] }),
             run: vi.fn().mockResolvedValue({ meta: { changes: 0 } }),
           })),
         };
@@ -230,5 +231,73 @@ describe("Cloudflare canonical scan callback", () => {
       { id: "user-1" } as never,
     )).rejects.toThrow("dispatch response timeout");
     expect(statements.some((query) => query.includes("status='failed'") && query.includes("status='queued'") && query.includes("app_scan_reports"))).toBe(true);
+  });
+
+  it("reuses only a complete report bound to the active publication release", async () => {
+    const db = {
+      prepare: vi.fn((query: string) => ({
+        bind: vi.fn(() => ({
+          first: vi.fn().mockResolvedValue(query.includes("FROM app_scan_jobs") ? null : null),
+          all: vi.fn().mockResolvedValue(query.includes("app_scan_publication_release_reports") ? {
+            results: [{
+              scan_id: "current-scan",
+              report_json: JSON.stringify(validBundle()),
+              scanner_build: build,
+              ruleset_version: "rules-1",
+              policy_version: "3.0.0",
+              score_schema_version: "2",
+            }],
+          } : { results: [] }),
+        })),
+      })),
+      batch: vi.fn(),
+    };
+    harness.privateDb.mockReturnValue(db);
+
+    await expect(queueCloudflareDeepScan(
+      "publisher.extension",
+      "1.0.0",
+      new Request("https://example.test"),
+      { id: "user-1" } as never,
+    )).resolves.toMatchObject({ status: "complete", scan_id: "current-scan", reused: true });
+  });
+
+  it("does not reuse a report whose scanner build is not the active release build", async () => {
+    const staleBundle = validBundle();
+    staleBundle.metadata.scanner_build = "b".repeat(40);
+    const statements: string[] = [];
+    const db = {
+      prepare: vi.fn((query: string) => {
+        statements.push(query);
+        return {
+          bind: vi.fn(() => ({
+            first: vi.fn().mockResolvedValue(
+              query.includes("SELECT scan_id FROM app_scan_reports") ? { scan_id: "stale-scan" }
+                : query.includes("COUNT(*)") ? { count: 0 }
+                  : query.includes("dispatch_count") ? { dispatch_count: 0, status: "queued", updated_at: null }
+                    : null,
+            ),
+            all: vi.fn().mockResolvedValue(query.includes("app_scan_publication_release_reports") ? {
+              results: [{ scan_id: "stale-scan", report_json: JSON.stringify(staleBundle), scanner_build: build, ruleset_version: "rules-1", policy_version: "3.0.0", score_schema_version: "2" }],
+            } : { results: [] }),
+            run: vi.fn().mockResolvedValue({ meta: { changes: 1 } }),
+          })),
+        };
+      }),
+      batch: vi.fn(),
+    };
+    harness.privateDb.mockReturnValue(db);
+    harness.runtimeEnv.mockImplementation((key: string) => key === "GITHUB_ACTIONS_TOKEN" ? "github-token" : "");
+    harness.githubDispatch.mockResolvedValue({ ok: true, status: 204 });
+
+    const result = await queueCloudflareDeepScan(
+      "publisher.extension",
+      "1.0.0",
+      new Request("https://example.test"),
+      { id: "user-1" } as never,
+    );
+    expect(result.status).toBe("queued");
+    expect(result.reused).toBeUndefined();
+    expect(statements.some((query) => query.includes("SELECT scan_id FROM app_scan_reports WHERE extension_id"))).toBe(false);
   });
 });
