@@ -24,7 +24,7 @@ const sql = `
   select r.scan_id,r.extension_id,r.version,r.artifact_sha256,r.created_at,r.report_json
   from app_scan_reports r
   join app_scan_jobs j on j.id = r.job_id
-  where json_extract(r.report_json,'$.metadata.scanner_build')='${scannerBuild}'
+  where lower(coalesce(j.expected_scanner_build,''))='${scannerBuild}'
     and j.scan_purpose in ('public_intelligence','benchmark')
   order by r.created_at desc
 `;
@@ -137,7 +137,13 @@ for (const row of rows) {
 
 if (failures.length) throw new Error(`Cloudflare publication manifest cannot be built:\n- ${failures.join("\n- ")}`);
 const extensions = [...selected.values()].sort((left, right) => `${left.extension_id}@${left.version}`.localeCompare(`${right.extension_id}@${right.version}`));
-if (extensions.length !== expectedReports) throw new Error(`Expected ${expectedReports} unique reports, found ${extensions.length}.`);
+if (extensions.length !== expectedReports) {
+  const quarantineSummary = quarantined
+    .slice(0, 25)
+    .map((item) => `${item.extension_id}@${item.version} (${item.reason})`)
+    .join("; ");
+  throw new Error(`Expected ${expectedReports} unique reports, found ${extensions.length}. Quarantined: ${quarantined.length}.${quarantineSummary ? ` ${quarantineSummary}` : ""}`);
+}
 const identities = new Set(extensions.map((row) => `${row.policy_version}\u0000${row.ruleset_version}\u0000${row.score_schema_version}`));
 if (identities.size !== 1) throw new Error("Cloudflare publication reports do not share one policy, ruleset, and score schema.");
 const first = extensions[0];
