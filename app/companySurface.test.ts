@@ -31,6 +31,8 @@ describe("company site surface", () => {
       "How do I dispute a finding or flag a malicious extension?",
     ])
       expect(faq).toContain(question);
+    expect(faq).toContain("Bubblewrap-isolated worker");
+    expect(faq).toContain("failed or unsupported runtime coverage remains incomplete");
     expect(faq).toContain('"@type": "FAQPage"');
     expect(faq.match(/\bhref: "\//g)?.length).toBeGreaterThanOrEqual(9);
   });

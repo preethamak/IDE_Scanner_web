@@ -21,7 +21,7 @@ const faqs = [
   {
     question: "Do you install or execute extensions to scan them?",
     answer:
-      "No. Website analysis inspects the published package without running it inside your editor. The local CLI examines extensions installed on your machine, and that analysis stays on your machine; nothing is uploaded unless you explicitly export a portable report.",
+      "Managed Website Deep Scan retrieves the exact published package and runs bounded observations only for capabilities that require runtime coverage, inside a Bubblewrap-isolated worker with networking disabled. It never runs the extension in your editor or on the worker host. The local CLI is non-executing by default and can request the same isolated runtime path explicitly; failed or unsupported runtime coverage remains incomplete or not applicable rather than becoming an allow.",
     href: "/analyze",
     linkLabel: "Choose an analysis path",
   },
