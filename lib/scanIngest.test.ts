@@ -220,6 +220,48 @@ describe("public canonical schema enforcement", () => {
     }, build)).toContain("completed controlled runtime coverage");
   });
 
+  it("admits an authenticated host-entrypoint exit only with a clean trace", () => {
+    const entrypointExitCoverage = {
+      ...goodDetail.analysis_coverage,
+      providers: {
+        ...goodDetail.analysis_coverage.providers,
+        dynamic_sandbox: {
+          provider: "dynamic_sandbox",
+          status: "completed",
+          execution: "controlled-bubblewrap",
+          executed: true,
+          required: true,
+          policy: "capability-gated-v1",
+          external_syscall_trace: true,
+          error_count: 0,
+          runtime_run_status: "failed",
+        },
+      },
+    };
+    const entrypointExitMeta = {
+      ...goodMeta,
+      intelligence_snapshot: {
+        ...goodMeta.intelligence_snapshot,
+        dynamic_sandbox: {
+          ...goodMeta.intelligence_snapshot.dynamic_sandbox,
+          external_syscall_trace: true,
+          observed_kinds: { "publisher.one": ["network_attempt", "runtime_entrypoint_error"] },
+        },
+      },
+    };
+    expect(publicCanonicalError(true, "2.3", { ...goodDetail, extension_id: "publisher.one", version: "2.0", analysis_coverage: entrypointExitCoverage }, entrypointExitMeta, build, "publisher.one", "2.0")).toBeNull();
+    expect(publicCanonicalError(true, "2.3", { ...goodDetail, extension_id: "publisher.one", version: "2.0", analysis_coverage: entrypointExitCoverage }, {
+      ...entrypointExitMeta,
+      intelligence_snapshot: {
+        ...entrypointExitMeta.intelligence_snapshot,
+        dynamic_sandbox: {
+          ...entrypointExitMeta.intelligence_snapshot.dynamic_sandbox,
+          observed_kinds: { "publisher.one": ["runtime_entrypoint_error", "runtime_timeout"] },
+        },
+      },
+    }, build, "publisher.one", "2.0")).toContain("completed controlled runtime coverage");
+  });
+
   it("rejects public reports with partial executable-file coverage", () => {
     expect(publicCanonicalError(
       true,

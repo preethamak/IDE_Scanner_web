@@ -63,6 +63,36 @@ describe("publication runtime contract", () => {
     })).toBeNull();
   });
 
+  it("accepts a traced editor-host entrypoint exit only when explicitly authenticated", () => {
+    expect(publicationRuntimeMismatch({
+      profile: metadata.profile,
+      metadata: {
+        ...requiredMetadata,
+        intelligence_snapshot: {
+          ...requiredMetadata.intelligence_snapshot,
+          dynamic_sandbox: {
+            ...requiredMetadata.intelligence_snapshot.dynamic_sandbox,
+            observed_kinds: { "publisher.one": ["network_attempt", "runtime_entrypoint_error"] },
+          },
+        },
+      },
+      extensionId: "publisher.one",
+      analysisCoverage: {
+        providers: {
+          dynamic_sandbox: {
+            status: "completed",
+            execution: "controlled-bubblewrap",
+            executed: true,
+            required: true,
+            policy: "capability-gated-v1",
+            external_syscall_trace: true,
+            runtime_run_status: "failed",
+          },
+        },
+      },
+    })).toBeNull();
+  });
+
   it("rejects static-only and failed runtime evidence", () => {
     expect(publicationRuntimeMismatch({
       profile: "standard",

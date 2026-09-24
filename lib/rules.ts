@@ -75,7 +75,7 @@ export function hasCompletePublicCoverage(report: unknown): boolean {
   const coverage = objectValue(detail.analysis_coverage);
   return coverage.status === "complete"
     && coverage.required_providers_complete === true
-    && publicRuntimeError(objectValue(value.metadata), coverage) === null;
+    && publicRuntimeError(objectValue(value.metadata), coverage, text(detail.extension_id)) === null;
 }
 
 function text(value: unknown, fallback = ""): string {

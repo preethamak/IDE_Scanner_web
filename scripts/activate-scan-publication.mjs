@@ -95,6 +95,7 @@ for (const wanted of expected) {
     profile: objectValue(canonicalReport.metadata).profile,
     metadata: objectValue(canonicalReport.metadata),
     analysisCoverage: coverage,
+    extensionId: wanted.extension_id || singleExtensionDetail(canonicalReport.extensions)?.extension_id,
   });
   if (runtimeMismatch) mismatches.push(`${key_}: ${runtimeMismatch}`);
   const rowMismatch = publicationRowMismatch({ row: actual, detail: singleExtensionDetail(canonicalReport.extensions) });

@@ -52,7 +52,11 @@ export function publicCanonicalError(
   if (!metadata.policy_version || metadata.policy_version === "legacy") return "Public scans require an explicit non-legacy classification policy.";
   if (!metadata.ruleset_version || metadata.ruleset_version === "unknown") return "Public scans require an explicit ruleset version.";
   const intelligence = objectValue(metadata.intelligence_snapshot);
-  const runtimeError = publicRuntimeError(metadata, objectValue(detail.analysis_coverage));
+  const runtimeError = publicRuntimeError(
+    metadata,
+    objectValue(detail.analysis_coverage),
+    String(expectedExtensionId || detailExtensionId || identityExtensionId),
+  );
   if (runtimeError) return runtimeError;
   const registryIntelligence = objectValue(intelligence.registry);
   if (!/^[0-9a-f]{64}$/.test(String(registryIntelligence.sha256 || ""))) {

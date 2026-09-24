@@ -77,6 +77,7 @@ for (const row of rows) {
     profile: metadata.profile,
     metadata,
     analysisCoverage: coverage,
+    extensionId: row.extension_id || detail.extension_id,
   });
   const analysisIncomplete = String(detail.analysis_status || "") !== "complete"
     || coverage.status !== "complete"

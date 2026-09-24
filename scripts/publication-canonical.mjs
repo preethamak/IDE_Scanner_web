@@ -46,6 +46,7 @@ export function publicCanonicalMismatch({ reportedSchemaVersion, detail, metadat
     profile: metadata.profile,
     metadata,
     analysisCoverage: object(detail.analysis_coverage),
+    extensionId: expectedExtensionId || detailExtensionId || identityExtensionId,
   });
   if (runtimeMismatch) return runtimeMismatch;
 
@@ -197,6 +198,7 @@ export function activeRegistryRowMismatch({ row, detail, metadata, release }) {
     profile: metadata.profile,
     metadata,
     analysisCoverage: coverage,
+    extensionId: report.extension_id || identityExtensionId,
   });
   if (runtimeMismatch) return runtimeMismatch;
   const advisoryMismatch = extensionAdvisoryMismatch(object(metadata.intelligence_snapshot), coverage);

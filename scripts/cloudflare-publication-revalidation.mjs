@@ -56,6 +56,7 @@ export function cloudflarePublicationMismatches({ extensions, rows, scannerBuild
       profile: metadata.profile,
       metadata,
       analysisCoverage: object(detail.analysis_coverage),
+      extensionId: item.extension_id || detail.extension_id,
     });
     if (runtimeMismatch && runtimeMismatch !== canonicalMismatch) mismatches.push(`${item.extension_id}@${item.version}: ${runtimeMismatch}`);
     const rowMismatch = publicationRowMismatch({ row, detail });

@@ -68,6 +68,7 @@ for (const row of rows) {
     profile: object(report.metadata).profile,
     metadata: object(report.metadata),
     analysisCoverage: row.analysis_coverage,
+    extensionId: row.extension_id || detail.extension_id,
   });
   const rowMismatch = publicationRowMismatch({ row, detail });
   if (canonicalMismatch || runtimeMismatch || rowMismatch) {
@@ -154,4 +155,3 @@ function databaseConnectionString() {
   if (!password) throw new Error("DATABASE_URL or SUPABASE_PASSWORD is required for Supabase publication validation.");
   return `postgresql://postgres.kmdujtabqaxgoeltbxpq:${encodeURIComponent(password)}@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres?uselibpqcompat=true&sslmode=require`;
 }
-
