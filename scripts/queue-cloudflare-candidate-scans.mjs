@@ -135,7 +135,10 @@ console.log(JSON.stringify({ scanner_build: scannerBuild, require_active_release
 
 function verifySelectedJobs(items, build) {
   const present = new Set();
-  for (const batch of chunks(items, 250)) {
+  // Keep the verification predicate below under Cloudflare D1's SQLite
+  // expression-depth limit. A 100-item cohort becomes one OR branch per
+  // extension/version pair, so verify in small bounded batches.
+  for (const batch of chunks(items, 25)) {
     const identityFilter = batch
       .map((item) => `(lower(extension_id)=lower(${sql(item.extensionId)}) AND version=${sql(item.version)})`)
       .join(" OR ");
