@@ -280,6 +280,19 @@
   font-size: 12px;
 }
 
+.feedbackError p {
+  margin: 0;
+}
+
+.feedbackError a {
+  display: inline-block;
+  margin-top: 7px;
+  color: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .feedbackHoneypot {
   position: absolute;
   width: 1px;

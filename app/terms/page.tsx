@@ -35,7 +35,7 @@ const sections = [
   {
     title: "4. What analysis can and cannot promise",
     body: [
-      "Every report is point-in-time evidence about one exact release. Analysis is static and behavioral review is bounded; findings marked INCOMPLETE mean we could not verify enough to decide.",
+      "Every report is point-in-time evidence about one exact release. Reports combine static inspection with bounded behavioral review when the selected scan path requires it; findings marked INCOMPLETE mean we could not verify enough to decide.",
       "A clean report is not a guarantee that an extension is safe, and a finding is not a legal determination. Use reports as one input alongside your own review and policies. The scoring methodology page explains how decisions are produced.",
     ],
   },

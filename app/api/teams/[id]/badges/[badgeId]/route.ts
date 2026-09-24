@@ -3,6 +3,7 @@ import { authenticated } from "@/lib/auth";
 import { audit, getWorkspaceState } from "@/lib/cloudflareWorkspace";
 import { nowIso, privateDb } from "@/lib/cloudflarePrivate";
 import { serviceDb } from "@/lib/supabase";
+import { runtimeServiceDb } from "@/lib/supabaseRuntime";
 import { requireTeamRole } from "@/lib/teams";
 import { teamApiError } from "@/lib/teamApiError";
 import {
@@ -16,6 +17,10 @@ import { presentTeamBadge, type PresentedTeamBadge } from "@/lib/teamBadgePresen
 export const dynamic = "force-dynamic";
 
 type Context = { params: Promise<{ id: string; badgeId: string }> };
+
+function teamServiceDb() {
+  return runtimeServiceDb() || serviceDb();
+}
 
 export async function GET(_request: Request, context: Context) {
   try {
@@ -94,7 +99,7 @@ async function loadCloudflareBadge(teamId: string, badgeId: string): Promise<Pre
 }
 
 async function loadSupabaseBadge(teamId: string, badgeId: string): Promise<PresentedTeamBadge | null> {
-  const db = serviceDb();
+  const db = teamServiceDb();
   const [badgeResult, watchResult] = await Promise.all([
     db.from("team_badges").select("*").eq("id", badgeId).eq("team_id", teamId).maybeSingle(),
     db.from("team_watchlist_items").select("extension_id,last_observed_version,baseline_version").eq("team_id", teamId),
@@ -147,7 +152,7 @@ async function mutateSupabaseBadge(
   userId: string,
   input: BadgePatch,
 ): Promise<PresentedTeamBadge> {
-  const db = serviceDb();
+  const db = teamServiceDb();
   const result = await db.from("team_badges").select("*").eq("id", badgeId).eq("team_id", teamId).maybeSingle();
   if (result.error) throw result.error;
   const badge = normalizeTeamBadge(result.data);

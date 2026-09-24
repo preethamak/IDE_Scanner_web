@@ -31,6 +31,7 @@ SCAN_RATE_LIMIT_SECRET=... # separate random value
 RESEND_API_KEY=... # server-only; required for feedback and email notifications
 NOTIFICATION_FROM_EMAIL=feedback@abscissa.dev # verified Resend sender
 FEEDBACK_TO_EMAIL=hello@abscissa.dev # company inbox; defaults to hello@abscissa.dev
+GOOGLE_OAUTH_CLIENT_SECRET=... # server-only; Google OAuth web client secret
 ```
 
 Configure the scanner repository Action secret `SCAN_CALLBACK_SECRET` with the same callback value. Configure the web repository Action secrets:
@@ -62,7 +63,14 @@ The default is `sarvam-105b` for the standard-key interactive report path. `deep
 
 The intelligence endpoint is `POST /api/extensions/:id/versions/:version/scans/:scanId/intelligence` and accepts only a bounded review goal (`install_decision`, `flag_investigation`, or `publisher_response`) and `standard` depth. It returns a concise, evidence-cited reviewer guide rather than a free-form report; the deterministic scan remains authoritative. It uses the shared D1 `app_ai_usage` window for production limiting (three requests per user per ten minutes), with the operator kill switch `SARVAM_INTELLIGENCE_REPORT_ENABLED=false`. Deep review is intentionally not exposed until a separate shared credit/quota policy is enabled.
 
-Configure Supabase Auth with site URL `https://abscissa.dev` and redirect URLs `https://abscissa.dev/auth/callback` and `http://localhost:8765/auth/callback`. Google and GitHub OAuth use callback `https://PROJECT.supabase.co/auth/v1/callback`. Enable the corresponding production UI with `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true` and `NEXT_PUBLIC_GITHUB_AUTH_ENABLED=true` only after its provider is configured in Supabase.
+Google sign-in uses the Cloudflare Worker routes shown below rather than the legacy Supabase browser OAuth flow. Register both exact URLs in the Google OAuth client while testing:
+
+```text
+https://abscissa.dev/api/auth/callback/google
+http://localhost:8765/api/auth/callback/google
+```
+
+The production redirect is pinned in `wrangler.jsonc` as `GOOGLE_OAUTH_REDIRECT_URI`; keep the value identical to the URL registered in Google Cloud. `GOOGLE_OAUTH_CLIENT_ID` is a Worker variable and `GOOGLE_OAUTH_CLIENT_SECRET` is a server-only secret. Email sign-in sends a one-click link through the `AUTH_EMAIL` Cloudflare Email Sending binding, or through Resend when that binding is unavailable. The link expires after ten minutes. Set `RESEND_API_KEY` and keep `AUTH_EMAIL_FROM` on a verified sender before enabling the production flow.
 
 ### Cloudflare deployment
 
@@ -90,11 +98,22 @@ behavior: public routes prefer D1 and fall back to the GitHub snapshot if D1 is
 unavailable. Workspace authentication, teams, billing, and private tables still
 use Supabase until their separate Cloudflare Access/D1 migration is completed.
 
-Email sign-in uses a six-digit one-time password so users can request the code in one browser and enter it in another. In Supabase Dashboard, open **Authentication → Email Templates → Magic Link**, use `{{ .Token }}` in the message body (not `{{ .ConfirmationURL }}`), and update the subject to describe a sign-in code. Keep the code expiry short. Supabase's default sender is intended for limited development use; for a zero-cost launch, make GitHub OAuth the primary sign-in path and retain email OTP only while its delivery and template configuration are verified.
+Anonymous Deep Scan access is a server-enforced five-scan trial per requester
+over a 30-day window. The requester fingerprint is HMAC-hashed from the
+forwarded IP and stored in D1 `app_guest_scan_trials`; raw IP addresses are not
+stored. Each guest job is linked to a separate hashed `gr_trial` HttpOnly cookie
+in `app_guest_scan_access`, which lets that browser follow only its own scan.
+The quota is checked and consumed by `cloudflareGuestTrialStatus` and
+`consumeGuestTrial` in `lib/cloudflareDeepScan.ts`, and the tables are created by
+`d1/migrations/0005_guest_deep_scan_trials.sql`. The `/api/deep-scans` endpoint
+returns the remaining count to the Deep Scan control and switches to the sign-in
+path once the trial is exhausted.
+
+The legacy Supabase email OTP endpoint remains available only for existing sessions and migration compatibility; the product UI no longer asks users to copy an OTP.
 
 ### Free-plan authentication decision
 
-The application intentionally does not expose email-and-password sign-up, sign-in, or reset flows. It uses email OTP and OAuth instead, so Supabase's paid leaked-password-protection advisor finding is not a product password risk. Keep this visible as an accepted platform-plan exception in launch reviews; do not suppress it by adding a password flow. The regression test `lib/passwordlessAuthSurface.test.ts` protects that boundary.
+The application intentionally does not expose email-and-password sign-up, sign-in, or reset flows. It uses secure email links and OAuth instead, so Supabase's paid leaked-password-protection advisor finding is not a product password risk. Keep this visible as an accepted platform-plan exception in launch reviews; do not suppress it by adding a password flow. The regression test `lib/passwordlessAuthSurface.test.ts` protects that boundary.
 
 ## Run the complete product locally
 

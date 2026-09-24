@@ -29,13 +29,13 @@ export function authEmailFrom(): string {
   return runtimeEnv("AUTH_EMAIL_FROM").trim() || "hello@abscissa.dev";
 }
 
-export async function sendAuthCode(email: string, code: string): Promise<void> {
+export async function sendAuthLink(email: string, link: string): Promise<void> {
   const message: EmailMessage = {
     to: email,
     from: authEmailFrom(),
-    subject: "Your GuardRails sign-in code",
-    text: `Your GuardRails sign-in code is ${code}. It expires in 10 minutes. If you did not request this, you can ignore this email.`,
-    html: `<p>Your GuardRails sign-in code is <strong>${code}</strong>.</p><p>It expires in 10 minutes. If you did not request this, you can ignore this email.</p>`,
+    subject: "Sign in to GuardRails",
+    text: `Use this secure link to sign in to GuardRails:\n\n${link}\n\nThis link expires in 10 minutes. If you did not request it, you can ignore this email.`,
+    html: `<p>Use this secure link to sign in to GuardRails:</p><p><a href="${link}">Sign in to GuardRails</a></p><p>This link expires in 10 minutes. If you did not request it, you can ignore this email.</p>`,
   };
 
   const binding = cloudflareEmail();
@@ -44,7 +44,7 @@ export async function sendAuthCode(email: string, code: string): Promise<void> {
       await binding.send(message);
       return;
     } catch {
-      // Cloudflare Email Sending is unavailable on the free Workers plan.
+      // Fall through to the configured transactional provider.
     }
   }
 

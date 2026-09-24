@@ -5,6 +5,7 @@ import { getCloudflareScanProduct } from "@/lib/cloudflareDeepScan";
 import { audit, getWorkspaceState } from "@/lib/cloudflareWorkspace";
 import { newId, nowIso, privateDb } from "@/lib/cloudflarePrivate";
 import { serviceDb } from "@/lib/supabase";
+import { runtimeServiceDb } from "@/lib/supabaseRuntime";
 import { requireTeamRole } from "@/lib/teams";
 import { teamApiError } from "@/lib/teamApiError";
 import {
@@ -24,6 +25,10 @@ type Context = { params: Promise<{ id: string }> };
 type BadgeResponse = PresentedTeamBadge;
 
 const extensionPattern = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+$/;
+
+function teamServiceDb() {
+  return runtimeServiceDb() || serviceDb();
+}
 
 export async function GET(request: Request, context: Context) {
   try {
@@ -102,7 +107,7 @@ async function listCloudflareBadges(teamId: string, userId: string): Promise<Bad
 }
 
 async function listSupabaseBadges(teamId: string, userId: string): Promise<BadgeResponse[]> {
-  const db = serviceDb();
+  const db = teamServiceDb();
   const [badgeResult, watchResult] = await Promise.all([
     db.from("team_badges").select("*").eq("team_id", teamId).order("updated_at", { ascending: false }),
     db.from("team_watchlist_items").select("extension_id,last_observed_version").eq("team_id", teamId),
@@ -463,7 +468,7 @@ async function createSupabaseBadge(
   input: BadgeInput,
   request: Request,
 ): Promise<{ status: number; body: Record<string, unknown> }> {
-  const db = serviceDb();
+  const db = teamServiceDb();
   const key = badgeKey(input.extensionId, input.version);
   const existingResult = await db.from("team_badges").select("*").eq("team_id", teamId).eq("badge_key", key).maybeSingle();
   if (existingResult.error) throw existingResult.error;
@@ -552,7 +557,7 @@ async function syncSupabasePending(
   const badge = summary
     ? teamBadgeFromScan(summary, { ...existing, updated_at: now, scan_job_id: stringOrNull(scan.id) || existing.scan_job_id })
     : { ...existing, scan_job_id: stringOrNull(scan.id) || existing.scan_job_id, updated_at: now };
-  const result = await serviceDb().from("team_badges").update(serializeSupabaseBadge(badge)).eq("id", badge.id).eq("team_id", teamId).select("*").single();
+  const result = await teamServiceDb().from("team_badges").update(serializeSupabaseBadge(badge)).eq("id", badge.id).eq("team_id", teamId).select("*").single();
   if (result.error) throw result.error;
   const saved = normalizeTeamBadge(result.data) || badge;
   return { badge: presentTeamBadge(saved), reused_scan: scan.reused === true || scan.deduplicated === true };
@@ -564,7 +569,7 @@ async function getCloudflareCompletedScan(extensionId: string, version: string, 
 }
 
 async function getSupabaseCompletedScan(extensionId: string, version: string, scanId: string): Promise<Record<string, unknown> | null> {
-  const result = await serviceDb().from("scans").select("id,extension_id,version,artifact_sha256,analysis_status,decision,verdict,public_outcome,analysis_coverage,capability_assessment,risk_score,malware_score,coverage_percent,scanned_at").eq("id", scanId).eq("extension_id", extensionId).eq("version", version).maybeSingle();
+  const result = await teamServiceDb().from("scans").select("id,extension_id,version,artifact_sha256,analysis_status,decision,verdict,public_outcome,analysis_coverage,capability_assessment,risk_score,malware_score,coverage_percent,scanned_at").eq("id", scanId).eq("extension_id", extensionId).eq("version", version).maybeSingle();
   if (result.error) throw result.error;
   return result.data as Record<string, unknown> | null;
 }

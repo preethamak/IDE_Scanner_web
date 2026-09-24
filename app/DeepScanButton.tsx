@@ -105,6 +105,7 @@ export default function DeepScanButton({
   const [signedOut, setSignedOut] = useState(false);
   const [guestTrialAvailable, setGuestTrialAvailable] = useState(false);
   const [guestTrialRemaining, setGuestTrialRemaining] = useState(0);
+  const [guestTrialExhausted, setGuestTrialExhausted] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -126,9 +127,16 @@ export default function DeepScanButton({
         setHealth("network_unavailable");
       }
       const job = jobResult.status === "fulfilled" ? jobResult.value : null;
+      if (typeof job?.guest_trial_remaining === "number") {
+        const remaining = Number(job.guest_trial_remaining);
+        setGuestTrialRemaining(remaining);
+        setGuestTrialAvailable(
+          job.guest_trial_available !== false && remaining > 0,
+        );
+        setGuestTrialExhausted(remaining === 0);
+      }
       if (job?.auth_required) {
         setSignedOut(true);
-        setGuestTrialAvailable(false);
       } else if (job?.guest_trial_available) {
         setSignedOut(false);
         setGuestTrialAvailable(true);
@@ -180,7 +188,13 @@ export default function DeepScanButton({
       if (requestInFlight || document.visibilityState === "hidden") return;
       requestInFlight = true;
       let response: Response;
-      let body: { status?: string; report_url?: string; error?: string };
+      let body: {
+        status?: string;
+        report_url?: string;
+        error?: string;
+        guest_trial_remaining?: number;
+        guest_trial_available?: boolean;
+      };
       try {
         const headers = await browserAuthHeaders(db);
         response = await fetch(`/api/deep-scans/${jobId}`, { cache: "no-store", headers });
@@ -205,6 +219,16 @@ export default function DeepScanButton({
         window.clearInterval(timer);
         return;
       }
+      if (typeof body.guest_trial_remaining === "number") {
+        setGuestTrialRemaining(body.guest_trial_remaining);
+        setGuestTrialAvailable(
+          body.guest_trial_available !== false && body.guest_trial_remaining > 0,
+        );
+        if (body.guest_trial_remaining === 0) {
+          setGuestTrialExhausted(true);
+          setSignedOut(true);
+        }
+      }
       if ([429, 502, 503, 504].includes(response.status)) {
         consecutiveFailures += 1;
         if (consecutiveFailures >= 3)
@@ -223,20 +247,23 @@ export default function DeepScanButton({
       if (["complete", "incomplete"].includes(String(body.status))) {
         const terminal =
           body.status === "incomplete" ? "incomplete" : "complete";
-        setState(terminal);
-        setReportUrl(
-          String(
-            body.report_url ||
-              extensionPageModel(extensionId, version, null).reportHref,
-          ),
+        const nextReportUrl = String(
+          body.report_url ||
+            extensionPageModel(extensionId, version, null).reportHref,
         );
+        setState(terminal);
+        setReportUrl(nextReportUrl);
         setMessage(
           terminal === "complete"
             ? "Deep Scan complete. Your Analysis Report is ready."
             : "Deep Scan is incomplete. Review the missing checks before making a trust decision.",
         );
         window.clearInterval(timer);
-        router.refresh();
+        if (showReportLink) {
+          router.push(nextReportUrl);
+        } else {
+          router.refresh();
+        }
       } else if (body.status === "failed") {
         setState("error");
         setMessage(
@@ -265,10 +292,10 @@ export default function DeepScanButton({
       }
     }, 5000);
     return () => window.clearInterval(timer);
-  }, [db, jobId, router, extensionId, version]);
+  }, [db, jobId, router, extensionId, version, showReportLink]);
 
   async function queue() {
-    if (signedOut && !guestTrialAvailable) {
+    if (signedOut && !guestTrialAvailable && guestTrialExhausted) {
       trackProductEvent({
         name: "workspace_signup_started",
         source_route: window.location.pathname,
@@ -286,6 +313,7 @@ export default function DeepScanButton({
     let response: Response;
     let body: {
       error?: string;
+      code?: string;
       status?: string;
       report_url?: string;
       id?: string;
@@ -318,9 +346,23 @@ export default function DeepScanButton({
       return;
     }
     if (!response.ok) {
+      if (body.code === "guest_trial_exhausted") {
+        setSignedOut(true);
+        setGuestTrialAvailable(false);
+        setGuestTrialRemaining(0);
+        setGuestTrialExhausted(true);
+      }
       setState("error");
       setMessage(body.error || "Deep Scan is temporarily unavailable.");
       return;
+    }
+    if (typeof body.trial_remaining === "number") {
+      setGuestTrialRemaining(body.trial_remaining);
+      setGuestTrialAvailable(body.trial_remaining > 0);
+      if (body.trial_remaining === 0) {
+        setGuestTrialExhausted(true);
+        setSignedOut(true);
+      }
     }
     if (body.status === "complete") {
       setState("complete");
@@ -370,17 +412,7 @@ export default function DeepScanButton({
           ["loading", "queued", "running"].includes(state)
         }
       >
-        {signedOut && !guestTrialAvailable ? (
-          <>
-            Create free workspace to Deep Scan <ScanSearch size={16} />
-          </>
-        ) : health === "checking" ? (
-          <>
-            <LoaderCircle className="spin" size={16} /> Checking availability
-          </>
-        ) : unavailable ? (
-          "Deep Scan unavailable"
-        ) : state === "loading" ? (
+        {state === "loading" ? (
           <>
             <LoaderCircle className="spin" size={16} /> Queueing
           </>
@@ -390,6 +422,22 @@ export default function DeepScanButton({
           <>
             <LoaderCircle className="spin" size={16} /> Analyzing
           </>
+        ) : guestTrialAvailable && !signedOut ? (
+          <>
+            Try {guestTrialRemaining || 5} free scan{guestTrialRemaining === 1 ? "" : "s"} <ScanSearch size={16} />
+          </>
+        ) : signedOut && !guestTrialAvailable ? (
+          <>
+            {guestTrialExhausted
+              ? "Create free workspace to continue"
+              : "Try 5 free scans"} <ScanSearch size={16} />
+          </>
+        ) : health === "checking" ? (
+          <>
+            <LoaderCircle className="spin" size={16} /> Checking availability
+          </>
+        ) : unavailable ? (
+          "Deep Scan unavailable"
         ) : ["complete", "incomplete"].includes(state) ? (
           <>
             Run a new scan <ScanSearch size={16} />
@@ -402,7 +450,7 @@ export default function DeepScanButton({
       </button>
       {guestTrialAvailable && !signedOut ? (
         <span className="actionNotice" role="status">
-          {guestTrialRemaining || 5} free Deep Scan{guestTrialRemaining === 1 ? "" : "s"} without sign-in. Sign in to save history and monitor releases.
+          {guestTrialRemaining || 5} free scan{guestTrialRemaining === 1 ? "" : "s"} without sign-in. Sign in to save history and monitor releases.
         </span>
       ) : null}
       {showReportLink && reportUrl ? (

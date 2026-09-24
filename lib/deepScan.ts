@@ -3,6 +3,7 @@ import { resolveMarketplaceExtension } from "@/lib/marketplace";
 import { serviceDb } from "@/lib/supabase";
 import { getDeepScanHealth } from "@/lib/deepScanHealth";
 import { cloudflarePrivateAvailable, dispatchCloudflareDeepScan, queueCloudflareDeepScan } from "@/lib/cloudflareDeepScan";
+import { consumeSupabaseGuestTrial, guestTrialKey, guestTrialTokenHash, supabaseGuestTrialStatus } from "@/lib/supabaseGuestTrial";
 import { runtimeEnv } from "@/lib/runtimeEnv";
 
 export class DeepScanUnavailableError extends Error {
@@ -94,6 +95,159 @@ export async function queueDeepScan(
     throw new Error(message);
   }
   return withReportUrl({ ...job.data, profile: "deep", runner_poll_seconds: 0, dispatch: dispatched ? "started" : "scheduled" });
+}
+
+export async function queueSupabaseGuestDeepScan(
+  extensionId: string,
+  requestedVersion: string | undefined,
+  request: Request,
+  trialToken: string,
+  force = false,
+): Promise<Record<string, unknown>> {
+  if (cloudflarePrivateAvailable()) {
+    throw new Error("The Cloudflare guest scan path should be used for this deployment.");
+  }
+  if (!trialToken) throw new Error("A trial session is required.");
+  const health = await getDeepScanHealth();
+  if (!health.accepting_requests)
+    throw new DeepScanUnavailableError("Deep Scan is not configured to accept requests.");
+  const db = serviceDb();
+  const item = await resolveMarketplaceExtension(extensionId);
+  const canonicalExtensionId = item.extension_id;
+  const version = requestedVersion || item.version;
+  if (!version) throw new Error("No published version is available for this extension.");
+  const tokenHash = guestTrialTokenHash(trialToken);
+  const trialKey = guestTrialKey(request);
+
+  const active = await db
+    .from("scan_jobs")
+    .select("*")
+    .eq("extension_id", canonicalExtensionId)
+    .eq("version", version)
+    .eq("profile", "deep")
+    .in("status", ["queued", "running"])
+    .maybeSingle();
+  if (active.error) throw active.error;
+  if (active.data) {
+    const existingAccess = await db
+      .from("guest_deep_scan_access")
+      .select("job_id")
+      .eq("job_id", String(active.data.id))
+      .eq("token_hash", tokenHash)
+      .eq("trial_key", trialKey)
+      .maybeSingle();
+    if (existingAccess.error) throw existingAccess.error;
+    if (!existingAccess.data)
+      throw new Error("A scan for this release is already running. Try again shortly.");
+    return withReportUrl({
+      ...active.data,
+      deduplicated: true,
+      trial_remaining: (await supabaseGuestTrialStatus(request)).remaining,
+    });
+  }
+
+  const requiredBuild = await currentScannerBuild();
+  if (requiredBuild && !force) {
+    const complete = await db
+      .from("scans")
+      .select("id")
+      .eq("extension_id", canonicalExtensionId)
+      .eq("version", version)
+      .eq("scanner_build", requiredBuild)
+      .eq("analysis_status", "complete")
+      .order("scanned_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (complete.error) throw complete.error;
+    if (complete.data) {
+      return withReportUrl({
+        status: "complete",
+        scan_id: complete.data.id,
+        reused: true,
+        extension_id: canonicalExtensionId,
+        version,
+        trial_remaining: (await supabaseGuestTrialStatus(request)).remaining,
+      });
+    }
+  }
+
+  const trial = await consumeSupabaseGuestTrial(request);
+  const extension = await db.from("extensions").upsert(
+    {
+      id: item.extension_id,
+      name: item.extension_id.split(".").slice(1).join("."),
+      display_name: item.display_name,
+      publisher: item.publisher,
+      description: item.short_description,
+      registry: item.registry || "vs-marketplace",
+      publisher_verified: item.publisher_verified,
+      installs: item.install_count,
+      rating: item.rating_average,
+      icon_url: item.icon_url,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "id" },
+  );
+  if (extension.error) throw extension.error;
+
+  const artifact = await db.from("extension_versions").upsert(
+    {
+      extension_id: item.extension_id,
+      version,
+      registry: item.registry || "vs-marketplace",
+      is_latest: version === item.version,
+      scan_state: "queued",
+    },
+    { onConflict: "extension_id,version" },
+  );
+  if (artifact.error) throw artifact.error;
+
+  const job = await db
+    .from("scan_jobs")
+    .insert({
+      extension_id: canonicalExtensionId,
+      version,
+      profile: "deep",
+      requester_hash: trialKey,
+      requested_by: null,
+      scan_purpose: "user_request",
+      status: "queued",
+      expected_scanner_build: null,
+      claim_protocol: 2,
+    })
+    .select("*")
+    .single();
+  if (job.error) throw job.error;
+
+  const access = await db.from("guest_deep_scan_access").insert({
+    job_id: job.data.id,
+    token_hash: tokenHash,
+    trial_key: trialKey,
+  });
+  if (access.error) throw access.error;
+
+  await db.from("scan_job_events").insert({
+    job_id: job.data.id,
+    stage: "queued",
+    event_type: "guest_trial_created",
+    detail: { extension_id: canonicalExtensionId, version },
+  });
+  let dispatched = false;
+  try {
+    dispatched = await dispatchDeepScan(String(job.data.id));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "The Deep Scan worker could not be started.";
+    await db.from("scan_jobs").update({ status: "failed", lifecycle_stage: "failed", error: message, callback_error: message, completed_at: new Date().toISOString(), updated_at: new Date().toISOString(), last_event_at: new Date().toISOString() }).eq("id", job.data.id);
+    await db.from("scan_job_events").insert({ job_id: job.data.id, stage: "failed", event_type: "dispatch_failed", detail: { error: message } });
+    throw new Error(message);
+  }
+  return {
+    ...job.data,
+    profile: "deep",
+    runner_poll_seconds: 0,
+    dispatch: dispatched ? "started" : "scheduled",
+    trial_remaining: trial.remaining,
+  };
 }
 
 export function withReportUrl<T extends Record<string, unknown>>(result: T): T & { report_url?: string } {

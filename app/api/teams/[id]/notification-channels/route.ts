@@ -33,7 +33,12 @@ export async function GET(request: Request, context: Context) {
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst", "viewer"]);
     if (provider === "cloudflare") {
       const state = await getWorkspaceState(id);
-      return NextResponse.json({ configured: outboundNotificationsConfigured(), channels: state.channels.map(({ target: _target, ...channel }) => channel), deliveries: state.deliveries, digest_deliveries: state.digest_deliveries });
+      return NextResponse.json({
+        configured: outboundNotificationsConfigured(),
+        channels: state.channels.map((channel) => Object.fromEntries(Object.entries(channel).filter(([key]) => key !== "target"))),
+        deliveries: state.deliveries,
+        digest_deliveries: state.digest_deliveries,
+      });
     }
     const db = serviceDb();
     const [channelResult, deliveryResult, digestResult] = await Promise.all([
@@ -151,7 +156,7 @@ export async function POST(request: Request, context: Context) {
       const channel = { id: newId(), kind, label, enabled: true, minimum_severity: severity, last_validated_at: createdAt, last_error: null, created_at: createdAt, target };
       state.channels.push(channel);
       await saveState(id, state);
-      const { target: _target, ...safeChannel } = channel;
+      const safeChannel = Object.fromEntries(Object.entries(channel).filter(([key]) => key !== "target"));
       return NextResponse.json(safeChannel, { status: 201 });
     }
     const { data, error } = await serviceDb()

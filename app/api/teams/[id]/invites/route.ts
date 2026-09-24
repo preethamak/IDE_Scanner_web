@@ -42,7 +42,9 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     if (provider === "cloudflare") {
       const invitation = { id: newId(), team_id: id, role, expires_at: new Date(Date.now() + expiresInDays * DAY).toISOString(), accepted_at: null, created_at: nowIso(), token_hash: tokenHash(token), created_by: user.id };
       await privateDb().prepare("INSERT INTO app_team_invitations(id,team_id,token_hash,role,expires_at,accepted_at,created_by,created_at) VALUES(?,?,?,?,?,?,?,?)").bind(invitation.id, invitation.team_id, invitation.token_hash, invitation.role, invitation.expires_at, null, invitation.created_by, invitation.created_at).run();
-      const { token_hash: _tokenHash, team_id: _teamId, created_by: _createdBy, ...safeInvitation } = invitation;
+      const safeInvitation = Object.fromEntries(
+        Object.entries(invitation).filter(([key]) => !["token_hash", "team_id", "created_by"].includes(key)),
+      );
       return NextResponse.json({ invitation: safeInvitation, invitation_path: `/workspace/invitations/${token}` }, { status: 201 });
     }
     const { data, error } = await serviceDb().from("team_invitations").insert({ team_id: id, token_hash: tokenHash(token), role, expires_at: new Date(Date.now() + expiresInDays * DAY).toISOString(), created_by: user.id }).select("id,role,expires_at,created_at").single();

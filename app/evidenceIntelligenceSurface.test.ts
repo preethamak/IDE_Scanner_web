@@ -22,4 +22,9 @@ describe("reviewer guide surface", () => {
     expect(visuals).toContain("ReviewerEventChainVisual");
     expect(visuals).toContain("Validated evidence-backed event chain");
   });
+
+  it("keeps the browser request limited to review options", () => {
+    expect(report).toContain('body: JSON.stringify({ review_goal: reviewGoal, depth: "standard" })');
+    expect(report).not.toContain("context_ticket");
+  });
 });

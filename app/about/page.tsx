@@ -26,12 +26,13 @@ export default function AboutPage() {
           <ScanSearch />
           <h2>What the product does</h2>
           <p>
-            It retrieves an exact published artifact, performs static analysis,
-            and records bounded Bubblewrap runtime observations when the
-            artifact requires them. Findings, coverage, artifact identity,
-            scanner build, ruleset, and runtime limitations stay attached to
-            the same report. Unsupported or failed runtime coverage is visible;
-            it is not converted into an allow.
+            It retrieves an exact published artifact, combines deterministic
+            static analysis with bounded Bubblewrap runtime observations when
+            the artifact requires them, and keeps both evidence types on the
+            same report. Findings, coverage, artifact identity, scanner build,
+            ruleset, and runtime limitations stay attached to that release.
+            Unsupported or failed runtime coverage is visible; it is not
+            converted into an allow.
           </p>
         </article>
         <article>

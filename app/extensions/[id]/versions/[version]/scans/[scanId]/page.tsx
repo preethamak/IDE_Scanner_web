@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import AnalysisReport from "@/app/ExtensionDossier";
 import { getExtensionProduct, getVersionScanProduct } from "@/lib/productData";
 import { parseExtensionDossierData } from "@/lib/reportContract";
-import { compileEvidenceIntelligenceContext, signEvidenceIntelligenceContext } from "@/lib/evidenceIntelligence";
 import { cloudflarePrivateAvailable } from "@/lib/cloudflareDeepScan";
 import { cloudflareSessionActive } from "@/lib/cloudflareSession";
 import { serverDb } from "@/lib/supabaseServer";
@@ -55,6 +54,5 @@ export default async function ImmutableScanPage({
       </main>
     );
   }
-  const intelligenceContext = compileEvidenceIntelligenceContext({ version, scan: data.scan, findings: data.findings, files: data.files, dependencies: data.dependencies });
-  return <AnalysisReport data={data} signedIn={claims} intelligenceTicket={signEvidenceIntelligenceContext(intelligenceContext)} />;
+  return <AnalysisReport data={data} signedIn={claims} />;
 }

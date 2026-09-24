@@ -1,4 +1,4 @@
-const OTP_DELIVERY_FAILURE = "We could not send a sign-in code right now. Please try again shortly or use Google or GitHub sign-in.";
+const OTP_DELIVERY_FAILURE = "We could not send a sign-in link right now. Please try again shortly or use Google or GitHub sign-in.";
 
 export function authErrorMessage(error: unknown): string {
   if (!error || typeof error !== "object") return OTP_DELIVERY_FAILURE;

@@ -18,7 +18,7 @@ import "./cli.css";
 export const metadata: Metadata = {
   title: "GuardRails CLI",
   description:
-    "Scan extensions already installed in your IDE without uploading or executing their code.",
+    "Scan extensions already installed in your IDE locally, with optional isolated runtime evidence.",
   alternates: { canonical: "/cli" },
 };
 
@@ -55,7 +55,8 @@ export default function CliPage() {
           <p>
             Find extensions across VS Code, Cursor, Windsurf, and VSCodium.
             Inspect an integrity-checked local snapshot without executing the
-            extension or sending its source to GuardRails.
+            extension by default or sending its source to GuardRails. An
+            explicit Bubblewrap sandbox command can add local runtime evidence.
           </p>
           <CliInstallCommand />
           <div className="cliHeroNotes">
@@ -66,7 +67,7 @@ export default function CliPage() {
               <Check /> One self-contained, integrity-checked package
             </span>
             <span>
-              <Check /> Extension code is never executed
+              <Check /> Static scan is non-executing by default
             </span>
           </div>
           <p className="cliPackageNote">
@@ -126,8 +127,8 @@ export default function CliPage() {
           <span>Results stay tied to the package you scanned</span>
         </article>
         <article>
-          <strong>Zero execution</strong>
-          <span>Extension code is inspected, never launched</span>
+          <strong>Static by default</strong>
+          <span>Dynamic evidence is explicit and Bubblewrap-isolated</span>
         </article>
         <article>
           <strong>Private by default</strong>
@@ -178,8 +179,9 @@ export default function CliPage() {
           <h2>Your extension code stays on your machine.</h2>
           <p>
             GuardRails copies selected extensions into a temporary private
-            snapshot, scans it locally, then removes the snapshot. It never
-            launches extension code.
+            snapshot, scans it locally, then removes the snapshot. The normal
+            scan never launches extension code; dynamic observation is a
+            separate explicit Bubblewrap command.
           </p>
         </div>
         <div className="cliPrivacyFacts">

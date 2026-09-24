@@ -1,4 +1,5 @@
 import { serviceDb } from "@/lib/supabase";
+import { runtimeServiceDb } from "@/lib/supabaseRuntime";
 import { TeamAuthorizationError } from "@/lib/teamApiError";
 import { privateDb } from "@/lib/cloudflarePrivate";
 
@@ -28,7 +29,7 @@ export async function requireTeamRole(teamId: string, userId: string, allowed: r
     if (!role || !allowed.includes(role)) throw new TeamAuthorizationError();
     return role;
   }
-  const { data, error } = await serviceDb().from("team_members").select("role").eq("team_id", teamId).eq("user_id", userId).maybeSingle();
+  const { data, error } = await (runtimeServiceDb() || serviceDb()).from("team_members").select("role").eq("team_id", teamId).eq("user_id", userId).maybeSingle();
   if (error) throw error;
   const role = teamRole(data?.role);
   if (!role || !allowed.includes(role)) throw new TeamAuthorizationError();
@@ -46,7 +47,7 @@ export async function teamExists(teamId: string): Promise<boolean> {
     const row = await cloudflare.prepare("SELECT id FROM app_teams WHERE id=?").bind(teamId).first<{ id?: unknown }>();
     return Boolean(row?.id);
   }
-  const { data, error } = await serviceDb().from("teams").select("id").eq("id", teamId).maybeSingle();
+  const { data, error } = await (runtimeServiceDb() || serviceDb()).from("teams").select("id").eq("id", teamId).maybeSingle();
   if (error) throw error;
   return Boolean(data);
 }

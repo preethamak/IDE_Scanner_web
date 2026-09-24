@@ -14,9 +14,22 @@ export async function getDeepScanHealth(): Promise<DeepScanHealth> {
   if (cloudflarePrivateAvailable()) {
     if (!runtimeEnv("GITHUB_ACTIONS_TOKEN")) return { accepting_requests: false, status: "configuration_unavailable", last_seen_at: null };
     try {
-      const lastSeen = await getCloudflareRunnerHeartbeat(privateDb());
+      const db = privateDb();
+      const [lastSeen, activeJob] = await Promise.all([
+        getCloudflareRunnerHeartbeat(db),
+        db
+          .prepare("SELECT status,started_at FROM app_scan_jobs WHERE status IN ('queued','running') ORDER BY created_at LIMIT 1")
+          .first<{ status?: string; started_at?: string | null }>(),
+      ]);
+      // Deep Scan is an on-demand worker. An empty queue is a healthy idle
+      // state; requiring a heartbeat during idle periods made the public
+      // status page report a false degradation after the last canary ended.
+      if (!activeJob) return { accepting_requests: true, status: "ready", last_seen_at: lastSeen };
       const recent = lastSeen ? Date.now() - new Date(lastSeen).getTime() < 12 * 60_000 : false;
-      return { accepting_requests: true, status: recent ? "ready" : "runner_delayed", last_seen_at: lastSeen };
+      const activeRun = activeJob.status === "running" && activeJob.started_at
+        ? Date.now() - new Date(String(activeJob.started_at)).getTime() < 25 * 60_000
+        : false;
+      return { accepting_requests: true, status: recent || activeRun ? "ready" : "runner_delayed", last_seen_at: lastSeen };
     } catch {
       return { accepting_requests: true, status: "runner_delayed", last_seen_at: null };
     }

@@ -3,10 +3,11 @@ import { authenticated } from "@/lib/auth";
 import { normalizeMarketplaceId } from "@/lib/marketplace";
 import { serviceDb } from "@/lib/supabase";
 import { serverDb } from "@/lib/supabaseServer";
-import { DeepScanUnavailableError, queueDeepScan } from "@/lib/deepScan";
+import { DeepScanUnavailableError, queueDeepScan, queueSupabaseGuestDeepScan } from "@/lib/deepScan";
 import { scanProgressColumns, scanProgressPayload } from "@/lib/scanProgress";
-import { cloudflareGuestTrialStatus, cloudflarePrivateAvailable, cloudflareScanProgress, getCloudflareGuestJobForRelease, GuestTrialLimitError, guestTrialToken, guestTrialCookie, queueCloudflareGuestDeepScan } from "@/lib/cloudflareDeepScan";
+import { cloudflareGuestTrialStatus, cloudflarePrivateAvailable, cloudflareScanProgress, getCloudflareGuestJobForRelease, GuestTrialLimitError, guestTrialToken as cloudflareGuestTrialToken, guestTrialCookie as cloudflareGuestTrialCookie, queueCloudflareGuestDeepScan } from "@/lib/cloudflareDeepScan";
 import { newSessionToken, privateDb } from "@/lib/cloudflarePrivate";
+import { guestTrialCookie, guestTrialToken, getSupabaseGuestJobForRelease, newGuestTrialToken, supabaseGuestTrialStatus } from "@/lib/supabaseGuestTrial";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,7 +28,7 @@ export async function GET(request: Request) {
       const version = (url.searchParams.get("version") || "").trim();
       const user = await cloudflareAuthenticatedUser(request);
       if (!user) {
-        const guestJob = await getCloudflareGuestJobForRelease(extensionId, version, guestTrialToken(request));
+        const guestJob = await getCloudflareGuestJobForRelease(extensionId, version, cloudflareGuestTrialToken(request));
         const trial = await cloudflareGuestTrialStatus(request);
         if (guestJob) return NextResponse.json({ ...(await cloudflareScanProgress(guestJob)), guest_trial_available: trial.available, guest_trial_remaining: trial.remaining, guest_trial_limit: trial.limit, guest_trial_window_days: trial.window_days });
         return NextResponse.json({ guest_trial_available: trial.available, guest_trial_remaining: trial.remaining, guest_trial_limit: trial.limit, guest_trial_window_days: trial.window_days, auth_required: !trial.available });
@@ -40,11 +41,38 @@ export async function GET(request: Request) {
     const {
       data: { user },
     } = await db.auth.getUser();
-    if (!user)
-      return NextResponse.json(
-        { error: "Sign in to view Deep Scan progress.", code: "auth_required" },
-        { status: 401 },
-      );
+    if (!user) {
+      const token = guestTrialToken(request) || newGuestTrialToken();
+      const url = new URL(request.url);
+      const extensionId = normalizeMarketplaceId(url.searchParams.get("extension_id") || "");
+      const version = (url.searchParams.get("version") || "").trim();
+      try {
+        const guestJob = await getSupabaseGuestJobForRelease(extensionId, version, request);
+        const trial = await supabaseGuestTrialStatus(request);
+        const response = guestJob
+          ? NextResponse.json({
+              ...(await scanProgressPayload(serviceDb(), guestJob)),
+              guest_trial_available: trial.available,
+              guest_trial_remaining: trial.remaining,
+              guest_trial_limit: trial.limit,
+              guest_trial_window_days: trial.window_days,
+            })
+          : NextResponse.json({
+              guest_trial_available: trial.available,
+              guest_trial_remaining: trial.remaining,
+              guest_trial_limit: trial.limit,
+              guest_trial_window_days: trial.window_days,
+              auth_required: !trial.available,
+            });
+        response.headers.append("Set-Cookie", guestTrialCookie(token, request));
+        return response;
+      } catch {
+        return NextResponse.json(
+          { error: "Sign in to view Deep Scan progress.", code: "auth_required" },
+          { status: 401 },
+        );
+      }
+    }
     const url = new URL(request.url);
     const extensionId = normalizeMarketplaceId(
       url.searchParams.get("extension_id") || "",
@@ -94,10 +122,10 @@ export async function POST(request: Request) {
       const user = await cloudflareAuthenticatedUser(request);
       const extensionId = normalizeMarketplaceId(String(payload.extension_id || ""));
       if (!user) {
-        const token = guestTrialToken(request) || newSessionToken();
+        const token = cloudflareGuestTrialToken(request) || newSessionToken();
         const result = await queueCloudflareGuestDeepScan(extensionId, payload.version?.trim() || undefined, request, token, payload.force === true);
         const response = NextResponse.json(result, { status: String(result.status) === "complete" ? 200 : 202 });
-        response.headers.append("Set-Cookie", guestTrialCookie(token));
+        response.headers.append("Set-Cookie", cloudflareGuestTrialCookie(token, undefined, request));
         return response;
       }
       const result = await queueDeepScan(extensionId, payload.version?.trim() || undefined, request, user.id, payload.force === true);
@@ -107,11 +135,21 @@ export async function POST(request: Request) {
     const {
       data: { user },
     } = await db.auth.getUser();
-    if (!user)
-      return NextResponse.json(
-        { error: "Sign in to request a Deep Scan.", code: "auth_required" },
-        { status: 401 },
+    if (!user) {
+      const token = guestTrialToken(request) || newGuestTrialToken();
+      const result = await queueSupabaseGuestDeepScan(
+        normalizeMarketplaceId(String(payload.extension_id || "")),
+        payload.version?.trim() || undefined,
+        request,
+        token,
+        payload.force === true,
       );
+      const response = NextResponse.json(result, {
+        status: String(result.status) === "complete" ? 200 : 202,
+      });
+      response.headers.append("Set-Cookie", guestTrialCookie(token, request));
+      return response;
+    }
     const extensionId = normalizeMarketplaceId(
       String(payload.extension_id || ""),
     );

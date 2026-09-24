@@ -30,4 +30,10 @@ describe("Deep Scan product control", () => {
     );
     expect(styles).toContain("position: static");
   });
+
+  it("offers the free scans before asking for a workspace", () => {
+    expect(source).toContain("Try 5 free scans");
+    expect(source).toContain("guestTrialExhausted");
+    expect(source).not.toContain("Create free workspace to Deep Scan");
+  });
 });

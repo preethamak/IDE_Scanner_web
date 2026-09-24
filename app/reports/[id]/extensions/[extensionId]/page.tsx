@@ -221,8 +221,9 @@ export default function ReportExtensionPage({
                     <div>
                       <strong>{group.summary}</strong>
                       <p>
-                        {group.rule.replaceAll("-", " ")} · {group.count}{" "}
-                        location{group.count === 1 ? "" : "s"}
+                        {group.rule.replaceAll("-", " ")} · {group.occurrences}{" "}
+                        occurrence{group.occurrences === 1 ? "" : "s"} · {group.locations.length}{" "}
+                        location{group.locations.length === 1 ? "" : "s"}
                       </p>
                     </div>
                     <ChevronDown />
@@ -440,6 +441,7 @@ function groupFindings(items: ExtensionDetail["findings"]) {
       summary: string;
       severity: string;
       count: number;
+      occurrences: number;
       locations: string[];
       actionable: boolean;
     }
@@ -449,6 +451,7 @@ function groupFindings(items: ExtensionDetail["findings"]) {
       current = map.get(key);
     if (current) {
       current.count++;
+      current.occurrences += occurrenceCount(f);
       for (const p of f.file_refs || [])
         if (!current.locations.includes(p)) current.locations.push(p);
       current.actionable ||= requiresReview(f.actionability);
@@ -462,6 +465,7 @@ function groupFindings(items: ExtensionDetail["findings"]) {
         summary: f.evidence_summary,
         severity: f.effective_severity || f.severity,
         count: 1,
+        occurrences: occurrenceCount(f),
         locations: [...(f.file_refs || [])],
         actionable: requiresReview(f.actionability),
       });
@@ -471,6 +475,11 @@ function groupFindings(items: ExtensionDetail["findings"]) {
       Number(b.actionable) - Number(a.actionable) ||
       severity(b.severity) - severity(a.severity),
   );
+}
+
+function occurrenceCount(finding: ExtensionDetail["findings"][number]) {
+  const count = Number(finding.evidence?.occurrence_count);
+  return Number.isFinite(count) && count > 0 ? count : Math.max(1, finding.file_refs?.length || 1);
 }
 function severity(s: string) {
   return (

@@ -16,7 +16,7 @@ describe("GuardRails CLI product surface", () => {
     expect(page).toContain("Audit every VS Code-based editor on your machine.");
     expect(page).toContain("Local inventory");
     expect(page).toContain("Exact snapshot");
-    expect(page).toContain("Zero execution");
+    expect(page).toContain("Static by default");
     expect(page).toContain("Private by default");
   });
 

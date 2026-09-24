@@ -16,6 +16,9 @@ const eslintConfig = defineConfig([
     ".claude/**",
     ".venv*/**",
     "supabase/.temp/**",
+    // A separate nested Sites project; its source and generated bundles are
+    // not part of the GuardRails web application lint boundary.
+    "rithika-birthday-site/**",
   ]),
 ]);
 

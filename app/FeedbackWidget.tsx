@@ -14,7 +14,7 @@ type State =
   | { kind: "idle" }
   | { kind: "busy" }
   | { kind: "done"; emailDelivered: boolean }
-  | { kind: "error"; message: string };
+  | { kind: "error"; message: string; mailtoHref?: string };
 
 const initialForm = {
   category: "suggestion" as FeedbackCategory,
@@ -28,6 +28,7 @@ export default function FeedbackWidget() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [state, setState] = useState<State>({ kind: "idle" });
+  const directEmailHref = `mailto:hello@abscissa.dev?subject=${encodeURIComponent(`GuardRails feedback: ${FEEDBACK_CATEGORY_LABELS[form.category]}`)}&body=${encodeURIComponent([form.message.trim(), "", `Page: ${pathname}`, form.contact_email.trim() ? `Reply-to: ${form.contact_email.trim()}` : ""].filter(Boolean).join("\n"))}`;
 
   useEffect(() => {
     if (!open) return;
@@ -69,12 +70,36 @@ export default function FeedbackWidget() {
       const payload = (await response.json().catch(() => null)) as
         | { error?: string; email_delivered?: boolean }
         | null;
-      if (!response.ok) throw new Error(payload?.error || "Feedback could not be sent.");
+      if (!response.ok) {
+        const subject = `GuardRails feedback: ${FEEDBACK_CATEGORY_LABELS[form.category]}`;
+        const body = [
+          form.message.trim(),
+          "",
+          `Page: ${pathname}`,
+          form.contact_email.trim()
+            ? `Reply-to: ${form.contact_email.trim()}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join("\n");
+        throw Object.assign(
+          new Error(payload?.error || "Feedback could not be sent."),
+          response.status >= 500
+            ? {
+                mailtoHref: `mailto:hello@abscissa.dev?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+              }
+            : {},
+        );
+      }
       setState({ kind: "done", emailDelivered: payload?.email_delivered === true });
     } catch (error) {
       setState({
         kind: "error",
         message: error instanceof Error ? error.message : "Feedback could not be sent.",
+        mailtoHref:
+          error && typeof error === "object" && "mailtoHref" in error
+            ? String((error as { mailtoHref?: unknown }).mailtoHref || "")
+            : undefined,
       });
     }
   }
@@ -125,8 +150,9 @@ export default function FeedbackWidget() {
                 <p>
                   {state.emailDelivered
                     ? "It is with the GuardRails team now."
-                    : "The team will review it shortly."}
+                    : "We saved it, but the team inbox is not connected right now. Email us directly so it is seen immediately."}
                 </p>
+                {!state.emailDelivered ? <a href={directEmailHref}>Email hello@abscissa.dev</a> : null}
                 <button type="button" className="button buttonDark" onClick={close}>
                   Done
                 </button>
@@ -188,7 +214,14 @@ export default function FeedbackWidget() {
                   <span>Page context: {pathname}</span>
                   <span>Private message · limited to 5 per hour</span>
                 </div>
-                {state.kind === "error" ? <p className={styles.feedbackError} role="alert">{state.message}</p> : null}
+                {state.kind === "error" ? (
+                  <div className={styles.feedbackError} role="alert">
+                    <p>{state.message}</p>
+                    {state.mailtoHref ? (
+                      <a href={state.mailtoHref}>Email hello@abscissa.dev instead</a>
+                    ) : null}
+                  </div>
+                ) : null}
                 <button type="submit" className="button buttonDark" disabled={state.kind === "busy"}>
                   {state.kind === "busy" ? "Sending…" : <>Send feedback <Send /></>}
                 </button>

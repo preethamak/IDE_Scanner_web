@@ -3,8 +3,8 @@ import { authErrorMessage } from "@/lib/authError";
 
 describe("authErrorMessage", () => {
   it("turns opaque email-delivery failures into a useful recovery message", () => {
-    expect(authErrorMessage({ code: "unexpected_failure", message: "Error sending magic link email" })).toMatch(/could not send a sign-in code/i);
-    expect(authErrorMessage({})).toMatch(/could not send a sign-in code/i);
+    expect(authErrorMessage({ code: "unexpected_failure", message: "Error sending magic link email" })).toMatch(/could not send a sign-in link/i);
+    expect(authErrorMessage({})).toMatch(/could not send a sign-in link/i);
   });
 
   it("keeps a useful authentication error message", () => {

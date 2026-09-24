@@ -1,7 +1,7 @@
 import { ChevronRight, CircleCheck } from "lucide-react";
 import DossierSectionHead from "@/app/dossier/DossierSectionHead";
 
-export type EvidenceGroupData = { rule: string; summary: string; severity: string; count: number; locations: string[]; actionability: string; evidenceClasses: string[] };
+export type EvidenceGroupData = { rule: string; summary: string; severity: string; count: number; occurrences: number; locations: string[]; actionability: string; evidenceClasses: string[] };
 
 export default function AlertsSection({ actionableGroups, lowGroups, contextualGroups }: { actionableGroups: EvidenceGroupData[]; lowGroups: EvidenceGroupData[]; contextualGroups: EvidenceGroupData[] }) {
   return <>
@@ -13,7 +13,7 @@ export default function AlertsSection({ actionableGroups, lowGroups, contextualG
 }
 
 function EvidenceGroup({ group }: { group: EvidenceGroupData }) {
-  return <details className="ds-evidence"><summary><span className={`ds-pill ${pillVariant(group.severity)}`}>{displaySeverity(group.severity)}</span><div className="ds-evidence-body"><strong>{group.summary}</strong><p>{group.count} observed location{group.count === 1 ? "" : "s"} · {actionabilityLabel(group.actionability)}</p><code>{group.rule} · {group.evidenceClasses.join(", ")} evidence</code></div><ChevronRight className="ds-evidence-chevron" /></summary><div className="ds-evidence-locations"><p>{group.count} observation{group.count === 1 ? "" : "s"}. Every recorded location is listed below.</p>{group.locations.length ? group.locations.map((location) => <code key={location}>{location}</code>) : <small>No file location was recorded.</small>}</div></details>;
+  return <details className="ds-evidence"><summary><span className={`ds-pill ${pillVariant(group.severity)}`}>{displaySeverity(group.severity)}</span><div className="ds-evidence-body"><strong>{group.summary}</strong><p>{group.occurrences} occurrence{group.occurrences === 1 ? "" : "s"} · {group.locations.length} location{group.locations.length === 1 ? "" : "s"} · {actionabilityLabel(group.actionability)}</p><code>{group.rule} · {group.evidenceClasses.join(", ")} evidence</code></div><ChevronRight className="ds-evidence-chevron" /></summary><div className="ds-evidence-locations"><p>{group.occurrences} observation{group.occurrences === 1 ? "" : "s"}. Every recorded location is listed below.</p>{group.locations.length ? group.locations.map((location) => <code key={location}>{location}</code>) : <small>No file location was recorded.</small>}</div></details>;
 }
 
 function Empty({ text }: { text: string }) { return <div className="dossierEmpty"><CircleCheck/><p>{text}</p></div>; }

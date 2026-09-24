@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   AtSign,
@@ -12,8 +13,7 @@ import {
 } from "lucide-react";
 import { browserDb } from "@/lib/supabase";
 import { browserAuthHeaders } from "@/lib/browserAuth";
-import { authErrorMessage } from "@/lib/authError";
-import { isEmailOtp, normalizeEmail, normalizeEmailOtp } from "@/lib/emailOtp";
+import { normalizeEmail } from "@/lib/emailOtp";
 import { trackProductEvent } from "@/lib/analyticsEvents";
 import styles from "./Onboarding.module.css";
 import "./account.css";
@@ -31,10 +31,9 @@ const googleEnabled = true;
 // expose the working Cloudflare path in production.
 const githubEnabled = true;
 export default function AccountPage() {
+  const router = useRouter();
   const db = useMemo(() => browserDb(), []);
   const [email, setEmail] = useState("");
-  const [emailOtp, setEmailOtp] = useState("");
-  const [emailOtpSent, setEmailOtpSent] = useState(false);
   const [emailAuthPending, setEmailAuthPending] = useState(false);
   const [account, setAccount] = useState<AccountState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +47,9 @@ export default function AccountPage() {
         : error === "invalid_state"
           ? "That sign-in session expired. Start again."
           : error === "provider_denied"
-            ? "The sign-in provider declined the request. Try again or use another option."
+            ? "Google could not complete sign-in. Check the OAuth callback settings, then try again or use the email link."
+            : error === "google_denied"
+              ? "Google declined this sign-in. If this is a testing OAuth app, add your Google account as a test user."
             : error === "missing_email"
               ? "The provider did not return a verified email address. Try another option."
               : error === "provider_unavailable"
@@ -73,8 +74,16 @@ export default function AccountPage() {
     entryPoint === "monitor"
       ? "Continue to monitor this extension."
       : entryPoint === "report"
-        ? "Continue with this exact public report."
+        ? "Try five free scans before setting up a workspace."
         : "Continue to your workspace.";
+  function continueToDestination() {
+    const destination = new URLSearchParams(window.location.search).get("next");
+    router.push(
+      destination?.startsWith("/") && !destination.startsWith("//")
+        ? destination
+        : "/workspace",
+    );
+  }
   useEffect(() => {
     void (async () => {
       try {
@@ -122,44 +131,17 @@ export default function AccountPage() {
     clean.searchParams.delete("error");
     window.history.replaceState(null, "", clean);
   }, []);
-  function callbackUrl() {
-    const destination =
-      new URLSearchParams(window.location.search).get("next") || "/workspace";
-    // The PKCE code verifier lives in a cookie on this origin, so the email
-    // link must come back to the same origin or the exchange fails.
-    return `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`;
-  }
-  function continueToDestination() {
-    const destination = new URLSearchParams(window.location.search).get("next");
-    window.location.assign(
-      destination?.startsWith("/") && !destination.startsWith("//")
-        ? destination
-        : "/workspace",
-    );
-  }
   async function oauth(provider: "google" | "github") {
-    if (provider === "github") {
-      const next = new URLSearchParams(window.location.search).get("next") || "/workspace";
-      window.location.assign(`/api/auth/github?next=${encodeURIComponent(next)}`);
-      return;
-    }
-    if (!db) {
-      const next = new URLSearchParams(window.location.search).get("next") || "/workspace";
-      window.location.assign(`/api/auth/google?next=${encodeURIComponent(next)}`);
-      return;
-    }
     trackProductEvent({
       name: "workspace_signup_started",
       source_route: window.location.pathname,
       entry_point: entryPoint,
     });
-    const result = await db.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: callbackUrl() },
-    });
-    if (result.error) setMessage(result.error.message);
+    const next = new URLSearchParams(window.location.search).get("next") || "/workspace";
+    const route = provider === "google" ? "/api/auth/google" : "/api/auth/github";
+    window.location.assign(new URL(`${route}?next=${encodeURIComponent(next)}`, window.location.origin).toString());
   }
-  async function sendEmailOtp() {
+  async function sendEmailLink() {
     const address = normalizeEmail(email);
     if (!address) return setMessage("Enter an email address.");
     trackProductEvent({
@@ -168,71 +150,22 @@ export default function AccountPage() {
       entry_point: entryPoint,
     });
     setEmailAuthPending(true);
-    if (!db) {
-      try {
-        const response = await fetch("/api/auth/email/request", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: address }),
-        });
-        const body = await response.json().catch(() => ({}));
-        setEmailAuthPending(false);
-        if (!response.ok) return setMessage(body.error || "Email sign-in is temporarily unavailable.");
-        setEmail(address);
-        setEmailOtp("");
-        setEmailOtpSent(true);
-        return setMessage(body.message || "Enter the sign-in code we sent to your email.");
-      } catch {
-        setEmailAuthPending(false);
-        return setMessage("Email sign-in is temporarily unavailable. Try Google or GitHub.");
-      }
+    try {
+      const next = new URLSearchParams(window.location.search).get("next") || "/workspace";
+      const response = await fetch(`/api/auth/email/request?next=${encodeURIComponent(next)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: address }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) return setMessage(body.error || "Email sign-in is temporarily unavailable.");
+      setEmail(address);
+      setMessage(body.message || "Check your email for a secure sign-in link.");
+    } catch {
+      setMessage("Email sign-in is temporarily unavailable. Try Google or GitHub.");
+    } finally {
+      setEmailAuthPending(false);
     }
-    const result = await db.auth.signInWithOtp({
-      email: address,
-      options: { shouldCreateUser: true, emailRedirectTo: callbackUrl() },
-    });
-    setEmailAuthPending(false);
-    if (result.error) return setMessage(authErrorMessage(result.error));
-    setEmail(address);
-    setEmailOtp("");
-    setEmailOtpSent(true);
-    setMessage("Enter the sign-in code we sent to your email.");
-  }
-  async function verifyEmailOtp() {
-    const address = normalizeEmail(email);
-    if (!isEmailOtp(emailOtp))
-      return setMessage("Enter the complete sign-in code.");
-    setEmailAuthPending(true);
-    if (!db) {
-      try {
-        const response = await fetch("/api/auth/email/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: address,
-            code: emailOtp,
-            next: new URLSearchParams(window.location.search).get("next") || "/workspace",
-          }),
-        });
-        const body = await response.json().catch(() => ({}));
-        setEmailAuthPending(false);
-        if (!response.ok) return setMessage(body.error || "That code is invalid or expired.");
-        window.location.assign(body.next || "/workspace");
-        return;
-      } catch {
-        setEmailAuthPending(false);
-        return setMessage("Email sign-in is temporarily unavailable. Try again.");
-      }
-    }
-    const result = await db.auth.verifyOtp({
-      email: address,
-      token: emailOtp,
-      type: "email",
-    });
-    setEmailAuthPending(false);
-    if (result.error)
-      return setMessage("That code is invalid or expired. Request a new one.");
-    continueToDestination();
   }
   async function finishOnboarding() {
     if (!account || onboardingSaving) return;
@@ -303,21 +236,24 @@ export default function AccountPage() {
           <h1>Set up the place where extension changes come back to you.</h1>
           <p>
             In under a minute, create a workspace, choose the tools you use, and
-            make your first extension decision traceable. You can invite
-            teammates after setup.
+            make your first extension decision traceable. Your free plan starts
+            immediately with no payment details. You can invite teammates after
+            setup.
           </p>
+          <p>Five Deep Scans are free. No card is required.</p>
           <ul className={styles.benefits}>
             <li>Your reviewed version becomes a clear monitoring baseline</li>
             <li>
               New releases return with an exact before-and-after comparison
             </li>
             <li>Every decision keeps its evidence, owner, and reason</li>
+            <li>Five free Deep Scans before you need a workspace</li>
           </ul>
         </section>
         <section className={styles.form} aria-label="Workspace setup">
           <div className={styles.formIntro}>
             <span className={styles.formEyebrow}>Step 1 of 1</span>
-            <h2>Create your decision space</h2>
+            <h2>Start your free workspace</h2>
             <p>
               Start alone or invite a team later. This does not upload any
               source code.
@@ -378,7 +314,7 @@ export default function AccountPage() {
               </>
             ) : (
               <>
-                Create workspace <ArrowRight />
+                Start free workspace <ArrowRight />
               </>
             )}
           </button>
@@ -435,6 +371,9 @@ export default function AccountPage() {
           </p>
           <ul>
             <li>
+              <Check /> Five Deep Scans free — no card required
+            </li>
+            <li>
               <Check /> Public catalog and exact-version intelligence
             </li>
             <li>
@@ -442,6 +381,9 @@ export default function AccountPage() {
             </li>
             <li>
               <Check /> Version-change monitoring
+            </li>
+            <li>
+              <Check /> Five free Deep Scans before workspace setup
             </li>
             <li>
               <Check /> Personal review history
@@ -484,7 +426,7 @@ export default function AccountPage() {
           className="emailOtp"
           onSubmit={(event) => {
             event.preventDefault();
-            void (emailOtpSent ? verifyEmailOtp() : sendEmailOtp());
+            void sendEmailLink();
           }}
         >
           <label>
@@ -497,46 +439,13 @@ export default function AccountPage() {
               aria-label="Email address"
               autoComplete="email"
               spellCheck={false}
-              disabled={emailAuthPending || emailOtpSent}
+              disabled={emailAuthPending}
               required
             />
           </label>
-          {emailOtpSent ? (
-            <>
-              <input
-                className="emailOtpCode"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]{6,10}"
-                value={emailOtp}
-                onChange={(event) =>
-                  setEmailOtp(normalizeEmailOtp(event.target.value))
-                }
-                placeholder="Sign-in code"
-                aria-label="Sign-in code"
-                autoComplete="one-time-code"
-                maxLength={10}
-                required
-              />
-              <div className="emailOtpActions">
-                <button type="submit" disabled={emailAuthPending}>
-                  {emailAuthPending ? "Verifying…" : "Verify code"}
-                </button>
-                <button
-                  type="button"
-                  className="textAction"
-                  onClick={() => void sendEmailOtp()}
-                  disabled={emailAuthPending}
-                >
-                  Send a new code
-                </button>
-              </div>
-            </>
-          ) : (
-            <button type="submit" disabled={emailAuthPending}>
-              {emailAuthPending ? "Sending…" : "Email me a code"}
-            </button>
-          )}
+          <button type="submit" disabled={emailAuthPending}>
+            {emailAuthPending ? "Sending…" : "Email me a secure link"}
+          </button>
         </form>
         {message ? (
           <p className="authMessage" role="status">

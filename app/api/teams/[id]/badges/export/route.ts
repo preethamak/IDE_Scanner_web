@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { authenticated } from "@/lib/auth";
 import { privateDb } from "@/lib/cloudflarePrivate";
 import { serviceDb } from "@/lib/supabase";
+import { runtimeServiceDb } from "@/lib/supabaseRuntime";
 import { requireTeamRole } from "@/lib/teams";
 import { teamApiError } from "@/lib/teamApiError";
 import { presentTeamBadge, type PresentedTeamBadge } from "@/lib/teamBadgePresentation";
@@ -9,6 +10,10 @@ import { renderBadgeMarkdown, renderBadgeSnippets, exportBadgeRecord } from "@/l
 
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
+
+function teamServiceDb() {
+  return runtimeServiceDb() || serviceDb();
+}
 
 export async function GET(request: Request, context: Context) {
   try {
@@ -41,7 +46,7 @@ async function cloudflareBadges(teamId: string): Promise<PresentedTeamBadge[]> {
 }
 
 async function supabaseBadges(teamId: string): Promise<PresentedTeamBadge[]> {
-  const result = await serviceDb().from("team_badges").select("*").eq("team_id", teamId).order("extension_id").order("version");
+  const result = await teamServiceDb().from("team_badges").select("*").eq("team_id", teamId).order("extension_id").order("version");
   if (result.error) throw result.error;
   return (result.data || []).map((row) => presentTeamBadge(row)).filter((badge): badge is PresentedTeamBadge => Boolean(badge));
 }

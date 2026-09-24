@@ -35,7 +35,6 @@ import AlertsSection from "@/app/dossier/AlertsSection";
 import ChangesSection from "@/app/dossier/ChangesSection";
 import OverviewSection from "@/app/dossier/OverviewSection";
 import EvidenceIntelligenceReport from "@/app/EvidenceIntelligenceReport";
-import type { EvidenceIntelligenceTicket } from "@/lib/evidenceIntelligence";
 import { benchmarkValidation } from "@/lib/benchmarkLookup";
 import {
   coveragePresentation,
@@ -80,7 +79,7 @@ const sections: Array<{ id: Section; label: string; icon: typeof Radar }> = [
   { id: "raw", label: "Raw evidence", icon: Terminal },
 ];
 
-export default function AnalysisReport({ data, signedIn = false, intelligenceTicket }: Props & { signedIn?: boolean; intelligenceTicket?: EvidenceIntelligenceTicket }) {
+export default function AnalysisReport({ data, signedIn = false }: Props & { signedIn?: boolean }) {
   const {
     id,
     version,
@@ -207,7 +206,6 @@ export default function AnalysisReport({ data, signedIn = false, intelligenceTic
         version={version}
         scanId={String(scan.id || "")}
         signedIn={signedIn}
-        intelligenceTicket={intelligenceTicket}
       />
       <div className={`dossierLayout ${reportStyles.layout}`}>
         <DossierNavigation
@@ -288,6 +286,7 @@ type Group = {
   summary: string;
   severity: string;
   count: number;
+  occurrences: number;
   locations: string[];
   actionability: string;
   evidenceClasses: string[];
@@ -311,6 +310,7 @@ function groupFindings(findings: ReportFinding[]): Group[] {
       : [];
     if (current) {
       current.count += 1;
+      current.occurrences += findingOccurrences(item, locations);
       current.severity =
         severityRank(findingSeverity) > severityRank(current.severity)
           ? findingSeverity
@@ -323,6 +323,7 @@ function groupFindings(findings: ReportFinding[]): Group[] {
       for (const location of locations)
         if (!current.locations.includes(location))
           current.locations.push(location);
+      current.count = current.locations.length || current.count;
       if (!current.evidenceClasses.includes(evidenceClass))
         current.evidenceClasses.push(evidenceClass);
     } else
@@ -332,7 +333,8 @@ function groupFindings(findings: ReportFinding[]): Group[] {
           item.summary || item.evidence_summary || rule.replaceAll("-", " "),
         ),
         severity: findingSeverity,
-        count: 1,
+        count: locations.length || 1,
+        occurrences: findingOccurrences(item, locations),
         locations,
         actionability,
         evidenceClasses: [evidenceClass],
@@ -344,6 +346,10 @@ function groupFindings(findings: ReportFinding[]): Group[] {
       severityRank(b.severity) - severityRank(a.severity) ||
       b.count - a.count,
   );
+}
+function findingOccurrences(item: ReportFinding, locations: string[]) {
+  const count = Number((item.evidence as ReportObject | undefined)?.occurrence_count);
+  return Number.isFinite(count) && count > 0 ? count : Math.max(1, locations.length);
 }
 function normalizedSeverity(value: string) {
   return ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"].includes(

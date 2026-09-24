@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import {
   createSession,
   parseCookies,
+  requestIsSecure,
   safeNext,
   sessionCookie,
   upsertGithubUser,
@@ -56,9 +57,10 @@ export async function GET(request: Request) {
     const user = await upsertGithubUser({ subject, email, displayName });
     const session = await createSession(user.id);
     const response = NextResponse.redirect(new URL(next, url.origin));
-    response.headers.append("Set-Cookie", sessionCookie(session));
-    response.headers.append("Set-Cookie", "gr_oauth_state=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax");
-    response.headers.append("Set-Cookie", "gr_oauth_next=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax");
+    const secure = requestIsSecure(request);
+    response.headers.append("Set-Cookie", sessionCookie(session, undefined, secure));
+    response.headers.append("Set-Cookie", `gr_oauth_state=; Max-Age=0; Path=/; HttpOnly;${secure ? " Secure;" : ""} SameSite=Lax`);
+    response.headers.append("Set-Cookie", `gr_oauth_next=; Max-Age=0; Path=/; HttpOnly;${secure ? " Secure;" : ""} SameSite=Lax`);
     return response;
   } catch {
     return redirectError(url, "provider_unavailable");

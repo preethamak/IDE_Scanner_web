@@ -21,7 +21,11 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const MAX_BODY_BYTES = 36_864;
+// New clients send only the review options. Keep bounded headroom for a
+// signed context ticket from an older cached client: the ticket contains
+// serialized JSON inside JSON, so its escaped request bytes can exceed the
+// original 36 KiB guard even though the server still caps the full body.
+const MAX_BODY_BYTES = 128 * 1024;
 const WINDOW_MS = 10 * 60 * 1_000;
 const MAX_REQUESTS_PER_WINDOW = 3;
 const localRequestBuckets = new Map<string, { count: number; resetAt: number }>();

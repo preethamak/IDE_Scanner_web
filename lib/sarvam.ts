@@ -13,7 +13,12 @@ import {
 const SARVAM_ORIGIN = "https://api.sarvam.ai";
 const REQUEST_TIMEOUT_MS = 20_000;
 const INTELLIGENCE_REQUEST_TIMEOUT_MS = 55_000;
-const INTELLIGENCE_ATTEMPT_TIMEOUT_MS = 24_000;
+// Sarvam 105B can take longer than the generic request timeout on reports
+// with dense capability and finding context. Keep the overall request budget
+// bounded, but give the first structured-generation attempt enough time to
+// finish instead of converting a slow AI response into a deterministic-only
+// result.
+const INTELLIGENCE_ATTEMPT_TIMEOUT_MS = 45_000;
 const INTELLIGENCE_MAX_ATTEMPTS = 2;
 const INTELLIGENCE_MAX_OUTPUT_TOKENS = 2_400;
 const MAX_CONTEXT_CHARS = 24_000;
@@ -577,6 +582,9 @@ async function requestIntelligenceResponse({
     signal: AbortSignal.timeout(timeoutMs),
   }).catch((error) => {
     if (error instanceof SarvamProviderError) throw error;
+    console.warn("[sarvam-evidence-intelligence] request failed", {
+      error: error instanceof Error ? error.name : "unknown",
+    });
     throw new SarvamProviderError(502);
   });
 

@@ -13,9 +13,9 @@ const css = fs.readFileSync(
 
 describe("GuardRails account surface", () => {
   it("keeps authentication behavior while presenting the product outcome", () => {
-    expect(page).toContain("signInWithOAuth");
-    expect(page).toContain("signInWithOtp");
-    expect(page).toContain("verifyOtp");
+    expect(page).toContain("/api/auth/google");
+    expect(page).toContain("/api/auth/email/request");
+    expect(page).toContain("Email me a secure link");
     expect(page).toContain("Know what changed. Keep the decision.");
     expect(page).toContain("Your GuardRails workspace.");
   });

@@ -2,7 +2,13 @@
 
 ## Release decision
 
-The validated 30-report release is active in production. Its deep-profile replay,
+This file contains the historical 30-report release audit from the earlier
+scanner build. It is not current evidence for the next production release.
+The current release procedure requires a fresh exact-byte holdout, deep
+runtime coverage, and a new accuracy-gated publication manifest; no new cohort
+should be described as live until those artifacts are present.
+
+At the time of that audit, the validated 30-report release was active. Its deep-profile replay,
 stored website reports, and CLI Deep Scan produce the same canonical extension
 result for identical immutable inputs.
 
@@ -84,7 +90,7 @@ dependency intelligence.
 ## Production activation
 
 The publication dry run validated all 30 exact reports before release
-`faf713ea-12cc-4d40-ac9d-a170a6fc3113` was activated. The public registry now lists
+`faf713ea-12cc-4d40-ac9d-a170a6fc3113` was activated at that time. The public registry then listed
 exactly those 30 reports from core build `33ed46d`, with 18 allow, 11 review, and
 1 block. The benchmark API exposes no obsolete static outcome or publication-date
 fields. Browser validation opened the registry and an immutable Code Runner report;

@@ -5,7 +5,7 @@ The web product publishes version-specific extension intelligence. It renders ca
 ## Boundaries
 
 - Next.js routes authenticate requests, enqueue scans, and ingest signed worker callbacks.
-- `lib/scanIngest.ts` validates canonical report schema, immutable artifact identity, scanner build identity, and publication eligibility.
+- `lib/publicCanonicalContract.ts` is the pure shared admission boundary for canonical public/benchmark reports; both `lib/scanIngest.ts` (Supabase) and `lib/cloudflareDeepScan.ts` (Cloudflare/D1) validate report schema, immutable artifact identity, scanner build identity, runtime coverage, and publication eligibility before persistence.
 - Supabase `scan_jobs`, `scan_job_events`, and `scan_callback_receipts` provide durable job state and audit history. RLS limits user-visible rows; service-role-only RPCs claim and reconcile jobs.
 - `app/ExtensionDossier.tsx` owns layout and interaction; `lib/dossierPresentation.ts` owns decision-facing wording and packaged-README selection.
 
@@ -15,4 +15,4 @@ The web app queues a Deep Scan, a worker claims it atomically, the worker execut
 
 ## Trust rules
 
-Public intelligence requires the canonical report contract, immutable artifact and registry identities, an explicit scanner build, and completed required providers. Hosted-static results and incomplete evidence cannot be published as an approval decision.
+Public intelligence requires the canonical report contract, immutable artifact and registry identities, an explicit scanner build, the deep profile, controlled Bubblewrap runtime evidence for capability-gated execution (or an explicit runtime-not-applicable decision), and completed required providers. Hosted-static, static-only, failed-runtime, and incomplete evidence cannot be published as an approval decision.

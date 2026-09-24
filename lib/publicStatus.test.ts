@@ -31,6 +31,22 @@ describe("public product status", () => {
       value.services.filter((item) => item.state === "unknown"),
     ).toHaveLength(3);
   });
+  it("does not mark an unconfigured notification pipeline as unknown", () => {
+    const value = evaluatePublicStatus({
+      runner: ready,
+      newestRegistryRefresh: "2026-08-07T10:00:00.000Z",
+      scanFailureRate: 0,
+      notificationFailureRate: null,
+      notificationConfigured: false,
+      databaseReachable: true,
+      now: new Date("2026-08-07T11:00:00.000Z"),
+    });
+    expect(value.overall).toBe("operational");
+    expect(value.services.find((item) => item.id === "notifications")).toMatchObject({
+      state: "operational",
+      detail: "No notification channels are configured; no deliveries are pending.",
+    });
+  });
   it("lets an active incident degrade healthy service checks", () => {
     const value = evaluatePublicStatus({
       runner: ready,

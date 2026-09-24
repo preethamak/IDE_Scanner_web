@@ -19,6 +19,20 @@ describe("public security summary auth boundary", () => {
     expect(callout).toContain("publicAnalysisAction");
   });
 
+  it("resolves the cached summary CTA against the current browser session", () => {
+    expect(summary).toContain("<PublicAnalysisCallout");
+    expect(callout).toContain(
+      'fetch("/api/auth/session", { cache: "no-store" })',
+    );
+    expect(callout).toContain("publicAnalysisAction");
+    expect(callout).toContain(
+      '<Link className="button buttonDark" href={action.href}>',
+    );
+    expect(callout).toContain(
+      '<a className="button buttonDark" href={action.href}>',
+    );
+  });
+
   it("uses the canonical Deep Scan control for an unscanned exact version", () => {
     expect(callout).toContain("<DeepScanButton");
     expect(callout).toContain("extensionId={extensionId}");

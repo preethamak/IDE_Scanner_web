@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createHash, randomBytes } from "node:crypto";
 import { privateDb, nowIso } from "@/lib/cloudflarePrivate";
-import { sendAuthCode } from "@/lib/cloudflareEmail";
+import { sendAuthLink } from "@/lib/cloudflareEmail";
+import { safeNext } from "@/lib/cloudflarePrivate";
 import { runtimeEnv } from "@/lib/runtimeEnv";
 import { runtimeSupabase } from "@/lib/supabaseRuntime";
 
@@ -26,12 +27,12 @@ export async function POST(request: Request) {
     d1Db = privateDb();
     const existing = await d1Db.prepare("SELECT created_at FROM app_email_auth_codes WHERE email=?").bind(email).first<{ created_at?: unknown }>();
     if (existing?.created_at && Date.now() - Date.parse(String(existing.created_at)) < 60_000) {
-      return NextResponse.json({ error: "Wait a minute before requesting another code." }, { status: 429 });
+      return NextResponse.json({ error: "Wait a minute before requesting another link." }, { status: 429 });
     }
-    const code = codeValue();
+    const token = randomBytes(32).toString("base64url");
     const createdAt = nowIso();
     const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
-    issuedHash = codeHash(email, code);
+    issuedHash = codeHash(email, token);
     await d1Db
       .prepare(
         `INSERT INTO app_email_auth_codes(email,code_hash,attempts,expires_at,created_at)
@@ -40,8 +41,13 @@ export async function POST(request: Request) {
       )
       .bind(email, issuedHash, 0, expiresAt, createdAt)
       .run();
-    await sendAuthCode(email, code);
-    return NextResponse.json({ ok: true, message: "Enter the sign-in code we sent to your email." });
+    const requestedNext = safeNext(new URL(request.url).searchParams.get("next"));
+    const link = new URL("/api/auth/email/verify", request.url);
+    link.searchParams.set("token", token);
+    link.searchParams.set("email", email);
+    link.searchParams.set("next", requestedNext);
+    await sendAuthLink(email, link.toString());
+    return NextResponse.json({ ok: true, message: "Check your email for a secure sign-in link." });
   } catch {
     if (d1Db && issuedHash) {
       await d1Db.prepare("DELETE FROM app_email_auth_codes WHERE email=? AND code_hash=?").bind(email, issuedHash).run().catch(() => undefined);
@@ -53,17 +59,15 @@ export async function POST(request: Request) {
     if (supabase) {
       const result = await supabase.auth.signInWithOtp({
         email,
-        options: { shouldCreateUser: true },
+        options: {
+          shouldCreateUser: true,
+          emailRedirectTo: `${new URL(request.url).origin}/auth/callback?next=${encodeURIComponent(safeNext(new URL(request.url).searchParams.get("next")))}`,
+        },
       });
-      if (!result.error) return NextResponse.json({ ok: true, message: "Enter the sign-in code we sent to your email." });
+      if (!result.error) return NextResponse.json({ ok: true, message: "Check your email for a secure sign-in link." });
     }
     return NextResponse.json({ error: "Email sign-in is not available right now. Use Google or GitHub instead." }, { status: 503 });
   }
-}
-
-function codeValue(): string {
-  const value = randomBytes(4).readUInt32BE(0);
-  return String(value % 1_000_000).padStart(6, "0");
 }
 
 export function codeHash(email: string, code: string): string {

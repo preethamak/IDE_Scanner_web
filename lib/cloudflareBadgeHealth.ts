@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 type JsonObject = Record<string, unknown>;
 type CatalogEntry = { id?: unknown; latest_version?: unknown };
+type CatalogChunk = { payload?: string | null; active_publication_id?: string | null };
 
 /**
  * Reconcile Cloudflare workspace watches with the catalog mirror.
@@ -15,11 +16,30 @@ export async function reconcileCloudflareBadgeHealth(
   db: D1Database,
   now = new Date().toISOString(),
 ): Promise<{ teams_checked: number; teams_changed: number; releases_detected: number }> {
-  const catalogResult = await db
-    .prepare("SELECT payload FROM registry_section_chunks WHERE section=? ORDER BY chunk_index")
-    .bind("catalog")
-    .all<{ payload: string }>();
-  const latestByExtension = latestCatalogVersions(catalogResult.results.map((row) => row.payload).join(""));
+  let catalogResult: { results: CatalogChunk[] };
+  try {
+    catalogResult = await db
+      .prepare(`
+        SELECT c.payload, s.publication_id AS active_publication_id
+        FROM registry_publication_state s
+        LEFT JOIN registry_section_chunks_v2 c
+          ON c.publication_id = s.publication_id AND c.section=?
+        WHERE s.state_key='active'
+        ORDER BY c.chunk_index
+      `)
+      .bind("catalog")
+      .all<CatalogChunk>();
+  } catch {
+    catalogResult = { results: [] };
+  }
+  const activePublication = catalogResult.results.some((row) => Boolean(row.active_publication_id));
+  if (!activePublication) {
+    catalogResult = await db
+      .prepare("SELECT payload FROM registry_section_chunks WHERE section=? ORDER BY chunk_index")
+      .bind("catalog")
+      .all<CatalogChunk>();
+  }
+  const latestByExtension = latestCatalogVersions(catalogResult.results.map((row) => row.payload || "").join(""));
   if (!latestByExtension.size) return { teams_checked: 0, teams_changed: 0, releases_detected: 0 };
 
   const teams = await db

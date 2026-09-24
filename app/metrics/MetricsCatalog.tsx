@@ -13,11 +13,12 @@ const dimensions = [
   ["Publisher & project", "Verification, maintenance, repository and security-policy context."],
   ["Analysis confidence", "Executable coverage and successful completion of required analyzers."],
 ];
+const EMPTY_RULES: ActiveRuleCatalog["rules"] = [];
 
 export default function MetricsCatalog({ catalog }: { catalog: ActiveRuleCatalog | null }) {
   const [query, setQuery] = useState("");
   const [engine, setEngine] = useState("all");
-  const rules = catalog?.rules || [];
+  const rules = catalog?.rules ?? EMPTY_RULES;
   const engines = ["all", ...Array.from(new Set(rules.map((item) => item.engine)))];
   const filtered = useMemo(() => rules.filter((item) => {
     const text = `${item.id} ${item.title} ${item.category} ${item.description}`.toLowerCase();

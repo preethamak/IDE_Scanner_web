@@ -13,7 +13,7 @@ import {
   Printer,
   ShieldAlert,
 } from "lucide-react";
-import type { EvidenceIntelligenceReport, EvidenceIntelligenceTicket, IntelligenceReviewGoal } from "@/lib/evidenceIntelligence";
+import type { EvidenceIntelligenceReport, IntelligenceReviewGoal } from "@/lib/evidenceIntelligence";
 import { BlastRadiusVisual, EvidenceRefs, ReviewerEventChainVisual } from "./EvidenceIntelligenceVisuals";
 import styles from "./evidenceIntelligence.module.css";
 
@@ -30,13 +30,11 @@ export default function EvidenceIntelligenceReport({
   version,
   scanId,
   signedIn,
-  intelligenceTicket,
 }: {
   extensionId: string;
   version: string;
   scanId: string;
   signedIn: boolean;
-  intelligenceTicket?: EvidenceIntelligenceTicket;
 }) {
   const [reviewGoal, setReviewGoal] = useState<IntelligenceReviewGoal>("install_decision");
   const [report, setReport] = useState<EvidenceIntelligenceReport | null>(null);
@@ -50,7 +48,10 @@ export default function EvidenceIntelligenceReport({
       const response = await fetch(`/api/extensions/${encodeURIComponent(extensionId)}/versions/${encodeURIComponent(version)}/scans/${encodeURIComponent(scanId)}/intelligence`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ review_goal: reviewGoal, depth: "standard", ...(intelligenceTicket ? { context_ticket: intelligenceTicket } : {}) }),
+        // The route reloads the exact immutable report server-side. Do not put
+        // the serialized evidence context in the browser request: nesting that
+        // JSON as a ticket roughly doubles its size and can trip request limits.
+        body: JSON.stringify({ review_goal: reviewGoal, depth: "standard" }),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {

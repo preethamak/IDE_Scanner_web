@@ -7,6 +7,7 @@ import {
   Fingerprint,
   HardDrive,
   LockKeyhole,
+  PlaySquare,
   ScanSearch,
   ShieldCheck,
   XCircle,
@@ -34,6 +35,17 @@ const paths = [
     retained:
       "Nothing by GuardRails unless you explicitly import or share the report",
     executes: false,
+  },
+  {
+    icon: PlaySquare,
+    label: "Observed behavior",
+    title: "Optional local sandbox",
+    location: "Your computer · Bubblewrap",
+    input: "A local VSIX or extension folder with explicit opt-in",
+    output: "Observed process, filesystem, DNS, and network events",
+    retained:
+      "Only when you explicitly import the observation report into a scan",
+    executes: true,
   },
   {
     icon: FileArchive,
@@ -180,8 +192,9 @@ export default function AnalysisBoundariesPage() {
                 </div>
               </dl>
               <footer>
-                {executes ? <XCircle /> : <CheckCircle2 />} Extension
-                entrypoints are not executed
+                {executes ? <XCircle /> : <CheckCircle2 />} {executes
+                  ? "Entrypoint runs only inside isolated Bubblewrap"
+                  : "Extension entrypoints are not executed"}
               </footer>
             </article>
           ),

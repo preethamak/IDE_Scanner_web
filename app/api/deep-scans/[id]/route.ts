@@ -6,6 +6,7 @@ import { serverDb } from "@/lib/supabaseServer";
 import { scanProgressColumns, scanProgressPayload } from "@/lib/scanProgress";
 import { cloudflareGuestTrialStatus, cloudflarePrivateAvailable, cloudflareScanProgress, getCloudflareGuestJob, guestTrialToken } from "@/lib/cloudflareDeepScan";
 import { privateDb } from "@/lib/cloudflarePrivate";
+import { getSupabaseGuestJob, supabaseGuestTrialStatus } from "@/lib/supabaseGuestTrial";
 
 export const dynamic = "force-dynamic";
 
@@ -42,8 +43,27 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       if (!job) return NextResponse.json({ error: "Scan job not found." }, { status: 404 });
       return NextResponse.json(await cloudflareScanProgress(job));
     }
-    const db=await serverDb(); const {data:{user}}=await db.auth.getUser(); if(!user)return NextResponse.json({error:"Sign in to view scan progress."},{status:401});
+    const db=await serverDb(); const {data:{user}}=await db.auth.getUser();
     const service = serviceDb();
+    if (!user) {
+      const guestJob = await getSupabaseGuestJob(id, request);
+      if (!guestJob) return NextResponse.json({ error: "This trial scan is unavailable. Sign in to view scans saved to a workspace." }, { status: 401 });
+      if (guestJob.status === "queued" && !guestJob.github_run_id) {
+        await dispatchDeepScan(String(guestJob.id), 120).catch(() => false);
+      }
+      if (isStale(guestJob)) {
+        const reconciled = await service.rpc("reconcile_stale_deep_scans", { p_queue_grace_minutes: QUEUE_GRACE_MINUTES });
+        if (!reconciled.error) {
+          const refreshed = await service.from("scan_jobs").select(scanProgressColumns).eq("id", id).maybeSingle();
+          if (!refreshed.error && refreshed.data) {
+            const trial = await supabaseGuestTrialStatus(request);
+            return NextResponse.json({ ...(await scanProgressPayload(service, refreshed.data)), guest_trial_available: trial.available, guest_trial_remaining: trial.remaining, guest_trial_limit: trial.limit, guest_trial_window_days: trial.window_days });
+          }
+        }
+      }
+      const trial = await supabaseGuestTrialStatus(request);
+      return NextResponse.json({ ...(await scanProgressPayload(service, guestJob)), guest_trial_available: trial.available, guest_trial_remaining: trial.remaining, guest_trial_limit: trial.limit, guest_trial_window_days: trial.window_days });
+    }
     const subscription = await service.from("scan_job_subscribers").select("job_id").eq("job_id", id).eq("user_id", user.id).maybeSingle();
     if (subscription.error) throw subscription.error;
     if (!subscription.data) return NextResponse.json({ error: "Scan job not found." }, { status: 404 });

@@ -15,6 +15,7 @@ import {
   ClipboardCheck,
   Clock3,
   Command,
+  Download,
   Inbox,
   LayoutDashboard,
   Laptop,
@@ -262,6 +263,7 @@ export default function TeamWorkspace(
     cadence_hours: 6,
     error: null,
   });
+  const [policyExportState, setPolicyExportState] = useState<"idle" | "loading" | "error">("idle");
 
   const getAuthHeaders = useCallback(() => browserAuthHeaders(db), [db]);
   const loadTeams = useCallback(async () => {
@@ -376,6 +378,32 @@ export default function TeamWorkspace(
     const timer = window.setTimeout(() => void loadWorkspace(), 0);
     return () => window.clearTimeout(timer);
   }, [loadWorkspace]);
+
+  async function downloadEnterprisePolicy() {
+    if (!activeTeamId || policyExportState === "loading") return;
+    setPolicyExportState("loading");
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(
+        `/api/teams/${encodeURIComponent(activeTeamId)}/policy-bundle`,
+        { headers },
+      );
+      if (!response.ok) throw new Error("Policy export failed.");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "guardrails-enterprise-policy.json";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setPolicyExportState("idle");
+    } catch {
+      setPolicyExportState("error");
+      window.setTimeout(() => setPolicyExportState("idle"), 3000);
+    }
+  }
 
   async function createTeam(name: string) {
     const headers = await getAuthHeaders();
@@ -895,6 +923,13 @@ export default function TeamWorkspace(
             <Link href={registryHref}>
               <Plus /> Add extension
             </Link>
+            <button
+              onClick={() => void downloadEnterprisePolicy()}
+              disabled={policyExportState === "loading"}
+              title="Download the deny-by-default enterprise policy"
+            >
+              <Download /> {policyExportState === "loading" ? "Preparing…" : policyExportState === "error" ? "Retry policy" : "Deploy policy"}
+            </button>
           </div>
         </header>
         {notificationOpen ? (
@@ -985,6 +1020,7 @@ export default function TeamWorkspace(
               watches={watchItems}
               initialExtension={props.initialExtension}
               getAuthHeaders={getAuthHeaders}
+              onChanged={loadWorkspace}
             />
           ) : null}
           {view === "decisions" ? (
