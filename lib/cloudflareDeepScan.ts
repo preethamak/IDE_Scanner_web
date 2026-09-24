@@ -640,7 +640,7 @@ function splitReportText(reportJson: string): string[] {
   return chunks;
 }
 
-async function loadCloudflareReportJson(scanId: string, storedReportJson: string): Promise<string | null> {
+export async function loadCloudflareReportJson(scanId: string, storedReportJson: string): Promise<string | null> {
   const markerValue = parseJson(storedReportJson);
   if (!markerValue || typeof markerValue !== "object" || Array.isArray(markerValue)) return storedReportJson;
   const marker = markerValue as Row;

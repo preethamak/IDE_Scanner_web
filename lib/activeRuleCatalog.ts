@@ -1,7 +1,7 @@
 import "server-only";
 
 import { serviceDb } from "@/lib/supabase";
-import { cloudflarePrivateAvailable } from "@/lib/cloudflareDeepScan";
+import { cloudflarePrivateAvailable, loadCloudflareReportJson } from "@/lib/cloudflareDeepScan";
 import { privateDb } from "@/lib/cloudflarePrivate";
 import { catalogFromReleaseReport, hasCompletePublicCoverage, type ActiveRuleCatalog } from "@/lib/rules";
 import { hasAccuracyGateAttestation } from "@/lib/publicationHealth";
@@ -105,9 +105,11 @@ async function getCloudflareActiveRuleCatalog(): Promise<ActiveRuleCatalog | nul
     const key = `${String(member.extension_id || "").toLowerCase()}@${String(member.version || "")}`;
     if (!key || !member.artifact_sha256 || identities.has(key)) return null;
     identities.add(key);
+    const reportJson = await loadCloudflareReportJson(String(member.scan_id || ""), String(member.report_json || ""));
+    if (!reportJson) return null;
     let bundle: Record<string, unknown>;
     try {
-      bundle = JSON.parse(String(member.report_json || "")) as Record<string, unknown>;
+      bundle = JSON.parse(reportJson) as Record<string, unknown>;
     } catch {
       return null;
     }
