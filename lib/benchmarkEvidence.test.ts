@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectBenchmarkScansForRelease } from "@/lib/benchmarkEvidence";
+import { benchmarkScanIsComplete, selectBenchmarkScansForRelease } from "@/lib/benchmarkEvidence";
 
 const activeRelease = {
   policyVersion: "3.0.0",
@@ -10,6 +10,21 @@ const activeRelease = {
 };
 
 describe("benchmark publication boundary", () => {
+  it("requires canonical completion metadata in addition to 100% scalar coverage", () => {
+    const complete = {
+      analysis_status: "complete",
+      analysis_coverage: { status: "complete", required_providers_complete: true, executable_file_coverage_percent: 100 },
+      coverage_percent: 100,
+      scanner_build: "active-build",
+      policy_version: "3.0.0",
+      ruleset_version: "2026.08.21",
+    };
+    expect(benchmarkScanIsComplete(complete)).toBe(true);
+    expect(benchmarkScanIsComplete({ ...complete, analysis_status: "incomplete" })).toBe(false);
+    expect(benchmarkScanIsComplete({ ...complete, analysis_coverage: { ...complete.analysis_coverage, required_providers_complete: false } })).toBe(false);
+    expect(benchmarkScanIsComplete({ ...complete, policy_version: "legacy" })).toBe(false);
+  });
+
   it("does not let a newer historical scan replace an active-release report", () => {
     const selected = selectBenchmarkScansForRelease([
       {
