@@ -239,14 +239,17 @@ describe("Cloudflare canonical scan callback", () => {
         bind: vi.fn(() => ({
           first: vi.fn().mockResolvedValue(query.includes("FROM app_scan_jobs") ? null : null),
           all: vi.fn().mockResolvedValue(query.includes("app_scan_publication_release_reports") ? {
-            results: [{
-              scan_id: "current-scan",
-              report_json: JSON.stringify(validBundle()),
-              scanner_build: build,
-              ruleset_version: "rules-1",
-              policy_version: "3.0.0",
-              score_schema_version: "2",
-            }],
+              results: [{
+                scan_id: "current-scan",
+                report_json: JSON.stringify(validBundle()),
+                scanner_build: build,
+                ruleset_version: "rules-1",
+                policy_version: "3.0.0",
+                score_schema_version: "2",
+                accuracy_gate_corpus_id: "guardrails-real-evidence-2026",
+                accuracy_gate_corpus_version: "2026.09.24.1",
+                accuracy_gate_sha256: "f".repeat(64),
+              }],
           } : { results: [] }),
         })),
       })),
@@ -260,6 +263,51 @@ describe("Cloudflare canonical scan callback", () => {
       new Request("https://example.test"),
       { id: "user-1" } as never,
     )).resolves.toMatchObject({ status: "complete", scan_id: "current-scan", reused: true });
+  });
+
+  it("does not reuse a report from an active release without an accuracy-gate attestation", async () => {
+    const statements: string[] = [];
+    const db = {
+      prepare: vi.fn((query: string) => {
+        statements.push(query);
+        return {
+          bind: vi.fn(() => ({
+            first: vi.fn().mockResolvedValue(
+              query.includes("dispatch_count") ? { dispatch_count: 0, status: "queued", updated_at: null }
+                : query.includes("COUNT(*)") ? { count: 0 }
+                  : query.includes("FROM app_scan_jobs") ? null
+                    : null,
+            ),
+            all: vi.fn().mockResolvedValue(query.includes("app_scan_publication_release_reports") ? {
+              results: [{
+                scan_id: "unattested-scan",
+                report_json: JSON.stringify(validBundle()),
+                scanner_build: build,
+                ruleset_version: "rules-1",
+                policy_version: "3.0.0",
+                score_schema_version: "2",
+              }],
+            } : { results: [] }),
+            run: vi.fn().mockResolvedValue({ meta: { changes: 1 } }),
+          })),
+        };
+      }),
+      batch: vi.fn(),
+    };
+    harness.privateDb.mockReturnValue(db);
+    harness.runtimeEnv.mockImplementation((key: string) => key === "GITHUB_ACTIONS_TOKEN" ? "github-token" : "");
+    harness.githubDispatch.mockResolvedValue({ ok: true, status: 204 });
+
+    const result = await queueCloudflareDeepScan(
+      "publisher.extension",
+      "1.0.0",
+      new Request("https://example.test"),
+      { id: "user-1" } as never,
+    );
+
+    expect(result.status).toBe("queued");
+    expect(result.reused).toBeUndefined();
+    expect(statements.some((query) => query.includes("accuracy_gate_sha256"))).toBe(true);
   });
 
   it("does not reuse a report whose scanner build is not the active release build", async () => {

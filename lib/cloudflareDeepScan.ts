@@ -9,6 +9,7 @@ import { getCloudflareRegistryCatalogExtension, getCloudflareRegistryProduct } f
 import { markCloudflareRunnerClaimed, markCloudflareRunnerCompleted, markCloudflareRunnerError, recordCloudflareRunnerHeartbeat } from "@/lib/cloudflareRunnerStatus";
 import { dispatchGithubDeepScan } from "@/lib/cloudflareGithubDispatch";
 import { publicCanonicalError } from "@/lib/publicCanonicalContract";
+import { hasAccuracyGateAttestation } from "@/lib/publicationHealth";
 
 type Row = Record<string, unknown>;
 type Bundle = { metadata?: Row; extensions?: Row | Row[] };
@@ -530,9 +531,13 @@ async function cloudflareReleaseBuildIsCurrent(db: ReturnType<typeof privateDb>,
 async function reusableCloudflareScanId(db: ReturnType<typeof privateDb>, extensionId: string, version: string): Promise<string | null> {
   // Only reports that are members of the active publication release may be
   // reused. A report row alone is not enough: Cloudflare stores the scanner
-  // build, ruleset, analysis status, and coverage inside report_json.
+  // build, ruleset, analysis status, and coverage inside report_json. The
+  // active release must also carry the accuracy-gate attestation; otherwise a
+  // legacy or partially migrated pointer could make an unvalidated report
+  // look like a trusted Deep Scan result.
   const candidates = await db.prepare(`
-    SELECT report.scan_id,report.report_json,release.scanner_build,release.ruleset_version,release.policy_version,release.score_schema_version
+    SELECT report.scan_id,report.report_json,release.scanner_build,release.ruleset_version,release.policy_version,release.score_schema_version,
+           release.accuracy_gate_corpus_id,release.accuracy_gate_corpus_version,release.accuracy_gate_sha256
     FROM app_scan_reports report
     JOIN app_scan_publication_release_reports member ON member.scan_id=report.scan_id
     JOIN app_scan_publication_releases release ON release.id=member.release_id
@@ -554,7 +559,8 @@ async function reusableCloudflareScanId(db: ReturnType<typeof privateDb>, extens
       const identity = jsonObject(detail?.artifact_identity);
       const scoreSchemaVersion = String(detail?.score_schema_version || metadata.score_schema_version || "");
       const executableCoverage = Number(coverage.executable_file_coverage_percent ?? coverage.coverage_percent ?? 0);
-      if (!detail
+      if (!hasAccuracyGateAttestation(candidate)
+        || !detail
         || String(metadata.profile || "") !== "deep"
         || String(metadata.scanner_build || "").trim().toLowerCase() !== String(candidate.scanner_build || "").trim().toLowerCase()
         || String(metadata.ruleset_version || "") !== String(candidate.ruleset_version || "")
