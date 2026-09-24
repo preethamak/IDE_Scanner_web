@@ -33,6 +33,9 @@ describe("company site surface", () => {
       expect(faq).toContain(question);
     expect(faq).toContain("Bubblewrap-isolated worker");
     expect(faq).toContain("failed or unsupported runtime coverage remains incomplete");
+    expect(faq).not.toContain(
+      "Website analysis inspects the published package without running it inside your editor.",
+    );
     expect(faq).toContain('"@type": "FAQPage"');
     expect(faq.match(/\bhref: "\//g)?.length).toBeGreaterThanOrEqual(9);
   });
