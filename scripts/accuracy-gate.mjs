@@ -3,6 +3,11 @@ export const MIN_FRESH_HOLDOUT_SAFE = 5;
 export const MIN_FRESH_HOLDOUT_MALICIOUS = 5;
 export const MAX_SAFE_REVIEW_RATE = 0.2;
 const SHA256 = /^[0-9a-f]{64}$/i;
+// A known-safe label means "not malware"; it does not mean "no security
+// issue." Exact dependency advisories are legitimate review evidence and
+// must not be treated as scanner noise merely because the artifact is not a
+// malicious fixture.
+const ALLOWED_KNOWN_SAFE_ACTIONABLE_RULES = new Set(["vulnerable-npm-dependency"]);
 
 export function validateAccuracyGate(value, expected = {}) {
   const errors = [];
@@ -148,9 +153,16 @@ export function validateAccuracyGate(value, expected = {}) {
   if (ruleNoise.false_negative_malware_count !== 0) {
     errors.push("fresh-labeled holdout rule-noise audit contains a known-malicious false negative");
   }
-  if (!Array.isArray(ruleNoise.rules_with_known_safe_actionable)
-    || ruleNoise.rules_with_known_safe_actionable.length) {
-    errors.push("fresh-labeled holdout rule-noise audit contains known-safe actionable rules");
+  const knownSafeActionable = ruleNoise.rules_with_known_safe_actionable;
+  if (!Array.isArray(knownSafeActionable)) {
+    errors.push("fresh-labeled holdout rule-noise audit contains invalid known-safe actionable rule data");
+  } else {
+    const unexpected = knownSafeActionable
+      .map((rule) => String(rule))
+      .filter((rule) => !ALLOWED_KNOWN_SAFE_ACTIONABLE_RULES.has(rule));
+    if (unexpected.length) {
+      errors.push(`fresh-labeled holdout rule-noise audit contains unexpected known-safe actionable rules: ${unexpected.join(", ")}`);
+    }
   }
   if (!Array.isArray(ruleNoise.rules_with_known_safe_blocks)
     || ruleNoise.rules_with_known_safe_blocks.length) {

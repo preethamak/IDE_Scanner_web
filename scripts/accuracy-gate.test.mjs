@@ -226,7 +226,24 @@ describe("accuracy publication gate", () => {
         rule_noise: { ...validGate.holdout.rule_noise, rules_with_known_safe_actionable: ["filesystem-access"] },
       },
     }, { scanner_build: "a".repeat(40) });
-    expect(errors).toContain("fresh-labeled holdout rule-noise audit contains known-safe actionable rules");
+    expect(errors).toContain("fresh-labeled holdout rule-noise audit contains unexpected known-safe actionable rules: filesystem-access");
+  });
+
+  it("allows an exact dependency advisory on a non-malicious fixture as review evidence", () => {
+    const errors = validateAccuracyGate({
+      ...validGate,
+      holdout: {
+        ...validGate.holdout,
+        safe_review_rate: 0.1667,
+        rule_noise: {
+          ...validGate.holdout.rule_noise,
+          safe_review_rate: 0.1667,
+          false_positive_review_count: 1,
+          rules_with_known_safe_actionable: ["vulnerable-npm-dependency"],
+        },
+      },
+    }, { scanner_build: "a".repeat(40) });
+    expect(errors).toEqual([]);
   });
 
   it("rejects rule-matrix counts that cannot come from the labelled corpus", () => {
