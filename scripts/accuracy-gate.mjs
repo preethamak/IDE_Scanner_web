@@ -13,6 +13,7 @@ export function validateAccuracyGate(value, expected = {}) {
   const holdout = object(gate.holdout);
   const behaviorOnly = object(holdout.behavior_only);
   const runtimeEvidence = object(holdout.runtime_evidence);
+  const ruleNoise = object(holdout.rule_noise);
 
   if (String(gate.schema_version || "") !== ACCURACY_GATE_SCHEMA_VERSION) {
     errors.push(`accuracy gate schema must be ${ACCURACY_GATE_SCHEMA_VERSION}`);
@@ -113,6 +114,47 @@ export function validateAccuracyGate(value, expected = {}) {
   if (number(labelCounts.known_safe) !== number(holdout.safe_evaluated)
     || number(labelCounts.known_malicious) !== number(holdout.malicious_evaluated)) {
     errors.push("fresh-labeled holdout label counts do not match the frozen corpus");
+  }
+  if (ruleNoise.schema_version !== "guardrails.report-audit.v1") {
+    errors.push("fresh-labeled holdout must retain a labelled rule-noise audit");
+  }
+  if (!/^[0-9a-f]{64}$/i.test(String(ruleNoise.audit_sha256 || ""))) {
+    errors.push("fresh-labeled holdout rule-noise audit requires an audit SHA-256");
+  }
+  if (String(ruleNoise.scanner_build || "") !== String(identity.scanner_build || "")) {
+    errors.push("fresh-labeled holdout rule-noise audit build does not match the report identity");
+  }
+  if (String(ruleNoise.source_scan_id || "").trim() === "") {
+    errors.push("fresh-labeled holdout rule-noise audit requires a source scan id");
+  }
+  if (number(ruleNoise.labeled_extensions) !== holdoutArtifacts
+    || number(object(ruleNoise.label_counts).known_safe) !== number(holdout.safe_evaluated)
+    || number(object(ruleNoise.label_counts).known_malicious) !== number(holdout.malicious_evaluated)) {
+    errors.push("fresh-labeled holdout rule-noise audit coverage does not match the holdout");
+  }
+  for (const field of ["false_positive_review_count", "false_positive_block_count", "false_negative_malware_count"]) {
+    if (!Number.isInteger(ruleNoise[field]) || ruleNoise[field] < 0) {
+      errors.push(`fresh-labeled holdout rule-noise audit ${field} must be a non-negative integer`);
+    }
+  }
+  if (!boundedRate(ruleNoise.safe_review_rate)) {
+    errors.push("fresh-labeled holdout rule-noise audit safe_review_rate must be a number between 0 and 1");
+  } else if (ruleNoise.safe_review_rate > MAX_SAFE_REVIEW_RATE) {
+    errors.push("fresh-labeled holdout rule-noise audit safe review rate exceeds the 20% noise ceiling");
+  }
+  if (ruleNoise.false_positive_block_count !== 0) {
+    errors.push("fresh-labeled holdout rule-noise audit contains a known-safe block");
+  }
+  if (ruleNoise.false_negative_malware_count !== 0) {
+    errors.push("fresh-labeled holdout rule-noise audit contains a known-malicious false negative");
+  }
+  if (!Array.isArray(ruleNoise.rules_with_known_safe_actionable)
+    || ruleNoise.rules_with_known_safe_actionable.length) {
+    errors.push("fresh-labeled holdout rule-noise audit contains known-safe actionable rules");
+  }
+  if (!Array.isArray(ruleNoise.rules_with_known_safe_blocks)
+    || ruleNoise.rules_with_known_safe_blocks.length) {
+    errors.push("fresh-labeled holdout rule-noise audit contains known-safe blocking rules");
   }
   const provenance = object(holdout.provenance);
   for (const field of ["source_sha256", "advisory_snapshot_sha256"]) {

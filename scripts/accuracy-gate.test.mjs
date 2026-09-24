@@ -37,6 +37,20 @@ const validGate = {
     dynamic_required: 5,
     dynamic_not_applicable: 5,
     rule_matrix: { "filesystem-access": { fired_on_known_safe: 5, fired_on_known_malicious: 0 } },
+    rule_noise: {
+      schema_version: "guardrails.report-audit.v1",
+      source_scan_id: "scan-holdout",
+      scanner_build: "a".repeat(40),
+      audit_sha256: "d".repeat(64),
+      labeled_extensions: 10,
+      label_counts: { known_safe: 5, known_malicious: 5 },
+      false_positive_review_count: 0,
+      false_positive_block_count: 0,
+      false_negative_malware_count: 0,
+      safe_review_rate: 0,
+      rules_with_known_safe_actionable: [],
+      rules_with_known_safe_blocks: [],
+    },
     label_counts: { known_safe: 5, known_malicious: 5 },
     provenance: {
       source_sha256: "a".repeat(64),
@@ -194,6 +208,25 @@ describe("accuracy publication gate", () => {
       holdout: { ...validGate.holdout, rule_matrix: {} },
     }, { scanner_build: "a".repeat(40) });
     expect(errors).toContain("fresh-labeled holdout must retain at least one labelled rule firing");
+  });
+
+  it("rejects a holdout without the labelled rule-noise audit", () => {
+    const withoutNoise = { ...validGate, holdout: { ...validGate.holdout } };
+    delete withoutNoise.holdout.rule_noise;
+    expect(validateAccuracyGate(withoutNoise, { scanner_build: "a".repeat(40) })).toContain(
+      "fresh-labeled holdout must retain a labelled rule-noise audit",
+    );
+  });
+
+  it("rejects a holdout with known-safe actionable rule noise", () => {
+    const errors = validateAccuracyGate({
+      ...validGate,
+      holdout: {
+        ...validGate.holdout,
+        rule_noise: { ...validGate.holdout.rule_noise, rules_with_known_safe_actionable: ["filesystem-access"] },
+      },
+    }, { scanner_build: "a".repeat(40) });
+    expect(errors).toContain("fresh-labeled holdout rule-noise audit contains known-safe actionable rules");
   });
 
   it("rejects rule-matrix counts that cannot come from the labelled corpus", () => {
