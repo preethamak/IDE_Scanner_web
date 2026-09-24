@@ -6,23 +6,21 @@ Run `npm run launch:readiness -- --with-health` with `LAUNCH_HEALTH_URL` and
 `LAUNCH_HEALTH_SECRET` set. Do not promote when the active public release is
 missing, incomplete, stale, or the health endpoint reports a non-2xx response.
 
-Before building or activating either a Cloudflare/D1 or Supabase publication,
-run the scanner's version-pinned production corpus benchmark with
+Before building or activating the current Cloudflare/D1 publication, run the
+scanner's version-pinned production corpus benchmark with
 `IDE_SCANNER_BUILD_SHA` set to the exact scanner commit, then build the
-combined accuracy gate. Pass that same gate JSON to the matching validation
+combined accuracy gate. Pass that same gate JSON to the Cloudflare validation
 and activation scripts:
 
 * Cloudflare/D1: `build-cloudflare-publication-validation.mjs
   --accuracy-gate`, then `activate-cloudflare-scan-publication.mjs
   --accuracy-gate`.
-* Supabase: `build-publication-validation.mjs --accuracy-gate`, then
-  `activate-scan-publication.mjs --accuracy-gate`.
-
-The Supabase accuracy-gate migration must be applied before using the updated
-activation script. All four scripts reject failed gates, unknown build
-identities, mismatched policy/ruleset versions, and gates with no known-safe or
-known-malicious evaluation. A release must not be expanded merely because its
-scan jobs completed.
+The Supabase tables and activation scripts remain a legacy compatibility path;
+they are not a prerequisite for the current Cloudflare/D1 release workflow.
+The Cloudflare validation and activation scripts reject failed gates, unknown
+build identities, mismatched policy/ruleset versions, and gates with no
+known-safe or known-malicious evaluation. A release must not be expanded merely
+because its scan jobs completed.
 
 The production corpus is a deterministic regression suite, not an ecosystem
 accuracy claim. Public/benchmark callbacks also require the deep profile and
@@ -57,16 +55,14 @@ not be later than the declared freeze time. Do not hand-edit the generated
 corpus or gate; regenerate them from the reviewed source manifest.
 
 The website repository must have `SCANNER_REPO_READ_TOKEN` with read access to
-the scanner repository's Actions artifacts, plus `SUPABASE_PASSWORD`,
-`NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SECRET_KEY`, and the existing
-`CLOUDFLARE_API_TOKEN` and account configuration. The promotion workflow builds
-and activates both the Supabase publication consumed by the website export and
-the Cloudflare/D1 publication consumed by the runtime registry. Both manifests
-must contain exactly the requested cohort size. Each activation re-reads the
-manifest scans and rechecks the exact artifact identity, canonical report,
-decision, policy/ruleset, and runtime contract immediately before flipping its
-release active. A previously generated validation artifact is not sufficient by
-itself.
+the scanner repository's Actions artifacts and the existing
+`CLOUDFLARE_API_TOKEN` and account configuration. The current promotion
+workflow validates and activates the Cloudflare/D1 publication consumed by the
+runtime registry. Its manifest must contain exactly the requested cohort size.
+Activation re-reads the manifest scans and rechecks the exact artifact identity,
+canonical report, decision, policy/ruleset, and runtime contract immediately
+before flipping the release active. A previously generated validation artifact
+is not sufficient by itself.
 
 The public registry mirror uses generation-addressed D1 chunks. The import
 script stages all sections and products under a new publication ID, then flips
