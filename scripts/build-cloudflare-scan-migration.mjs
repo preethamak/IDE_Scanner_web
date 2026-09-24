@@ -5,7 +5,6 @@ import { createHash } from "node:crypto";
 import readline from "node:readline";
 import { fileURLToPath } from "node:url";
 
-const DEFAULT_BUILD = "02a0f71f61cd5b214f2d4785db876035d79b7d9c";
 const DEFAULT_MAX_PART_BYTES = 40_000_000;
 const DEFAULT_MAX_PART_STATEMENTS = 500;
 const MAX_STORED_PREVIEWS = 12;
@@ -18,10 +17,17 @@ function sqlString(value) {
   return `'${String(value).replaceAll("'", "''")}'`;
 }
 
-export function buildSubsetSql(sourceDb, scannerBuild = DEFAULT_BUILD) {
+function requireScannerBuild(scannerBuild) {
+  const build = String(scannerBuild || "").trim();
+  if (!/^[0-9a-f]{40}$/i.test(build)) {
+    throw new Error("A full 40-character scanner build SHA is required; refusing to migrate an implicit or stale release.");
+  }
+  return build;
+}
+
+export function buildSubsetSql(sourceDb, scannerBuild) {
   const source = path.resolve(sourceDb);
-  const build = String(scannerBuild).trim();
-  if (!/^[0-9a-f]{40}$/i.test(build)) throw new Error(`Invalid scanner build: ${build}`);
+  const build = requireScannerBuild(scannerBuild);
 
   return `
 PRAGMA journal_mode=OFF;
@@ -302,14 +308,15 @@ async function dumpIntoParts(database, partsDir, maxPartBytes, maxPartStatements
   return files;
 }
 
-export async function buildScanMigration({ sourceDb, outputDb, partsDir, scannerBuild = DEFAULT_BUILD, maxPartBytes = DEFAULT_MAX_PART_BYTES, maxPartStatements = DEFAULT_MAX_PART_STATEMENTS }) {
+export async function buildScanMigration({ sourceDb, outputDb, partsDir, scannerBuild, maxPartBytes = DEFAULT_MAX_PART_BYTES, maxPartStatements = DEFAULT_MAX_PART_STATEMENTS }) {
+  const build = requireScannerBuild(scannerBuild);
   ensureEmptyDatabase(outputDb);
-  runSqlite(outputDb, buildSubsetSql(sourceDb, scannerBuild));
+  runSqlite(outputDb, buildSubsetSql(sourceDb, build));
   const compacted = await compactReportRows(outputDb);
   const files = await dumpIntoParts(outputDb, partsDir, maxPartBytes, maxPartStatements);
   const counts = spawnSync("sqlite3", [outputDb, "SELECT 'jobs',COUNT(*) FROM app_scan_jobs UNION ALL SELECT 'reports',COUNT(*) FROM app_scan_reports UNION ALL SELECT 'queued',COUNT(*) FROM app_scan_jobs WHERE status='queued';"], { encoding: "utf8" });
   if (counts.status !== 0) throw new Error(`Could not validate migration subset: ${counts.stderr || counts.stdout}`);
-  return { sourceDb, outputDb, partsDir, scannerBuild, compacted, files, counts: counts.stdout.trim().split("\n") };
+  return { sourceDb, outputDb, partsDir, scannerBuild: build, compacted, files, counts: counts.stdout.trim().split("\n") };
 }
 
 async function main() {
@@ -317,7 +324,7 @@ async function main() {
   const sourceDb = parseFlag(args, "--source-db", ".tmp/registry-export.db");
   const outputDb = parseFlag(args, "--output-db", ".tmp/scan-subset.db");
   const partsDir = parseFlag(args, "--parts-dir", ".tmp/scan-import");
-  const scannerBuild = parseFlag(args, "--scanner-build", DEFAULT_BUILD);
+  const scannerBuild = parseFlag(args, "--scanner-build");
   const maxPartBytes = Number(parseFlag(args, "--max-part-bytes", String(DEFAULT_MAX_PART_BYTES)));
   const maxPartStatements = Number(parseFlag(args, "--max-part-statements", String(DEFAULT_MAX_PART_STATEMENTS)));
   const result = await buildScanMigration({ sourceDb, outputDb, partsDir, scannerBuild, maxPartBytes, maxPartStatements });

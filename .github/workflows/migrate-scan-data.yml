@@ -6,7 +6,6 @@ on:
       scanner_build:
         description: "Scanner build to move into the isolated scan database"
         required: true
-        default: "02a0f71f61cd5b214f2d4785db876035d79b7d9c"
 
 permissions:
   contents: read
