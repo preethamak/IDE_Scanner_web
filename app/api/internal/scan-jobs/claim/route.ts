@@ -9,6 +9,18 @@ export const dynamic = "force-dynamic";
 
 const scanJobIdPattern = /^(?:candidate-)?[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+function isD1DailyReadLimitError(error: unknown): boolean {
+  const code = error && typeof error === "object" && "code" in error ? String((error as { code?: unknown }).code || "") : "";
+  const message = error instanceof Error ? error.message : String(error || "");
+  return code === "7500" || /daily row[- ]read limit|free tier daily row reads|d1.*row[- ]read/i.test(`${code} ${message}`);
+}
+
+function secondsUntilUtcReset(): string {
+  const now = new Date();
+  const reset = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
+  return String(Math.max(60, Math.ceil((reset - now.getTime()) / 1000)));
+}
+
 export async function POST(request: Request) {
   if (!validRunnerSecret(request.headers.get("authorization"))) return NextResponse.json({ error: "Unauthorized runner." }, { status: 401 });
   const payload = await request.json().catch(() => ({})) as { runner_id?: string; job_id?: string | null; github_run_id?: string | number | null; github_sha?: string | null };
@@ -28,6 +40,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ id: job.id, extension_id: job.extension_id, version: job.version, target_platform: String(job.target_platform || ""), callback_url: `${runtimeEnv("NEXT_PUBLIC_SITE_URL") || "https://abscissa.dev"}/api/internal/scan-results` });
     } catch (error) {
       console.error("Cloudflare scan claim failed", error);
+      if (isD1DailyReadLimitError(error)) {
+        return NextResponse.json(
+          { error: "The scan queue is paused until the D1 daily row-read limit resets." },
+          { status: 429, headers: { "Retry-After": secondsUntilUtcReset() } },
+        );
+      }
       return NextResponse.json({ error: "The scan queue is temporarily unavailable; retry shortly." }, { status: 503 });
     }
   }
