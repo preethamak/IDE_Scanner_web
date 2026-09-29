@@ -3,9 +3,39 @@ import { execFileSync } from "node:child_process";
 const database = process.env.CLOUDFLARE_SCAN_DATABASE || "abscissa-scan-data";
 const preserveBuild = String(process.env.PRESERVE_SCANNER_BUILD || "").trim().toLowerCase();
 const apply = String(process.env.APPLY || "false").trim().toLowerCase() === "true";
+const directApply = String(process.env.DIRECT_APPLY || "false").trim().toLowerCase() === "true";
 
 if (!/^[0-9a-f]{40}$/.test(preserveBuild)) {
   throw new Error("PRESERVE_SCANNER_BUILD must be a full 40-character scanner commit SHA.");
+}
+
+// Emergency path for a D1 daily-read outage. The normal path below performs
+// an explicit target count and post-delete verification. This path is only
+// enabled by a separate workflow input and uses a fixed, non-active-release
+// predicate; it performs no broad table reset and preserves the requested
+// current scanner build. If D1 rejects the write because the quota applies to
+// DELETE scans too, the command fails before any later statement runs.
+if (directApply) {
+  if (!apply) throw new Error("DIRECT_APPLY requires APPLY=true.");
+  const targetScanIds = `
+    SELECT r.scan_id
+    FROM app_scan_reports r
+    JOIN app_scan_jobs j ON j.id=r.job_id
+    WHERE j.scan_purpose='public_intelligence'
+      AND lower(COALESCE(j.expected_scanner_build, ''))<>${sql(preserveBuild)}
+      AND NOT EXISTS (
+        SELECT 1
+        FROM app_scan_publication_release_reports rr
+        JOIN app_scan_publication_releases release ON release.id=rr.release_id
+        WHERE release.active=1
+          AND rr.scan_id=r.scan_id
+      )
+  `;
+  execute(`DELETE FROM app_scan_report_previews WHERE scan_id IN (${targetScanIds})`);
+  execute(`DELETE FROM app_scan_report_chunks WHERE scan_id IN (${targetScanIds})`);
+  execute(`DELETE FROM app_scan_reports WHERE scan_id IN (${targetScanIds})`);
+  console.log(JSON.stringify({ database, direct_apply: true, preserved_scanner_build: preserveBuild }, null, 2));
+  process.exit(0);
 }
 
 const active = query(`

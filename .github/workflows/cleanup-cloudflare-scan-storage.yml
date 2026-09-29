@@ -14,6 +14,11 @@ on:
         required: true
         default: false
         type: boolean
+      direct_apply:
+        description: Use the pre-resolved non-active-release delete predicate without a D1 read preflight
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -36,4 +41,5 @@ jobs:
           CLOUDFLARE_SCAN_DATABASE: abscissa-scan-data
           PRESERVE_SCANNER_BUILD: ${{ inputs.preserve_scanner_build }}
           APPLY: ${{ inputs.apply }}
+          DIRECT_APPLY: ${{ inputs.direct_apply }}
         run: node scripts/cleanup-cloudflare-scan-storage.mjs
