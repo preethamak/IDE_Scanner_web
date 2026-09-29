@@ -47,6 +47,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Apply pending D1 claim indexes before scanning
+        id: d1_gate
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: 26e873c5d55e5e386df482c9dbe8bcd7
@@ -55,9 +56,41 @@ jobs:
             echo "CLOUDFLARE_API_TOKEN is required before the publication cohort can run."
             exit 1
           fi
-          npx --yes wrangler@4.136.1 d1 migrations apply abscissa-registry --remote
-          npx --yes wrangler@4.136.1 d1 migrations apply abscissa-scan-data --remote
+          apply_migrations() {
+            local database="$1"
+            local output status
+            set +e
+            output=$(npx --yes wrangler@4.136.1 d1 migrations apply "$database" --remote 2>&1)
+            status=$?
+            set -e
+            printf '%s\n' "$output"
+            if [ "$status" -eq 0 ]; then
+              return 0
+            fi
+            if grep -Eqi 'code: 7500|daily row[- ]read limit|free tier daily row reads' <<< "$output"; then
+              return 75
+            fi
+            return "$status"
+          }
+          echo "available=true" >> "$GITHUB_OUTPUT"
+          for database in abscissa-registry abscissa-scan-data; do
+            if apply_migrations "$database"; then
+              status=0
+            else
+              status=$?
+            fi
+            if [ "$status" -eq 75 ]; then
+              echo "D1 row-read quota is still exhausted; deferring the scan cohort to the next recovery window."
+              echo "available=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            if [ "$status" -ne 0 ]; then
+              echo "D1 migration failed for $database with status $status." >&2
+              exit "$status"
+            fi
+          done
       - name: Replay the completed canary callback
+        if: steps.d1_gate.outputs.available == 'true'
         env:
           GH_TOKEN: ${{ secrets.SCANNER_REPO_READ_TOKEN }}
         run: |
@@ -71,6 +104,7 @@ jobs:
             -f source_run_id="$CANARY_SOURCE_RUN" \
             -f job_id="$CANARY_JOB_ID"
       - name: Dispatch the attested scanner cohort
+        if: steps.d1_gate.outputs.available == 'true'
         env:
           GH_TOKEN: ${{ secrets.SCANNER_REPO_READ_TOKEN }}
         run: |
