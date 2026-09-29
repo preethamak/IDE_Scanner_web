@@ -224,16 +224,6 @@ export async function cloudflareScanProgress(job: Row): Promise<Row> {
 export async function claimCloudflareJob(input: { runnerId: string; jobId: string | null; githubRunId: number | null; githubSha: string }): Promise<Row | null> {
   const db = privateDb();
   const scannerBuild = input.githubSha.trim().toLowerCase();
-  const heartbeatAt = nowIso();
-  // This is intentionally before the queue lookup: an empty queue is still a
-  // successful worker invocation and must keep the health signal fresh.
-  try {
-    await recordCloudflareRunnerHeartbeat(db, input.runnerId, heartbeatAt);
-  } catch (error) {
-    // Runner telemetry must not turn an otherwise claimable job into a 503.
-    // D1 can reject this ancillary write when its row-read budget is exhausted.
-    console.error("Cloudflare runner heartbeat failed", error);
-  }
   const now = nowIso();
   // Claim and select in one write statement. The previous SELECT-then-UPDATE
   // sequence made every worker read the queue twice and allowed concurrent
@@ -275,8 +265,17 @@ export async function claimCloudflareJob(input: { runnerId: string; jobId: strin
        RETURNING ${claimedJobColumns}`;
     job = await db.prepare(unboundStatement).bind(scannerBuild, input.runnerId, input.githubRunId, now, now, now).first<Row>();
   }
-  if (!job) return null;
+  if (!job) {
+    // Queue ownership is the correctness boundary. Record an empty-worker
+    // heartbeat only after the claim attempt so telemetry cannot consume the
+    // last available D1 read before an eligible job is claimed.
+    try { await recordCloudflareRunnerHeartbeat(db, input.runnerId, now); } catch (error) {
+      console.error("Cloudflare runner heartbeat failed", error);
+    }
+    return null;
+  }
   try {
+    await recordCloudflareRunnerHeartbeat(db, input.runnerId, now);
     await markCloudflareRunnerClaimed(db, now);
     await addCloudflareScanEvent(String(job.id), "running", "claimed", { runner_id: input.runnerId, scanner_build: input.githubSha });
   } catch (error) {
