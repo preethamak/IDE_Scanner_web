@@ -227,7 +227,13 @@ export async function claimCloudflareJob(input: { runnerId: string; jobId: strin
   const heartbeatAt = nowIso();
   // This is intentionally before the queue lookup: an empty queue is still a
   // successful worker invocation and must keep the health signal fresh.
-  await recordCloudflareRunnerHeartbeat(db, input.runnerId, heartbeatAt);
+  try {
+    await recordCloudflareRunnerHeartbeat(db, input.runnerId, heartbeatAt);
+  } catch (error) {
+    // Runner telemetry must not turn an otherwise claimable job into a 503.
+    // D1 can reject this ancillary write when its row-read budget is exhausted.
+    console.error("Cloudflare runner heartbeat failed", error);
+  }
   const now = nowIso();
   // Claim and select in one write statement. The previous SELECT-then-UPDATE
   // sequence made every worker read the queue twice and allowed concurrent
@@ -248,8 +254,14 @@ export async function claimCloudflareJob(input: { runnerId: string; jobId: strin
     : [scannerBuild, input.runnerId, input.githubRunId, now, now, now, scannerBuild];
   const job = await db.prepare(statement).bind(...values).first<Row>();
   if (!job) return null;
-  await markCloudflareRunnerClaimed(db, now);
-  await addCloudflareScanEvent(String(job.id), "running", "claimed", { runner_id: input.runnerId, scanner_build: input.githubSha });
+  try {
+    await markCloudflareRunnerClaimed(db, now);
+    await addCloudflareScanEvent(String(job.id), "running", "claimed", { runner_id: input.runnerId, scanner_build: input.githubSha });
+  } catch (error) {
+    // The atomic claim is the correctness boundary. Observability writes are
+    // best effort so a telemetry quota cannot strand a job after it is running.
+    console.error("Cloudflare runner claim telemetry failed", error);
+  }
   return job;
 }
 
