@@ -126,12 +126,23 @@ try {
 } finally {
   await rm(temp, { recursive: true, force: true });
 }
-const missing = verifySelectedJobs(selected, scannerBuild);
-if (missing.length) {
-  const sample = missing.slice(0, 10).map((item) => `${item.extensionId}@${item.version}`).join(", ");
-  throw new Error(`D1 candidate queue verification failed for ${missing.length} selected artifacts; sample: ${sample}`);
+let verification = "passed";
+try {
+  const missing = verifySelectedJobs(selected, scannerBuild);
+  if (missing.length) {
+    const sample = missing.slice(0, 10).map((item) => `${item.extensionId}@${item.version}`).join(", ");
+    throw new Error(`D1 candidate queue verification failed for ${missing.length} selected artifacts; sample: ${sample}`);
+  }
+} catch (error) {
+  // The INSERT statements above are idempotent and already completed as one
+  // D1 import. Cloudflare's free tier can reject only the read-back query
+  // after a successful write; let workers drain the staged cohort and leave
+  // exact completeness to the publication validator.
+  if (!isDailyRowReadLimitError(error)) throw error;
+  verification = "skipped-d1-daily-row-read-limit";
+  console.warn("Candidate queue write succeeded; D1 read-back verification was skipped because the daily row-read limit is exhausted.");
 }
-console.log(JSON.stringify({ scanner_build: scannerBuild, require_active_release: requireActiveRelease, marketplace_page_count: marketplacePageCount, available: candidates.length, selected: selected.length, candidates: selected }, null, 2));
+console.log(JSON.stringify({ scanner_build: scannerBuild, require_active_release: requireActiveRelease, marketplace_page_count: marketplacePageCount, available: candidates.length, selected: selected.length, verification, candidates: selected }, null, 2));
 
 function verifySelectedJobs(items, build) {
   const present = new Set();
@@ -168,6 +179,11 @@ function queryD1(command) {
   });
   const payload = JSON.parse(raw);
   return Array.isArray(payload?.[0]?.results) ? payload[0].results : [];
+}
+
+function isDailyRowReadLimitError(error) {
+  const message = error instanceof Error ? `${error.message}\n${error.stack || ""}` : String(error);
+  return message.includes("code: 7500") || message.includes("daily row read limit");
 }
 
 function boundedInteger(name, fallback, minimum, maximum) {
