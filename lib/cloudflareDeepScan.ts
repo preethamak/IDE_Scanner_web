@@ -223,6 +223,7 @@ export async function cloudflareScanProgress(job: Row): Promise<Row> {
 
 export async function claimCloudflareJob(input: { runnerId: string; jobId: string | null; githubRunId: number | null; githubSha: string }): Promise<Row | null> {
   const db = privateDb();
+  const scannerBuild = input.githubSha.trim().toLowerCase();
   const heartbeatAt = nowIso();
   // This is intentionally before the queue lookup: an empty queue is still a
   // successful worker invocation and must keep the health signal fresh.
@@ -235,16 +236,16 @@ export async function claimCloudflareJob(input: { runnerId: string; jobId: strin
   const statement = input.jobId
     ? `UPDATE app_scan_jobs
        SET status='running',lifecycle_stage='running',expected_scanner_build=COALESCE(expected_scanner_build,?),runner_id=?,github_run_id=?,attempt_count=attempt_count+1,started_at=COALESCE(started_at,?),updated_at=?,last_event_at=?
-       WHERE id=? AND status='queued' AND (expected_scanner_build IS NULL OR lower(expected_scanner_build)=lower(?))
+       WHERE id=? AND status='queued' AND (expected_scanner_build IS NULL OR expected_scanner_build=?)
        RETURNING *`
     : `UPDATE app_scan_jobs
        SET status='running',lifecycle_stage='running',expected_scanner_build=COALESCE(expected_scanner_build,?),runner_id=?,github_run_id=?,attempt_count=attempt_count+1,started_at=COALESCE(started_at,?),updated_at=?,last_event_at=?
-       WHERE id=(SELECT id FROM app_scan_jobs WHERE status='queued' AND (expected_scanner_build IS NULL OR lower(expected_scanner_build)=lower(?)) ORDER BY created_at LIMIT 1)
+       WHERE id=(SELECT id FROM app_scan_jobs WHERE status='queued' AND (expected_scanner_build IS NULL OR expected_scanner_build=?) ORDER BY created_at LIMIT 1)
          AND status='queued'
        RETURNING *`;
   const values = input.jobId
-    ? [input.githubSha, input.runnerId, input.githubRunId, now, now, now, input.jobId, input.githubSha]
-    : [input.githubSha, input.runnerId, input.githubRunId, now, now, now, input.githubSha];
+    ? [scannerBuild, input.runnerId, input.githubRunId, now, now, now, input.jobId, scannerBuild]
+    : [scannerBuild, input.runnerId, input.githubRunId, now, now, now, scannerBuild];
   const job = await db.prepare(statement).bind(...values).first<Row>();
   if (!job) return null;
   await markCloudflareRunnerClaimed(db, now);
