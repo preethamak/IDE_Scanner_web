@@ -32,6 +32,25 @@ export async function dispatchQueuedCloudflareScan(
     return { dispatched: false, job_id: String(job.id), reason: "recently_dispatched" };
   }
 
+  // Reserve the job before calling GitHub. If D1 is unavailable (for example
+  // after the free-tier row-read budget is exhausted), this write fails and we
+  // do not launch another doomed matrix of workers every five minutes. The
+  // optimistic predicates also prevent two cron invocations from dispatching
+  // the same queued job concurrently.
+  const timestamp = now.toISOString();
+  const reservation = await db
+    .prepare(
+      `UPDATE app_scan_jobs
+       SET dispatch_count=dispatch_count+1,lifecycle_stage='dispatching',updated_at=?,last_event_at=?
+       WHERE id=? AND status='queued' AND dispatch_count=? AND updated_at=?`,
+    )
+    .bind(timestamp, timestamp, String(job.id), Number(job.dispatch_count || 0), String(job.updated_at || ""))
+    .run();
+  const changes = Number((reservation as { meta?: { changes?: unknown } } | null)?.meta?.changes);
+  if (Number.isFinite(changes) && changes < 1) {
+    return { dispatched: false, job_id: String(job.id), reason: "recently_dispatched" };
+  }
+
   const owner = stringValue(env.GITHUB_REPO_OWNER) || "preethamak";
   const repository = stringValue(env.GITHUB_SCANNER_REPO) || "IDE_Scanner";
   const response = await dispatchGithubDeepScan({ token, owner, repository }, String(job.id));
@@ -40,9 +59,8 @@ export async function dispatchQueuedCloudflareScan(
   }
   if (!response.ok) throw new Error(`Scheduled Deep Scan dispatch failed (${response.status}).`);
 
-  const timestamp = now.toISOString();
   await db
-    .prepare("UPDATE app_scan_jobs SET dispatch_count=dispatch_count+1,lifecycle_stage='dispatched',updated_at=?,last_event_at=? WHERE id=? AND status='queued'")
+    .prepare("UPDATE app_scan_jobs SET lifecycle_stage='dispatched',updated_at=?,last_event_at=? WHERE id=? AND status='queued'")
     .bind(timestamp, timestamp, String(job.id))
     .run();
   return { dispatched: true, job_id: String(job.id), reason: "dispatched" };
