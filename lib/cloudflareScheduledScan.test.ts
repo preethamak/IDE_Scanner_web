@@ -12,7 +12,7 @@ const queuedJob = {
 };
 
 function database(reservation: Promise<unknown>) {
-  const prepare = vi.fn((query: string) => ({
+  const prepare = vi.fn(() => ({
     first: vi.fn().mockResolvedValue(queuedJob),
     bind: vi.fn(() => ({ run: vi.fn(() => reservation) })),
   }));
