@@ -16,8 +16,8 @@ type Bundle = { metadata?: Row; extensions?: Row | Row[] };
 const GUEST_TRIAL_LIMIT = 5;
 const GUEST_TRIAL_WINDOW_DAYS = 30;
 const GUEST_TRIAL_COOKIE = "gr_trial";
-const MAX_STORED_PREVIEWS = 12;
-const MAX_STORED_PREVIEW_CHARS = 32_768;
+const MAX_STORED_PREVIEWS = 4;
+const MAX_STORED_PREVIEW_CHARS = 8_192;
 const MAX_STORED_FILE_ROWS = 2_000;
 const MAX_INLINE_REPORT_CHARS = 80_000;
 const REPORT_CHUNK_CHARS = 100_000;
@@ -277,7 +277,7 @@ export async function saveCloudflareScanResult(jobId: string, bundle: Bundle): P
   if (String(job.extension_id).toLowerCase() !== extensionId.toLowerCase() || String(job.version) !== version) throw new Error("Scanner result does not match the claimed artifact.");
   const scanId = randomUUID();
   const now = nowIso();
-  const compacted = compactCloudflareBundle(bundle);
+  const compacted = compactCloudflareBundle(bundle, scanPurpose);
   const reportJson = JSON.stringify(compacted.bundle);
   const reportChunks = splitReportText(reportJson);
   const storedReportJson = reportChunks.length > 1
@@ -590,8 +590,9 @@ function singleExtension(value: Bundle["extensions"]): Row | null {
 
 type StoredPreview = { path: string; content: string; content_sha256: string; truncated: boolean };
 
-function compactCloudflareBundle(bundle: Bundle): { bundle: Bundle; previews: StoredPreview[] } {
+function compactCloudflareBundle(bundle: Bundle, scanPurpose = ""): { bundle: Bundle; previews: StoredPreview[] } {
   const previews: StoredPreview[] = [];
+  const publicStorage = ["public_intelligence", "benchmark"].includes(scanPurpose);
   const compactDetail = (detail: Row): Row => {
     const inventory = jsonObject(detail.artifact_inventory);
     const rawFiles = array(inventory.files);
@@ -618,7 +619,27 @@ function compactCloudflareBundle(bundle: Bundle): { bundle: Bundle; previews: St
       compactInventory.files_truncated = true;
     }
     compactInventory.file_count = Math.max(rawFiles.length, allHashes.length);
-    return { ...detail, artifact_inventory: compactInventory };
+    const compacted: Row = { ...detail, artifact_inventory: compactInventory };
+    if (publicStorage) {
+      // Public reports need the bounded finding graph, summaries and source
+      // references. Raw evidence duplicates source snippets in every report
+      // and is not part of the publication contract; accepting it here would
+      // let a stale worker exhaust D1 even after the worker-side guard.
+      compacted.findings = array(detail.findings).map((item) => {
+        const finding = jsonObject(item);
+        const { evidence: _rawEvidence, ...withoutRawEvidence } = finding;
+        return withoutRawEvidence;
+      });
+      const evidence = jsonObject(detail.evidence);
+      compacted.evidence = Object.fromEntries(
+        Object.entries(evidence).map(([key, value]) => {
+          const record = jsonObject(value);
+          const { raw: _raw, ...withoutRaw } = record;
+          return [key, withoutRaw];
+        }),
+      );
+    }
+    return compacted;
   };
   const extensions = Array.isArray(bundle.extensions)
     ? bundle.extensions.map((detail) => compactDetail(jsonObject(detail)))
