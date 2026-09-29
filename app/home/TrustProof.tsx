@@ -2,13 +2,9 @@ import Link from "next/link";
 import { ArrowRight, Bug, Database, Radar, ShieldCheck } from "lucide-react";
 import styles from "./authorityLanding.module.css";
 import { getPublicMetrics } from "@/lib/publicMetrics";
-import { getPublicSecurityFeed } from "@/lib/productData";
 
 export default async function TrustProof() {
-  const [metrics, detections] = await Promise.all([
-    getPublicMetrics(),
-    getPublicSecurityFeed(24),
-  ]);
+  const metrics = await getPublicMetrics();
   const dataAvailable = metrics.as_of !== null;
   const stats = [
     {
@@ -27,8 +23,8 @@ export default async function TrustProof() {
       icon: Bug,
     },
     {
-      value: dataAvailable ? String(detections.length) : "—",
-      label: "Extensions currently flagged",
+      value: dataAvailable ? formatCount(metrics.high_risk_reviews) : "—",
+      label: "High-risk releases reviewed",
       icon: Radar,
     },
   ];
