@@ -53,8 +53,8 @@ jobs:
             echo "CLOUDFLARE_API_TOKEN is required before the publication cohort can run."
             exit 1
           fi
-          npx wrangler@4.136.1 d1 migrations apply abscissa-registry --remote
-          npx wrangler@4.136.1 d1 migrations apply abscissa-scan-data --remote
+          npx --yes wrangler@4.136.1 d1 migrations apply abscissa-registry --remote
+          npx --yes wrangler@4.136.1 d1 migrations apply abscissa-scan-data --remote
       - name: Dispatch the attested scanner cohort
         env:
           GH_TOKEN: ${{ secrets.SCANNER_REPO_READ_TOKEN }}
