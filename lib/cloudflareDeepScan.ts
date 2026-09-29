@@ -227,23 +227,29 @@ export async function claimCloudflareJob(input: { runnerId: string; jobId: strin
   // This is intentionally before the queue lookup: an empty queue is still a
   // successful worker invocation and must keep the health signal fresh.
   await recordCloudflareRunnerHeartbeat(db, input.runnerId, heartbeatAt);
-  const where = input.jobId
-    ? "id=? AND status='queued' AND (expected_scanner_build IS NULL OR lower(expected_scanner_build)=lower(?))"
-    : "status='queued' AND (expected_scanner_build IS NULL OR lower(expected_scanner_build)=lower(?))";
-  const values = input.jobId ? [input.jobId, input.githubSha] : [input.githubSha];
-  const job = await db.prepare(`SELECT * FROM app_scan_jobs WHERE ${where} ORDER BY created_at LIMIT 1`).bind(...values).first<Row>();
-  if (!job) return null;
   const now = nowIso();
-  const claimResult = await db.prepare("UPDATE app_scan_jobs SET status='running',lifecycle_stage='running',expected_scanner_build=COALESCE(expected_scanner_build,?),runner_id=?,github_run_id=?,attempt_count=attempt_count+1,started_at=COALESCE(started_at,?),updated_at=?,last_event_at=? WHERE id=? AND status='queued'").bind(input.githubSha, input.runnerId, input.githubRunId, now, now, now, String(job.id)).run();
-  // Multiple GitHub workers can select the same queued row before D1
-  // serializes their updates. Only the worker whose conditional UPDATE
-  // changed one row owns the claim; all other workers must return to the
-  // queue instead of scanning the same artifact concurrently.
-  if (claimResult?.meta && Number(claimResult.meta.changes) === 0) return null;
+  // Claim and select in one write statement. The previous SELECT-then-UPDATE
+  // sequence made every worker read the queue twice and allowed concurrent
+  // workers to race over the same oldest row. UPDATE ... RETURNING is both
+  // atomic and materially cheaper under D1's row-read limits.
+  const statement = input.jobId
+    ? `UPDATE app_scan_jobs
+       SET status='running',lifecycle_stage='running',expected_scanner_build=COALESCE(expected_scanner_build,?),runner_id=?,github_run_id=?,attempt_count=attempt_count+1,started_at=COALESCE(started_at,?),updated_at=?,last_event_at=?
+       WHERE id=? AND status='queued' AND (expected_scanner_build IS NULL OR lower(expected_scanner_build)=lower(?))
+       RETURNING *`
+    : `UPDATE app_scan_jobs
+       SET status='running',lifecycle_stage='running',expected_scanner_build=COALESCE(expected_scanner_build,?),runner_id=?,github_run_id=?,attempt_count=attempt_count+1,started_at=COALESCE(started_at,?),updated_at=?,last_event_at=?
+       WHERE id=(SELECT id FROM app_scan_jobs WHERE status='queued' AND (expected_scanner_build IS NULL OR lower(expected_scanner_build)=lower(?)) ORDER BY created_at LIMIT 1)
+         AND status='queued'
+       RETURNING *`;
+  const values = input.jobId
+    ? [input.githubSha, input.runnerId, input.githubRunId, now, now, now, input.jobId, input.githubSha]
+    : [input.githubSha, input.runnerId, input.githubRunId, now, now, now, input.githubSha];
+  const job = await db.prepare(statement).bind(...values).first<Row>();
+  if (!job) return null;
   await markCloudflareRunnerClaimed(db, now);
-  const updated = await db.prepare("SELECT * FROM app_scan_jobs WHERE id=?").bind(String(job.id)).first<Row>();
   await addCloudflareScanEvent(String(job.id), "running", "claimed", { runner_id: input.runnerId, scanner_build: input.githubSha });
-  return updated;
+  return job;
 }
 
 export async function saveCloudflareScanResult(jobId: string, bundle: Bundle): Promise<string> {

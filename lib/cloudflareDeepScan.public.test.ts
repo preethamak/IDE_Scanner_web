@@ -163,18 +163,17 @@ describe("Cloudflare canonical scan callback", () => {
   });
 
   it("does not let a losing concurrent worker scan the same queued job", async () => {
-    const queued = {
+    const claimed = {
       id: "job-1",
       extension_id: "publisher.extension",
       version: "1.0.0",
-      status: "queued",
+      status: "running",
     };
-    const first = vi.fn().mockResolvedValue(queued);
-    const run = vi.fn().mockResolvedValue({ meta: { changes: 0 } });
+    const first = vi.fn().mockResolvedValue(claimed);
     const db = {
-      prepare: vi.fn((query: string) => query.startsWith("SELECT * FROM app_scan_jobs")
+      prepare: vi.fn((query: string) => query.includes("RETURNING")
         ? { bind: vi.fn(() => ({ first })) }
-        : { bind: vi.fn(() => ({ run })) }),
+        : { bind: vi.fn(() => ({ run: vi.fn().mockResolvedValue(undefined) })) }),
     };
     harness.privateDb.mockReturnValue(db);
 
@@ -183,8 +182,8 @@ describe("Cloudflare canonical scan callback", () => {
       jobId: null,
       githubRunId: 123,
       githubSha: build,
-    })).resolves.toBeNull();
-    expect(run).toHaveBeenCalledTimes(1);
+    })).resolves.toEqual(claimed);
+    expect(db.prepare).toHaveBeenCalledWith(expect.stringContaining("UPDATE app_scan_jobs"));
   });
 
   it("does not let a late failure callback overwrite a completed report", async () => {

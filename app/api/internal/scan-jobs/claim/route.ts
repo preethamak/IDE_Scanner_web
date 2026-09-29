@@ -20,9 +20,14 @@ export async function POST(request: Request) {
   if (!/^[0-9a-f]{40}$/.test(githubSha)) return NextResponse.json({ error: "Invalid GitHub build identity." }, { status: 400 });
 
   if (cloudflarePrivateAvailable()) {
-    const job = await claimCloudflareJob({ runnerId, jobId, githubRunId, githubSha });
-    if (!job) return new NextResponse(null, { status: 204 });
-    return NextResponse.json({ id: job.id, extension_id: job.extension_id, version: job.version, target_platform: String(job.target_platform || ""), callback_url: `${runtimeEnv("NEXT_PUBLIC_SITE_URL") || "https://abscissa.dev"}/api/internal/scan-results` });
+    try {
+      const job = await claimCloudflareJob({ runnerId, jobId, githubRunId, githubSha });
+      if (!job) return new NextResponse(null, { status: 204 });
+      return NextResponse.json({ id: job.id, extension_id: job.extension_id, version: job.version, target_platform: String(job.target_platform || ""), callback_url: `${runtimeEnv("NEXT_PUBLIC_SITE_URL") || "https://abscissa.dev"}/api/internal/scan-results` });
+    } catch (error) {
+      console.error("Cloudflare scan claim failed", error);
+      return NextResponse.json({ error: "The scan queue is temporarily unavailable; retry shortly." }, { status: 503 });
+    }
   }
 
   const result = await serviceDb().rpc("claim_deep_scan_job", { p_runner_id: runnerId, p_scanner_build: githubSha, p_job_id: jobId, p_github_run_id: githubRunId });
