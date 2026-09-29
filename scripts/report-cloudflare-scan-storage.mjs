@@ -2,9 +2,6 @@ import { execFileSync } from "node:child_process";
 
 const database = process.env.CLOUDFLARE_SCAN_DATABASE || "abscissa-scan-data";
 const queries = {
-  "database.page_count": "SELECT page_count AS value FROM pragma_page_count",
-  "database.page_size": "SELECT page_size AS value FROM pragma_page_size",
-  "database.freelist_count": "SELECT freelist_count AS value FROM pragma_freelist_count",
   "reports.rows": "SELECT COUNT(*) AS value FROM app_scan_reports",
   "reports.report_json_chars": "SELECT COALESCE(SUM(length(report_json)), 0) AS value FROM app_scan_reports",
   "report_chunks.rows": "SELECT COUNT(*) AS value FROM app_scan_report_chunks",
@@ -33,8 +30,4 @@ for (const [metric, command] of Object.entries(queries)) {
   const row = payload.flatMap((item) => Array.isArray(item?.results) ? item.results : [])[0];
   output[metric] = String(row?.value ?? "");
 }
-const pageCount = Number(output["database.page_count"] || 0);
-const pageSize = Number(output["database.page_size"] || 0);
-output["database.approximate_bytes"] = String(pageCount * pageSize);
-output["database.approximate_megabytes"] = String(Math.round((pageCount * pageSize / 1024 / 1024) * 100) / 100);
 console.log(JSON.stringify(output, null, 2));
