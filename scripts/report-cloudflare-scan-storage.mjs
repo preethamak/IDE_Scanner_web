@@ -30,4 +30,55 @@ for (const [metric, command] of Object.entries(queries)) {
   const row = payload.flatMap((item) => Array.isArray(item?.results) ? item.results : [])[0];
   output[metric] = String(row?.value ?? "");
 }
+
+const groupQueries = {
+  jobs_by_build_status: `
+    SELECT COALESCE(j.expected_scanner_build, '') AS scanner_build,
+           j.scan_purpose, j.status, COUNT(*) AS count
+    FROM app_scan_jobs j
+    GROUP BY COALESCE(j.expected_scanner_build, ''), j.scan_purpose, j.status
+    ORDER BY count DESC, scanner_build, j.scan_purpose, j.status
+  `,
+  reports_by_release_and_purpose: `
+    SELECT CASE WHEN member.scan_id IS NULL THEN 'not_active_release' ELSE 'active_release_member' END AS release_membership,
+           j.scan_purpose, COUNT(*) AS report_count,
+           COALESCE(SUM(length(report.report_json)), 0) AS inline_chars
+    FROM app_scan_reports report
+    JOIN app_scan_jobs j ON j.id=report.job_id
+    LEFT JOIN app_scan_publication_release_reports member
+      ON member.scan_id=report.scan_id
+     AND member.release_id=(SELECT id FROM app_scan_publication_releases WHERE active=1 LIMIT 1)
+    GROUP BY release_membership, j.scan_purpose
+    ORDER BY release_membership, j.scan_purpose
+  `,
+  chunks_by_release: `
+    SELECT CASE WHEN member.scan_id IS NULL THEN 'not_active_release' ELSE 'active_release_member' END AS release_membership,
+           COUNT(*) AS chunk_rows, COALESCE(SUM(length(chunk.content)), 0) AS content_chars
+    FROM app_scan_report_chunks chunk
+    LEFT JOIN app_scan_publication_release_reports member
+      ON member.scan_id=chunk.scan_id
+     AND member.release_id=(SELECT id FROM app_scan_publication_releases WHERE active=1 LIMIT 1)
+    GROUP BY release_membership
+    ORDER BY release_membership
+  `,
+  previews_by_release: `
+    SELECT CASE WHEN member.scan_id IS NULL THEN 'not_active_release' ELSE 'active_release_member' END AS release_membership,
+           COUNT(*) AS preview_rows, COALESCE(SUM(length(preview.content)), 0) AS content_chars
+    FROM app_scan_report_previews preview
+    LEFT JOIN app_scan_publication_release_reports member
+      ON member.scan_id=preview.scan_id
+     AND member.release_id=(SELECT id FROM app_scan_publication_releases WHERE active=1 LIMIT 1)
+    GROUP BY release_membership
+    ORDER BY release_membership
+  `,
+};
+for (const [name, command] of Object.entries(groupQueries)) {
+  const raw = execFileSync("npx", ["wrangler", "d1", "execute", database, "--remote", "--command", command, "--json"], {
+    encoding: "utf8",
+    maxBuffer: 16 * 1024 * 1024,
+  });
+  const payload = JSON.parse(raw);
+  output[name] = payload.flatMap((item) => Array.isArray(item?.results) ? item.results : []);
+}
+
 console.log(JSON.stringify(output, null, 2));
