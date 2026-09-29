@@ -246,13 +246,24 @@ export async function claimCloudflareJob(input: { runnerId: string; jobId: strin
        RETURNING *`
     : `UPDATE app_scan_jobs
        SET status='running',lifecycle_stage='running',expected_scanner_build=COALESCE(expected_scanner_build,?),runner_id=?,github_run_id=?,attempt_count=attempt_count+1,started_at=COALESCE(started_at,?),updated_at=?,last_event_at=?
-       WHERE id=(SELECT id FROM app_scan_jobs WHERE status='queued' AND (expected_scanner_build IS NULL OR expected_scanner_build=?) ORDER BY created_at LIMIT 1)
-         AND status='queued'
+       WHERE id=(SELECT id FROM app_scan_jobs WHERE status='queued' AND expected_scanner_build=? ORDER BY created_at LIMIT 1)
+       AND status='queued'
        RETURNING *`;
   const values = input.jobId
     ? [scannerBuild, input.runnerId, input.githubRunId, now, now, now, input.jobId, scannerBuild]
     : [scannerBuild, input.runnerId, input.githubRunId, now, now, now, scannerBuild];
-  const job = await db.prepare(statement).bind(...values).first<Row>();
+  let job = await db.prepare(statement).bind(...values).first<Row>();
+  if (!job && !input.jobId) {
+    // User-created jobs may not yet be bound to a scanner build. Keep that
+    // compatibility path separate so publication workers never scan the whole
+    // queue through an OR predicate that defeats the claim index.
+    const unboundStatement = `UPDATE app_scan_jobs
+       SET status='running',lifecycle_stage='running',expected_scanner_build=?,runner_id=?,github_run_id=?,attempt_count=attempt_count+1,started_at=COALESCE(started_at,?),updated_at=?,last_event_at=?
+       WHERE id=(SELECT id FROM app_scan_jobs WHERE status='queued' AND expected_scanner_build IS NULL ORDER BY created_at LIMIT 1)
+       AND status='queued'
+       RETURNING *`;
+    job = await db.prepare(unboundStatement).bind(scannerBuild, input.runnerId, input.githubRunId, now, now, now).first<Row>();
+  }
   if (!job) return null;
   try {
     await markCloudflareRunnerClaimed(db, now);
