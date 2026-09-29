@@ -43,7 +43,7 @@ const build = "a".repeat(40);
 const artifactSha = "d".repeat(64);
 
 function makeDb(job: Record<string, unknown>) {
-  const first = vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(job);
+  const first = vi.fn().mockResolvedValue({ ...job, existing_scan_id: null });
   const statement = { bind: vi.fn(() => ({ first })) };
   const db = {
     prepare: vi.fn(() => statement),

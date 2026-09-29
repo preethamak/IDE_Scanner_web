@@ -288,16 +288,19 @@ export async function claimCloudflareJob(input: { runnerId: string; jobId: strin
 
 export async function saveCloudflareScanResult(jobId: string, bundle: Bundle): Promise<string> {
   const db = privateDb();
-  const existing = await db
-    .prepare("SELECT scan_id FROM app_scan_reports WHERE job_id=? LIMIT 1")
+  const state = await db
+    .prepare(`SELECT j.*,r.scan_id AS existing_scan_id
+              FROM app_scan_jobs j
+              LEFT JOIN app_scan_reports r ON r.job_id=j.id
+              WHERE j.id=?
+              LIMIT 1`)
     .bind(jobId)
     .first<Row>();
   // GitHub retries callbacks after a network timeout. The first request may
   // have committed the report even when the runner never received its 200
   // response, so a replay must be a successful no-op.
-  if (existing?.scan_id) return String(existing.scan_id);
-
-  const job = await db.prepare("SELECT * FROM app_scan_jobs WHERE id=? LIMIT 1").bind(jobId).first<Row>();
+  if (state?.existing_scan_id) return String(state.existing_scan_id);
+  const job = state;
   if (!job) throw new Error("Scan job was not found.");
   const detail = singleExtension(bundle.extensions);
   if (!detail) throw new Error("Scanner bundle must contain exactly one extension detail.");
