@@ -37,6 +37,14 @@ describe("scan claim endpoint", () => {
     expect(rpc).toHaveBeenCalledWith("claim_deep_scan_job", { p_runner_id: "github-actions-42", p_scanner_build: githubSha, p_job_id: "550e8400-e29b-41d4-a716-446655440000", p_github_run_id: 42 });
   });
 
+  it("accepts the prefixed IDs used by staged publication jobs", async () => {
+    const jobId = "candidate-550e8400-e29b-41d4-a716-446655440000";
+    rpc.mockResolvedValue({ data: { id: jobId, extension_id: "publisher.extension", version: "1.2.3", expected_scanner_build: githubSha }, error: null });
+    const response = await POST(request("runner-secret", { runner_id: "github-actions-42", job_id: jobId, github_run_id: "42", github_sha: githubSha }));
+    expect(response.status).toBe(200);
+    expect(rpc).toHaveBeenCalledWith("claim_deep_scan_job", { p_runner_id: "github-actions-42", p_scanner_build: githubSha, p_job_id: jobId, p_github_run_id: 42 });
+  });
+
   it("rejects a worker whose build differs from the job binding", async () => {
     rpc.mockResolvedValue({ data: { id: "job-1", extension_id: "publisher.extension", version: "1.2.3", expected_scanner_build: "b".repeat(40) }, error: null });
     expect((await POST(request())).status).toBe(409);
