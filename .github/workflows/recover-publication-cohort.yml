@@ -1,0 +1,153 @@
+name: Recover attested publication cohort
+
+# One-time operational recovery for the currently staged 250-release cohort.
+# Scanning and promotion remain separate: this workflow only dispatches the
+# attested scanner and asks the existing promotion workflow to validate and
+# activate. It never writes publication rows itself.
+on:
+  schedule:
+    - cron: "10 0 * * *"
+    - cron: "0 */2 * * *"
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: Recovery phase to run
+        required: true
+        default: both
+        type: choice
+        options:
+          - dispatch
+          - promote
+          - both
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: guardrails-publication-recovery
+  cancel-in-progress: false
+
+env:
+  SCANNER_BUILD: 1d8f6722f7334973b441dfd27d2396198f9a794f
+  SCANNER_HOLDOUT_RUN: "36572904262"
+  EXPECTED_REPORTS: "250"
+
+jobs:
+  dispatch-scans:
+    if: >-
+      ${{
+        (github.event_name == 'schedule' && github.event.schedule == '10 0 * * *')
+        || (github.event_name == 'workflow_dispatch' && (inputs.phase == 'dispatch' || inputs.phase == 'both'))
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Dispatch the attested scanner cohort
+        env:
+          GH_TOKEN: ${{ secrets.SCANNER_REPO_READ_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "SCANNER_REPO_READ_TOKEN is required to dispatch the scanner workers."
+            exit 1
+          fi
+          gh workflow run deep-scan.yml \
+            --repo preethamak/IDE_Scanner \
+            --ref main \
+            -f worker_count=16 \
+            -f jobs_per_worker=16 \
+            -f scanner_build="$SCANNER_BUILD"
+
+  promote:
+    if: >-
+      ${{
+        (github.event_name == 'schedule' && github.event.schedule == '0 */2 * * *')
+        || (github.event_name == 'workflow_dispatch' && (inputs.phase == 'promote' || inputs.phase == 'both'))
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out promotion scripts
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Skip while another promotion is running
+        id: promotion_gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          running=$(gh run list \
+            --repo preethamak/IDE_Scanner_web \
+            --workflow promote-publication.yml \
+            --limit 10 \
+            --json status \
+            --jq 'any(.[]; .status == "queued" or .status == "in_progress")')
+          if [ "$running" = "true" ]; then
+            echo "A publication promotion is already running; leaving it as the sole writer."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+      - name: Skip when this build is already active
+        id: active
+        if: steps.promotion_gate.outputs.skip != 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 26e873c5d55e5e386df482c9dbe8bcd7
+          CLOUDFLARE_SCAN_DATABASE: abscissa-scan-data
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "CLOUDFLARE_API_TOKEN is required to inspect the active release."
+            exit 1
+          fi
+          error_file=$(mktemp)
+          set +e
+          active_json=$(npx wrangler d1 execute "$CLOUDFLARE_SCAN_DATABASE" --remote --json \
+            --command "SELECT scanner_build,expected_reports,report_count_at_activation FROM app_scan_publication_releases WHERE active=1 LIMIT 1" \
+            2>"$error_file")
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            if grep -Eq 'code: 7500|daily row read limit' "$error_file"; then
+              echo "D1 row-read quota is still exhausted; the next recovery window will retry."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            cat "$error_file"
+            exit "$status"
+          fi
+          active_result=$(ACTIVE_JSON="$active_json" node <<'NODE'
+          const payload = JSON.parse(process.env.ACTIVE_JSON || "[]");
+          const row = payload.flatMap((item) => item.results || [])[0] || {};
+          const active = String(row.scanner_build || "").toLowerCase() === process.env.SCANNER_BUILD.toLowerCase()
+            && Number(row.expected_reports) === Number(process.env.EXPECTED_REPORTS)
+            && Number(row.report_count_at_activation) === Number(process.env.EXPECTED_REPORTS);
+          process.stdout.write(JSON.stringify({ active, row }));
+          NODE
+          )
+          echo "$active_result"
+          if node -e 'process.exit(JSON.parse(process.argv[1]).active ? 0 : 1)' "$active_result"; then
+            echo "already_active=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "already_active=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Promote only through the exact validation workflow
+        if: steps.promotion_gate.outputs.skip != 'true' && steps.active.outputs.skip != 'true' && steps.active.outputs.already_active != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run promote-publication.yml \
+            --repo preethamak/IDE_Scanner_web \
+            --ref main \
+            -f scanner_run_id="$SCANNER_HOLDOUT_RUN" \
+            -f scanner_build="$SCANNER_BUILD" \
+            -f expected_reports="$EXPECTED_REPORTS" \
+            -f activate=true \
+            -f queue_candidate_scan=false \
+            -f queue_bulk_scan=false \
+            -f scan_batch_limit=250 \
+            -f cohort_limit=250 \
+            -f marketplace_page_count=3
