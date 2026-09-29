@@ -32,6 +32,8 @@ env:
   SCANNER_BUILD: 1d8f6722f7334973b441dfd27d2396198f9a794f
   SCANNER_HOLDOUT_RUN: "36572904262"
   EXPECTED_REPORTS: "250"
+  CANARY_SOURCE_RUN: "36610861702"
+  CANARY_JOB_ID: candidate-32e3e4d8-3835-488e-a5cb-795764dfb0e7
 
 jobs:
   dispatch-scans:
@@ -44,6 +46,19 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - name: Replay the completed canary callback
+        env:
+          GH_TOKEN: ${{ secrets.SCANNER_REPO_READ_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "SCANNER_REPO_READ_TOKEN is required to replay the canary callback."
+            exit 1
+          fi
+          gh workflow run retry-scan-callback.yml \
+            --repo preethamak/IDE_Scanner \
+            --ref main \
+            -f source_run_id="$CANARY_SOURCE_RUN" \
+            -f job_id="$CANARY_JOB_ID"
       - name: Apply pending D1 claim indexes before scanning
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
