@@ -182,7 +182,9 @@ function queryD1(command) {
 }
 
 function isDailyRowReadLimitError(error) {
-  const message = error instanceof Error ? `${error.message}\n${error.stack || ""}` : String(error);
+  const message = error instanceof Error
+    ? [error.message, error.stack, error.stdout, error.stderr, ...(Array.isArray(error.output) ? error.output : [])].filter(Boolean).join("\n")
+    : String(error);
   return message.includes("code: 7500") || message.includes("daily row read limit");
 }
 
