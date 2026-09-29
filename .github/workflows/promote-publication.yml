@@ -234,7 +234,7 @@ jobs:
             --repo preethamak/IDE_Scanner \
             --ref main \
             -f worker_count=16 \
-            -f jobs_per_worker=8 \
+            -f jobs_per_worker=16 \
             -f scanner_build="$SCANNER_BUILD"
 
   activate:
