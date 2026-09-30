@@ -23,10 +23,11 @@ export default function HeaderAccount() {
         const response = await fetch("/api/auth/session", { cache: "no-store" });
         const body = await response.json().catch(() => ({}));
         if (response.ok && body.user) {
-          cloudflareActive.value = true;
+          const sessionProvider = String(body.user.provider || "").toLowerCase() === "supabase" ? "supabase" : "cloudflare";
+          cloudflareActive.value = sessionProvider === "cloudflare";
           if (active) {
             setUser({ email: String(body.user.email || "") });
-            setProvider("cloudflare");
+            setProvider(sessionProvider);
           }
           return;
         }
@@ -65,8 +66,8 @@ export default function HeaderAccount() {
   }, [db]);
 
   async function signOut() {
-    if (provider === "cloudflare") await fetch("/api/auth/logout", { method: "POST" });
-    else await db?.auth.signOut();
+    if (provider === "supabase") await db?.auth.signOut();
+    await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
     setProvider(null);
     setOpen(false); router.replace("/");

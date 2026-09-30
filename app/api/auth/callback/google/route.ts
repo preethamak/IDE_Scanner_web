@@ -28,13 +28,13 @@ export async function GET(request: Request) {
   const state = url.searchParams.get("state") || "";
   const expectedState = cookies.gr_google_state || "";
   const next = safeNext(cookies.gr_google_next);
-  if (!state || !expectedState || !timingSafe(state, expectedState)) return redirectError(url, "invalid_state");
+  if (!state || !expectedState || !timingSafe(state, expectedState)) return redirectError(url, "invalid_state", next);
   const code = url.searchParams.get("code") || "";
   const verifier = cookies.gr_google_verifier || "";
-  if (!code || !verifier) return redirectError(url, "missing_code");
+  if (!code || !verifier) return redirectError(url, "missing_code", next);
   const clientId = runtimeEnv("GOOGLE_OAUTH_CLIENT_ID");
   const clientSecret = runtimeEnv("GOOGLE_OAUTH_CLIENT_SECRET").trim();
-  if (!clientId || !clientSecret) return redirectError(url, "google_unconfigured");
+  if (!clientId || !clientSecret) return redirectError(url, "google_unconfigured", next);
 
   try {
     const tokenBody = new URLSearchParams({
@@ -61,6 +61,7 @@ export async function GET(request: Request) {
       return redirectError(
         url,
         tokens.error === "access_denied" ? "google_denied" : "provider_denied",
+        next,
       );
     }
     const profileResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
@@ -68,12 +69,12 @@ export async function GET(request: Request) {
     });
     if (!profileResponse.ok) {
       console.error("[google-oauth] userinfo request failed", profileResponse.status);
-      return redirectError(url, "provider_denied");
+      return redirectError(url, "provider_denied", next);
     }
     const profile = await profileResponse.json() as GoogleProfile;
     const subject = String(profile.sub || "").trim();
     const email = typeof profile.email === "string" ? profile.email.trim().toLowerCase() : "";
-    if (!subject || !email || profile.email_verified !== true) return redirectError(url, "missing_email");
+    if (!subject || !email || profile.email_verified !== true) return redirectError(url, "missing_email", next);
     const displayName = String(profile.name || profile.given_name || email.split("@")[0]).trim().slice(0, 120);
     const user = await upsertGoogleUser({ subject, email, displayName });
     const session = await createSession(user.id);
@@ -85,7 +86,7 @@ export async function GET(request: Request) {
     response.headers.append("Set-Cookie", clearCookie("gr_google_next", secure));
     return response;
   } catch {
-    return redirectError(url, "provider_unavailable");
+    return redirectError(url, "provider_unavailable", next);
   }
 }
 
@@ -97,8 +98,9 @@ function clearCookie(name: string, secure: boolean): string {
   return `${name}=; Max-Age=0; ${googleCookieFlags(secure)}`;
 }
 
-function redirectError(url: URL, code: string): NextResponse {
+function redirectError(url: URL, code: string, next = "/workspace"): NextResponse {
   const destination = new URL("/account", url.origin);
   destination.searchParams.set("error", code);
+  if (next !== "/workspace") destination.searchParams.set("next", safeNext(next));
   return NextResponse.redirect(destination);
 }
