@@ -31,6 +31,7 @@ SCAN_RATE_LIMIT_SECRET=... # separate random value
 RESEND_API_KEY=... # server-only; required for feedback and email notifications
 NOTIFICATION_FROM_EMAIL=feedback@abscissa.dev # verified Resend sender
 FEEDBACK_TO_EMAIL=hello@abscissa.dev # company inbox; defaults to hello@abscissa.dev
+GITHUB_OAUTH_CLIENT_SECRET=... # server-only; GitHub OAuth app secret
 GOOGLE_OAUTH_CLIENT_SECRET=... # server-only; Google OAuth web client secret
 ```
 
@@ -40,6 +41,9 @@ Configure the scanner repository Action secret `SCAN_CALLBACK_SECRET` with the s
 NEXT_PUBLIC_SUPABASE_URL
 SUPABASE_SECRET_KEY
 GITHUB_ACTIONS_TOKEN
+GITHUB_OAUTH_CLIENT_SECRET
+GOOGLE_OAUTH_CLIENT_SECRET
+RESEND_API_KEY
 ```
 
 The secret key and workflow token are server-only. Never expose them through `NEXT_PUBLIC_*` variables. Deep Scan callbacks are HMAC-verified before schema validation and ingestion.
