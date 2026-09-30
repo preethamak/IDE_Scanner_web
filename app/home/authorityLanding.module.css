@@ -4,12 +4,12 @@
   --ledger-ink: #141622;
   --ledger-muted: #66707d;
   --ledger-line: #d8dce5;
-  --ledger-signal: #2a4cff;
-  --ledger-signal-soft: #eef0ff;
-  --ledger-signal-strong: #9aa8ff;
-  --ledger-signal-ink: #16215d;
-  --ledger-signal-hover: #dee4ff;
-  --ledger-focus: #2a4cff;
+  --ledger-signal: #7ea7cc;
+  --ledger-signal-soft: #eef5fb;
+  --ledger-signal-strong: #bfd4e7;
+  --ledger-signal-ink: #29465e;
+  --ledger-signal-hover: #dfedf7;
+  --ledger-focus: #557f9f;
   --faint: #655c57;
   overflow: hidden;
   background: var(--ledger-paper);
@@ -216,7 +216,7 @@
   overflow: hidden;
   border: 1px solid var(--ledger-ink);
   background: #11131c;
-  box-shadow: 18px 18px 0 var(--ledger-signal);
+  box-shadow: 18px 18px 0 var(--ledger-signal-strong);
 }
 
 .heroMovieFrame video {
@@ -253,7 +253,7 @@
 .liveEvidence {
   padding: 116px max(24px, calc((100vw - 1240px) / 2)) 112px;
   border-bottom: 1px solid var(--ledger-line);
-  background: #e9edff;
+  background: var(--ledger-signal-soft);
 }
 
 .liveHeader {
@@ -306,7 +306,7 @@
 
 .liveBoard :global(.board) {
   border-radius: 0;
-  box-shadow: 16px 16px 0 #c9d1f8, 16px 16px 0 1px var(--ledger-line), 0 25px 55px rgb(20 22 34 / 9%);
+  box-shadow: 16px 16px 0 var(--ledger-signal-strong), 16px 16px 0 1px var(--ledger-line), 0 25px 55px rgb(20 22 34 / 9%);
 }
 
 .trialCallout {
@@ -330,7 +330,7 @@
   overflow: hidden;
   border: 1px solid var(--ledger-ink);
   background: var(--ledger-ink);
-  box-shadow: 12px 12px 0 var(--ledger-signal);
+  box-shadow: 12px 12px 0 var(--ledger-signal-strong);
 }
 
 .trialSteps > span,
@@ -347,7 +347,7 @@
 .trialSteps b { margin-top: 8px; font-size: 13px; }
 .trialSteps small { margin-top: 4px; color: var(--ledger-muted); font-size: 11px; line-height: 1.35; }
 .trialSteps > a { display: inline-flex; align-items: center; gap: 7px; background: var(--ledger-ink); color: #fff; font-size: 12px; font-weight: 800; white-space: nowrap; }
-.trialSteps > a:hover { background: var(--ledger-signal); }
+.trialSteps > a:hover { background: var(--ledger-signal-ink); }
 .trialSteps > a svg { width: 14px; }
 
 .demoSection {
@@ -363,7 +363,7 @@
 .demoIntro { max-width: 340px; }
 .demoIntro > p { margin-top: 24px !important; }
 .demoFilm { transform: translateY(14px) rotate(-1deg); }
-.demoFilm :global(.film) { border-radius: 0; box-shadow: 14px 16px 0 #e2e5ff, 14px 16px 0 1px var(--ledger-signal-strong), 0 24px 50px rgb(20 22 34 / 10%); }
+.demoFilm :global(.film) { border-radius: 0; box-shadow: 14px 16px 0 var(--ledger-signal-soft), 14px 16px 0 1px var(--ledger-signal-strong), 0 24px 50px rgb(20 22 34 / 10%); }
 
 .researchLink {
   display: grid;
@@ -409,16 +409,16 @@
 }
 
 .teamGrid article { min-height: 205px; padding: 22px; background: #fff; }
-.teamGrid article:nth-child(2) { background: #e9edff; }
+.teamGrid article:nth-child(2) { background: var(--ledger-signal-soft); }
 .teamGrid article:nth-child(3) { background: #f3bd45; }
 .teamGrid article:nth-child(4) { background: #fff; }
-.teamGrid article:hover { background: var(--ledger-signal); color: #fff; }
+.teamGrid article:hover { background: var(--ledger-signal-hover); color: var(--ledger-ink); }
 .teamGrid span { color: var(--ledger-signal); font: 800 11px var(--font-mono); }
 .teamGrid article:nth-child(3) span,
 .teamGrid article:hover span { color: inherit; }
 .teamGrid h3 { margin: 65px 0 8px; font-size: 18px; letter-spacing: -.03em; }
 .teamGrid p { max-width: 210px; color: var(--ledger-muted); font-size: 12px; line-height: 1.55; }
-.teamGrid article:hover p { color: #e8ebff; }
+.teamGrid article:hover p { color: var(--ledger-muted); }
 
 .proof,
 .trust {
@@ -480,7 +480,7 @@
 .close .sectionKicker { align-self: start; color: var(--ledger-signal-ink); }
 .close h2 { font-size: clamp(44px, 6vw, 88px); line-height: .86; letter-spacing: -.09em; }
 .close h2 em { color: var(--ledger-signal-ink); }
-.close a { border: 1px solid var(--ledger-ink); background: var(--ledger-signal); padding: 15px 17px; color: #fff; }
+.close a { border: 1px solid var(--ledger-ink); background: var(--ledger-signal); padding: 15px 17px; color: var(--ledger-ink); }
 .close a:hover { background: var(--ledger-ink); }
 
 @media (max-width: 940px) {
@@ -514,7 +514,7 @@
   .heroLayout { padding: 58px 0 46px; }
   .heroCopy h1 { font-size: 58px; }
   .heroLead { font-size: 16px; }
-  .heroMovieFrame { box-shadow: 9px 9px 0 var(--ledger-signal); }
+  .heroMovieFrame { box-shadow: 9px 9px 0 var(--ledger-signal-strong); }
   .heroMovieCaption { align-items: flex-start; flex-direction: column; gap: 8px; }
   .liveEvidence,
   .trialCallout,
@@ -527,7 +527,7 @@
   .demoIntro h2,
   .teamIntro h2 { font-size: 49px; }
   .liveBoard { margin-top: 48px; }
-  .liveBoard :global(.board) { box-shadow: 8px 9px 0 #c9d1f8; }
+  .liveBoard :global(.board) { box-shadow: 8px 9px 0 var(--ledger-signal-strong); }
   .trialSteps { grid-template-columns: 1fr 1fr; }
   .trialSteps > a { grid-column: 1 / -1; justify-content: center; }
   .demoSection { padding-top: 86px; padding-bottom: 92px; }
