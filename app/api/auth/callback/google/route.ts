@@ -33,7 +33,8 @@ export async function GET(request: Request) {
   const verifier = cookies.gr_google_verifier || "";
   if (!code || !verifier) return redirectError(url, "missing_code");
   const clientId = runtimeEnv("GOOGLE_OAUTH_CLIENT_ID");
-  if (!clientId) return redirectError(url, "provider_unavailable");
+  const clientSecret = runtimeEnv("GOOGLE_OAUTH_CLIENT_SECRET").trim();
+  if (!clientId || !clientSecret) return redirectError(url, "google_unconfigured");
 
   try {
     const tokenBody = new URLSearchParams({
@@ -43,8 +44,7 @@ export async function GET(request: Request) {
       grant_type: "authorization_code",
       redirect_uri: googleRedirectUri(url),
     });
-    const clientSecret = runtimeEnv("GOOGLE_OAUTH_CLIENT_SECRET").trim();
-    if (clientSecret) tokenBody.set("client_secret", clientSecret);
+    tokenBody.set("client_secret", clientSecret);
     const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },

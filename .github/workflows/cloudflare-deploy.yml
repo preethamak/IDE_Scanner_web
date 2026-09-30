@@ -47,6 +47,17 @@ jobs:
           else
             echo "RESEND_API_KEY is not configured; retaining the current email fallback."
           fi
+      - name: Sync optional Google OAuth client secret
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 26e873c5d55e5e386df482c9dbe8bcd7
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+        run: |
+          if [ -n "$GOOGLE_OAUTH_CLIENT_SECRET" ]; then
+            printf '%s' "$GOOGLE_OAUTH_CLIENT_SECRET" | npx wrangler secret put GOOGLE_OAUTH_CLIENT_SECRET --config wrangler.jsonc
+          else
+            echo "::warning::GOOGLE_OAUTH_CLIENT_SECRET is not configured; Google sign-in will remain unavailable."
+          fi
       - name: Detect D1 migration changes
         id: schema_changes
         run: |

@@ -15,6 +15,11 @@ export default async function AuthorityLanding() {
   const inventory = await getPublicInventory(8);
   return <main className={styles.page}>
     <section className={styles.hero}>
+      <div className={styles.heroRail} aria-hidden="true">
+        <span>GuardRails / 01</span>
+        <i />
+        <span>Decision ledger</span>
+      </div>
       <div className={styles.heroCopy}>
         <h1>See an extension’s access<br /><em>before it reaches your editor.</em></h1>
         <p className={styles.heroLead}>GuardRails compares the package, permissions, and release history before you install. When a later version changes access, it shows exactly what changed.</p>
@@ -24,9 +29,13 @@ export default async function AuthorityLanding() {
         </div>
         <div className={styles.actions}><Link href="/registry">Browse the registry <ArrowRight /></Link><Link href="#how">See the flow <ChevronRight /></Link></div>
       </div>
-      <div className={styles.heroVisual}><ReleaseReviewFilm /></div>
+      <div className={styles.heroVisual}>
+        <div className={styles.heroVisualLabel} aria-hidden="true"><span>Release review / 01</span><span>Live preview</span></div>
+        <ReleaseReviewFilm />
+      </div>
     </section>
     <section className={styles.liveEvidence} aria-labelledby="live-evidence-heading">
+      <div className={styles.sectionStamp} aria-hidden="true"><span>02</span><b>Change signal</b></div>
       <div className={styles.liveEvidenceCopy}>
         <h2 id="live-evidence-heading">Know what changed before you install.</h2>
         <p>See the version, what it can reach, and the decision made about it.</p>
@@ -35,6 +44,7 @@ export default async function AuthorityLanding() {
       <ExtensionSignalBoard items={inventory.items} total={inventory.totals.releases} />
     </section>
     <section className={styles.trialCallout} aria-labelledby="trial-heading">
+      <div className={styles.sectionStamp} aria-hidden="true"><span>03</span><b>Open access</b></div>
       <div>
         <h2 id="trial-heading">Try five scans free.</h2>
         <p>Inspect the package, capabilities, and evidence before you create an account. Sign in only when you want monitoring, team decisions, and scan history.</p>
@@ -46,6 +56,7 @@ export default async function AuthorityLanding() {
       </div>
     </section>
     <section className={styles.demoSection} id="how" aria-labelledby="demo-heading">
+      <div className={styles.sectionStamp} aria-hidden="true"><span>04</span><b>Proof in motion</b></div>
       <div className={styles.demoCopy}>
         <h2 id="demo-heading">Watch a release<br /><em>become a decision.</em></h2>
         <p>Watch a release move from monitoring to review. The change is isolated, the evidence stays attached, and the next step is clear.</p>

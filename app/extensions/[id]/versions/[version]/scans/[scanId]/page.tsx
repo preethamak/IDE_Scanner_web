@@ -5,6 +5,7 @@ import { parseExtensionDossierData } from "@/lib/reportContract";
 import { cloudflarePrivateAvailable } from "@/lib/cloudflareDeepScan";
 import { cloudflareSessionActive } from "@/lib/cloudflareSession";
 import { serverDb } from "@/lib/supabaseServer";
+import { runtimeSupabase } from "@/lib/supabaseRuntime";
 
 export const dynamic = "force-dynamic";
 
@@ -18,10 +19,15 @@ export default async function ImmutableScanPage({
   const version = decodeURIComponent(route.version);
   const scanId = decodeURIComponent(route.scanId);
   const cloudflare = cloudflarePrivateAvailable();
+  // Cloudflare injects runtime variables per request. Use the runtime
+  // Supabase client as the compatibility path for immutable reports that
+  // predate the D1 publication mirror; the report still has to pass the
+  // exact version/scan identity checks in getVersionScanProduct.
+  const legacyClient = cloudflare ? runtimeSupabase() : null;
   const [claims, extensionProduct, versionProduct] = await Promise.all([
     cloudflare ? cloudflareSessionActive() : serverDb().then((db) => db.auth.getClaims().then((result) => Boolean(result.data?.claims))).catch(() => false),
-    getExtensionProduct(id),
-    getVersionScanProduct(id, version, scanId, undefined, { skipCloudflareCatalog: true }),
+    getExtensionProduct(id, legacyClient || undefined),
+    getVersionScanProduct(id, version, scanId, legacyClient || undefined, { skipCloudflareCatalog: true }),
   ]);
   if (!extensionProduct || !versionProduct?.scan) notFound();
   let data = null;

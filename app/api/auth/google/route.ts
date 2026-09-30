@@ -9,8 +9,15 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const clientId = runtimeEnv("GOOGLE_OAUTH_CLIENT_ID");
-  if (!clientId) return NextResponse.json({ error: "Google sign-in is not configured." }, { status: 503 });
+  const clientSecret = runtimeEnv("GOOGLE_OAUTH_CLIENT_SECRET").trim();
   const url = new URL(request.url);
+  if (!clientId || !clientSecret) {
+    const destination = new URL("/account", url.origin);
+    destination.searchParams.set("error", "google_unconfigured");
+    const next = safeNext(url.searchParams.get("next"));
+    if (next !== "/workspace") destination.searchParams.set("next", next);
+    return NextResponse.redirect(destination);
+  }
   const state = randomBytes(24).toString("base64url");
   const verifier = randomBytes(48).toString("base64url");
   const challenge = createHash("sha256").update(verifier).digest("base64url");
