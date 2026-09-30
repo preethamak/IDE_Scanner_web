@@ -46,6 +46,11 @@ on:
         required: true
         default: "250"
         type: string
+      candidate_offset:
+        description: Ranked Marketplace offset for a replacement cohort after runtime-incomplete candidates
+        required: false
+        default: "0"
+        type: string
       marketplace_page_count:
         description: Marketplace pages of 100 extensions to ingest; blank auto-sizes to the requested cohort
         required: false
@@ -222,6 +227,7 @@ jobs:
           SCANNER_BUILD: ${{ inputs.scanner_build }}
           SCAN_BATCH_LIMIT: ${{ inputs.scan_batch_limit }}
           COHORT_LIMIT: ${{ inputs.cohort_limit }}
+          COHORT_OFFSET: ${{ inputs.candidate_offset }}
           MARKETPLACE_PAGE_COUNT: ${{ inputs.marketplace_page_count }}
         run: |
           node scripts/queue-cloudflare-candidate-scans.mjs
@@ -384,6 +390,7 @@ jobs:
           SCANNER_BUILD: ${{ inputs.scanner_build }}
           SCAN_BATCH_LIMIT: ${{ inputs.scan_batch_limit }}
           COHORT_LIMIT: ${{ inputs.cohort_limit }}
+          COHORT_OFFSET: ${{ inputs.candidate_offset }}
           MARKETPLACE_PAGE_COUNT: ${{ inputs.marketplace_page_count }}
           REQUIRE_ACTIVE_RELEASE: "true"
         run: |
