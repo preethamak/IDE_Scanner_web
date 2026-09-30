@@ -94,7 +94,7 @@ export default function AccountPage() {
         if (cloudflare.ok && cloudflareBody.user) {
           setAccount({
             email: String(cloudflareBody.user.email || ""),
-            provider: "cloudflare",
+            provider: String(cloudflareBody.user.provider || "").toLowerCase() === "supabase" ? "supabase" : "cloudflare",
             profile: cloudflareBody.profile || null,
           });
           setLoading(false);
@@ -219,7 +219,7 @@ export default function AccountPage() {
   }
   async function signOut() {
     if (account?.provider === "supabase") await db?.auth.signOut();
-    else await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", { method: "POST" });
     setAccount(null);
   }
   if (loading)

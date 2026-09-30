@@ -285,6 +285,11 @@ export default function TeamWorkspace(
         headers: headers.Authorization ? headers : undefined,
       });
       const body = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        const next = `${window.location.pathname}${window.location.search}`;
+        router.replace(`/account?next=${encodeURIComponent(next)}`);
+        return;
+      }
       if (!response.ok)
         throw new Error(
           String(body.error || "Your workspaces could not be loaded."),
@@ -340,6 +345,11 @@ export default function TeamWorkspace(
       const bodies = await Promise.all(
         responses.map((response) => response.json().catch(() => ({}))),
       );
+      if (responses.some((response) => response.status === 401)) {
+        const next = `${window.location.pathname}${window.location.search}`;
+        router.replace(`/account?next=${encodeURIComponent(next)}`);
+        return;
+      }
       if (responses.slice(0, 6).some((response) => !response.ok))
         throw new Error("Some workspace data could not be refreshed.");
       setAlerts(Array.isArray(bodies[0].alerts) ? bodies[0].alerts : []);

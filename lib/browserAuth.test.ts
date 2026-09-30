@@ -41,6 +41,18 @@ describe("browserAuthHeaders", () => {
     expect(getSession).toHaveBeenCalledOnce();
   });
 
+  it("keeps a Supabase SSR session authenticated when its browser token is unavailable", async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ user: { id: "legacy-user", provider: "supabase" } }),
+    } as Response);
+    getSession.mockResolvedValue({ data: { session: null } });
+
+    await expect(browserAuthHeaders(db)).resolves.toEqual({
+      Authorization: "Bearer supabase-session",
+    });
+  });
+
   it("falls back to Supabase when the Cloudflare session endpoint is unavailable", async () => {
     vi.mocked(fetch).mockRejectedValue(new Error("network unavailable"));
     getSession.mockResolvedValue({
