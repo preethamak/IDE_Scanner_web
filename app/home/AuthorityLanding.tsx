@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ChevronRight, ScanSearch } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import ExtensionSearch from "@/app/ExtensionSearch";
 import styles from "./authorityLanding.module.css";
 import ReleaseReviewFilm from "./ReleaseReviewFilm";
@@ -13,67 +13,91 @@ import { getPublicInventory } from "@/lib/productData";
 
 export default async function AuthorityLanding() {
   const inventory = await getPublicInventory(8);
+
   return <main className={styles.page}>
     <section className={styles.hero}>
-      <div className={styles.heroRail} aria-hidden="true">
-        <span>GuardRails / 01</span>
-        <i />
-        <span>Decision ledger</span>
+      <div className={styles.heroTopline}>
+        <span className={styles.heroKicker}><i /> Extension intelligence for the software you install</span>
+        <span className={styles.heroIssue}>Issue 01 <b>·</b> Before install</span>
       </div>
-      <div className={styles.heroCopy}>
-        <h1>See an extension’s access<br /><em>before it reaches your editor.</em></h1>
-        <p className={styles.heroLead}>GuardRails compares the package, permissions, and release history before you install. When a later version changes access, it shows exactly what changed.</p>
-        <div className={styles.heroSearch}>
-          <span className={styles.heroSearchLabel}><ScanSearch /> Check any extension — Marketplace or Open VSX</span>
-          <ExtensionSearch submitLabel="Check extension" />
+      <div className={styles.heroLayout}>
+        <div className={styles.heroCopy}>
+          <h1>Know what an extension can do <em>before you let it in.</em></h1>
+          <p className={styles.heroLead}>GuardRails turns every release into a clear install decision: what changed, what it can reach, and whether the evidence supports a yes.</p>
+          <div className={styles.actions}>
+            <Link className={styles.heroPrimary} href="/registry">Check an extension <ArrowRight /></Link>
+            <Link className={styles.heroTextLink} href="#how">See how it works <ArrowUpRight /></Link>
+          </div>
+          <div className={styles.heroSearch}>
+            <span className={styles.heroSearchLabel}>Or search Marketplace / Open VSX</span>
+            <ExtensionSearch submitLabel="Check extension" />
+          </div>
         </div>
-        <div className={styles.actions}><Link href="/registry">Browse the registry <ArrowRight /></Link><Link href="#how">See the flow <ChevronRight /></Link></div>
+        <aside className={styles.heroAside}>
+          <p>One place to inspect package behavior, compare releases, and keep the reason behind the decision.</p>
+          <dl>
+            <div><dt>01</dt><dd>Exact release</dd></div>
+            <div><dt>02</dt><dd>Observed access</dd></div>
+            <div><dt>03</dt><dd>Reusable decision</dd></div>
+          </dl>
+        </aside>
       </div>
-      <div className={styles.heroVisual}>
-        <div className={styles.heroVisualLabel} aria-hidden="true"><span>Release review / 01</span><span>Live preview</span></div>
-        <ReleaseReviewFilm />
+      <div className={styles.heroMovie}>
+        <div className={styles.heroMovieMeta}><span>Product film / release review</span><span>GuardRails · 00:48</span></div>
+        <div className={styles.heroMovieFrame}>
+          <video autoPlay controls muted loop playsInline preload="metadata" poster="/demos/guardrails-product-overview-poster.jpg" aria-label="GuardRails product demo">
+            <source src="/demos/guardrails-product-overview.mp4" type="video/mp4" />
+            Your browser does not support video playback.
+          </video>
+          <div className={styles.heroMovieCaption}><span>From a new capability to a saved decision.</span><Link href="/demos">Open the full demo <ArrowUpRight /></Link></div>
+        </div>
       </div>
     </section>
+
     <section className={styles.liveEvidence} aria-labelledby="live-evidence-heading">
-      <div className={styles.sectionStamp} aria-hidden="true"><span>02</span><b>Change signal</b></div>
-      <div className={styles.liveEvidenceCopy}>
-        <h2 id="live-evidence-heading">Know what changed before you install.</h2>
-        <p>See the version, what it can reach, and the decision made about it.</p>
-        <Link href="/registry">Browse release reports <ArrowRight /></Link>
+      <div className={styles.liveHeader}>
+        <div>
+          <span className={styles.sectionKicker}>02 / The public view</span>
+          <h2 id="live-evidence-heading">The useful answer is<br /><em>what changed.</em></h2>
+        </div>
+        <div className={styles.liveHeaderAside}><p>See a release the way a reviewer sees it: exact version, observed surfaces, evidence coverage, and the decision that follows.</p><Link href="/registry">Browse the release index <ArrowRight /></Link></div>
       </div>
-      <ExtensionSignalBoard items={inventory.items} total={inventory.totals.releases} />
+      <div className={styles.liveBoard}>
+        <div className={styles.liveBoardLabel}><span>Live release index</span><span>{inventory.totals.releases.toLocaleString()} releases</span></div>
+        <ExtensionSignalBoard items={inventory.items} total={inventory.totals.releases} />
+      </div>
     </section>
+
     <section className={styles.trialCallout} aria-labelledby="trial-heading">
-      <div className={styles.sectionStamp} aria-hidden="true"><span>03</span><b>Open access</b></div>
-      <div>
-        <h2 id="trial-heading">Try five scans free.</h2>
-        <p>Inspect the package, capabilities, and evidence before you create an account. Sign in only when you want monitoring, team decisions, and scan history.</p>
+      <div className={styles.trialLead}>
+        <span className={styles.sectionKicker}>03 / Start here</span>
+        <h2 id="trial-heading">Five scans.<br /><em>No account required.</em></h2>
+        <p>Inspect the package, capabilities, and evidence before you decide whether GuardRails belongs in your workflow.</p>
       </div>
       <div className={styles.trialSteps} aria-label="Free scan details">
         <span><strong>01</strong><b>No card</b><small>Start from a public extension.</small></span>
         <span><strong>05</strong><b>Scans / 30 days</b><small>Start with any public extension.</small></span>
-        <Link href="/registry">Try a free scan <ArrowRight /></Link>
+        <Link href="/registry">Start a free scan <ArrowRight /></Link>
       </div>
     </section>
+
     <section className={styles.demoSection} id="how" aria-labelledby="demo-heading">
-      <div className={styles.sectionStamp} aria-hidden="true"><span>04</span><b>Proof in motion</b></div>
-      <div className={styles.demoCopy}>
-        <h2 id="demo-heading">Watch a release<br /><em>become a decision.</em></h2>
-        <p>Watch a release move from monitoring to review. The change is isolated, the evidence stays attached, and the next step is clear.</p>
-        <Link href="/demos">See all product demos <ArrowRight /></Link>
+      <div className={styles.demoIntro}>
+        <span className={styles.sectionKicker}>04 / The review surface</span>
+        <h2 id="demo-heading">A release arrives.<br /><em>The decision stays.</em></h2>
+        <p>Compare the new capability against the approved baseline, inspect the evidence, and save the context for the next release.</p>
+        <Link href="/workspace">Build a review workflow <ArrowUpRight /></Link>
       </div>
-      <div className={styles.demoVideo}>
-        <video autoPlay controls muted loop playsInline preload="metadata" poster="/demos/guardrails-product-overview-poster.jpg">
-          <source src="/demos/guardrails-product-overview.mp4" type="video/mp4" />
-          Your browser does not support video playback.
-        </video>
-      </div>
+      <div className={styles.demoFilm}><ReleaseReviewFilm /></div>
     </section>
-    <section className={styles.researchLink}><p>Case study</p><div><h2>Solidity Pro: a case study in extension supply-chain risk.</h2><Link href="/research/solidity-pro">Read the case study <ArrowRight /></Link></div></section>
+
+    <section className={styles.researchLink}><p>Research note</p><div><h2>What an extension can reach is a supply-chain question.</h2><Link href="/research/solidity-pro">Read the Solidity Pro case study <ArrowUpRight /></Link></div></section>
+
     <section className={styles.teamSection} aria-labelledby="team-heading">
-      <div className={styles.teamSectionCopy}>
-        <h2 id="team-heading">Make every extension decision reusable.</h2>
-        <p>Give reviewers one place to triage changes, carry decisions forward, and publish the evidence that developers need before they install.</p>
+      <div className={styles.teamIntro}>
+        <span className={styles.sectionKicker}>05 / For teams</span>
+        <h2 id="team-heading">Turn one good review into a system.</h2>
+        <p>Give reviewers one place to triage changes, carry decisions forward, and publish the evidence developers need before they install.</p>
         <Link href="/workspace">Open the team workspace <ArrowRight /></Link>
       </div>
       <div className={styles.teamGrid}>
@@ -83,11 +107,12 @@ export default async function AuthorityLanding() {
         <article><span>04</span><h3>Trust badges</h3><p>Share a current, verifiable result with your developers.</p></article>
       </div>
     </section>
+
     <IdeCompatibility />
     <TrustProof />
     <SarvamProgramNote />
     <DecisionMemoryFilm />
     <LandingFaq />
-    <section className={styles.close}><h2>Inspect one extension.<br /><em>Keep the evidence.</em></h2><Link href="/registry">Check an extension <ArrowRight /></Link></section>
+    <section className={styles.close}><span className={styles.sectionKicker}>The next install is a decision</span><h2>Inspect one extension.<br /><em>Keep the evidence.</em></h2><Link href="/registry">Check an extension <ArrowRight /></Link></section>
   </main>;
 }
