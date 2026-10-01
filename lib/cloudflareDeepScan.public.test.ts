@@ -34,7 +34,12 @@ vi.mock("@/lib/cloudflareRegistry", () => ({
   getCloudflareRegistryCatalogExtension: harness.catalogExtension,
   getCloudflareRegistryProduct: vi.fn(),
 }));
-vi.mock("@/lib/marketplace", () => ({ resolveMarketplaceExtension: harness.marketplaceExtension }));
+vi.mock("@/lib/marketplace", () => ({
+  resolveMarketplaceExtension: harness.marketplaceExtension,
+  deepScanSupportError: (item: { scan_supported?: boolean; scan_support_reason?: string } | null) => item?.scan_supported === false
+    ? item.scan_support_reason || "unsupported extension"
+    : null,
+}));
 vi.mock("@/lib/cloudflareGithubDispatch", () => ({ dispatchGithubDeepScan: harness.githubDispatch }));
 
 import { claimCloudflareJob, failCloudflareScan, queueCloudflareDeepScan, saveCloudflareScanResult } from "@/lib/cloudflareDeepScan";
@@ -145,6 +150,23 @@ describe("Cloudflare canonical scan callback", () => {
 
     await expect(saveCloudflareScanResult("job-1", bundle)).rejects.toThrow("report schema 2.3");
     expect(db.batch).not.toHaveBeenCalled();
+  });
+
+  it("rejects a Visual Studio-only package before creating a scan job", async () => {
+    harness.marketplaceExtension.mockResolvedValue({
+      extension_id: "Codium.qodogen",
+      version: "0.14.2",
+      scan_supported: false,
+      scan_support_reason: "Deep Scan supports VS Code-compatible extensions; this package is Visual Studio-only.",
+    });
+
+    await expect(queueCloudflareDeepScan(
+      "Codium.qodogen",
+      "0.14.2",
+      new Request("https://example.test"),
+      { id: "user-1" } as never,
+    )).rejects.toThrow("Visual Studio-only");
+    expect(harness.privateDb).toHaveBeenCalledTimes(1);
   });
 
   it("persists a complete canonical public result after shared admission", async () => {
