@@ -13,6 +13,8 @@ export type CloudflareWorkspaceState = {
   digest_deliveries: Array<Record<string, unknown>>;
   policies: Array<Record<string, unknown>>;
   release_events: Array<Record<string, unknown>>;
+  trust_records: Array<Record<string, unknown>>;
+  recall_events: Array<Record<string, unknown>>;
   preferences: Record<string, unknown>;
   audit: Array<Record<string, unknown>>;
   invitations: Array<Record<string, unknown>>;
@@ -24,7 +26,7 @@ export type CloudflareWorkspaceState = {
 };
 
 export const defaultWorkspaceState: CloudflareWorkspaceState = {
-  watchlist: [], alerts: [], decisions: [], members: [], channels: [], deliveries: [], digest_deliveries: [], policies: [], release_events: [], audit: [], invitations: [], inventory: { devices: [], installations: [], last_import_at: null },
+  watchlist: [], alerts: [], decisions: [], members: [], channels: [], deliveries: [], digest_deliveries: [], policies: [], release_events: [], trust_records: [], recall_events: [], audit: [], invitations: [], inventory: { devices: [], installations: [], last_import_at: null },
   preferences: { release_alerts: true, scan_alerts: true, decision_alerts: true, high_evidence_alerts: true, provenance_alerts: true, coverage_alerts: true, due_alerts: true, weekly_digest: false, digest_weekday: 1, digest_hour_utc: 9 },
 };
 
@@ -33,7 +35,7 @@ export async function getWorkspaceState(teamId: string): Promise<CloudflareWorks
   return {
     ...defaultWorkspaceState,
     ...raw,
-    watchlist: array(raw.watchlist), alerts: array(raw.alerts), decisions: array(raw.decisions), members: array(raw.members), channels: array(raw.channels), deliveries: array(raw.deliveries), digest_deliveries: array(raw.digest_deliveries), policies: array(raw.policies), release_events: array(raw.release_events), audit: array(raw.audit), invitations: array(raw.invitations), inventory: inventory(raw.inventory), preferences: { ...defaultWorkspaceState.preferences, ...jsonValue(raw.preferences) },
+    watchlist: array(raw.watchlist), alerts: array(raw.alerts), decisions: array(raw.decisions), members: array(raw.members), channels: array(raw.channels), deliveries: array(raw.deliveries), digest_deliveries: array(raw.digest_deliveries), policies: array(raw.policies), release_events: array(raw.release_events), trust_records: array(raw.trust_records), recall_events: array(raw.recall_events), audit: array(raw.audit), invitations: array(raw.invitations), inventory: inventory(raw.inventory), preferences: { ...defaultWorkspaceState.preferences, ...jsonValue(raw.preferences) },
   };
 }
 export async function saveState(teamId: string, state: CloudflareWorkspaceState): Promise<void> {

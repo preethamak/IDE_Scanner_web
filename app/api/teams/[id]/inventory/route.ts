@@ -8,7 +8,7 @@ import { getWorkspaceState, saveState } from "@/lib/cloudflareWorkspace";
 import { getCloudflareRegistryProduct } from "@/lib/cloudflareRegistry";
 
 type Context = { params: Promise<{ id: string }> };
-type Installation = { device_id: string; extension_id: string; version: string; registry: string; reported_at: string };
+type Installation = { device_id: string; extension_id: string; version: string; registry: string; artifact_sha256?: string | null; reported_at: string };
 type Scan = { id: string; extension_id: string; version: string; decision: string; severity: string; scanned_at: string };
 
 export async function GET(request: Request, context: Context) {
@@ -30,7 +30,7 @@ export async function GET(request: Request, context: Context) {
     }
     const db = serviceDb();
     const [installationResult, deviceResult, watchResult, importResult] = await Promise.all([
-      db.from("team_inventory_installations").select("device_id,extension_id,version,registry,reported_at").eq("team_id", id).order("extension_id"),
+      db.from("team_inventory_installations").select("device_id,extension_id,version,registry,artifact_sha256,reported_at").eq("team_id", id).order("extension_id"),
       db.from("team_inventory_devices").select("id,external_id,display_name,platform,source,last_seen_at").eq("team_id", id).order("last_seen_at", { ascending: false }),
       db.from("team_watchlist_items").select("extension_id,monitoring_state,baseline_version").eq("team_id", id),
       db.from("team_inventory_imports").select("created_at").eq("team_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
@@ -95,7 +95,7 @@ export async function POST(request: Request, context: Context) {
       const observedAt = input.reported_at;
       const device = { id: input.device.id, external_id: input.device.id, display_name: input.device.name, platform: input.device.platform, source: input.source, last_seen_at: observedAt };
       state.inventory.devices = [device, ...state.inventory.devices.filter((item) => String(item.id) !== input.device.id)];
-      state.inventory.installations = [...state.inventory.installations.filter((item) => String(item.device_id) !== input.device.id), ...input.extensions.map((extension) => ({ device_id: input.device.id, extension_id: extension.extension_id, version: extension.version, registry: extension.registry, reported_at: observedAt }))];
+      state.inventory.installations = [...state.inventory.installations.filter((item) => String(item.device_id) !== input.device.id), ...input.extensions.map((extension) => ({ device_id: input.device.id, extension_id: extension.extension_id, version: extension.version, registry: extension.registry, artifact_sha256: extension.artifact_sha256, reported_at: observedAt }))];
       state.inventory.last_import_at = observedAt;
       await saveState(id, state);
       return NextResponse.json({ import: { device_id: input.device.id, extension_count: input.extensions.length, reported_at: observedAt } }, { status: 201 });

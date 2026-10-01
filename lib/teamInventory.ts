@@ -7,7 +7,7 @@ export type TeamInventoryImport = {
   device: { id: string; name: string; platform: InventoryPlatform };
   reported_at: string;
   source: "cli" | "json" | "api";
-  extensions: Array<{ extension_id: string; version: string; registry: InventoryRegistry }>;
+  extensions: Array<{ extension_id: string; version: string; registry: InventoryRegistry; artifact_sha256: string | null }>;
 };
 
 export class InventoryValidationError extends Error {
@@ -53,12 +53,19 @@ export function parseTeamInventoryImport(value: unknown): TeamInventoryImport {
     const key = extensionId.toLowerCase();
     if (seen.has(key)) throw new InventoryValidationError(`Extension ${extensionId} is listed more than once.`);
     seen.add(key);
+    const artifactSha256 = item.artifact_sha256 === undefined || item.artifact_sha256 === null || item.artifact_sha256 === ""
+      ? null
+      : boundedString(item.artifact_sha256, 64, `Extension ${extensionId} has an invalid artifact SHA-256.`).toLowerCase();
+    if (artifactSha256 && !/^[0-9a-f]{64}$/i.test(artifactSha256)) {
+      throw new InventoryValidationError(`Extension ${extensionId} has an invalid artifact SHA-256.`);
+    }
     return {
       extension_id: extensionId,
       version: boundedString(item.version, 120, `Extension ${extensionId} requires a version.`),
       registry: item.registry === undefined
         ? "unknown"
         : enumValue(item.registry, inventoryRegistries, `Extension ${extensionId} has an invalid registry.`),
+      artifact_sha256: artifactSha256,
     };
   });
   return { device: { id, name, platform }, reported_at: timestamp.toISOString(), source, extensions };

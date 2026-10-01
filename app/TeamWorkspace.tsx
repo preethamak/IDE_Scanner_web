@@ -17,6 +17,7 @@ import {
   Command,
   Download,
   Inbox,
+  KeyRound,
   LayoutDashboard,
   Laptop,
   LogOut,
@@ -47,6 +48,7 @@ import NotificationSettings, {
 } from "@/app/workspace/NotificationSettings";
 import BillingPanel from "@/app/workspace/BillingPanel";
 import TeamInventoryPanel from "@/app/workspace/TeamInventoryPanel";
+import TrustLedgerPanel from "@/app/workspace/TrustLedgerPanel";
 import BadgeStudioView from "@/app/workspace/views/BadgeStudioView";
 import { browserDb } from "@/lib/supabase";
 import { browserAuthHeaders } from "@/lib/browserAuth";
@@ -124,6 +126,7 @@ type DecisionSaveResult =
 type View =
   | "overview"
   | "inventory"
+  | "trust"
   | "inbox"
   | "extensions"
   | "badges"
@@ -134,6 +137,7 @@ type View =
 const nav = [
   ["overview", "Overview", LayoutDashboard],
   ["inventory", "Inventory", Laptop],
+  ["trust", "Trust ledger", KeyRound],
   ["inbox", "Review inbox", Inbox],
   ["extensions", "Extensions", Blocks],
   ["badges", "Badges", BadgeCheck],
@@ -1007,6 +1011,14 @@ export default function TeamWorkspace(
           ) : null}
           {view === "inventory" ? (
             <TeamInventoryPanel
+              key={activeTeam.id}
+              teamId={activeTeam.id}
+              role={activeTeam.role}
+              getAuthHeaders={getAuthHeaders}
+            />
+          ) : null}
+          {view === "trust" ? (
+            <TrustLedgerPanel
               key={activeTeam.id}
               teamId={activeTeam.id}
               role={activeTeam.role}

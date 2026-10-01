@@ -6,7 +6,7 @@ const valid = {
   reported_at: "2026-08-18T10:00:00.000Z",
   source: "cli",
   extensions: [
-    { extension_id: "GitHub.copilot", version: "1.388.0", registry: "vs-marketplace" },
+    { extension_id: "GitHub.copilot", version: "1.388.0", registry: "vs-marketplace", artifact_sha256: null },
   ],
 };
 
@@ -23,6 +23,15 @@ describe("team inventory import contract", () => {
     });
     expect(result.source).toBe("json");
     expect(result.extensions[0].registry).toBe("unknown");
+    expect(result.extensions[0].artifact_sha256).toBeNull();
+  });
+
+  it("retains a valid endpoint artifact hash for exact recall matching", () => {
+    const result = parseTeamInventoryImport({
+      ...valid,
+      extensions: [{ ...valid.extensions[0], artifact_sha256: "A".repeat(64) }],
+    });
+    expect(result.extensions[0].artifact_sha256).toBe("a".repeat(64));
   });
 
   it.each([

@@ -10,6 +10,7 @@ type InventoryItem = {
   display_name: string;
   version: string;
   registry: string;
+  artifact_sha256: string | null;
   status: "scanned" | "review_required" | "unscanned" | "unknown";
   monitored: boolean;
   decision: string | null;
@@ -27,8 +28,8 @@ const example = JSON.stringify({
   reported_at: new Date().toISOString(),
   source: "json",
   extensions: [
-    { extension_id: "GitHub.copilot", version: "1.388.0", registry: "vs-marketplace" },
-    { extension_id: "dbaeumer.vscode-eslint", version: "3.0.10", registry: "vs-marketplace" },
+    { extension_id: "GitHub.copilot", version: "1.388.0", registry: "vs-marketplace", artifact_sha256: null },
+    { extension_id: "dbaeumer.vscode-eslint", version: "3.0.10", registry: "vs-marketplace", artifact_sha256: null },
   ],
 }, null, 2);
 
@@ -99,7 +100,7 @@ export default function TeamInventoryPanel({ teamId, role, getAuthHeaders }: { t
   }
 
   return <section className={styles.inventory}>
-    <header className={styles.title}><div><span>Team inventory</span><h1>Know what is installed before deciding what is allowed.</h1><p>Import a device snapshot, measure exact-version coverage, and move registry-known extensions into continuous monitoring.</p></div><div><button onClick={() => void load()}><RefreshCw/> Refresh</button>{canManage ? <label><Upload/> Import JSON<input type="file" accept="application/json,.json" onChange={readFile}/></label> : null}</div></header>
+    <header className={styles.title}><div><span>Team inventory</span><h1>Know what is installed before deciding what is allowed.</h1><p>Import a device snapshot, measure exact-version coverage, and move registry-known extensions into continuous monitoring. Include a published artifact SHA-256 when available so recalls can distinguish exact installations from version-only matches.</p></div><div><button onClick={() => void load()}><RefreshCw/> Refresh</button>{canManage ? <label><Upload/> Import JSON<input type="file" accept="application/json,.json" onChange={readFile}/></label> : null}</div></header>
     {error ? <div className={styles.error}><AlertTriangle/><span>{error}</span>{state === "error" ? <button onClick={() => void load()}>Try again</button> : null}</div> : null}
     {notice ? <div className={styles.notice}><CheckCircle2/>{notice}</div> : null}
     {importOpen ? <section className={styles.importer}><header><div><FileJson/><span><strong>Import one device snapshot</strong><small>JSON only · maximum 1,000 extensions · current device state replaces its previous snapshot</small></span></div><button onClick={() => setDocument(example)}>Load example</button></header><textarea aria-label="Inventory JSON" value={document} onChange={(event) => setDocument(event.target.value)} spellCheck={false}/><footer><button onClick={() => { setImportOpen(false); setDocument(""); }}>Cancel</button><button disabled={saving || !document.trim()} onClick={() => void importInventory()}>{saving ? <LoaderCircle className={styles.spin}/> : <Upload/>} Import inventory</button></footer></section> : null}
@@ -107,7 +108,7 @@ export default function TeamInventoryPanel({ teamId, role, getAuthHeaders }: { t
     {data ? <>
       <div className={styles.metrics}><article><span>Devices</span><strong>{data.summary.devices}</strong><small>Reporting endpoints</small></article><article><span>Unique extensions</span><strong>{data.summary.unique_extensions}</strong><small>{data.summary.installations} installations</small></article><article><span>Exact versions scanned</span><strong>{data.summary.scanned}</strong><small>{data.summary.review_required} need review</small></article><article><span>Unknown or unscanned</span><strong>{data.summary.unknown + data.summary.unscanned}</strong><small>Coverage to close</small></article></div>
       <div className={styles.toolbar}><span>{data.last_import_at ? `Last import ${new Date(data.last_import_at).toLocaleString()}` : "No inventory has been imported yet."}</span>{canManage && monitorable.length ? <button disabled={saving} onClick={() => void monitorDiscovered()}><Radar/> Monitor {monitorable.length} discovered</button> : null}</div>
-      {uniqueItems.length ? <div className={styles.table}><header><span>Extension</span><span>Installed</span><span>Evidence</span><span>Monitoring</span></header>{uniqueItems.map((item) => <article key={item.extension_id}><div><strong>{item.display_name}</strong><code>{item.extension_id}</code></div><code>@{item.version}</code><span className={styles[item.status]}>{statusLabel(item.status)}</span><span>{item.monitored ? "Monitored" : "Not monitored"}</span></article>)}</div> : <div className={styles.empty}><Laptop/><h2>No team inventory yet.</h2><p>Export installed extensions from a development machine and import the JSON snapshot. GuardRails stores extension identifiers and versions, not local paths or source files.</p>{canManage ? <button onClick={() => { setDocument(example); setImportOpen(true); }}>Start with an example</button> : null}</div>}
+      {uniqueItems.length ? <div className={styles.table}><header><span>Extension</span><span>Installed</span><span>Evidence</span><span>Monitoring</span></header>{uniqueItems.map((item) => <article key={item.extension_id}><div><strong>{item.display_name}</strong><code>{item.extension_id}</code></div><div><code>@{item.version}</code>{item.artifact_sha256 ? <small title={item.artifact_sha256}>Exact artifact hash recorded</small> : <small>Version-only identity</small>}</div><span className={styles[item.status]}>{statusLabel(item.status)}</span><span>{item.monitored ? "Monitored" : "Not monitored"}</span></article>)}</div> : <div className={styles.empty}><Laptop/><h2>No team inventory yet.</h2><p>Export installed extensions from a development machine and import the JSON snapshot. GuardRails stores extension identifiers and versions, not local paths or source files.</p>{canManage ? <button onClick={() => { setDocument(example); setImportOpen(true); }}>Start with an example</button> : null}</div>}
     </> : null}
   </section>;
 }

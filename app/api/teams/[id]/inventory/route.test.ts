@@ -12,7 +12,7 @@ const valid = {
   device: { id: "laptop-1", name: "Developer laptop", platform: "linux" },
   reported_at: "2026-08-18T10:00:00.000Z",
   source: "cli",
-  extensions: [{ extension_id: "GitHub.copilot", version: "1.388.0", registry: "vs-marketplace" }],
+  extensions: [{ extension_id: "GitHub.copilot", version: "1.388.0", registry: "vs-marketplace", artifact_sha256: null }],
 };
 
 describe("team inventory API", () => {
