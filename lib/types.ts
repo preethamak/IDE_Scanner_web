@@ -248,6 +248,8 @@ export type MarketplaceSearchResult = {
   icon_url: string;
   registry?: "vs-marketplace" | "openvsx";
   download_url?: string;
+  scan_supported?: boolean;
+  scan_support_reason?: string;
 };
 
 export type DiscoveryMatchReason = "exact_identity" | "exact_name" | "matching" | "related";

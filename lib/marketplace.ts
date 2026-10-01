@@ -149,6 +149,11 @@ export function marketplaceVsixUrl(item: MarketplaceSearchResult): string {
   return `https://marketplace.visualstudio.com/_apis/public/gallery/publishers/${encodeURIComponent(item.publisher)}/vsextensions/${encodeURIComponent(name)}/${encodeURIComponent(item.version)}/vspackage`;
 }
 
+export function deepScanSupportError(item: MarketplaceSearchResult | null | undefined): string | null {
+  if (item?.scan_supported !== false) return null;
+  return item?.scan_support_reason || "Deep Scan supports VS Code-compatible extensions; this Marketplace package does not expose a VS Code package manifest.";
+}
+
 export function normalizeMarketplaceId(value: string): string {
   const raw = value.trim();
   const vscodePrefix = "vscode:extension/";
@@ -194,6 +199,8 @@ function normalizeExtension(raw: GalleryExtension): MarketplaceSearchResult | nu
   if (!publisher || !name || !version?.version) return null;
   const stats = Object.fromEntries((raw.statistics || []).map((item) => [item.statisticName?.toLowerCase(), item.value || 0]));
   const icon = version.files?.find((item) => item.assetType === "Microsoft.VisualStudio.Services.Icons.Small") || version.files?.find((item) => item.assetType === "Microsoft.VisualStudio.Services.Icons.Default");
+  const assetTypes = (version.files || []).map((item) => String(item.assetType || "")).filter(Boolean);
+  const scanSupported = assetTypes.length ? assetTypes.includes("Microsoft.VisualStudio.Code.Manifest") : undefined;
   return {
     extension_id: `${publisher}.${name}`,
     display_name: raw.displayName || name,
@@ -207,7 +214,11 @@ function normalizeExtension(raw: GalleryExtension): MarketplaceSearchResult | nu
     rating_average: Number(stats.averagerating || 0),
     rating_count: Number(stats.ratingcount || 0),
     icon_url: icon?.source || "",
-    registry: "vs-marketplace"
+    registry: "vs-marketplace",
+    scan_supported: scanSupported,
+    scan_support_reason: scanSupported === false
+      ? "Deep Scan supports VS Code-compatible extensions; this Marketplace package is not published with a VS Code package manifest."
+      : undefined,
   };
 }
 
@@ -216,7 +227,7 @@ type OpenVsxExtension = { name?: string; namespace?: string; version?: string; d
 function normalizeOpenVsx(raw: OpenVsxExtension): MarketplaceSearchResult {
   const publisher = raw.namespace || "unknown";
   const name = raw.name || "extension";
-  return { extension_id: `${publisher}.${name}`, display_name: raw.displayName || name, publisher, publisher_display_name: publisher, publisher_verified: Boolean(raw.verified), short_description: raw.description || "", version: raw.version || "", last_updated: raw.timestamp || "", install_count: Number(raw.downloadCount || 0), rating_average: Number(raw.averageRating || 0), rating_count: Number(raw.reviewCount || 0), icon_url: raw.files?.icon || "", registry: "openvsx", download_url: raw.files?.download || "" };
+  return { extension_id: `${publisher}.${name}`, display_name: raw.displayName || name, publisher, publisher_display_name: publisher, publisher_verified: Boolean(raw.verified), short_description: raw.description || "", version: raw.version || "", last_updated: raw.timestamp || "", install_count: Number(raw.downloadCount || 0), rating_average: Number(raw.averageRating || 0), rating_count: Number(raw.reviewCount || 0), icon_url: raw.files?.icon || "", registry: "openvsx", download_url: raw.files?.download || "", scan_supported: true };
 }
 
 async function resolveOpenVsxExtension(extensionId: string): Promise<MarketplaceSearchResult | null> {

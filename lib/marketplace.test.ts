@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isConcreteVersion, listMarketplaceVersions, listPublisherExtensions, searchMarketplace } from "@/lib/marketplace";
+import { deepScanSupportError, isConcreteVersion, listMarketplaceVersions, listPublisherExtensions, searchMarketplace } from "@/lib/marketplace";
 
 describe("listMarketplaceVersions", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -40,6 +40,22 @@ describe("listMarketplaceVersions", () => {
 
     await expect(searchMarketplace("GitHub.copilot")).resolves.toMatchObject([{ extension_id: "GitHub.copilot" }]);
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("marks Visual Studio-only packages as unsupported for Deep Scan", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ results: [{ extensions: [{
+        extensionName: "qodogen",
+        displayName: "Qodo - AI Code Review",
+        publisher: { publisherName: "Codium" },
+        versions: [{ version: "0.14.2", files: [{ assetType: "QodoGenVS.vsix" }] }],
+      }] }] }),
+    }));
+
+    const [item] = await searchMarketplace("Codium.qodogen");
+    expect(item.scan_supported).toBe(false);
+    expect(deepScanSupportError(item)).toContain("not published with a VS Code package manifest");
   });
 
   it("lists and ranks only extensions from the exact publisher", async () => {
