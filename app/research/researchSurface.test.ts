@@ -56,6 +56,20 @@ describe("research index surface", () => {
     expect(research).toContain("not a GuardRails discovery claim");
   });
 
+  it("publishes the Gemini Code Assist preventive-block boundary", () => {
+    const research = readFileSync(new URL("../../lib/research.ts", import.meta.url), "utf8");
+    expect(research).toContain('slug: "gemini-code-assist-2-100-0"');
+    expect(research).toContain("bbb05ad583f8d3ad97560ec0b5b2e252ac6166020fd1de55bc96ae0458a24b0e");
+    expect(research).toContain("not a first-discovery claim about Gemini Code Assist");
+  });
+
+  it("publishes the MySQL Client 2 preventive-block boundary", () => {
+    const research = readFileSync(new URL("../../lib/research.ts", import.meta.url), "utf8");
+    expect(research).toContain('slug: "mysql-client-2-9-0-2"');
+    expect(research).toContain("6f1cf09c486df860cf164365cdd8ff80c92d78014e15b10042658fbf70f5475b");
+    expect(research).toContain("not a confirmed-malware or confirmed-theft claim");
+  });
+
   it("uses a light responsive and motion-safe surface", () => {
     expect(styles).toContain("#edf7f4");
     expect(styles).toContain("#f4faf8");

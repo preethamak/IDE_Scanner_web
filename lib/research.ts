@@ -290,6 +290,96 @@ export const researchArticles: ResearchArticle[] = [
     ],
   },
   {
+    slug: "gemini-code-assist-2-100-0",
+    category: "Case study",
+    title: "Gemini Code Assist 2.100.0: a preventive block on credential exfiltration evidence",
+    summary:
+      "GuardRails correlated credential collection and outbound serialization in an exact Marketplace VSIX, while keeping a preventive block separate from a confirmed-malware claim.",
+    published: "1 October 2026",
+    reading: "3 min read",
+    sections: [
+      {
+        heading: "The exact artifact",
+        paragraphs: [
+          "The case is Google.geminicodeassist 2.100.0, acquired from the Visual Studio Marketplace and bound to VSIX SHA-256 bbb05ad583f8d3ad97560ec0b5b2e252ac6166020fd1de55bc96ae0458a24b0e. The decision applies to these bytes and this release; it is not a blanket claim about Gemini Code Assist or future versions.",
+          "The production result is BLOCK with a suspicious verdict, risk score 99, and malware score 0. That combination is intentional: the evidence crossed the preventive policy boundary, but there is no independent malicious-release advisory or confirmed theft evidence attached to this artifact.",
+        ],
+      },
+      {
+        heading: "What the scanner found",
+        paragraphs: [
+          "The high-confidence finding is in agent/a2a-server.mjs. The code collects multiple credential families and serializes them into an outbound request. The correlation matters: collection of sensitive material is paired with a delivery sink rather than being treated as an isolated reference to an environment variable.",
+          "The isolated runtime also observed a filesystem write under the analysis boundary. Runtime evidence is reported as observed capability and context; it does not imply that the scanner proved a real user's credentials were read or transmitted.",
+        ],
+      },
+      {
+        heading: "Why the language matters",
+        paragraphs: [
+          "Calling this release confirmed malware would overstate the evidence. The defensible conclusion is narrower: this exact artifact contains a credential-harvesting and exfiltration path that is too risky to approve without independent publisher explanation and deeper review.",
+          "The result also shows why malware score and risk score are separate fields. Risk orders a high-consequence preventive decision; malware score remains zero because the scanner has not established a confirmed malicious classification from authoritative intelligence.",
+        ],
+      },
+      {
+        heading: "What this proves",
+        paragraphs: [
+          "An IDE extension can be blocked before a confirmed campaign report exists. That is useful for enterprise allowlisting, provided the report names the exact file, rule, evidence class, runtime boundary, and uncertainty instead of collapsing everything into an AI-generated label.",
+          "This case is a GuardRails preventive detection, not a first-discovery claim about Gemini Code Assist as a product or its publisher.",
+        ],
+      },
+    ],
+    sources: [
+      {
+        label: "Visual Studio Marketplace listing",
+        href: "https://marketplace.visualstudio.com/items?itemName=Google.geminicodeassist",
+      },
+    ],
+  },
+  {
+    slug: "mysql-client-2-9-0-2",
+    category: "Case study",
+    title: "MySQL Client 2 9.0.2: credential collection inside a database tool",
+    summary:
+      "An exact Marketplace release was blocked after GuardRails correlated credential collection, outbound serialization, dynamic code, and destructive-operation indicators.",
+    published: "1 October 2026",
+    reading: "3 min read",
+    sections: [
+      {
+        heading: "The exact release",
+        paragraphs: [
+          "The case is cweijan.vscode-mysql-client2 9.0.2, acquired from the Visual Studio Marketplace and bound to VSIX SHA-256 6f1cf09c486df860cf164365cdd8ff80c92d78014e15b10042658fbf70f5475b. The decision is for this artifact and version, not for every release of MySQL Client 2.",
+          "GuardRails returned BLOCK with a suspicious verdict, risk score 99, and malware score 0. This is a preventive enterprise decision based on executable evidence, not a claim that a published malware campaign or confirmed theft has been established.",
+        ],
+      },
+      {
+        heading: "The credential path",
+        paragraphs: [
+          "In out/extension.js, the scanner found a high-confidence pattern that collects multiple credential families and serializes the collected material for outbound use. The finding is not based on the extension merely having database credentials in its normal configuration; it is the combination of collection behavior and an outbound serialization sink.",
+          "The same artifact also contains dynamic-code and destructive-operation indicators. Those signals do not independently prove malicious intent, but they increase the consequence of a credential-handling path in a developer workstation extension.",
+        ],
+      },
+      {
+        heading: "Why this is a preventive block",
+        paragraphs: [
+          "A database client legitimately needs network access and may handle connection secrets. That context is why a capability-only rule would be noisy. Here, the decision comes from correlated behavior in the packed extension, not from network access alone.",
+          "The malware score remains zero because the current evidence does not include an independent malicious-release advisory or proof that a user's credentials were actually stolen. The appropriate statement is that the exact release presents an unacceptable credential-exfiltration risk until the publisher can explain and remediate it.",
+        ],
+      },
+      {
+        heading: "What this proves",
+        paragraphs: [
+          "Preventive scanning has value before an incident report exists, but only when the report is precise about what was observed and what was not. GuardRails binds this decision to the VSIX hash, affected file, correlated rule evidence, and runtime boundary so a reviewer can reproduce the conclusion.",
+          "This is a GuardRails preventive detection, not a confirmed-malware or confirmed-theft claim about the publisher or every version of MySQL Client 2.",
+        ],
+      },
+    ],
+    sources: [
+      {
+        label: "Visual Studio Marketplace listing",
+        href: "https://marketplace.visualstudio.com/items?itemName=cweijan.vscode-mysql-client2",
+      },
+    ],
+  },
+  {
     slug: "capability-is-not-malware",
     category: "Methodology",
     title: "Capability is not malware",
