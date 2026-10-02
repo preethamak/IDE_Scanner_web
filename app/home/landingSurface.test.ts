@@ -13,6 +13,9 @@ describe("GuardRails landing surface", () => {
     expect(landing()).toContain("<ReleaseReviewFilm />");
     expect(landing()).toContain("<DecisionMemoryFilm />");
     expect(landing()).toContain("<IdeCompatibility />");
+    expect(landing()).toContain('aria-labelledby="positioning-heading"');
+    expect(landing()).toContain("Read-only MCP access");
+    expect(landing()).toContain("Overall read");
     expect(landing()).not.toContain("<SecurityBento />");
     expect(landing()).not.toContain("<ReleaseWorkflow />");
   });

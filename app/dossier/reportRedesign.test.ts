@@ -14,6 +14,9 @@ describe("exact-release report redesign", () => {
     expect(dossier).toContain("productReportMast");
     expect(dossier).toContain("productReportPulse");
     expect(dossier).toContain('aria-label="Optional reviewer guide"');
+    expect(read("./DossierHeader.tsx")).toContain('aria-label="Release details"');
+    expect(read("./DossierHeader.tsx")).toContain("SHA-256 pinned");
+    expect(read("./DossierHeader.tsx")).toContain("Decision memory");
     expect(dossier.indexOf("dossierLayout")).toBeLessThan(
       dossier.indexOf("productReportAssistant"),
     );

@@ -77,20 +77,28 @@ function CompareWorkspace() {
 
   useEffect(() => {
     if (!queryExtension) return;
-    setExtensionId(queryExtension);
-    setLoading(true);
-    setError("");
+    let cancelled = false;
     void fetchProduct(queryExtension)
       .then((nextProduct) => {
+        if (cancelled) return;
+        setExtensionId(queryExtension);
         setProduct(nextProduct);
         const nextVersions = nextProduct.versions || [];
         const nextCurrent = chooseVersion(nextVersions, queryTo, 0);
         const nextBaseline = chooseVersion(nextVersions, queryFrom, 1, nextCurrent);
         setCurrent(nextCurrent);
         setBaseline(nextBaseline);
+        setError("");
       })
-      .catch((cause) => setError(cause instanceof Error ? cause.message : "The extension could not be loaded."))
-      .finally(() => setLoading(false));
+      .catch((cause) => {
+        if (!cancelled) setError(cause instanceof Error ? cause.message : "The extension could not be loaded.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [queryExtension, queryFrom, queryTo]);
 
   async function loadExtension(event: React.FormEvent) {

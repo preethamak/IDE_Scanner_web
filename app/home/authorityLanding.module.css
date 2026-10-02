@@ -365,6 +365,64 @@
 .demoFilm { transform: translateY(14px) rotate(-1deg); }
 .demoFilm :global(.film) { border-radius: 0; box-shadow: 14px 16px 0 var(--ledger-signal-soft), 14px 16px 0 1px var(--ledger-signal-strong), 0 24px 50px rgb(20 22 34 / 10%); }
 
+.positioning {
+  padding: 112px max(24px, calc((100vw - 1240px) / 2)) 96px;
+  border-bottom: 1px solid var(--ledger-line);
+  background: var(--ledger-signal-soft);
+}
+
+.positioningHeader {
+  display: grid;
+  grid-template-columns: minmax(300px, 1.1fr) minmax(260px, .75fr);
+  gap: clamp(38px, 9vw, 125px);
+  align-items: end;
+}
+
+.positioningHeader h2 {
+  max-width: 690px;
+  margin-top: 17px;
+  font-size: clamp(45px, 6vw, 80px);
+  line-height: .9;
+  letter-spacing: -.08em;
+}
+
+.positioningHeader h2 em { color: var(--ledger-signal); font-style: normal; }
+.positioningHeader > p { max-width: 420px; color: var(--ledger-muted); font-size: 15px; line-height: 1.65; }
+
+.positioningGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  margin-top: 68px;
+  border: 1px solid var(--ledger-ink);
+  background: var(--ledger-ink);
+}
+
+.positioningGrid article { min-height: 245px; padding: 22px; background: #fff; }
+.positioningGrid article:nth-child(2) { background: var(--ledger-signal-strong); }
+.positioningGrid article:nth-child(3) { background: #f3bd45; }
+.positioningGrid article > span { color: var(--ledger-signal-ink); font: 800 10px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+.positioningGrid h3 { margin-top: 72px; font-size: 23px; letter-spacing: -.04em; }
+.positioningGrid p { max-width: 290px; margin-top: 10px; color: var(--ledger-muted); font-size: 12px; line-height: 1.55; }
+.positioningGrid article:nth-child(3) p { color: var(--ledger-signal-ink); }
+.positioningGrid a { display: inline-flex; align-items: center; gap: 7px; margin-top: 17px; color: var(--ledger-signal-ink); font-size: 11px; font-weight: 800; text-decoration: none; }
+.positioningGrid a svg { width: 14px; }
+
+.positioningRead {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) auto;
+  gap: 25px;
+  align-items: center;
+  margin-top: 22px;
+  border-top: 1px solid var(--ledger-ink);
+  padding-top: 20px;
+}
+
+.positioningRead strong { color: var(--ledger-signal-ink); font: 800 10px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+.positioningRead p { max-width: 620px; font-size: 16px; line-height: 1.45; }
+.positioningRead a { display: inline-flex; align-items: center; gap: 7px; color: var(--ledger-signal-ink); font-size: 11px; font-weight: 800; text-decoration: none; }
+.positioningRead a svg { width: 14px; }
+
 .researchLink {
   display: grid;
   grid-template-columns: 180px minmax(0, 1fr);
@@ -487,7 +545,8 @@
   .heroLayout,
   .liveHeader,
   .trialCallout,
-  .demoSection { grid-template-columns: 1fr; }
+  .demoSection,
+  .positioningHeader { grid-template-columns: 1fr; }
 
   .heroLayout { gap: 45px; padding-top: 62px; }
   .heroAside { max-width: 360px; }
@@ -497,6 +556,8 @@
   .trialSteps { max-width: 680px; }
   .demoIntro { max-width: 590px; }
   .demoFilm { transform: none; }
+  .positioningGrid { grid-template-columns: 1fr 1fr; }
+  .positioningGrid article:last-child { grid-column: 1 / -1; }
   .teamIntro { grid-template-columns: 1fr 1fr; row-gap: 22px; }
   .teamIntro h2 { grid-column: 1 / -1; grid-row: 2; }
   .teamIntro > p { grid-column: 1; grid-row: 3; }
@@ -531,6 +592,13 @@
   .trialSteps { grid-template-columns: 1fr 1fr; }
   .trialSteps > a { grid-column: 1 / -1; justify-content: center; }
   .demoSection { padding-top: 86px; padding-bottom: 92px; }
+  .positioning { padding: 86px 20px 75px; }
+  .positioningHeader h2 { font-size: 49px; }
+  .positioningGrid { grid-template-columns: 1fr; margin-top: 48px; }
+  .positioningGrid article:last-child { grid-column: auto; }
+  .positioningGrid article { min-height: 205px; }
+  .positioningGrid h3 { margin-top: 48px; }
+  .positioningRead { grid-template-columns: 1fr; gap: 11px; }
   .researchLink { grid-template-columns: 1fr; gap: 14px; padding-right: 20px; padding-left: 20px; }
   .researchLink div { align-items: flex-start; flex-direction: column; gap: 15px; }
   .researchLink h2 { font-size: 22px; }

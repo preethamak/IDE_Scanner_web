@@ -169,6 +169,8 @@ export default function AnalysisReport({ data, signedIn = false }: Props & { sig
           version={version}
           extension={extension}
           scan={scan}
+          fileCount={files.length}
+          dependencyCount={dependencies.length}
         /></div>
       <section className={`${reportStyles.pulse} productReportPulse`} aria-label="Report evidence snapshot">
         <article><span>Decision now</span><strong>{String(scan.decision_reason || "Evidence is scoped to this exact release.")}</strong><small>Exact artifact only</small></article>

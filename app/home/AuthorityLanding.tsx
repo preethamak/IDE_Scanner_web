@@ -100,6 +100,19 @@ export default async function AuthorityLanding() {
       <div className={styles.demoFilm}><ReleaseReviewFilm /></div>
     </section>
 
+    <section className={styles.positioning} aria-labelledby="positioning-heading">
+      <header className={styles.positioningHeader}>
+        <div><span className={styles.sectionKicker}>What GuardRails is</span><h2 id="positioning-heading">An evidence desk for <em>IDE extensions.</em></h2></div>
+        <p>GuardRails is the product behind abscissa.dev: a research and review companion that turns a published extension release into searchable, comparable, version-pinned evidence.</p>
+      </header>
+      <div className={styles.positioningGrid}>
+        <article><span>01 / Review</span><h3>More than a scanner</h3><p>Inspect package behavior, observed capabilities, and coverage before an extension enters your editor or your team.</p></article>
+        <article><span>02 / Connection</span><h3>Read-only MCP access</h3><p>Connect Codex, Claude, or another MCP client to check extension risk and find alternatives from the public evidence corpus.</p><Link href="/docs#mcp">Read the MCP docs <ArrowUpRight /></Link></article>
+        <article><span>03 / Boundary</span><h3>Useful, not a guarantee</h3><p>GuardRails is not an antivirus or a safety promise. Results stay tied to exact artifacts, available coverage, and the limits shown in each report.</p></article>
+      </div>
+      <div className={styles.positioningRead}><strong>Overall read</strong><p>GuardRails is closer to a release-review and evidence system for extension supply-chain risk than a generic dashboard.</p><Link href="/about">Read how the product works <ArrowRight /></Link></div>
+    </section>
+
     <section className={styles.researchLink}><p>Research note</p><div><h2>What an extension can reach is a supply-chain question.</h2><Link href="/research/solidity-pro">Read the Solidity Pro case study <ArrowUpRight /></Link></div></section>
 
     <section className={styles.teamSection} aria-labelledby="team-heading">
