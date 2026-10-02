@@ -198,9 +198,9 @@ async function fetchMarketplaceVersions(extensionIds: string[]): Promise<Map<str
       signal: AbortSignal.timeout(12_000),
     });
     if (!response.ok) return result;
-    const payload = await response.json() as { results?: Array<{ extensions?: Array<{ extensionId?: string; versions?: Array<{ version?: string }> }> }> };
+    const payload = await response.json() as { results?: Array<{ extensions?: Array<{ publisher?: { publisherName?: string }; extensionName?: string; versions?: Array<{ version?: string }> }> }> };
     for (const extension of payload.results?.[0]?.extensions || []) {
-      const id = stringValue(extension.extensionId).toLowerCase();
+      const id = `${stringValue(extension.publisher?.publisherName)}.${stringValue(extension.extensionName)}`.toLowerCase();
       const version = stringValue(extension.versions?.[0]?.version);
       if (id && version) result.set(id, version);
     }
