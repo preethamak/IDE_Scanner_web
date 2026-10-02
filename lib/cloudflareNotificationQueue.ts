@@ -1,4 +1,4 @@
-type PrivateDatabase = D1Database;
+import type { PrivateDatabase } from "@/lib/cloudflarePrivate";
 
 /** Deliver due D1-backed workspace notifications from either cron entrypoint. */
 export async function deliverCloudflareNotifications(
