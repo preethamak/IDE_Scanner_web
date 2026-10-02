@@ -70,10 +70,13 @@ export async function sendWorkspaceInvitation(email: string, link: string, role:
     text: `You have been invited as a ${role} to a GuardRails workspace.\n\nAccept invitation: ${link}\n\nThis invitation expires in seven days.`,
     html: `<p>You have been invited as a <strong>${role}</strong> to a GuardRails workspace.</p><p><a href="${link}">Accept invitation</a></p><p>This invitation expires in seven days.</p>`,
   };
+  const apiKey = runtimeEnv("RESEND_API_KEY").trim();
+  if (apiKey) {
+    const response = await fetch("https://api.resend.com/emails", { method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ ...message, to: [message.to] }), signal: AbortSignal.timeout(12_000) });
+    if (!response.ok) throw new Error(`Transactional email provider returned HTTP ${response.status}.`);
+    return;
+  }
   const binding = cloudflareEmail();
   if (binding) { await binding.send(message); return; }
-  const apiKey = runtimeEnv("RESEND_API_KEY").trim();
-  if (!apiKey) throw new Error("No transactional email provider is configured.");
-  const response = await fetch("https://api.resend.com/emails", { method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ ...message, to: [message.to] }), signal: AbortSignal.timeout(12_000) });
-  if (!response.ok) throw new Error(`Transactional email provider returned HTTP ${response.status}.`);
+  throw new Error("No transactional email provider is configured.");
 }
