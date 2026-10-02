@@ -113,6 +113,8 @@ export default async function ExtensionPage({
             <DeepScanButton
               extensionId={product.extension.id}
               version={version}
+              scanSupported={product.extension.scan_supported}
+              scanSupportReason={product.extension.scan_support_reason}
             />
           )}
           <a
@@ -155,6 +157,8 @@ export default async function ExtensionPage({
               <h2>
                 {scan
                   ? decisionHeadline(decision)
+                : product.extension.scan_supported === false
+                  ? "This package cannot be scanned here."
                   : "This version has not been scanned yet."}
               </h2>
             </header>
@@ -164,7 +168,10 @@ export default async function ExtensionPage({
                     scan.decision_reason ||
                       "Review the Analysis Report before installing.",
                   )
-                : "Read the README and version history, then request a security scan when you are ready."}
+                : product.extension.scan_supported === false
+                  ? product.extension.scan_support_reason ||
+                    "This Marketplace package is not published as a VS Code-compatible extension."
+                  : "Read the README and version history, then request a security scan when you are ready."}
             </p>
             {scan ? (
               <Link className="profileReportLink" href={reportHref}>

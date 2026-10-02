@@ -36,4 +36,12 @@ describe("Deep Scan product control", () => {
     expect(source).toContain("guestTrialExhausted");
     expect(source).not.toContain("Create free workspace to Deep Scan");
   });
+
+  it("renders unsupported Marketplace packages as a capability state", () => {
+    expect(source).toContain("scanSupported");
+    expect(source).toContain('scanSupported === false');
+    expect(source).toContain('data-testid="deep-scan-unsupported"');
+    expect(source).toContain("VS Code package manifest missing");
+    expect(source).toContain("Browse compatible extensions");
+  });
 });

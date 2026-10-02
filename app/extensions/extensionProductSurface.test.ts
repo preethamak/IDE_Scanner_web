@@ -90,4 +90,10 @@ describe("extension product profile", () => {
     );
     expect(timeline).toContain("Result applies only to this version");
   });
+
+  it("carries package capability limits into the profile action", () => {
+    expect(page).toContain("scanSupported={product.extension.scan_supported}");
+    expect(page).toContain("This package cannot be scanned here.");
+    expect(exactVersion).toContain("scanSupported={extension.scan_supported}");
+  });
 });

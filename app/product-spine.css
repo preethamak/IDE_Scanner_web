@@ -291,6 +291,16 @@
   min-height: 42px;
 }
 
+.productExtensionProfile .profileActions .deepScanUnsupported {
+  grid-column: 1 / -1;
+  justify-items: stretch;
+}
+
+.productExtensionProfile .profileActions .deepScanUnsupported .scanCapabilityCard {
+  width: 100%;
+  max-width: none;
+}
+
 .profileCompareAction,
 .reportCompareAction {
   display: inline-flex;

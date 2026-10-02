@@ -1,4 +1,5 @@
 import type { MarketplaceSearchResult } from "@/lib/types";
+import { DEFAULT_DEEP_SCAN_SUPPORT_REASON } from "@/lib/deepScanSupport";
 
 const GALLERY_URL = "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery?api-version=7.2-preview.1";
 
@@ -151,7 +152,7 @@ export function marketplaceVsixUrl(item: MarketplaceSearchResult): string {
 
 export function deepScanSupportError(item: MarketplaceSearchResult | null | undefined): string | null {
   if (item?.scan_supported !== false) return null;
-  return item?.scan_support_reason || "Deep Scan supports VS Code-compatible extensions; this Marketplace package does not expose a VS Code package manifest.";
+  return item?.scan_support_reason || DEFAULT_DEEP_SCAN_SUPPORT_REASON;
 }
 
 export function normalizeMarketplaceId(value: string): string {

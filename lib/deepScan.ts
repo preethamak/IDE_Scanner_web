@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { deepScanSupportError, resolveMarketplaceExtension } from "@/lib/marketplace";
+import { DeepScanUnsupportedError } from "@/lib/deepScanSupport";
 import { serviceDb } from "@/lib/supabase";
 import { getDeepScanHealth } from "@/lib/deepScanHealth";
 import { cloudflarePrivateAvailable, dispatchCloudflareDeepScan, queueCloudflareDeepScan } from "@/lib/cloudflareDeepScan";
@@ -32,7 +33,7 @@ export async function queueDeepScan(
 
   const item = await resolveMarketplaceExtension(extensionId);
   const supportError = deepScanSupportError(item);
-  if (supportError) throw new Error(supportError);
+  if (supportError) throw new DeepScanUnsupportedError(supportError);
   const canonicalExtensionId = item.extension_id;
   const version = requestedVersion || item.version;
   if (!version) throw new Error("No published version is available for this extension.");
@@ -116,7 +117,7 @@ export async function queueSupabaseGuestDeepScan(
   const db = serviceDb();
   const item = await resolveMarketplaceExtension(extensionId);
   const supportError = deepScanSupportError(item);
-  if (supportError) throw new Error(supportError);
+  if (supportError) throw new DeepScanUnsupportedError(supportError);
   const canonicalExtensionId = item.extension_id;
   const version = requestedVersion || item.version;
   if (!version) throw new Error("No published version is available for this extension.");

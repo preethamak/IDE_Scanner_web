@@ -26,6 +26,8 @@ export type CatalogExtension = {
   catalog_rank: number | null;
   latest_version?: string;
   latest_scan?: Record<string, unknown> | null;
+  scan_supported?: boolean;
+  scan_support_reason?: string;
 };
 
 export type ScanDecision = "allow" | "review" | "block" | "incomplete";
@@ -38,6 +40,11 @@ const cachedSecurityFeed=unstable_cache(async(limit:number)=>fetchPublicSecurity
 const cachedPublicInventory=unstable_cache(async(limit:number,offset:number)=>fetchPublicInventory(limit,offset).catch(() => emptyInventory()),["public-inventory-v2"],{revalidate:300,tags:["public-intel"]});
 const cachedPublicAnalysisHistory=unstable_cache(async(limit:number,offset:number)=>fetchPublicAnalysisHistory(limit,offset).catch(() => emptyAnalysisHistory()),["public-analysis-history-v1"],{revalidate:300,tags:["public-intel"]});
 const cachedCatalog=unstable_cache(async(query:string,limit:number)=>fetchCatalog(query,limit),["public-catalog-v1"],{revalidate:300,tags:["public-intel","catalog"]});
+const cachedRegistryExtension = unstable_cache(
+  async (id: string) => resolveMarketplaceExtension(id),
+  ["registry-extension-capabilities-v1"],
+  { revalidate: 3600, tags: ["registry-search"] },
+);
 
 export function getPublicSecurityFeed(limit = 6): Promise<PublicSecurityFeedItem[]> { return cachedSecurityFeed(limit); }
 
@@ -205,7 +212,7 @@ async function fetchCatalog(query = "", limit = 50): Promise<CatalogExtension[]>
   }
   if (!query.trim()) return [];
   const registry = await searchMarketplace(query, limit);
-  return registry.map((item, index) => ({ id: item.extension_id, name: item.extension_id.split(".").slice(1).join("."), display_name: item.display_name, publisher: item.publisher, description: item.short_description, registry: item.registry || "vs-marketplace", publisher_verified: item.publisher_verified, installs: item.install_count, rating: item.rating_average, icon_url: item.icon_url, repository_url: "", last_published_at: item.last_updated || null, catalog_rank: index + 1, latest_version: item.version, latest_scan: null }));
+  return registry.map((item, index) => ({ id: item.extension_id, name: item.extension_id.split(".").slice(1).join("."), display_name: item.display_name, publisher: item.publisher, description: item.short_description, registry: item.registry || "vs-marketplace", publisher_verified: item.publisher_verified, installs: item.install_count, rating: item.rating_average, icon_url: item.icon_url, repository_url: "", last_published_at: item.last_updated || null, catalog_rank: index + 1, latest_version: item.version, latest_scan: null, scan_supported: item.scan_supported, scan_support_reason: item.scan_support_reason }));
 }
 
 export async function getExtensionProduct(id: string, client?: SupabaseClient): Promise<{ extension: CatalogExtension; versions: Array<Record<string, unknown>>; scan: Record<string, unknown> | null } | null> {
@@ -217,7 +224,7 @@ export async function getExtensionProduct(id: string, client?: SupabaseClient): 
       : null;
     if (!latestD1Scan?.scan) {
       return {
-        extension: cloudflareProduct.extension,
+        extension: await withScanSupport(cloudflareProduct.extension),
         versions: cloudflareProduct.versions,
         scan: cloudflareProduct.scans.find((item) => item.version === latestVersion)?.scan || null,
       };
@@ -226,7 +233,7 @@ export async function getExtensionProduct(id: string, client?: SupabaseClient): 
     const versions = cloudflareProduct.versions.map((item) => String(item.version || "") === latestVersion
       ? { ...item, latest_scan_id: scan.id, scan_state: scan.analysis_status, decision: scan.decision, coverage_percent: scan.coverage_percent, scanned_at: scan.scanned_at }
       : item);
-    return { ...cloudflareProduct, extension: { ...cloudflareProduct.extension, latest_scan: scan }, versions, scan };
+    return { ...cloudflareProduct, extension: await withScanSupport({ ...cloudflareProduct.extension, latest_scan: scan }), versions, scan };
   }
   const cloudflareCatalog = await getCloudflareRegistryCatalogExtension<Record<string, unknown>>(id);
   if (cloudflareCatalog) {
@@ -235,7 +242,7 @@ export async function getExtensionProduct(id: string, client?: SupabaseClient): 
       ? versions
       : [{ extension_id: id, version: String(cloudflareCatalog.latest_version || ""), registry: String(cloudflareCatalog.registry || "vs-marketplace"), is_latest: true, scan_state: "not_scanned" }];
     return {
-      extension: normalizeCatalogRow({ ...cloudflareCatalog, extension_versions: fallbackVersions }),
+      extension: await withScanSupport(normalizeCatalogRow({ ...cloudflareCatalog, extension_versions: fallbackVersions })),
       versions: limitVersionHistory(dedupeVersions(fallbackVersions)),
       scan: null,
     };
@@ -275,7 +282,7 @@ export async function getExtensionProduct(id: string, client?: SupabaseClient): 
             });
             scan = scansByVersion.get(String(latest?.version || "")) || null;
           }
-          return { extension: normalizeCatalogRow(extension as Record<string, unknown>), versions: dedupeVersions(versionRows), scan };
+          return { extension: await withScanSupport(normalizeCatalogRow(extension as Record<string, unknown>)), versions: dedupeVersions(versionRows), scan };
         }
       }
     } catch {
@@ -291,7 +298,7 @@ async function registryProduct(id: string): Promise<{ extension: CatalogExtensio
   try {
     const item = await resolveMarketplaceExtension(id);
     const versions = limitVersionHistory(await cachedVersions(item.extension_id));
-    return { extension: { id: item.extension_id, name: item.extension_id.split(".").slice(1).join("."), display_name: item.display_name, publisher: item.publisher, description: item.short_description, registry: item.registry || "vs-marketplace", publisher_verified: item.publisher_verified, installs: item.install_count, rating: item.rating_average, icon_url: item.icon_url, repository_url: "", last_published_at: item.last_updated || null, catalog_rank: null, latest_version: item.version, latest_scan: null }, versions: versions.length ? versions : [{ extension_id: item.extension_id, version: item.version, registry: item.registry, published_at: item.last_updated, is_latest: true, scan_state: "not_scanned" }], scan: null };
+    return { extension: { id: item.extension_id, name: item.extension_id.split(".").slice(1).join("."), display_name: item.display_name, publisher: item.publisher, description: item.short_description, registry: item.registry || "vs-marketplace", publisher_verified: item.publisher_verified, installs: item.install_count, rating: item.rating_average, icon_url: item.icon_url, repository_url: "", last_published_at: item.last_updated || null, catalog_rank: null, latest_version: item.version, latest_scan: null, scan_supported: item.scan_supported, scan_support_reason: item.scan_support_reason }, versions: versions.length ? versions : [{ extension_id: item.extension_id, version: item.version, registry: item.registry, published_at: item.last_updated, is_latest: true, scan_state: "not_scanned" }], scan: null };
   } catch {
     return null;
   }
@@ -433,7 +440,7 @@ async function mirroredExtensionProduct(id: string): Promise<{ extension: Catalo
   if (!product) return null;
   const latest = product.versions.find((item) => item.is_latest) || product.versions[0];
   const scan = product.scans.find((item) => item.version === String(latest?.version || ""))?.scan || null;
-  return { extension: product.extension, versions: product.versions, scan };
+  return { extension: await withScanSupport(product.extension), versions: product.versions, scan };
 }
 
 async function mirroredVersionProduct(id: string, version: string): Promise<Record<string, unknown> | null> {
@@ -473,7 +480,23 @@ export async function seedExtensionFromRegistry(id: string): Promise<CatalogExte
 function normalizeCatalogRow(row: Record<string, unknown>): CatalogExtension {
   const versions = Array.isArray(row.extension_versions) ? row.extension_versions as Array<Record<string, unknown>> : [];
   const latest = versions.find((item) => item.is_latest) || versions[0];
-  return { id: String(row.id), name: String(row.name), display_name: String(row.display_name), publisher: String(row.publisher), description: String(row.description || ""), registry: String(row.registry), publisher_verified: Boolean(row.publisher_verified), installs: Number(row.installs || 0), rating: Number(row.rating || 0), icon_url: String(row.icon_url || ""), repository_url: String(row.repository_url || ""), last_published_at: row.last_published_at ? String(row.last_published_at) : null, catalog_rank: row.catalog_rank == null ? null : Number(row.catalog_rank), latest_version: latest ? String(latest.version || "") : undefined, latest_scan: null };
+  return { id: String(row.id), name: String(row.name), display_name: String(row.display_name), publisher: String(row.publisher), description: String(row.description || ""), registry: String(row.registry), publisher_verified: Boolean(row.publisher_verified), installs: Number(row.installs || 0), rating: Number(row.rating || 0), icon_url: String(row.icon_url || ""), repository_url: String(row.repository_url || ""), last_published_at: row.last_published_at ? String(row.last_published_at) : null, catalog_rank: row.catalog_rank == null ? null : Number(row.catalog_rank), latest_version: latest ? String(latest.version || "") : undefined, latest_scan: null, scan_supported: typeof row.scan_supported === "boolean" ? row.scan_supported : undefined, scan_support_reason: row.scan_support_reason ? String(row.scan_support_reason) : undefined };
+}
+
+async function withScanSupport(extension: CatalogExtension): Promise<CatalogExtension> {
+  if (typeof extension.scan_supported === "boolean") return extension;
+  try {
+    const item = await cachedRegistryExtension(extension.id);
+    return {
+      ...extension,
+      scan_supported: item.scan_supported,
+      scan_support_reason: item.scan_support_reason,
+    };
+  } catch {
+    // A registry outage must not make a public profile disappear. The API
+    // still enforces the same capability gate when a scan is requested.
+    return extension;
+  }
 }
 
 function escapeFilter(value: string): string {

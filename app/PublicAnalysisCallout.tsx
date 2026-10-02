@@ -13,6 +13,8 @@ type Props = {
   scanned: boolean;
   fullAnalysisHref?: string;
   initialSignedIn: boolean;
+  scanSupported?: boolean;
+  scanSupportReason?: string;
 };
 
 type SessionState = "checking" | "signed-in" | "signed-out";
@@ -23,6 +25,8 @@ export default function PublicAnalysisCallout({
   scanned,
   fullAnalysisHref,
   initialSignedIn,
+  scanSupported,
+  scanSupportReason,
 }: Props) {
   const db = useMemo(() => browserDb(), []);
   const [sessionState, setSessionState] = useState<SessionState>(
@@ -102,7 +106,12 @@ export default function PublicAnalysisCallout({
             </a>
           )
         ) : (
-          <DeepScanButton extensionId={extensionId} version={version} />
+          <DeepScanButton
+            extensionId={extensionId}
+            version={version}
+            scanSupported={scanSupported}
+            scanSupportReason={scanSupportReason}
+          />
         )}
         <Link
           className="button buttonQuiet"

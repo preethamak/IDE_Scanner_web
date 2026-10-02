@@ -5,6 +5,7 @@ import { gunzipSync } from "node:zlib";
 import { parseCookies, privateDb, newId, nowIso, requestIsSecure, sessionHash, type AppAuthUser } from "@/lib/cloudflarePrivate";
 import { runtimeEnv } from "@/lib/runtimeEnv";
 import { deepScanSupportError, resolveMarketplaceExtension } from "@/lib/marketplace";
+import { DeepScanUnsupportedError } from "@/lib/deepScanSupport";
 import { getCloudflareRegistryCatalogExtension, getCloudflareRegistryProduct } from "@/lib/cloudflareRegistry";
 import { markCloudflareRunnerClaimed, markCloudflareRunnerCompleted, markCloudflareRunnerError, recordCloudflareRunnerHeartbeat } from "@/lib/cloudflareRunnerStatus";
 import { dispatchGithubDeepScan } from "@/lib/cloudflareGithubDispatch";
@@ -100,9 +101,12 @@ export async function enqueueCloudflareCanonicalJobs(jobs: readonly CloudflareCa
 export async function queueCloudflareDeepScan(extensionId: string, requestedVersion: string | undefined, request: Request, user: AppAuthUser, force = false, scanPurpose: "user_request" | "team_badge" = "user_request"): Promise<Row> {
   const db = privateDb();
   const catalog = await getCloudflareRegistryCatalogExtension<{ id?: string; latest_version?: string }>(extensionId);
-  const marketplace = catalog ? null : await resolveMarketplaceExtension(extensionId);
+  // The D1 catalog knows identity and version, but it does not certify that a
+  // Marketplace package contains the VS Code manifest required by Deep Scan.
+  // Always make a best-effort registry lookup for that capability gate.
+  const marketplace = await resolveMarketplaceExtension(extensionId).catch(() => null);
   const supportError = deepScanSupportError(marketplace);
-  if (supportError) throw new Error(supportError);
+  if (supportError) throw new DeepScanUnsupportedError(supportError);
   const canonicalExtensionId = String(catalog?.id || marketplace?.extension_id || extensionId);
   const version = requestedVersion || String(catalog?.latest_version || marketplace?.version || "");
   if (!version) throw new Error("No published version is available for this extension.");
@@ -156,9 +160,9 @@ export async function queueCloudflareGuestDeepScan(extensionId: string, requeste
   const trialKey = requesterHash(request);
   const trial = await cloudflareGuestTrialStatus(request);
   const catalog = await getCloudflareRegistryCatalogExtension<{ id?: string; latest_version?: string }>(extensionId);
-  const marketplace = catalog ? null : await resolveMarketplaceExtension(extensionId);
+  const marketplace = await resolveMarketplaceExtension(extensionId).catch(() => null);
   const supportError = deepScanSupportError(marketplace);
-  if (supportError) throw new Error(supportError);
+  if (supportError) throw new DeepScanUnsupportedError(supportError);
   const canonicalExtensionId = String(catalog?.id || marketplace?.extension_id || extensionId);
   const version = requestedVersion || String(catalog?.latest_version || marketplace?.version || "");
   if (!version) throw new Error("No published version is available for this extension.");

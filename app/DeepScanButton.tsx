@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { LoaderCircle, ScanSearch } from "lucide-react";
+import { ArrowRight, FileWarning, LoaderCircle, ScanSearch } from "lucide-react";
 import Link from "next/link";
 import { trackProductEvent } from "@/lib/analyticsEvents";
 import { extensionPageModel } from "@/lib/extensionPageModel";
@@ -84,10 +84,14 @@ export default function DeepScanButton({
   extensionId,
   version,
   showReportLink = true,
+  scanSupported,
+  scanSupportReason,
 }: {
   extensionId: string;
   version: string;
   showReportLink?: boolean;
+  scanSupported?: boolean;
+  scanSupportReason?: string;
 }) {
   const db = useMemo(() => browserDb(), []);
   const router = useRouter();
@@ -106,8 +110,10 @@ export default function DeepScanButton({
   const [guestTrialAvailable, setGuestTrialAvailable] = useState(false);
   const [guestTrialRemaining, setGuestTrialRemaining] = useState(0);
   const [guestTrialExhausted, setGuestTrialExhausted] = useState(false);
+  const unsupported = scanSupported === false;
 
   useEffect(() => {
+    if (unsupported) return;
     let active = true;
     void browserAuthHeaders(db).then((headers) => Promise.allSettled([
       fetchDeepScanHealth(),
@@ -177,7 +183,7 @@ export default function DeepScanButton({
     return () => {
       active = false;
     };
-  }, [db, extensionId, version, showReportLink]);
+  }, [db, extensionId, version, showReportLink, unsupported]);
 
   useEffect(() => {
     if (!jobId) return;
@@ -295,6 +301,7 @@ export default function DeepScanButton({
   }, [db, jobId, router, extensionId, version, showReportLink]);
 
   async function queue() {
+    if (unsupported) return;
     if (signedOut && !guestTrialAvailable && guestTrialExhausted) {
       trackProductEvent({
         name: "workspace_signup_started",
@@ -389,6 +396,30 @@ export default function DeepScanButton({
       body.dispatch === "scheduled"
         ? "Queued for the next scheduled isolated analysis runner."
         : "Runner started. Preparing the exact published artifact for analysis.",
+    );
+  }
+
+  if (unsupported) {
+    return (
+      <div
+        className={`deepScanAction deepScanUnsupported${showReportLink ? " deepScanActionWithReport" : ""}`}
+        data-testid="deep-scan-unsupported"
+      >
+        <section className="scanCapabilityCard" role="status">
+          <div className="scanCapabilityEyebrow">
+            <FileWarning size={16} />
+            Deep Scan unavailable
+          </div>
+          <strong>VS Code package manifest missing</strong>
+          <p>
+            {scanSupportReason ||
+              "This Marketplace package is not published as a VS Code-compatible extension, so GuardRails cannot analyze it."}
+          </p>
+          <Link href="/extensions" className="scanCapabilityLink">
+            Browse compatible extensions <ArrowRight size={14} />
+          </Link>
+        </section>
+      </div>
     );
   }
 

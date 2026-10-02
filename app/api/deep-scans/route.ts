@@ -8,6 +8,7 @@ import { scanProgressColumns, scanProgressPayload } from "@/lib/scanProgress";
 import { cloudflareGuestTrialStatus, cloudflarePrivateAvailable, cloudflareScanProgress, getCloudflareGuestJobForRelease, GuestTrialLimitError, guestTrialToken as cloudflareGuestTrialToken, guestTrialCookie as cloudflareGuestTrialCookie, queueCloudflareGuestDeepScan } from "@/lib/cloudflareDeepScan";
 import { newSessionToken, privateDb } from "@/lib/cloudflarePrivate";
 import { guestTrialCookie, guestTrialToken, getSupabaseGuestJobForRelease, newGuestTrialToken, supabaseGuestTrialStatus } from "@/lib/supabaseGuestTrial";
+import { DeepScanUnsupportedError } from "@/lib/deepScanSupport";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -165,6 +166,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof GuestTrialLimitError || (error instanceof Error && error.name === "GuestTrialLimitError")) return NextResponse.json({ error: error.message, code: "guest_trial_exhausted" }, { status: 429 });
+    if (error instanceof DeepScanUnsupportedError || (error instanceof Error && error.name === "DeepScanUnsupportedError")) return NextResponse.json({ error: error.message, code: "scan_unsupported" }, { status: 422 });
     if (
       error instanceof DeepScanUnavailableError ||
       (error instanceof Error && error.name === "DeepScanUnavailableError")

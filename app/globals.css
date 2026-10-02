@@ -400,6 +400,11 @@ body.guardrails-workspace-mode .pageContent { padding: 0; max-width: none; }
 .actionNotice, .actionError { position: absolute; top: 48px; right: 0; z-index: 10; width: 320px; border: 1px solid var(--line); border-radius: 5px; background: white; padding: 10px 12px; box-shadow: 0 10px 30px #1824331a; color: var(--muted); font-size: 12px; line-height: 1.45; }
 .deepScanActionWithReport .actionNotice, .deepScanActionWithReport .actionError { position: static; width: min(320px, 100%); max-width: 100%; box-sizing: border-box; margin-top: 2px; box-shadow: none; }
 .actionError { border-color: #e4aeb2; color: var(--red); }
+.scanCapabilityCard { display: grid; gap: 8px; width: min(320px, 100%); border: 1px solid #a9cce4; border-left: 3px solid #2f78b7; background: #f1f8fd; padding: 13px 14px; color: var(--ink); font-size: 12px; line-height: 1.45; box-sizing: border-box; }
+.scanCapabilityEyebrow { display: flex; align-items: center; gap: 7px; color: #2f78b7; font: 800 11px var(--mono); letter-spacing: .05em; text-transform: uppercase; }
+.scanCapabilityCard strong { font-size: 13px; }
+.scanCapabilityCard p { margin: 0; color: var(--muted); }
+.scanCapabilityLink { display: inline-flex; align-items: center; gap: 5px; width: max-content; color: var(--ink); font-size: 12px; font-weight: 750; text-decoration: underline; text-underline-offset: 3px; }
 .packageFacts { display: grid; grid-template-columns: 1.05fr repeat(5, 1fr); border-block: 1px solid var(--ink); }
 .packageFacts > div { min-height: 88px; border-right: 1px solid var(--line); padding: 15px 17px; }
 .packageFacts > div:first-child { padding-left: 0; }

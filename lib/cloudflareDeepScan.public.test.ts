@@ -153,6 +153,7 @@ describe("Cloudflare canonical scan callback", () => {
   });
 
   it("rejects a Visual Studio-only package before creating a scan job", async () => {
+    harness.catalogExtension.mockResolvedValue({ id: "Codium.qodogen", latest_version: "0.14.2" });
     harness.marketplaceExtension.mockResolvedValue({
       extension_id: "Codium.qodogen",
       version: "0.14.2",

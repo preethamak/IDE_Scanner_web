@@ -80,6 +80,8 @@ export default function PublicSecuritySummary({
         scanned={scanned}
         fullAnalysisHref={fullAnalysisHref}
         initialSignedIn={signedIn}
+        scanSupported={extension.scan_supported}
+        scanSupportReason={extension.scan_support_reason}
       />
       <PermissionPassport
         compact
