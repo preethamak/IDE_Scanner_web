@@ -1,8 +1,4 @@
-import type { PrivateDatabase } from "@/lib/cloudflarePrivate";
-import {
-  cloudflareNotificationProvider,
-  cloudflareNotificationRequest,
-} from "@/lib/cloudflareNotificationDelivery";
+type PrivateDatabase = D1Database;
 
 /** Deliver due D1-backed workspace notifications from either cron entrypoint. */
 export async function deliverCloudflareNotifications(
@@ -19,12 +15,9 @@ export async function deliverCloudflareNotifications(
     const attempts = Number(row.attempts || 0) + 1;
     try {
       const payload = JSON.parse(String(row.payload_json || "{}"));
-      const provider = cloudflareNotificationProvider(
-        String(row.kind || "generic_webhook"),
-        String(row.target),
-        payload,
-      );
-      const delivery = cloudflareNotificationRequest(provider, String(row.target), payload);
+      const target = String(row.target);
+      const kind = String(row.kind || "generic_webhook");
+      const delivery = workerSafeDelivery(kind, target, payload);
       const response = await fetch(delivery.destination, {
         method: "POST",
         redirect: "error",
@@ -45,4 +38,19 @@ export async function deliverCloudflareNotifications(
     }
   }
   return { attempted: pending.results.length, sent, failed };
+}
+
+function workerSafeDelivery(kind: string, target: string, payload: unknown) {
+  const input = payload && typeof payload === "object" && !Array.isArray(payload)
+    ? payload as Record<string, unknown> : {};
+  const isSlack = /^https:\/\/hooks\.slack\.com\/services\/[A-Z0-9]+\/[A-Z0-9]+\/[A-Za-z0-9]+$/.test(target);
+  const isHttps = (() => { try { return new URL(target).protocol === "https:"; } catch { return false; } })();
+  if (kind === "slack_webhook" || isSlack) {
+    if (!isSlack) throw new Error("The stored Slack target is no longer allowed.");
+    return { destination: target, payload: input.text ? input : { text: `${String(input.extension_id || "extension")}@${String(input.target_version || input.version || "new release")}: ${String(input.message || input.summary || "A watched extension release changed.")}` }, headers: { "X-GuardRails-Event": String(input.event || "monitoring_alert") } };
+  }
+  if (kind !== "generic_webhook" || !isHttps) throw new Error("This notification provider requires the authenticated delivery route.");
+  const safePayload = { ...input };
+  delete safePayload.provider;
+  return { destination: target, payload: safePayload, headers: { "X-GuardRails-Event": String(input.event || "monitoring_alert") } };
 }
