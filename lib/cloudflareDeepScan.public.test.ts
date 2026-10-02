@@ -42,7 +42,7 @@ vi.mock("@/lib/marketplace", () => ({
 }));
 vi.mock("@/lib/cloudflareGithubDispatch", () => ({ dispatchGithubDeepScan: harness.githubDispatch }));
 
-import { claimCloudflareJob, failCloudflareScan, queueCloudflareDeepScan, saveCloudflareScanResult } from "@/lib/cloudflareDeepScan";
+import { claimCloudflareJob, failCloudflareScan, getCloudflareAuthorizedScanProduct, queueCloudflareDeepScan, saveCloudflareScanResult } from "@/lib/cloudflareDeepScan";
 
 const build = "a".repeat(40);
 const artifactSha = "d".repeat(64);
@@ -183,6 +183,25 @@ describe("Cloudflare canonical scan callback", () => {
     await expect(saveCloudflareScanResult("job-1", validBundle())).resolves.toEqual(expect.any(String));
     expect(db.batch).toHaveBeenCalledTimes(1);
     expect(harness.runnerCompleted).toHaveBeenCalledTimes(1);
+  });
+
+  it("reads a completed on-demand report only for its subscribed user", async () => {
+    const db = {
+      prepare: vi.fn((query: string) => ({
+        bind: vi.fn(() => ({
+          first: vi.fn().mockResolvedValue(query.includes("app_scan_job_subscribers")
+            ? { scan_id: "scan-1" }
+            : { report_json: JSON.stringify(validBundle()), artifact_sha256: artifactSha, created_at: "2026-09-19T00:00:00.000Z" }),
+        })),
+      })),
+      batch: vi.fn(),
+    };
+    harness.privateDb.mockReturnValue(db);
+
+    await expect(getCloudflareAuthorizedScanProduct("publisher.extension", "1.0.0", "scan-1", "user-1")).resolves.toMatchObject({
+      scan: { id: "scan-1", extension_id: "publisher.extension", version: "1.0.0" },
+    });
+    expect(db.prepare).toHaveBeenCalledWith(expect.stringContaining("app_scan_job_subscribers"));
   });
 
   it("does not let a losing concurrent worker scan the same queued job", async () => {

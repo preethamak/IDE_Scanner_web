@@ -4,7 +4,7 @@ import { getPublicRegistryProduct, getPublicRegistrySnapshot } from "@/lib/publi
 import { getCloudflareRegistryCatalogExtension, getCloudflareRegistryProduct, getCloudflareRegistrySection } from "@/lib/cloudflareRegistry";
 import { unstable_cache } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { cloudflarePrivateAvailable, getCloudflareScanProduct, getCloudflareScanSummary } from "@/lib/cloudflareDeepScan";
+import { cloudflarePrivateAvailable, getCloudflareAuthorizedScanProduct, getCloudflareScanProduct, getCloudflareScanSummary } from "@/lib/cloudflareDeepScan";
 import { hasAccuracyGateAttestation } from "@/lib/publicationHealth";
 
 const cachedVersions=unstable_cache(async(id:string)=>listMarketplaceVersions(id),["registry-versions-v2"],{revalidate:21600,tags:["registry-versions"]});
@@ -361,11 +361,17 @@ export type VersionScanProductOptions = {
   compact?: boolean;
   includePreviews?: boolean;
   skipCloudflareCatalog?: boolean;
+  authorizedUserId?: string;
+  guestTrialToken?: string;
 };
 
 export async function getVersionScanProduct(id: string, version: string, scanId: string, client?: SupabaseClient, options: VersionScanProductOptions = {}): Promise<Record<string, unknown> | null> {
   const cloudflareReport = await getCloudflareScanProduct(id, version, scanId, true).catch(() => null);
   if (cloudflareReport) return cloudflareReport;
+  if (cloudflarePrivateAvailable() && (options.authorizedUserId || options.guestTrialToken)) {
+    const authorizedReport = await getCloudflareAuthorizedScanProduct(id, version, scanId, options.authorizedUserId, options.guestTrialToken).catch(() => null);
+    if (authorizedReport) return authorizedReport;
+  }
   const cloudflareProduct = await getPublicRegistryProduct(id);
   if (cloudflareProduct) {
     const scan = cloudflareProduct.scans?.find((item) => String(item.version || "") === version && String(item.scan?.id || "") === scanId);

@@ -3,7 +3,7 @@ import AnalysisReport from "@/app/ExtensionDossier";
 import { getExtensionProduct, getVersionScanProduct } from "@/lib/productData";
 import { parseExtensionDossierData } from "@/lib/reportContract";
 import { cloudflarePrivateAvailable } from "@/lib/cloudflareDeepScan";
-import { cloudflareSessionActive } from "@/lib/cloudflareSession";
+import { cloudflareGuestTrialToken, cloudflareSessionActive, cloudflareSessionUser } from "@/lib/cloudflareSession";
 import { serverDb } from "@/lib/supabaseServer";
 import { runtimeSupabase } from "@/lib/supabaseRuntime";
 
@@ -19,15 +19,20 @@ export default async function ImmutableScanPage({
   const version = decodeURIComponent(route.version);
   const scanId = decodeURIComponent(route.scanId);
   const cloudflare = cloudflarePrivateAvailable();
+  const cloudflareUser = cloudflare ? await cloudflareSessionUser() : null;
   // Cloudflare injects runtime variables per request. Use the runtime
   // Supabase client as the compatibility path for immutable reports that
   // predate the D1 publication mirror; the report still has to pass the
   // exact version/scan identity checks in getVersionScanProduct.
   const legacyClient = cloudflare ? runtimeSupabase() : null;
   const [claims, extensionProduct, versionProduct] = await Promise.all([
-    cloudflare ? cloudflareSessionActive() : serverDb().then((db) => db.auth.getClaims().then((result) => Boolean(result.data?.claims))).catch(() => false),
+    cloudflare ? (cloudflareUser ? true : cloudflareSessionActive()) : serverDb().then((db) => db.auth.getClaims().then((result) => Boolean(result.data?.claims))).catch(() => false),
     getExtensionProduct(id, legacyClient || undefined),
-    getVersionScanProduct(id, version, scanId, legacyClient || undefined, { skipCloudflareCatalog: true }),
+    getVersionScanProduct(id, version, scanId, legacyClient || undefined, {
+      skipCloudflareCatalog: true,
+      authorizedUserId: cloudflareUser?.id,
+      guestTrialToken: cloudflare ? await cloudflareGuestTrialToken() : undefined,
+    }),
   ]);
   if (!extensionProduct || !versionProduct?.scan) notFound();
   let data = null;

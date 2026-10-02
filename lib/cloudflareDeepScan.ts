@@ -433,6 +433,39 @@ export async function getCloudflareScanProduct(extensionId: string, version: str
   return { version: { extension_id: extensionId, version, latest_scan_id: scanId, scan_state: report.analysis_status }, scan: report, findings, files, dependencies };
 }
 
+export async function getCloudflareAuthorizedScanProduct(
+  extensionId: string,
+  version: string,
+  scanId: string,
+  userId?: string,
+  guestToken?: string,
+): Promise<Row | null> {
+  if (!cloudflarePrivateAvailable() || (!userId && !guestToken)) return null;
+  const db = privateDb();
+  const row = userId
+    ? await db.prepare(`
+        SELECT report.scan_id
+        FROM app_scan_reports report
+        JOIN app_scan_jobs job ON job.id=report.job_id
+        JOIN app_scan_job_subscribers subscriber ON subscriber.job_id=job.id
+        WHERE report.scan_id=? AND lower(report.extension_id)=lower(?) AND report.version=?
+          AND subscriber.user_id=?
+          AND job.scan_purpose IN ('user_request','guest_trial','team_badge')
+        LIMIT 1
+      `).bind(scanId, extensionId, version, userId).first<Row>()
+    : await db.prepare(`
+        SELECT report.scan_id
+        FROM app_scan_reports report
+        JOIN app_scan_jobs job ON job.id=report.job_id
+        JOIN app_guest_scan_access access ON access.job_id=job.id
+        WHERE report.scan_id=? AND lower(report.extension_id)=lower(?) AND report.version=?
+          AND access.token_hash=?
+          AND job.scan_purpose='guest_trial'
+        LIMIT 1
+      `).bind(scanId, extensionId, version, sessionHash(guestToken || "")).first<Row>();
+  return row?.scan_id ? getCloudflareScanProduct(extensionId, version, String(row.scan_id), false) : null;
+}
+
 export async function getCloudflareLatestScanProduct(extensionId: string, version: string): Promise<Row | null> {
   if (!cloudflarePrivateAvailable()) return null;
   const row = await privateDb()
