@@ -8,6 +8,7 @@ import styles from "./mcpRegistry.module.css";
 
 type MetricNode = { title?: string; score?: number | null; status?: string; message?: string; children?: MetricNode[] };
 type Assessment = { decision?: string; risk_score?: number | null; coverage?: { percent?: number }; metrics?: MetricNode; error?: string };
+type QueuedAssessment = { status?: string; request_id?: string; report?: Assessment; error?: string };
 
 export default function McpRegistryClient({ entries }: { entries: McpDirectoryEntry[] }) {
   const [query, setQuery] = useState("");
@@ -33,9 +34,14 @@ export default function McpRegistryClient({ entries }: { entries: McpDirectoryEn
     setBusy(true); setError(""); setAssessment(null);
     try {
       const response = await fetch("/api/mcp/scan", { method: "POST", headers: { "Content-Type": "application/json" }, body: input });
-      const body = await response.json().catch(() => ({})) as Assessment;
+      const body = await response.json().catch(() => ({})) as Assessment & QueuedAssessment;
       if (!response.ok) throw new Error(String(body.error || "Assessment failed."));
-      setAssessment(body);
+      if (response.status === 202 && body.request_id) {
+        const completed = await waitForAssessment(body.request_id);
+        setAssessment(completed);
+      } else {
+        setAssessment(body);
+      }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Assessment failed.");
     } finally {
@@ -56,6 +62,17 @@ export default function McpRegistryClient({ entries }: { entries: McpDirectoryEn
 
     <footer className={styles.footer}><span>Directory metadata comes from the <a href="https://registry.modelcontextprotocol.io/" target="_blank" rel="noreferrer">Official MCP Registry</a>.</span><Link href="/research">Read how GuardRails analysis works <ArrowRight /></Link></footer>
   </main>;
+}
+
+async function waitForAssessment(requestId: string): Promise<Assessment> {
+  for (let attempt = 0; attempt < 45; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 2_000));
+    const response = await fetch(`/api/mcp/scan?request_id=${encodeURIComponent(requestId)}`, { cache: "no-store" });
+    const body = await response.json().catch(() => ({})) as QueuedAssessment;
+    if (!response.ok || body.status === "failed") throw new Error(String(body.error || "The MCP runner failed."));
+    if (body.status === "complete" && body.report) return body.report;
+  }
+  throw new Error("The free MCP runner is still processing. Please try the assessment again shortly.");
 }
 
 function AssessmentResult({ report }: { report: Assessment }) {
