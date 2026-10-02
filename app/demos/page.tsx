@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 const demos = [
   {
-    title: "Built-up context. Straight answers.",
+    title: "Review a release change.",
     description: "Watch a release move from monitoring to review, with its evidence and decision kept together.",
     src: "/demos/guardrails-product-overview.mp4",
   },

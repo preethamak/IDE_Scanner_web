@@ -15,7 +15,7 @@ export default function DecisionMemoryFilm() {
   const toggleRelease = () => setNextRelease((value) => !value);
 
   return <section className={styles.scene}>
-    <div className={styles.copy}><p><i /> Built-up context</p><h2>Your last review<br />should <em>carry forward.</em></h2><span>When the next version appears, its review begins with the last decision—not a blank page.</span></div>
+    <div className={styles.copy}><p><i /> Release history</p><h2>Your last review<br />should <em>carry forward.</em></h2><span>When the next version appears, its review begins with the last decision—not a blank page.</span></div>
     <div className={`${styles.window} ${nextRelease ? styles.next : ""}`} aria-label="GuardRails decision history interaction">
       <header><div><i /><i /><i /></div><b>GuardRails</b><span>Release history</span><small>Workspace assistant</small></header>
       <div className={styles.app}>

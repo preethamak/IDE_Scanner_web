@@ -11,7 +11,6 @@ describe("GuardRails landing surface", () => {
   it("composes the homepage from focused product sections", () => {
     expect(page()).toContain("<AuthorityLanding />");
     expect(landing()).toContain("<ReleaseReviewFilm />");
-    expect(landing()).toContain("<DecisionMemoryFilm />");
     expect(landing()).toContain("<IdeCompatibility />");
     expect(landing()).toContain('aria-labelledby="positioning-heading"');
     expect(landing()).toContain("Read-only MCP access");
@@ -47,12 +46,13 @@ describe("GuardRails landing surface", () => {
     expect(read("../authority.css")).toContain(".navPopover:not(.isOpen)");
     expect(read("../authority.css")).toContain("display: none");
   });
-  it("attaches decisions durably to an exact release", () => {
-    expect(landing()).toContain("DecisionMemoryFilm");
-    const memory = read("./DecisionMemoryFilm.tsx");
-    expect(memory).toContain("Approved with context");
-    expect(memory).toContain("Decision saved for this release");
-    expect(memory).toContain("brings forward the last decision");
+  it("keeps generic AI marketing panels off the homepage", () => {
+    expect(landing()).not.toContain("DecisionMemoryFilm");
+    expect(landing()).not.toContain("LandingFaq");
+    expect(landing()).not.toContain("SarvamProgramNote");
+    expect(read("./DecisionMemoryFilm.tsx")).not.toContain("Built-up context");
+    expect(read("./LandingFaq.tsx")).not.toContain("Straight answers");
+    expect(read("../SarvamProgramNote.tsx")).not.toContain("AI-assisted reviewer guide");
   });
 
   it("keeps marketplace proof points visible", () => {
@@ -64,14 +64,6 @@ describe("GuardRails landing surface", () => {
     // checkable against a cited source. The self-reported "4x detection
     // growth" number had none and was removed rather than relabelled.
     expect(proof).not.toContain('value: "4×"');
-  });
-
-  it("explains the Sarvam relationship without overstating the product claim", () => {
-    expect(landing()).toContain("SarvamProgramNote");
-    const note = read("../SarvamProgramNote.tsx");
-    expect(note).toContain("AI-assisted reviewer guide");
-    expect(note).toContain("Plain-language scan summaries");
-    expect(note).toContain("what should I do next?");
   });
 
   it("leads new visitors to public working surfaces while exposing the team path", () => {
@@ -90,10 +82,4 @@ describe("GuardRails landing surface", () => {
     expect(film).not.toContain("setInterval");
   });
 
-  it("keeps the decision-memory interaction visitor-led", () => {
-    const memory = read("./DecisionMemoryFilm.tsx");
-    expect(memory).toContain('from "motion/react"');
-    expect(memory).toContain('aria-pressed={nextRelease}');
-    expect(memory).not.toContain("setInterval");
-  });
 });

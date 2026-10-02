@@ -10,7 +10,7 @@ export default function SarvamProgramNote() {
         <FileCheck2 />
       </div>
       <div className={styles.content}>
-        <p className={styles.eyebrow}>AI-assisted reviewer guide</p>
+        <p className={styles.eyebrow}>Evidence interpretation</p>
         <div className={styles.marks} aria-label="GuardRails and Sarvam AI logos">
           <span className={styles.guardrailsLockup} aria-label="GuardRails">
             <BrandMark />

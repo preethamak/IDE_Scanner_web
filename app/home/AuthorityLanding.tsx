@@ -3,11 +3,8 @@ import { ArrowRight, ArrowUpRight } from "lucide-react";
 import ExtensionSearch from "@/app/ExtensionSearch";
 import styles from "./authorityLanding.module.css";
 import ReleaseReviewFilm from "./ReleaseReviewFilm";
-import DecisionMemoryFilm from "./DecisionMemoryFilm";
 import TrustProof from "./TrustProof";
-import LandingFaq from "./LandingFaq";
 import IdeCompatibility from "./IdeCompatibility";
-import SarvamProgramNote from "../SarvamProgramNote";
 import ExtensionSignalBoard from "./ExtensionSignalBoard";
 import { getPublicInventory } from "@/lib/productData";
 
@@ -132,9 +129,6 @@ export default async function AuthorityLanding() {
 
     <IdeCompatibility />
     <TrustProof />
-    <SarvamProgramNote />
-    <DecisionMemoryFilm />
-    <LandingFaq />
     <section className={styles.close}><span className={styles.sectionKicker}>The next install is a decision</span><h2>Inspect one extension.<br /><em>Keep the evidence.</em></h2><Link href="/registry">Check an extension <ArrowRight /></Link></section>
   </main>;
 }

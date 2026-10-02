@@ -23,7 +23,7 @@ export default function LandingFaq() {
   return (
     <section className={styles.faq} aria-labelledby="faq-heading">
       <div>
-        <p className={styles.eyebrow}><i /> Straight answers</p>
+        <p className={styles.eyebrow}><i /> Common questions</p>
         <h2 id="faq-heading">Before you decide on us.</h2>
       </div>
       <div>
