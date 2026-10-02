@@ -40,12 +40,20 @@ export async function reconcileCloudflareBadgeHealth(
       .all<CatalogChunk>();
   }
   const latestByExtension = latestCatalogVersions(catalogResult.results.map((row) => row.payload || "").join(""));
-  if (!latestByExtension.size) return { teams_checked: 0, teams_changed: 0, releases_detected: 0 };
 
   const teams = await db
     .prepare("SELECT team_id,state_json FROM app_team_state")
     .bind()
     .all<{ team_id: string; state_json: string }>();
+  if (!latestByExtension.size) {
+    for (const team of teams.results) {
+      const state = parseState(team.state_json);
+      state.monitoring = { status: "degraded", last_checked_at: now, next_check_at: null, cadence_hours: 6, error: "The registry catalog was unavailable during the last monitoring check." };
+      await db.prepare("UPDATE app_team_state SET state_json=?,updated_at=? WHERE team_id=?")
+        .bind(JSON.stringify(state), now, team.team_id).run();
+    }
+    return { teams_checked: teams.results.length, teams_changed: 0, releases_detected: 0 };
+  }
   let teamsChanged = 0;
   let releasesDetected = 0;
 
@@ -158,12 +166,12 @@ export async function reconcileCloudflareBadgeHealth(
       releasesDetected += 1;
     }
 
-    if (!changed) continue;
-    teamsChanged += 1;
+    if (changed) teamsChanged += 1;
     state.watchlist = watchlist;
     state.release_events = releaseEvents.slice(0, 200);
     state.alerts = alerts.slice(0, 200);
     state.audit = audit.slice(0, 500);
+    state.monitoring = { status: "healthy", last_checked_at: now, next_check_at: new Date(new Date(now).getTime() + 6 * 60 * 60 * 1000).toISOString(), cadence_hours: 6, error: null };
     await db
       .prepare("UPDATE app_team_state SET state_json=?,updated_at=? WHERE team_id=?")
       .bind(JSON.stringify(state), now, team.team_id)

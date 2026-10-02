@@ -6,6 +6,7 @@
 import generatedWorker from "./.open-next/worker.js";
 import { reconcileCloudflareBadgeHealth } from "./lib/cloudflareBadgeHealth";
 import { dispatchQueuedCloudflareScan } from "./lib/cloudflareScheduledScan";
+import { deliverCloudflareNotifications } from "./lib/cloudflareNotificationQueue";
 import type { PrivateDatabase } from "./lib/cloudflarePrivate";
 import { isPublicRoutePath, isRscPrefetch } from "./lib/publicRequestPolicy";
 
@@ -154,6 +155,14 @@ const worker = {
       } catch (error) {
         console.error(
           "[scheduled-deep-scan] dispatch failed",
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+      try {
+        await deliverCloudflareNotifications(scanData as unknown as PrivateDatabase);
+      } catch (error) {
+        console.error(
+          "[scheduled-notifications] delivery failed",
           error instanceof Error ? error.message : String(error),
         );
       }

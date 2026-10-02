@@ -15,7 +15,10 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst", "viewer"]);
     if (provider === "cloudflare") {
       const state = await getWorkspaceState(id);
-      return NextResponse.json({ items: state.watchlist, health: { status: "healthy", last_checked_at: nowIso(), next_check_at: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(), cadence_hours: 6, error: null } });
+      const monitoring = state.monitoring && typeof state.monitoring === "object" && !Array.isArray(state.monitoring)
+        ? state.monitoring as Record<string, unknown>
+        : null;
+      return NextResponse.json({ items: state.watchlist, health: monitoring || { status: "unknown", last_checked_at: null, next_check_at: null, cadence_hours: 6, error: "Monitoring has not completed its first scheduled check." } });
     }
     const db=serviceDb();
     const [{ data, error }, refreshResult] = await Promise.all([
