@@ -590,7 +590,7 @@ export default function TeamWorkspace(
     }
   }
 
-  async function createMemberInvite(role: string) {
+  async function createMemberInvite(role: string, email?: string) {
     try {
       const headers = await getAuthHeaders();
       if (!headers.Authorization)
@@ -605,7 +605,7 @@ export default function TeamWorkspace(
             ...headers,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ role, expires_in_days: 7 }),
+          body: JSON.stringify({ role, email, expires_in_days: 7 }),
         },
       );
       const body = await response.json().catch(() => ({}));
@@ -3103,7 +3103,7 @@ function SettingsView({
     role: string | null,
   ) => Promise<{ ok: true } | { ok: false; error: string }>;
   onCreateInvite: (
-    role: string,
+    role: string, email?: string,
   ) => Promise<{ ok: true; url: string } | { ok: false; error: string }>;
   notificationSettings: React.ReactNode;
   getAuthHeaders: () => Promise<Record<string, string>>;
@@ -3122,6 +3122,7 @@ function SettingsView({
   const [mutationMessage, setMutationMessage] = useState("");
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteRole, setInviteRole] = useState("analyst");
+  const [inviteEmail, setInviteEmail] = useState("");
   const [inviteState, setInviteState] = useState<
     "idle" | "saving" | "ready" | "error"
   >("idle");
@@ -3183,7 +3184,7 @@ function SettingsView({
   async function createInvite() {
     setInviteState("saving");
     setInviteMessage("");
-    const result = await onCreateInvite(inviteRole);
+    const result = await onCreateInvite(inviteRole, inviteEmail.trim() || undefined);
     if (result.ok) {
       setInviteState("ready");
       setInviteMessage(result.url);
@@ -3300,6 +3301,10 @@ function SettingsView({
                       <option value="analyst">Security analyst</option>
                       <option value="viewer">Viewer</option>
                     </select>
+                  </label>
+                  <label>
+                    Recipient email <small>(optional — otherwise copy the link)</small>
+                    <input type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} placeholder="teammate@company.com" />
                   </label>
                   <button
                     onClick={() => void createInvite()}
