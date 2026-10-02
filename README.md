@@ -147,6 +147,20 @@ IDE_SCANNER_API_TOKEN=replace-with-a-random-token
 
 Set the same token on the website and scanner service.
 
+The MCP registry assessment uses the same full Python pipeline in production. Set
+`MCP_SCANNER_URL` on the hosted Worker to the scanner service base URL and
+`MCP_SCANNER_TOKEN` to the same server-only bearer token. The service endpoint is
+`POST /v1/scans/mcp`; local development continues to use the explicit
+`IDE_SCANNER_LOCAL_API=true` bridge. The endpoint runs transport, authentication,
+repository, OSV/SCA, tool, and secrets extractors and returns the complete
+12-metric report.
+
+When `MCP_SCANNER_URL` is unset, the hosted Worker uses the free GitHub Actions
+runner in `preethamak/IDE_Scanner`. This path dispatches an encrypted descriptor,
+waits for the full report artifact, and decrypts it server-side. It requires the
+existing `GITHUB_ACTIONS_TOKEN` plus `MCP_SCAN_ENCRYPTION_KEY` on the Worker and
+the same encryption key as a repository Actions secret.
+
 ## Verification
 
 ```bash
