@@ -46,6 +46,11 @@ export async function reconcileCloudflareBadgeHealth(
     .bind()
     .all<{ team_id: string; state_json: string }>();
   if (!latestByExtension.size) {
+    const watchedIds = teams.results.flatMap((team) => array(parseState(team.state_json).watchlist).map((watch) => stringValue(watch.extension_id))).filter(Boolean);
+    const marketplaceVersions = await fetchMarketplaceVersions(watchedIds);
+    for (const [extensionId, version] of marketplaceVersions) latestByExtension.set(extensionId, version);
+  }
+  if (!latestByExtension.size) {
     for (const team of teams.results) {
       const state = parseState(team.state_json);
       state.monitoring = { status: "degraded", last_checked_at: now, next_check_at: null, cadence_hours: 6, error: "The registry catalog was unavailable during the last monitoring check." };
@@ -180,6 +185,27 @@ export async function reconcileCloudflareBadgeHealth(
   }
 
   return { teams_checked: teams.results.length, teams_changed: teamsChanged, releases_detected: releasesDetected };
+}
+
+async function fetchMarketplaceVersions(extensionIds: string[]): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  if (!extensionIds.length) return result;
+  try {
+    const response = await fetch("https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json;api-version=7.2-preview.1" },
+      body: JSON.stringify({ filters: [{ criteria: extensionIds.map((id) => ({ filterType: 7, value: id })) }], flags: 914 }),
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!response.ok) return result;
+    const payload = await response.json() as { results?: Array<{ extensions?: Array<{ extensionId?: string; versions?: Array<{ version?: string }> }> }> };
+    for (const extension of payload.results?.[0]?.extensions || []) {
+      const id = stringValue(extension.extensionId).toLowerCase();
+      const version = stringValue(extension.versions?.[0]?.version);
+      if (id && version) result.set(id, version);
+    }
+  } catch { /* catalog health remains degraded when the provider is unavailable */ }
+  return result;
 }
 
 function latestCatalogVersions(payload: string): Map<string, string> {
