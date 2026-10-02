@@ -10,6 +10,13 @@ describe("exact-release report redesign", () => {
     expect(dossier).toContain("Actionable evidence");
     expect(dossier).toContain("Package scope");
     expect(dossier).toContain("About immutable reports");
+    expect(dossier).toContain("productReportImmutableBar");
+    expect(dossier).toContain("productReportMast");
+    expect(dossier).toContain("productReportPulse");
+    expect(dossier).toContain('aria-label="Optional reviewer guide"');
+    expect(dossier.indexOf("dossierLayout")).toBeLessThan(
+      dossier.indexOf("productReportAssistant"),
+    );
     expect(read("../dossier/DossierHeader.tsx")).toContain("Compare releases");
   });
 

@@ -869,7 +869,7 @@
   color: var(--product-ink) !important;
 }
 
-.productReportPage .immutableBar {
+.productReportPage .productReportImmutableBar {
   grid-template-columns: 34px minmax(250px, 1fr) minmax(230px, .65fr) auto !important;
   border-color: var(--product-line) !important;
   border-radius: 0 !important;
@@ -877,17 +877,17 @@
   box-shadow: none !important;
 }
 
-.productReportPage .immutableBar .lock {
+.productReportPage .productReportImmutableBar .lock {
   border-radius: 50%;
   background: var(--product-blue-soft) !important;
   color: var(--product-blue) !important;
 }
 
-.productReportPage .immutableBar > div:nth-child(2) > span {
+.productReportPage .productReportImmutableBar > div:nth-child(2) > span {
   color: var(--product-blue) !important;
 }
 
-.productReportPage .mast {
+.productReportPage .productReportMast {
   margin-top: 19px;
 }
 
@@ -901,6 +901,8 @@
 
 .productReportPage .dossierIdentityPanel {
   min-height: 300px !important;
+  align-content: start !important;
+  padding-top: 45px !important;
   background: var(--product-paper) !important;
 }
 
@@ -961,30 +963,60 @@
   width: 15px;
 }
 
-.productReportPage .pulse {
+.productReportPage .monitorPrompt {
+  margin: 10px 0 0 !important;
+  border-color: var(--product-line) !important;
+  background: var(--product-paper) !important;
+  padding: 12px !important;
+}
+
+.productReportPage .monitorPrompt > svg {
+  color: var(--product-blue) !important;
+}
+
+.productReportPage .monitorPrompt strong {
+  margin: 3px 0 4px !important;
+  color: var(--product-ink) !important;
+  font-size: 13px !important;
+  line-height: 1.25 !important;
+}
+
+.productReportPage .monitorPrompt p,
+.productReportPage .monitorPrompt small {
+  color: var(--product-muted) !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+}
+
+.productReportPage .monitorPromptAction strong,
+.productReportPage .monitorPromptSuccess strong {
+  font-size: 12px !important;
+}
+
+.productReportPage .productReportPulse {
   border-color: var(--product-line) !important;
   border-radius: 0 !important;
   background: var(--product-line) !important;
 }
 
-.productReportPage .pulse article {
+.productReportPage .productReportPulse article {
   min-height: 122px;
   background: var(--product-paper) !important;
 }
 
-.productReportPage .pulse article:first-child {
+.productReportPage .productReportPulse article:first-child {
   background: var(--product-coral-soft) !important;
 }
 
-.productReportPage .pulse span {
+.productReportPage .productReportPulse span {
   color: var(--product-blue) !important;
 }
 
-.productReportPage .pulse strong {
+.productReportPage .productReportPulse strong {
   color: var(--product-ink) !important;
 }
 
-.productReportPage .pulse small {
+.productReportPage .productReportPulse small {
   color: var(--product-muted) !important;
 }
 
@@ -1017,6 +1049,46 @@
 
 .productReportPage .dossierContent {
   max-width: 1100px !important;
+}
+
+.productReportAssistant {
+  margin: 48px 0 0 268px;
+  border-top: 1px solid var(--product-line);
+  padding-top: 20px;
+}
+
+.productReportAssistant::before {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--product-faint);
+  content: "Optional decision support";
+  font: 800 10px var(--mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.productReportAssistant > section {
+  margin-top: 0 !important;
+  border-color: var(--product-line) !important;
+  border-left-color: var(--product-blue) !important;
+  background: var(--product-paper) !important;
+}
+
+/* The report module intentionally gives its masthead typography high
+   specificity. Keep the nested monitoring prompt compact inside that panel. */
+.productReportPage .productReportMast .dossierDecision .monitorPrompt strong,
+.productReportPage .productReportMast .dossierDecision .monitorPromptAction strong,
+.productReportPage .productReportMast .dossierDecision .monitorPromptSuccess strong {
+  margin: 3px 0 4px !important;
+  color: var(--product-ink) !important;
+  font: 700 13px/1.25 var(--sans) !important;
+  letter-spacing: 0 !important;
+}
+
+.productReportPage .productReportMast .dossierDecision .monitorPrompt p,
+.productReportPage .productReportMast .dossierDecision .monitorPrompt small {
+  color: var(--product-muted) !important;
+  font: 400 11px/1.4 var(--sans) !important;
 }
 
 @media (max-width: 1000px) {
@@ -1170,12 +1242,12 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  .productReportPage .immutableBar {
+  .productReportPage .productReportImmutableBar {
     grid-template-columns: 34px 1fr !important;
   }
 
-  .productReportPage .immutableBar dl,
-  .productReportPage .immutableBar .actions {
+  .productReportPage .productReportImmutableBar dl,
+  .productReportPage .productReportImmutableBar .actions {
     grid-column: 2;
   }
 
@@ -1195,6 +1267,10 @@
 
   .productReportPage .dossierContent {
     margin-top: 20px;
+  }
+
+  .productReportAssistant {
+    margin-left: 0;
   }
 }
 

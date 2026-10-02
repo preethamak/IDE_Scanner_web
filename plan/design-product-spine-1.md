@@ -73,7 +73,7 @@ Reframe the public GuardRails experience around one product spine: discover an e
 | TASK-014 | Run the local app and inspect `/`, a representative extension page, `/compare`, and a representative exact-release report at desktop and mobile widths; fix blocking layout or interaction regressions. | ✅* | 2026-10-02 |
 | TASK-015 | Commit the implementation to a reviewable branch and wait for the user's approval before production deployment. | | |
 
-`*` The clean worktree's source checks and direct `next build --webpack` completed successfully. The repository wrapper `npm run build` was blocked before compilation by its intentional Node 22 guard because this desktop runtime provides Node 26. The local browser preview covered `/`, a representative extension profile, and `/compare`; the authenticated report route remains protected, while its report-shell and action assumptions are covered by focused tests.
+`*` The clean worktree's source checks, focused suites, and direct `next build --webpack` completed successfully. The repository wrapper `npm run build` is blocked before compilation by its intentional Node 22 guard because this desktop runtime provides Node 26. Browser smoke checks covered `/`, a representative extension profile, `/compare`, and an exact-release report at desktop and 390px mobile widths; the report now places deterministic evidence before the optional reviewer guide and has no horizontal overflow.
 
 ## 3. Alternatives
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -43,6 +43,25 @@ type CompareResult = {
 };
 
 export default function ComparePage() {
+  return (
+    <Suspense fallback={<CompareLoadingState />}>
+      <CompareWorkspace />
+    </Suspense>
+  );
+}
+
+function CompareLoadingState() {
+  return (
+    <main className="comparePage productComparePage" aria-busy="true">
+      <section className="compareWorkspace compareLoadingState">
+        <LoaderCircle className="spin" aria-label="Loading release comparison" />
+        <strong>Loading the release comparison workspace…</strong>
+      </section>
+    </main>
+  );
+}
+
+function CompareWorkspace() {
   const searchParams = useSearchParams();
   const queryExtension = searchParams.get("extension") || "";
   const queryFrom = searchParams.get("from") || "";

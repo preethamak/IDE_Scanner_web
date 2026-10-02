@@ -136,7 +136,7 @@ export default function AnalysisReport({ data, signedIn = false }: Props & { sig
         Back to extension profile
       </Link>
       <section
-        className={immutableStyles.immutableBar}
+        className={`${immutableStyles.immutableBar} productReportImmutableBar`}
         aria-label="Immutable report identity"
       >
         <span className={immutableStyles.lock}>
@@ -164,13 +164,13 @@ export default function AnalysisReport({ data, signedIn = false }: Props & { sig
           </div>
         </dl>
       </section>
-      <div className={reportStyles.mast}><DossierHeader
+      <div className={`${reportStyles.mast} productReportMast`}><DossierHeader
           id={id}
           version={version}
           extension={extension}
           scan={scan}
         /></div>
-      <section className={reportStyles.pulse} aria-label="Report evidence snapshot">
+      <section className={`${reportStyles.pulse} productReportPulse`} aria-label="Report evidence snapshot">
         <article><span>Decision now</span><strong>{String(scan.decision_reason || "Evidence is scoped to this exact release.")}</strong><small>Exact artifact only</small></article>
         <article><span>Actionable evidence</span><strong>{actionableGroups.length}</strong><small>{lowGroups.length + contextualGroups.length} contextual notes</small></article>
         <article><span>Capabilities</span><strong>{Object.keys(capabilities).length}</strong><small>Observed powers, not intent</small></article>
@@ -201,12 +201,6 @@ export default function AnalysisReport({ data, signedIn = false }: Props & { sig
         <span>{String(extension.registry || "Registry not reported")}</span>
         <span>Version {version}</span>
       </div>
-      <EvidenceIntelligenceReport
-        extensionId={id}
-        version={version}
-        scanId={String(scan.id || "")}
-        signedIn={signedIn}
-      />
       <div className={`dossierLayout ${reportStyles.layout}`}>
         <DossierNavigation
           items={sections}
@@ -273,6 +267,14 @@ export default function AnalysisReport({ data, signedIn = false }: Props & { sig
           ) : null}
         </section>
       </div>
+      <section className="productReportAssistant" aria-label="Optional reviewer guide">
+        <EvidenceIntelligenceReport
+          extensionId={id}
+          version={version}
+          scanId={String(scan.id || "")}
+          signedIn={signedIn}
+        />
+      </section>
     </main>
   );
 }
