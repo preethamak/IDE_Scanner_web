@@ -82,7 +82,21 @@ jobs:
       - name: Apply Cloudflare D1 migrations
         if: steps.schema_changes.outputs.required == 'true'
         run: |
-          npx wrangler d1 migrations apply abscissa-registry --remote
+          # The registry database is at D1's storage ceiling. The pending
+          # claim indexes are an optimization only; a size-limit response
+          # must not prevent the Worker (or its secrets) from deploying.
+          set +e
+          registry_migration_output=$(npx wrangler d1 migrations apply abscissa-registry --remote 2>&1)
+          registry_migration_status=$?
+          printf '%s\n' "$registry_migration_output"
+          if [ "$registry_migration_status" -ne 0 ]; then
+            if printf '%s' "$registry_migration_output" | grep -q "Exceeded maximum DB size"; then
+              echo "::warning::Registry migration deferred because the D1 database is at its maximum size; continuing with the Worker deployment."
+            else
+              exit "$registry_migration_status"
+            fi
+          fi
+          set -e
           npx wrangler d1 migrations apply abscissa-scan-data --remote
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
