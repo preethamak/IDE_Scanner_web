@@ -29,6 +29,10 @@ export function authEmailFrom(): string {
   return runtimeEnv("AUTH_EMAIL_FROM").trim() || "hello@abscissa.dev";
 }
 
+function resendEmailFrom(): string {
+  return runtimeEnv("RESEND_FROM_EMAIL").trim() || authEmailFrom();
+}
+
 export async function sendAuthLink(email: string, link: string): Promise<void> {
   const message: EmailMessage = {
     to: email,
@@ -56,7 +60,7 @@ export async function sendAuthLink(email: string, link: string): Promise<void> {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ ...message, to: [message.to] }),
+    body: JSON.stringify({ ...message, from: resendEmailFrom(), to: [message.to] }),
     signal: AbortSignal.timeout(12_000),
   });
   if (!response.ok) throw new Error(`Transactional email provider returned HTTP ${response.status}.`);
@@ -72,7 +76,7 @@ export async function sendWorkspaceInvitation(email: string, link: string, role:
   };
   const apiKey = runtimeEnv("RESEND_API_KEY").trim();
   if (apiKey) {
-    const response = await fetch("https://api.resend.com/emails", { method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ ...message, to: [message.to] }), signal: AbortSignal.timeout(12_000) });
+    const response = await fetch("https://api.resend.com/emails", { method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ ...message, from: resendEmailFrom(), to: [message.to] }), signal: AbortSignal.timeout(12_000) });
     if (!response.ok) throw new Error(`Transactional email provider returned HTTP ${response.status}.`);
     return;
   }

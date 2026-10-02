@@ -22,6 +22,7 @@
     "NEXT_PUBLIC_SUPABASE_URL": "https://kmdujtabqaxgoeltbxpq.supabase.co",
     "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_SFVIp0jbZBldUWVKHdwXBQ_ZQEvM_gS",
     "AUTH_EMAIL_FROM": "hello@abscissa.dev",
+    "RESEND_FROM_EMAIL": "onboarding@resend.dev",
     "NOTIFICATION_FROM_EMAIL": "hello@abscissa.dev"
   },
   "routes": [
