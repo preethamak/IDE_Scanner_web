@@ -1879,12 +1879,12 @@ function Overview({
         <Metric
           label="Workspace health"
           value={
-            failed ? `${failed} issue${failed === 1 ? "" : "s"}` : "Healthy"
+            failed ? `${failed} issue${failed === 1 ? "" : "s"}` : health.status === "healthy" ? "Healthy" : health.status === "degraded" ? "Degraded" : "Waiting"
           }
           detail={
-            failed ? "Delivery needs attention" : "Monitoring is operational"
+            failed ? "Delivery needs attention" : health.status === "healthy" ? "Monitoring is operational" : health.status === "degraded" ? (health.error || "Monitoring needs attention") : "Awaiting the first scheduled check"
           }
-          tone={failed ? "red" : "green"}
+          tone={failed || health.status === "degraded" ? "red" : health.status === "healthy" ? "green" : "amber"}
         />
         <Metric
           label="Badge coverage"
@@ -1953,9 +1953,7 @@ function Overview({
               <b>Next expected check</b>
               {formatWorkspaceTime(health.next_check_at)}
             </span>
-            {health.status === "degraded" ? (
-              <em>{health.error || "Monitoring refresh needs attention."}</em>
-            ) : null}
+            {health.status !== "healthy" ? <em>{health.error || "Monitoring has not completed its first scheduled check."}</em> : null}
           </div>
           <button onClick={() => onNavigate("extensions")}>
             Open monitoring <ArrowRight />
