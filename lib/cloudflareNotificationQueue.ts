@@ -1,4 +1,4 @@
-import { nowIso, type PrivateDatabase } from "@/lib/cloudflarePrivate";
+import type { PrivateDatabase } from "@/lib/cloudflarePrivate";
 import {
   cloudflareNotificationProvider,
   cloudflareNotificationRequest,
@@ -7,7 +7,7 @@ import {
 /** Deliver due D1-backed workspace notifications from either cron entrypoint. */
 export async function deliverCloudflareNotifications(
   db: PrivateDatabase,
-  now = nowIso(),
+  now = new Date().toISOString(),
 ) {
   const pending = await db
     .prepare("SELECT id,kind,target,payload_json,attempts FROM app_notification_deliveries WHERE status IN ('pending','failed') AND next_attempt_at<=? ORDER BY created_at LIMIT 50")
@@ -34,7 +34,7 @@ export async function deliverCloudflareNotifications(
       });
       if (!response.ok) throw new Error(`Notification endpoint returned ${response.status}`);
       await db.prepare("UPDATE app_notification_deliveries SET status='sent',attempts=?,delivered_at=?,last_error=NULL WHERE id=?")
-        .bind(attempts, nowIso(), String(row.id)).run();
+        .bind(attempts, new Date().toISOString(), String(row.id)).run();
       sent += 1;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Notification delivery failed.";
