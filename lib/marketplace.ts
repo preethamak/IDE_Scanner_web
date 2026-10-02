@@ -201,7 +201,12 @@ function normalizeExtension(raw: GalleryExtension): MarketplaceSearchResult | nu
   const stats = Object.fromEntries((raw.statistics || []).map((item) => [item.statisticName?.toLowerCase(), item.value || 0]));
   const icon = version.files?.find((item) => item.assetType === "Microsoft.VisualStudio.Services.Icons.Small") || version.files?.find((item) => item.assetType === "Microsoft.VisualStudio.Services.Icons.Default");
   const assetTypes = (version.files || []).map((item) => String(item.assetType || "")).filter(Boolean);
-  const scanSupported = assetTypes.length ? assetTypes.includes("Microsoft.VisualStudio.Code.Manifest") : undefined;
+  const hasVsCodeManifest = assetTypes.includes("Microsoft.VisualStudio.Code.Manifest");
+  const hasVisualStudioVsix = assetTypes.some((assetType) => {
+    const normalized = assetType.toLowerCase();
+    return normalized.endsWith(".vsix") || normalized.endsWith("vsixpackage");
+  });
+  const scanSupported = assetTypes.length ? hasVsCodeManifest || hasVisualStudioVsix : undefined;
   return {
     extension_id: `${publisher}.${name}`,
     display_name: raw.displayName || name,
@@ -217,9 +222,7 @@ function normalizeExtension(raw: GalleryExtension): MarketplaceSearchResult | nu
     icon_url: icon?.source || "",
     registry: "vs-marketplace",
     scan_supported: scanSupported,
-    scan_support_reason: scanSupported === false
-      ? "Deep Scan supports VS Code-compatible extensions; this Marketplace package is not published with a VS Code package manifest."
-      : undefined,
+    scan_support_reason: undefined,
   };
 }
 

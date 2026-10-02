@@ -42,7 +42,7 @@ describe("listMarketplaceVersions", () => {
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
-  it("marks Visual Studio-only packages as unsupported for Deep Scan", async () => {
+  it("supports Visual Studio VSIX packages for Deep Scan", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ results: [{ extensions: [{
@@ -54,8 +54,24 @@ describe("listMarketplaceVersions", () => {
     }));
 
     const [item] = await searchMarketplace("Codium.qodogen");
+    expect(item.scan_supported).toBe(true);
+    expect(deepScanSupportError(item)).toBeNull();
+  });
+
+  it("keeps packages without a scan artifact unavailable", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ results: [{ extensions: [{
+        extensionName: "docs-only",
+        displayName: "Docs only",
+        publisher: { publisherName: "Example" },
+        versions: [{ version: "1.0.0", files: [{ assetType: "Microsoft.VisualStudio.Services.Content.Details" }] }],
+      }] }] }),
+    }));
+
+    const [item] = await searchMarketplace("Example.docs-only");
     expect(item.scan_supported).toBe(false);
-    expect(deepScanSupportError(item)).toContain("not published with a VS Code package manifest");
+    expect(deepScanSupportError(item)).toContain("Visual Studio VSIX package");
   });
 
   it("lists and ranks only extensions from the exact publisher", async () => {
