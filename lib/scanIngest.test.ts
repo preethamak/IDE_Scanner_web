@@ -356,4 +356,70 @@ describe("public canonical schema enforcement", () => {
       build,
     )).toContain("unverified registry artifact integrity");
   });
+
+  it("admits a preserved official Marketplace artifact with a disclosed stale SHA-256 property", () => {
+    const actual = "d".repeat(64);
+    const expected = "e".repeat(64);
+    const detail = {
+      ...goodDetail,
+      source: "vs-marketplace",
+      artifact_sha256: actual,
+      artifact_identity: {
+        sha256: actual,
+        registry: "vs-marketplace",
+        artifact_origin: "vs-marketplace_original",
+        original_registry_artifact: true,
+        preserved: true,
+        registry_integrity_mismatch: true,
+        signature: {
+          package_integrity: {
+            algorithm: "sha256",
+            expected,
+            actual,
+            source: "vs-marketplace-version-property",
+            metadata_mismatch: true,
+          },
+        },
+      },
+      artifact_inventory: {
+        warnings: ["The Marketplace version metadata SHA-256 did not match the exact bytes served."],
+      },
+    };
+    expect(publicCanonicalError(true, "2.3", detail, goodMeta, build)).toBeNull();
+  });
+
+  it("keeps a Marketplace mismatch blocked when the observed artifact was not preserved", () => {
+    const actual = "d".repeat(64);
+    const expected = "e".repeat(64);
+    expect(publicCanonicalError(
+      true,
+      "2.3",
+      {
+        ...goodDetail,
+        source: "vs-marketplace",
+        artifact_identity: {
+          sha256: actual,
+          registry: "vs-marketplace",
+          artifact_origin: "vs-marketplace_original",
+          original_registry_artifact: true,
+          preserved: false,
+          registry_integrity_mismatch: true,
+          signature: {
+            package_integrity: {
+              algorithm: "sha256",
+              expected,
+              actual,
+              source: "vs-marketplace-version-property",
+              metadata_mismatch: true,
+            },
+          },
+        },
+        artifact_inventory: {
+          warnings: ["The Marketplace version metadata SHA-256 did not match the exact bytes served."],
+        },
+      },
+      goodMeta,
+      build,
+    )).toContain("unverified registry artifact integrity");
+  });
 });

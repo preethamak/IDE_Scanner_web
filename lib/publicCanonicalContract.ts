@@ -22,7 +22,7 @@ export function publicCanonicalError(
   if (String(detail.score_schema_version || "") !== "2") return "Public scans require canonical score schema v2.";
   if (String(metadata.scanner_version || "").includes("hosted-static")) return "Hosted-static reports cannot be published as canonical scans.";
   const identity = objectValue(detail.artifact_identity);
-  if (registryIntegrityMismatch(detail, identity)) {
+  if (registryIntegrityMismatch(detail, identity) && !isDisclosedMarketplaceIntegrityMismatch(detail, identity)) {
     return "Public scans cannot publish unverified registry artifact integrity metadata.";
   }
   const identityExtensionId = String(identity.extension_id || "").trim();
@@ -105,6 +105,35 @@ function registryIntegrityMismatch(detail: ValueMap, identity: ValueMap): boolea
   const signature = objectValue(identity.signature || inventory.vsix_signature);
   const packageIntegrity = objectValue(signature.package_integrity);
   return identity.registry_integrity_mismatch === true || packageIntegrity.metadata_mismatch === true;
+}
+
+/**
+ * Some first-party Marketplace releases have stale VsixSha256 metadata even
+ * though the exact bytes can be downloaded and preserved. Those scans may be
+ * published only when the report carries the complete, disclosed mismatch:
+ * the source is the official VS Marketplace, both digests are present, the
+ * observed digest is the canonical artifact identity, and the artifact was
+ * preserved for later evidence review. This is deliberately narrower than a
+ * generic "allow mismatch" switch so user uploads and other registries remain
+ * fail-closed.
+ */
+function isDisclosedMarketplaceIntegrityMismatch(detail: ValueMap, identity: ValueMap): boolean {
+  if (identity.registry !== "vs-marketplace" || identity.original_registry_artifact !== true || identity.preserved !== true) return false;
+  if (String(identity.artifact_origin || "") !== "vs-marketplace_original") return false;
+  if (String(detail.source || "") !== "vs-marketplace") return false;
+  const inventory = objectValue(detail.artifact_inventory);
+  const signature = objectValue(identity.signature || inventory.vsix_signature);
+  const packageIntegrity = objectValue(signature.package_integrity);
+  if (packageIntegrity.algorithm !== "sha256" || packageIntegrity.source !== "vs-marketplace-version-property") return false;
+  if (packageIntegrity.metadata_mismatch !== true || identity.registry_integrity_mismatch !== true) return false;
+  const expected = String(packageIntegrity.expected || "").trim().toLowerCase();
+  const actual = String(packageIntegrity.actual || "").trim().toLowerCase();
+  const identityHash = String(identity.sha256 || "").trim().toLowerCase();
+  const detailHash = String(detail.artifact_sha256 || "").trim().toLowerCase();
+  if (!isSha256(expected) || !isSha256(actual) || expected === actual || actual !== identityHash) return false;
+  if (detailHash && detailHash !== actual) return false;
+  const warnings = Array.isArray(inventory.warnings) ? inventory.warnings : [];
+  return warnings.some((warning) => String(warning).toLowerCase().includes("metadata sha-256 did not match"));
 }
 
 function extensionAdvisoryError(intelligence: ValueMap, coverage: ValueMap): string | null {
