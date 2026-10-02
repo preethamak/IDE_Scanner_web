@@ -23,6 +23,7 @@ import "./product-ui.css";
 import "./readability.css";
 import "./authority.css";
 import "./light-theme.css";
+import "./product-spine.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://abscissa.dev"),

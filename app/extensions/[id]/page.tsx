@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BadgeCheck, ChevronRight, Download } from "lucide-react";
+import { BadgeCheck, ChevronRight, Download, GitCompareArrows } from "lucide-react";
 import {
   getExtensionProduct,
   getPublicInventory,
@@ -84,8 +84,8 @@ export default async function ExtensionPage({
       ? `https://open-vsx.org/extension/${encodeURIComponent(product.extension.publisher)}/${encodeURIComponent(product.extension.name)}`
       : `https://marketplace.visualstudio.com/items?itemName=${encodeURIComponent(product.extension.id)}`;
   return (
-    <main className="extensionProfile">
-      <header className="profileHeader">
+    <main className="extensionProfile productExtensionProfile">
+      <header className="profileHeader productProfileHeader">
         <div className="profileIdentity">
           <ExtensionIcon
             iconUrl={product.extension.icon_url}
@@ -121,6 +121,13 @@ export default async function ExtensionPage({
           >
             Install <Download size={16} />
           </a>
+          <Link
+            className="profileCompareAction"
+            href={`/compare?extension=${encodeURIComponent(product.extension.id)}&to=${encodeURIComponent(version)}`}
+          >
+            <GitCompareArrows size={15} />
+            Compare releases
+          </Link>
         </div>
       </header>
       <div className="profileFacts">

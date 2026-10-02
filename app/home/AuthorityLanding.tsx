@@ -14,14 +14,14 @@ import { getPublicInventory } from "@/lib/productData";
 export default async function AuthorityLanding() {
   const inventory = await getPublicInventory(8);
 
-  return <main className={styles.page}>
-    <section className={styles.hero}>
+  return <main className={`${styles.page} productLanding`}>
+    <section className={`${styles.hero} productLandingHero`}>
       <div className={styles.heroTopline}>
         <span className={styles.heroKicker}><i /> Extension intelligence for the software you install</span>
         <span className={styles.heroIssue}>Issue 01 <b>·</b> Before install</span>
       </div>
-      <div className={styles.heroLayout}>
-        <div className={styles.heroCopy}>
+      <div className={`${styles.heroLayout} productLandingHeroGrid`}>
+        <div className={`${styles.heroCopy} productLandingCopy`}>
           <h1>Know what an extension can do <em>before you let it in.</em></h1>
           <p className={styles.heroLead}>GuardRails turns every release into a clear install decision: what changed, what it can reach, and whether the evidence supports a yes.</p>
           <div className={styles.actions}>
@@ -33,7 +33,7 @@ export default async function AuthorityLanding() {
             <ExtensionSearch submitLabel="Check extension" />
           </div>
         </div>
-        <aside className={styles.heroAside}>
+        <aside className={`${styles.heroAside} productLandingAside`}>
           <p>One place to inspect package behavior, compare releases, and keep the reason behind the decision.</p>
           <dl>
             <div><dt>01</dt><dd>Exact release</dd></div>
@@ -42,7 +42,16 @@ export default async function AuthorityLanding() {
           </dl>
         </aside>
       </div>
-      <div className={styles.heroMovie}>
+      <nav className="productPath" aria-label="GuardRails review path">
+        <span className="productPathLabel">A review, not a tour</span>
+        <ol>
+          <li className="isCurrent"><b>01</b><strong>Discover</strong><small>Find the package you are considering.</small></li>
+          <li><b>02</b><strong>Inspect</strong><small>See the exact release and observed access.</small></li>
+          <li><b>03</b><strong>Compare</strong><small>Measure what changed from the baseline.</small></li>
+          <li><b>04</b><strong>Decide</strong><small>Keep the evidence with the decision.</small></li>
+        </ol>
+      </nav>
+      <div className={`${styles.heroMovie} productLandingProof`}>
         <div className={styles.heroMovieMeta}><span>Product film / release review</span><span>GuardRails · 00:48</span></div>
         <div className={styles.heroMovieFrame}>
           <video autoPlay controls muted loop playsInline preload="metadata" poster="/demos/guardrails-product-overview-poster.jpg" aria-label="GuardRails product demo">

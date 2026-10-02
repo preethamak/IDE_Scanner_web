@@ -64,6 +64,7 @@ describe("extension product profile", () => {
 
   it("reuses an evidence-backed Permission Diff on extension and workspace review", () => {
     expect(page).toContain("PermissionDiffCard");
+    expect(page).toContain("Compare releases");
     expect(workspace).toContain("PermissionDiffCard");
     expect(permissionDiff).toContain("/compare?from=");
     expect(permissionDiff).toContain(

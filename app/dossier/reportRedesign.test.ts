@@ -10,6 +10,7 @@ describe("exact-release report redesign", () => {
     expect(dossier).toContain("Actionable evidence");
     expect(dossier).toContain("Package scope");
     expect(dossier).toContain("About immutable reports");
+    expect(read("../dossier/DossierHeader.tsx")).toContain("Compare releases");
   });
 
   it("makes the policy path inspectable instead of presenting an unexplained score", () => {

@@ -1,5 +1,7 @@
 import ExtensionIdentity from "@/app/ExtensionIdentity";
 import ReportActions from "@/app/ReportActions";
+import Link from "next/link";
+import { GitCompareArrows } from "lucide-react";
 import { displayedDecision } from "@/lib/classificationContract";
 import { decisionExplanation, decisionLabel } from "@/lib/dossierPresentation";
 import type { ExtensionDossierData } from "@/lib/reportContract";
@@ -30,7 +32,12 @@ export default function DossierHeader({ id, version, extension, scan }: Props) {
       <dl className="dossierHeaderFacts">
         <div><dt>Required action</dt><dd>{nextAction}</dd></div>
       </dl>
-      <ReportActions extensionId={id} version={version} scanId={scan.id} />
+      <div className="reportHeaderActions">
+        <Link className="reportCompareAction" href={`/compare?extension=${encodeURIComponent(id)}&to=${encodeURIComponent(version)}`}>
+          <GitCompareArrows aria-hidden="true" /> Compare releases
+        </Link>
+        <ReportActions extensionId={id} version={version} scanId={scan.id} />
+      </div>
     </section>
   </header>;
 }

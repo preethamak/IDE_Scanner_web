@@ -128,7 +128,7 @@ export default function AnalysisReport({ data, signedIn = false }: Props & { sig
     return () => window.removeEventListener("hashchange", selectHash);
   }, []);
   return (
-    <main className={`dossierPage ${reportStyles.shell}`}>
+    <main className={`dossierPage productReportPage ${reportStyles.shell}`}>
       <Link
         className={`dossierBack ${reportStyles.back}`}
         href={`/extensions/${encodeURIComponent(id)}`}
