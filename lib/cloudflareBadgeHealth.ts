@@ -166,7 +166,8 @@ export async function reconcileCloudflareBadgeHealth(
       releasesDetected += 1;
     }
 
-    if (changed) teamsChanged += 1;
+    if (!changed) continue;
+    teamsChanged += 1;
     state.watchlist = watchlist;
     state.release_events = releaseEvents.slice(0, 200);
     state.alerts = alerts.slice(0, 200);
