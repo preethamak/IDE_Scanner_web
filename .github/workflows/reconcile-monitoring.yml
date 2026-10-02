@@ -1,0 +1,19 @@
+name: Reconcile workspace monitoring
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reconcile watched extension health
+        env:
+          NOTIFICATION_CRON_SECRET: ${{ secrets.NOTIFICATION_CRON_SECRET }}
+        run: |
+          curl --fail-with-body --silent --show-error --request POST \
+            --header "Authorization: Bearer ${NOTIFICATION_CRON_SECRET}" \
+            https://abscissa.dev/api/cron/reconcile-monitoring
