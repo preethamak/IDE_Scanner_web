@@ -20,21 +20,22 @@ export function renderTrustBadgeSvg(
 }
 
 export function renderBadgeSvg(label: string, fill: string, ariaLabel: string) {
-  const font = 'font-family="Verdana,Geneva,sans-serif" font-size="11" font-weight="600"';
-  const leftWidth = 86;
-  const rightWidth = Math.min(Math.max(7 + label.length * 6.2, 40), 300);
+  const font = 'font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="700"';
+  const leftWidth = 104;
+  const rightWidth = Math.min(Math.max(20 + label.length * 6.5, 58), 300);
   const width = leftWidth + rightWidth;
-  const body = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="20" role="img" aria-label="guardrails: ${escapeXml(ariaLabel)}">
-<linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient>
-<clipPath id="r"><rect width="${width}" height="20" rx="3" fill="#fff"/></clipPath>
+  const body = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="24" role="img" aria-label="GuardRails: ${escapeXml(ariaLabel)}">
+<linearGradient id="g" x2="0" y2="1"><stop stop-color="#1f2d3d"/><stop offset="1" stop-color="#101923"/></linearGradient>
+<clipPath id="r"><rect width="${width}" height="24" rx="6" fill="#fff"/></clipPath>
 <g clip-path="url(#r)">
-<rect width="${leftWidth}" height="20" fill="#17212c"/>
-<rect x="${leftWidth}" width="${rightWidth}" height="20" fill="${escapeXml(fill)}"/>
-<rect width="${width}" height="20" fill="url(#s)"/>
+<rect width="${leftWidth}" height="24" fill="url(#g)"/>
+<rect x="${leftWidth}" width="${rightWidth}" height="24" fill="${escapeXml(fill)}"/>
+<path d="M12 4l6 2.5v4.8c0 3.8-2.5 6.6-6 8.3-3.5-1.7-6-4.5-6-8.3V6.5L12 4z" fill="#8de1bb"/>
+<path d="M9.2 11.6l1.8 1.8 4-4" fill="none" stroke="#10251b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
 <g fill="#fff" text-anchor="middle" ${font}>
-<text x="${leftWidth / 2}" y="14" fill="#fff">guardrails</text>
-<text x="${leftWidth + rightWidth / 2}" y="14" fill="#101820">${escapeXml(label)}</text>
+<text x="62" y="15.5" fill="#fff">GUARDRAILS</text>
+<text x="${leftWidth + rightWidth / 2}" y="15.5" fill="#102018">${escapeXml(label)}</text>
 </g>
 </svg>`;
   return new Response(body, {
