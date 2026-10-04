@@ -15,7 +15,8 @@ describe("publisher badge workflow", () => {
   });
 
   it("keeps the public badge endpoint version-pinned and score-aware", () => {
-    expect(route).toContain("decision.risk_score");
+    expect(route).toContain("renderTrustBadgeSvg");
+    expect(route).toContain("renderPendingBadgeSvg");
     expect(route).toContain("version");
     expect(productData).toContain("getCloudflareRegistryCatalogExtension");
     expect(productData).toContain("catalogFallback?.latest_version");
