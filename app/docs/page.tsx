@@ -234,20 +234,18 @@ export default function DocsPage() {
           </span>
           <p>
             GuardRails ships an MCP server over Streamable HTTP (stateless, no
-            authentication) so coding agents can consult the public analysis
-            corpus before suggesting an extension. It speaks MCP protocol
-            version 2025-06-18; each request is a self-contained JSON-RPC 2.0
-            message.
+            server-side write operations) so coding agents can consult the
+            public analysis corpus before suggesting an extension. It speaks
+            MCP protocol version 2025-06-18; each request is a self-contained
+            JSON-RPC 2.0 message. The early-access endpoint is anonymous until
+            an operator configures an access token, then every request requires
+            a bearer token.
           </p>
-          <Code label="Claude Code">{`claude mcp add --transport http guardrails ${HOST}/api/mcp`}</Code>
-          <Code label="Generic MCP client configuration">{`{
-  "mcpServers": {
-    "guardrails": {
-      "type": "http",
-      "url": "${HOST}/api/mcp"
-    }
-  }
-}`}</Code>
+          <Code label="Codex (anonymous deployment)">{`codex mcp add guardrails --url ${HOST}/api/mcp`}</Code>
+          <Code label="Codex (early-access token)">{`export GUARDRAILS_MCP_TOKEN="..."
+codex mcp add guardrails --url ${HOST}/api/mcp --bearer-token-env-var GUARDRAILS_MCP_TOKEN`}</Code>
+          <Code label="Claude Code (early-access token)">{`claude mcp add --transport http guardrails ${HOST}/api/mcp \\
+  --header "Authorization: Bearer $GUARDRAILS_MCP_TOKEN"`}</Code>
           <div className={styles.toolGrid}>
             <article className={styles.toolCard}>
               <strong>check_extension_risk</strong>
@@ -274,14 +272,25 @@ export default function DocsPage() {
           </div>
           <p className={styles.note}>
             The server answers <code>initialize</code>, <code>tools/list</code>
-            , and <code>tools/call</code>; unknown methods and tools return
-            standard JSON-RPC errors. A GET request returns HTTP 405 — the
-            endpoint is stateless and does not open a server-sent event stream.
+            , <code>tools/call</code>, and <code>ping</code>; unknown methods
+            and tools return standard JSON-RPC errors. Tool metadata declares
+            the input and output schemas and marks every operation read-only.
+            Requests are capped at 64 KiB and responses are never cached. A GET
+            request returns HTTP 405 — the endpoint is stateless and does not
+            open a server-sent event stream.
           </p>
           <p>
             Questions about a verdict? Every tool result links to the exact
             report. See the <Link href="/scoring">scoring methodology</Link>{" "}
             for what decisions mean.
+          </p>
+          <p>
+            Operators enable early-access authentication by setting the
+            server-only <code>MCP_ACCESS_TOKEN</code> secret on the Worker. Set
+            <code>MCP_REQUIRE_AUTH=true</code> as a deployment guard: an
+            unconfigured token then returns 503 rather than serving anonymous
+            traffic. Rotate the token to revoke access; never place it in a
+            client bundle or source-controlled config.
           </p>
         </section>
       </div>
