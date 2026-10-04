@@ -72,7 +72,7 @@ function emailPayload(input: JsonObject, recipient: string): JsonObject {
       ? input.highlights.map((item) => `- ${String(item)}`).join("\n")
       : "- No meaningful release changes this week.";
     return {
-      from: runtimeEnv("NOTIFICATION_FROM_EMAIL"),
+      from: resendNotificationFrom(),
       to: [recipient],
       subject: "[GuardRails] Weekly security digest",
       text: `GuardRails weekly security digest\n\n${Number(input.release_changes || 0)} release changes\n${Number(input.needs_review || 0)} items need review\n${Number(input.decisions_recorded || 0)} decisions recorded\n\nHighlights\n${highlights}\n\nOpen review inbox: ${site}/workspace`,
@@ -82,11 +82,15 @@ function emailPayload(input: JsonObject, recipient: string): JsonObject {
   const version = String(input.target_version || input.version || "");
   const baseline = String(input.baseline_version || "reviewed baseline");
   return {
-    from: runtimeEnv("NOTIFICATION_FROM_EMAIL"),
+    from: resendNotificationFrom(),
     to: [recipient],
     subject: `[GuardRails] Release change: ${extension}@${version}`,
     text: `${String(input.message || "A watched extension release changed.")}\n\nReviewed baseline: ${extension}@${baseline}\nNew artifact: ${extension}@${version}\n\nOpen evidence: ${site}/extensions/${encodeURIComponent(extension)}/versions/${encodeURIComponent(version)}`,
   };
+}
+
+function resendNotificationFrom(): string {
+  return runtimeEnv("RESEND_FROM_EMAIL").trim() || runtimeEnv("NOTIFICATION_FROM_EMAIL");
 }
 
 function normalizeAlert(input: JsonObject): JsonObject {
