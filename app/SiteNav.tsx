@@ -20,6 +20,7 @@ const moreGroups: readonly { label: string; items: readonly NavItem[] }[] = [
     ["/workspace", "Team Workspace", "Assign decisions and preserve the evidence", Users],
     ["/cli", "Local CLI", "Inspect extensions installed on your machine", TerminalSquare],
     ["/ide", "GuardRails IDE", "Preview explicit authority for agents and tools", ShieldCheck],
+    ["/registry/mcp", "MCP Registry", "Inspect servers before an agent connects", Boxes],
     ["/monitor", "Release Monitoring", "Review only meaningful permission changes", BellRing],
   ] },
   { label: "Solutions", items: [
