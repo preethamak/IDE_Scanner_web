@@ -4,6 +4,8 @@ import { isValidGateCheck, lookupGateVerdict } from "@/lib/gateLookup";
 import { getBadgeDecision, getPublicInventory } from "@/lib/productData";
 import { publicDb } from "@/lib/supabase";
 import { deriveTrustTier } from "@/lib/trustTiers";
+import { validBearerSecret } from "@/lib/internalRunnerAuth";
+import { runtimeEnv } from "@/lib/runtimeEnv";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,6 +17,8 @@ export const dynamic = "force-dynamic";
 
 const PROTOCOL_VERSION = "2025-06-18";
 const EXTENSION_PATTERN = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+$/;
+const MAX_BODY_BYTES = 64 * 1024;
+const MCP_ACCESS_TOKEN_ENV = "MCP_ACCESS_TOKEN";
 
 type JsonRpcId = string | number | null;
 type JsonRpcRequest = { jsonrpc?: unknown; id?: JsonRpcId; method?: unknown; params?: unknown };
@@ -22,6 +26,7 @@ type JsonRpcRequest = { jsonrpc?: unknown; id?: JsonRpcId; method?: unknown; par
 const TOOLS = [
   {
     name: "check_extension_risk",
+    title: "Check extension risk",
     description:
       "Check the GuardRails public analysis verdict for an IDE extension before recommending or installing it. Returns the decision (allow/review/block), severity, public outcome, analysis coverage, a report URL, and a one-line recommendation. Pass a version to check the exact release; omit it to check the latest analyzed release.",
     inputSchema: {
@@ -32,9 +37,22 @@ const TOOLS = [
       },
       required: ["extension"],
     },
+    outputSchema: {
+      type: "object",
+      required: ["extension", "version", "verdict", "recommendation"],
+      properties: {
+        extension: { type: "string" },
+        version: { type: ["string", "null"] },
+        verdict: { type: "string", enum: ["pass", "fail", "unreviewed"] },
+        recommendation: { type: "string", enum: ["safe to recommend", "needs human review", "do not recommend"] },
+        report_url: { type: ["string", "null"] },
+      },
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
   },
   {
     name: "find_reputable_alternatives",
+    title: "Find reputable alternatives",
     description:
       "Search the GuardRails public inventory for analyzed extensions matching a keyword query (name, publisher, or description) and return up to five ranked by reputability: allowed decisions first, then trust tier, verified publisher, and lower severity. Use this to suggest a safer alternative when an extension from an unknown publisher looks risky.",
     inputSchema: {
@@ -44,20 +62,38 @@ const TOOLS = [
       },
       required: ["query"],
     },
+    outputSchema: {
+      type: "object",
+      required: ["query", "alternatives"],
+      properties: {
+        query: { type: "string" },
+        alternatives: { type: "array" },
+      },
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
   },
 ] as const;
 
 export async function GET() {
   return NextResponse.json(
     { error: "This MCP endpoint is stateless; use POST with JSON-RPC 2.0 messages." },
-    { status: 405, headers: { Allow: "POST" } },
+    { status: 405, headers: { Allow: "POST, OPTIONS" } },
   );
 }
 
+export function OPTIONS() {
+  return new Response(null, { status: 204, headers: { Allow: "POST, OPTIONS" } });
+}
+
 export async function POST(request: Request) {
+  const authorization = authorize(request);
+  if (authorization) return authorization;
+  if (contentLength(request) > MAX_BODY_BYTES) return rpcError(null, -32600, "Invalid request: body exceeds 64 KiB.", 413);
   let message: JsonRpcRequest;
   try {
-    message = (await request.json()) as JsonRpcRequest;
+    const raw = await request.text();
+    if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) return rpcError(null, -32600, "Invalid request: body exceeds 64 KiB.", 413);
+    message = JSON.parse(raw) as JsonRpcRequest;
   } catch {
     return rpcError(null, -32700, "Parse error: request body must be JSON.");
   }
@@ -73,9 +109,9 @@ export async function POST(request: Request) {
       return rpcResult(id, {
         protocolVersion: PROTOCOL_VERSION,
         capabilities: { tools: {} },
-        serverInfo: { name: "guardrails", version: "1.0.0" },
+        serverInfo: { name: "guardrails", version: "1.1.0" },
         instructions:
-          "GuardRails documents what published IDE extensions do. Call check_extension_risk before recommending an extension; call find_reputable_alternatives when a candidate needs review or is blocked.",
+          "Read-only public extension intelligence. Check a candidate before recommending it. An unreviewed result is not approval; link the exact report for a human decision. Early-access limits: 64 KiB request bodies and no write operations.",
       });
     case "notifications/initialized":
     case "notifications/cancelled":
@@ -215,13 +251,33 @@ function toolError(text: string) {
 function rpcResult(id: JsonRpcId, result: unknown) {
   return NextResponse.json(
     { jsonrpc: "2.0", id, result },
-    { headers: { "Cache-Control": "no-store" } },
+    { headers: rpcHeaders() },
   );
 }
 
-function rpcError(id: JsonRpcId, code: number, message: string) {
+function rpcError(id: JsonRpcId, code: number, message: string, status = 200) {
   return NextResponse.json(
     { jsonrpc: "2.0", id, error: { code, message } },
-    { headers: { "Cache-Control": "no-store" } },
+    { status, headers: rpcHeaders() },
   );
+}
+
+function authorize(request: Request): NextResponse | null {
+  const accessToken = runtimeEnv(MCP_ACCESS_TOKEN_ENV).trim();
+  const requireAuth = runtimeEnv("MCP_REQUIRE_AUTH").trim().toLowerCase() === "true";
+  if (!accessToken && !requireAuth) return null;
+  if (!accessToken) {
+    return NextResponse.json({ error: "MCP authentication is required but not configured." }, { status: 503, headers: { ...rpcHeaders(), "WWW-Authenticate": 'Bearer realm="guardrails-mcp"' } });
+  }
+  if (validBearerSecret(request.headers.get("authorization"), accessToken)) return null;
+  return NextResponse.json({ error: "Unauthorized MCP request." }, { status: 401, headers: { ...rpcHeaders(), "WWW-Authenticate": 'Bearer realm="guardrails-mcp"' } });
+}
+
+function contentLength(request: Request): number {
+  const value = Number(request.headers.get("content-length") || "0");
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+function rpcHeaders(): Record<string, string> {
+  return { "Cache-Control": "no-store", "Content-Type": "application/json; charset=utf-8", "MCP-Protocol-Version": PROTOCOL_VERSION, "X-Content-Type-Options": "nosniff" };
 }
