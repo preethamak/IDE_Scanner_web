@@ -42,3 +42,4 @@
 .metrics{grid-template-columns:repeat(5,1fr)}
 @media(max-width:1050px){.metrics{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:480px){.metrics{grid-template-columns:1fr}}
+.inviteResult{display:grid;gap:8px}.inviteDelivery{border-radius:9px;padding:10px 12px;background:#f3f7fb;color:#465a6d;font-size:12px;line-height:1.45}.inviteDeliverySent{background:#f3fbea;color:#177d69}.inviteDeliveryWarning{background:#fff1ee;color:#92392d}.inviteLinkRow{display:flex;align-items:center;gap:8px}.inviteLinkRow input{min-width:0;flex:1}

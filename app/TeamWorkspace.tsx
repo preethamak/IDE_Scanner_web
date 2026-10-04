@@ -616,6 +616,12 @@ export default function TeamWorkspace(
       return {
         ok: true as const,
         url: `${window.location.origin}${body.invitation_path}`,
+        deliveredTo:
+          typeof body.delivered_to === "string" ? body.delivered_to : undefined,
+        deliveryError:
+          typeof body.delivery_error === "string"
+            ? body.delivery_error
+            : undefined,
       };
     } catch (cause) {
       return {
@@ -3102,7 +3108,15 @@ function SettingsView({
   ) => Promise<{ ok: true } | { ok: false; error: string }>;
   onCreateInvite: (
     role: string, email?: string,
-  ) => Promise<{ ok: true; url: string } | { ok: false; error: string }>;
+  ) => Promise<
+    | {
+        ok: true;
+        url: string;
+        deliveredTo?: string;
+        deliveryError?: string;
+      }
+    | { ok: false; error: string }
+  >;
   notificationSettings: React.ReactNode;
   getAuthHeaders: () => Promise<Record<string, string>>;
 }) {
@@ -3125,6 +3139,10 @@ function SettingsView({
     "idle" | "saving" | "ready" | "error"
   >("idle");
   const [inviteMessage, setInviteMessage] = useState("");
+  const [inviteDeliveryMessage, setInviteDeliveryMessage] = useState("");
+  const [inviteDeliveryState, setInviteDeliveryState] = useState<
+    "sent" | "copy" | "warning" | ""
+  >("");
   const ownerCount = members.filter((member) => member.role === "owner").length;
   const canManage = team.role === "owner" || team.role === "admin";
   const roles = [
@@ -3182,10 +3200,24 @@ function SettingsView({
   async function createInvite() {
     setInviteState("saving");
     setInviteMessage("");
+    setInviteDeliveryMessage("");
+    setInviteDeliveryState("");
     const result = await onCreateInvite(inviteRole, inviteEmail.trim() || undefined);
     if (result.ok) {
       setInviteState("ready");
       setInviteMessage(result.url);
+      if (result.deliveryError) {
+        setInviteDeliveryState("warning");
+        setInviteDeliveryMessage(
+          "The link is ready, but we could not send the email. Copy the link below or retry.",
+        );
+      } else if (result.deliveredTo) {
+        setInviteDeliveryState("sent");
+        setInviteDeliveryMessage(`Invitation email sent to ${result.deliveredTo}.`);
+      } else {
+        setInviteDeliveryState("copy");
+        setInviteDeliveryMessage("Share this link with your teammate. It expires in seven days.");
+      }
     } else {
       setInviteState("error");
       setInviteMessage(result.error);
@@ -3314,18 +3346,31 @@ function SettingsView({
                   </button>
                   {inviteState === "ready" ? (
                     <div className={styles.inviteResult} role="status">
-                      <input
-                        aria-label="Invitation link"
-                        value={inviteMessage}
-                        readOnly
-                      />
-                      <button
-                        onClick={() =>
-                          void navigator.clipboard.writeText(inviteMessage)
-                        }
+                      <div
+                        className={`${styles.inviteDelivery} ${
+                          inviteDeliveryState === "warning"
+                            ? styles.inviteDeliveryWarning
+                            : inviteDeliveryState === "sent"
+                              ? styles.inviteDeliverySent
+                              : ""
+                        }`}
                       >
-                        <ClipboardCheck /> Copy link
-                      </button>
+                        {inviteDeliveryMessage}
+                      </div>
+                      <div className={styles.inviteLinkRow}>
+                        <input
+                          aria-label="Invitation link"
+                          value={inviteMessage}
+                          readOnly
+                        />
+                        <button
+                          onClick={() =>
+                            void navigator.clipboard.writeText(inviteMessage)
+                          }
+                        >
+                          <ClipboardCheck /> Copy link
+                        </button>
+                      </div>
                     </div>
                   ) : null}
                   {inviteState === "error" ? (
