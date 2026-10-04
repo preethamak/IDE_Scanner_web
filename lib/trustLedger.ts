@@ -4,6 +4,12 @@ export type TrustRecordStatus = (typeof trustRecordStatuses)[number];
 export const recallStates = ["open", "acknowledged", "closed"] as const;
 export type RecallState = (typeof recallStates)[number];
 
+const recallTransitions: Record<RecallState, readonly RecallState[]> = {
+  open: ["open", "acknowledged", "closed"],
+  acknowledged: ["acknowledged", "closed"],
+  closed: ["closed"],
+};
+
 export const trustRegistries = ["vs-marketplace", "openvsx", "unknown"] as const;
 export type TrustRegistry = (typeof trustRegistries)[number];
 
@@ -40,6 +46,11 @@ export type RecallImpact = {
     match: "exact" | "version_only";
   }>;
 };
+
+export function isRecallTransitionAllowed(current: unknown, next: RecallState): boolean {
+  return recallStates.includes(current as RecallState)
+    && recallTransitions[current as RecallState].includes(next);
+}
 
 const SHA256 = /^[a-f0-9]{64}$/i;
 const EXTENSION_ID = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+$/;

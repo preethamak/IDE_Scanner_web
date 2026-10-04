@@ -8,6 +8,7 @@ import { serviceDb } from "@/lib/supabase";
 import { teamApiError } from "@/lib/teamApiError";
 import {
   compareCapabilitySnapshots,
+  isRecallTransitionAllowed,
   normalizeArtifactIdentity,
   recallImpact,
   recallStates,
@@ -71,13 +72,20 @@ export async function PATCH(request: Request, context: Context) {
       const workspace = await getWorkspaceState(id);
       const recall = workspace.recall_events.find((item) => String(item.id) === recallId);
       if (!recall) return NextResponse.json({ error: "Recall event not found." }, { status: 404 });
+      if (!isRecallTransitionAllowed(recall.state, state as (typeof recallStates)[number])) return NextResponse.json({ error: "Recall events can only move forward from open to acknowledged to closed." }, { status: 409 });
       const now = nowIso();
       Object.assign(recall, { state, acknowledged_at: state === "acknowledged" || state === "closed" ? String(recall.acknowledged_at || now) : null, closed_at: state === "closed" ? now : null, updated_at: now });
       workspace.audit.unshift({ event_id: newId(), workspace_id: id, actor_id: user.id, action: `recall_${state}`, object_type: "recall_event", object_id: recallId, extension_id: recall.extension_id, version: recall.version, previous_state: null, resulting_state: { state }, rationale: null, risk_level: "critical", receipt_id: newId(), occurred_at: now });
       await saveState(id, workspace);
       return NextResponse.json(recall);
     }
-    const result = await serviceDb().from("team_recall_events").update({ state, acknowledged_at: state === "acknowledged" || state === "closed" ? nowIso() : null, closed_at: state === "closed" ? nowIso() : null }).eq("id", recallId).eq("team_id", id).select("*").maybeSingle();
+    const db = serviceDb();
+    const existing = await db.from("team_recall_events").select("*").eq("id", recallId).eq("team_id", id).maybeSingle();
+    if (existing.error) throw existing.error;
+    if (!existing.data) return NextResponse.json({ error: "Recall event not found." }, { status: 404 });
+    if (!isRecallTransitionAllowed(existing.data.state, state as (typeof recallStates)[number])) return NextResponse.json({ error: "Recall events can only move forward from open to acknowledged to closed." }, { status: 409 });
+    const now = nowIso();
+    const result = await db.from("team_recall_events").update({ state, acknowledged_at: state === "acknowledged" || state === "closed" ? existing.data.acknowledged_at || now : null, closed_at: state === "closed" ? now : null }).eq("id", recallId).eq("team_id", id).select("*").maybeSingle();
     if (result.error) throw result.error;
     if (!result.data) return NextResponse.json({ error: "Recall event not found." }, { status: 404 });
     return NextResponse.json(result.data);
@@ -155,6 +163,8 @@ async function recallCloudflare(teamId: string, userId: string, recordId: string
   const state = await getWorkspaceState(teamId);
   const record = state.trust_records.find((item) => String(item.id) === recordId);
   if (!record) return NextResponse.json({ error: "Trust record not found." }, { status: 404 });
+  const existingRecall = state.recall_events.find((item) => String(item.trust_record_id) === recordId);
+  if (existingRecall) return NextResponse.json({ record, recall: existingRecall, impact: existingRecall.affected_installations || emptyImpact(), idempotent: true }, { status: 200 });
   const identity = normalizeArtifactIdentity(record);
   const installations = state.inventory.installations.map((item) => ({ device_id: text(item.device_id), extension_id: text(item.extension_id), version: text(item.version), artifact_sha256: typeof item.artifact_sha256 === "string" ? item.artifact_sha256 : null } satisfies InventoryInstallation));
   const impact = recallImpact(installations, identity);
@@ -190,6 +200,9 @@ async function recallSupabase(teamId: string, userId: string, recordId: string, 
   const trust = await db.from("team_artifact_trust_records").select("*").eq("team_id", teamId).eq("id", recordId).maybeSingle();
   if (trust.error) throw trust.error;
   if (!trust.data) return NextResponse.json({ error: "Trust record not found." }, { status: 404 });
+  const existingRecall = await db.from("team_recall_events").select("*").eq("team_id", teamId).eq("trust_record_id", recordId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (existingRecall.error) throw existingRecall.error;
+  if (existingRecall.data) return NextResponse.json({ record: trust.data, recall: existingRecall.data, impact: existingRecall.data.affected_installations || emptyImpact(), idempotent: true }, { status: 200 });
   const identity = normalizeArtifactIdentity(trust.data);
   const inventory = await db.from("team_inventory_installations").select("device_id,extension_id,version,artifact_sha256").eq("team_id", teamId).eq("extension_id", identity.extension_id).eq("version", identity.version);
   if (inventory.error) throw inventory.error;
@@ -221,6 +234,10 @@ async function supabaseScan(scanId: string): Promise<ScanEvidence | null> {
 
 function emptyDelta(): CapabilityDelta {
   return { added: [], removed: [], changed: [], material: false };
+}
+
+function emptyImpact() {
+  return { exact_matches: 0, version_only_matches: 0, affected_devices: [], installations: [] };
 }
 
 function object(value: unknown): Record<string, unknown> {

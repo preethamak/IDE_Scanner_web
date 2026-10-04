@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareCapabilitySnapshots, normalizeArtifactIdentity, recallImpact } from "./trustLedger";
+import { compareCapabilitySnapshots, isRecallTransitionAllowed, normalizeArtifactIdentity, recallImpact } from "./trustLedger";
 
 describe("trust ledger", () => {
   it("normalizes an exact artifact identity and rejects weak hashes", () => {
@@ -37,5 +37,13 @@ describe("trust ledger", () => {
       { device_id: "laptop-d", extension_id: "Publisher.Extension", version: "1.2.4", artifact_sha256: "a".repeat(64) },
     ], normalizeArtifactIdentity({ extension_id: "publisher.extension", version: "1.2.3", artifact_sha256: "a".repeat(64) }));
     expect(impact).toMatchObject({ exact_matches: 1, version_only_matches: 1, affected_devices: ["laptop-a", "laptop-b"] });
+  });
+
+  it("allows recall containment to move forward only", () => {
+    expect(isRecallTransitionAllowed("open", "acknowledged")).toBe(true);
+    expect(isRecallTransitionAllowed("open", "closed")).toBe(true);
+    expect(isRecallTransitionAllowed("acknowledged", "closed")).toBe(true);
+    expect(isRecallTransitionAllowed("closed", "open")).toBe(false);
+    expect(isRecallTransitionAllowed("closed", "acknowledged")).toBe(false);
   });
 });

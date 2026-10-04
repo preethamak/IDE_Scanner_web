@@ -17,7 +17,7 @@ vi.mock("@/lib/cloudflareDeepScan", () => ({ getCloudflareScanProduct: mocks.sca
 vi.mock("@/lib/cloudflarePrivate", () => ({ newId: vi.fn(() => "generated-id"), nowIso: vi.fn(() => "2026-10-01T00:00:00.000Z"), privateDb: mocks.privateDb }));
 vi.mock("@/lib/cloudflareWorkspace", () => ({ getWorkspaceState: mocks.workspace, saveState: mocks.save }));
 
-import { POST } from "./route";
+import { PATCH, POST } from "./route";
 
 const context = { params: Promise.resolve({ id: "team-1" }) };
 const scan = {
@@ -67,5 +67,30 @@ describe("artifact trust ledger API", () => {
     expect(body.impact).toMatchObject({ exact_matches: 1, version_only_matches: 1, affected_devices: ["device-a", "device-b"] });
     expect(state.trust_records[0].status).toBe("revoked");
     expect(state.alerts[0].kind).toBe("artifact_recalled");
+  });
+
+  it("does not reopen a closed recall", async () => {
+    const state = {
+      trust_records: [{ id: "record-1", extension_id: "Publisher.Extension", version: "1.2.3", registry: "vs-marketplace", artifact_sha256: "a".repeat(64), status: "revoked" }],
+      recall_events: [{ id: "recall-1", trust_record_id: "record-1", extension_id: "Publisher.Extension", version: "1.2.3", state: "closed", affected_installations: {} }],
+      alerts: [], audit: [], inventory: { installations: [] },
+    };
+    mocks.workspace.mockResolvedValue(state);
+    const response = await PATCH(new Request("http://localhost", { method: "PATCH", body: JSON.stringify({ recall_id: "recall-1", state: "open" }) }), context);
+    expect(response.status).toBe(409);
+  });
+
+  it("makes a repeated recall request idempotent", async () => {
+    const state = {
+      trust_records: [{ id: "record-1", extension_id: "Publisher.Extension", version: "1.2.3", registry: "vs-marketplace", artifact_sha256: "a".repeat(64), status: "revoked" }],
+      recall_events: [{ id: "recall-1", trust_record_id: "record-1", extension_id: "Publisher.Extension", version: "1.2.3", state: "open", affected_installations: { exact_matches: 2, version_only_matches: 0, affected_devices: ["device-a"], installations: [] } }],
+      alerts: [], audit: [], inventory: { installations: [] },
+    };
+    mocks.workspace.mockResolvedValue(state);
+    const response = await POST(new Request("http://localhost", { method: "POST", body: JSON.stringify({ action: "recall", trust_record_id: "record-1", reason: "Repeated operator submission." }) }), context);
+    const body = await response.json();
+    expect(response.status).toBe(200);
+    expect(body.idempotent).toBe(true);
+    expect(state.recall_events).toHaveLength(1);
   });
 });
