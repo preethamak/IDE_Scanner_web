@@ -171,7 +171,23 @@ export async function reconcileCloudflareBadgeHealth(
       releasesDetected += 1;
     }
 
-    if (!changed) continue;
+    if (!changed) {
+      // A successful scheduled check is useful evidence even when the catalog
+      // has no newer release. Keep the workspace health timestamp current so
+      // the UI does not report a healthy-but-stale monitor.
+      state.monitoring = {
+        status: "healthy",
+        last_checked_at: now,
+        next_check_at: new Date(new Date(now).getTime() + 6 * 60 * 60 * 1000).toISOString(),
+        cadence_hours: 6,
+        error: null,
+      };
+      await db
+        .prepare("UPDATE app_team_state SET state_json=?,updated_at=? WHERE team_id=?")
+        .bind(JSON.stringify(state), now, team.team_id)
+        .run();
+      continue;
+    }
     teamsChanged += 1;
     state.watchlist = watchlist;
     state.release_events = releaseEvents.slice(0, 200);

@@ -45,14 +45,18 @@ describe("Cloudflare badge health reconciliation", () => {
     expect(state.audit).toEqual([expect.objectContaining({ action: "team_release_detected", actor_id: null })]);
   });
 
-  it("does not rewrite state when the catalog has no newer release", async () => {
-    const { db } = database();
+  it("records a healthy check when the catalog has no newer release", async () => {
+    const { db, updates } = database();
     const prepare = vi.mocked(db.prepare);
     prepare.mockImplementation((query: string) => ({
       bind: vi.fn(() => ({
         all: vi.fn().mockResolvedValue(query.includes("registry_section_chunks")
           ? { results: [{ payload: JSON.stringify([{ id: "publisher.extension", latest_version: "1.2.3" }]) }] }
           : { results: [{ team_id: "team-1", state_json: JSON.stringify({ watchlist: [{ extension_id: "publisher.extension", baseline_version: "1.2.3" }] }) }] }),
+        run: vi.fn(async () => {
+          updates.push("healthy-check");
+          return { success: true };
+        }),
       })),
     }) as never);
     await expect(reconcileCloudflareBadgeHealth(db, "2026-09-16T10:00:00.000Z")).resolves.toEqual({
@@ -60,5 +64,6 @@ describe("Cloudflare badge health reconciliation", () => {
       teams_changed: 0,
       releases_detected: 0,
     });
+    expect(updates).toHaveLength(1);
   });
 });
