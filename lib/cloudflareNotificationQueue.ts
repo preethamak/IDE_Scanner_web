@@ -20,7 +20,7 @@ export async function deliverCloudflareNotifications(
       const delivery = workerSafeDelivery(kind, target, payload);
       const response = await fetch(delivery.destination, {
         method: "POST",
-        redirect: "error",
+        redirect: "manual",
         headers: { "Content-Type": "application/json", "User-Agent": "GuardRails-Notification-Delivery/1.0", ...delivery.headers },
         body: JSON.stringify(delivery.payload),
         signal: AbortSignal.timeout(12_000),

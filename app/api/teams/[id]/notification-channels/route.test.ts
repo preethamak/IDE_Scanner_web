@@ -85,7 +85,7 @@ describe("team notification channel configuration", () => {
     );
     expect(fetch).toHaveBeenCalledWith(
       "https://hooks.example.com/guardrails",
-      expect.objectContaining({ redirect: "error" }),
+      expect.objectContaining({ redirect: "manual" }),
     );
   });
 

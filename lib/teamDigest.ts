@@ -294,7 +294,7 @@ async function sendDigest(
     email ? "https://api.resend.com/emails" : target,
     {
       method: "POST",
-      redirect: "error",
+      redirect: "manual",
       headers: {
         "Content-Type": "application/json",
         "User-Agent": "GuardRails-Weekly-Digest/1.0",

@@ -62,7 +62,7 @@ export async function POST(request: Request) {
           const payload = JSON.parse(String(row.payload_json || "{}"));
           const provider = cloudflareNotificationProvider(String(row.kind || "generic_webhook"), String(row.target), payload);
           const delivery = cloudflareNotificationRequest(provider, String(row.target), payload);
-          const response = await fetch(delivery.destination, { method: "POST", redirect: "error", headers: { "Content-Type": "application/json", "User-Agent": "GuardRails-Notification-Delivery/1.0", ...delivery.headers }, body: JSON.stringify(delivery.payload), signal: AbortSignal.timeout(12_000) });
+          const response = await fetch(delivery.destination, { method: "POST", redirect: "manual", headers: { "Content-Type": "application/json", "User-Agent": "GuardRails-Notification-Delivery/1.0", ...delivery.headers }, body: JSON.stringify(delivery.payload), signal: AbortSignal.timeout(12_000) });
           if (!response.ok) throw new Error(`Notification endpoint returned ${response.status}`);
           await db.prepare("UPDATE app_notification_deliveries SET status='sent',attempts=?,delivered_at=?,last_error=NULL WHERE id=?").bind(attempts, nowIso(), String(row.id)).run();
           sent += 1;
@@ -284,7 +284,7 @@ async function deliverTeamNotifications(db: Db, now: string) {
       }
       const response = await fetch(destination, {
         method: "POST",
-        redirect: "error",
+        redirect: "manual",
         headers: {
           "Content-Type": "application/json",
           "User-Agent": "GuardRails-Notification-Delivery/1.0",

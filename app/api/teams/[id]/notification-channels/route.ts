@@ -261,7 +261,7 @@ function validateProvider(
     return Promise.resolve(new Response(null, { status: 204 }));
   if (kind === "jira_cloud")
     return fetch(`${jira.site}/rest/api/3/myself`, {
-      redirect: "error",
+      redirect: "manual",
       headers: {
         Authorization: jiraAuthorization(
           jira as Parameters<typeof jiraAuthorization>[0],
@@ -273,7 +273,7 @@ function validateProvider(
     });
   return fetch(url, {
     method: "POST",
-    redirect: "error",
+    redirect: "manual",
     headers: {
       "Content-Type": "application/json",
       "User-Agent": "GuardRails-Notification-Validator/1.0",

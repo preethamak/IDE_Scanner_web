@@ -56,7 +56,9 @@ export async function deliverTeamChannelTestTarget(channel: { kind: string; targ
 
   const response = await fetch(destination, {
     method: "POST",
-    redirect: "error",
+    // Cloudflare Workers supports only "follow" and "manual". Manual keeps
+    // webhook delivery SSRF-safe without following provider redirects.
+    redirect: "manual",
     headers: {
       "Content-Type": "application/json",
       "User-Agent": "GuardRails-Notification-Test/1.0",

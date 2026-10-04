@@ -163,7 +163,7 @@ async function notifyCompany(
     }
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
-      redirect: "error",
+      redirect: "manual",
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${runtimeEnv("RESEND_API_KEY")}`,
