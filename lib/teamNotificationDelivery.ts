@@ -70,10 +70,17 @@ export async function deliverTeamChannelTestTarget(channel: { kind: string; targ
     body: JSON.stringify(payload),
     signal: AbortSignal.timeout(12_000),
   });
-  if (!response.ok)
-    throw new Error(
-      `${providerName(channel.kind)} returned HTTP ${response.status}.`,
-    );
+  if (!response.ok) {
+    let detail = "";
+    try {
+      const body = await response.json() as { message?: unknown; name?: unknown };
+      const message = typeof body.message === "string" ? body.message : typeof body.name === "string" ? body.name : "";
+      detail = message ? `: ${message}` : "";
+    } catch {
+      // Keep the status-only error when the provider does not return JSON.
+    }
+    throw new Error(`${providerName(channel.kind)} returned HTTP ${response.status}${detail}.`);
+  }
   return {
     provider: providerName(channel.kind),
     delivered_at: new Date().toISOString(),

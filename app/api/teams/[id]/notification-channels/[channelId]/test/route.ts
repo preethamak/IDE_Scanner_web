@@ -24,9 +24,18 @@ export async function POST(request: Request, context: Context) {
       const channel = state.channels.find((item) => String(item.id) === channelId);
       if (!channel) return NextResponse.json({ error: "Notification channel not found." }, { status: 404 });
       if (channel.enabled === false) return NextResponse.json({ error: "Enable this channel before sending a test." }, { status: 409 });
-      const result = await deliverTeamChannelTestTarget({ kind: String(channel.kind || ""), target: String(channel.target || "") });
-      channel.last_validated_at = result.delivered_at; channel.last_error = null; await saveState(id, state);
-      return NextResponse.json({ ok: true, provider: result.provider, delivered_at: result.delivered_at });
+      try {
+        const result = await deliverTeamChannelTestTarget({ kind: String(channel.kind || ""), target: String(channel.target || "") });
+        channel.last_validated_at = result.delivered_at;
+        channel.last_error = null;
+        await saveState(id, state);
+        return NextResponse.json({ ok: true, provider: result.provider, delivered_at: result.delivered_at });
+      } catch (cause) {
+        const message = cause instanceof Error ? cause.message : "The notification test could not be completed.";
+        channel.last_error = message;
+        await saveState(id, state);
+        return NextResponse.json({ error: message }, { status: 502 });
+      }
     }
     const db = serviceDb();
     const { data: channel, error } = await db
