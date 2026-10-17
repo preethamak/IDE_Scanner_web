@@ -24,7 +24,7 @@ describe("cross-site readability contract", () => {
   });
 
   it("keeps primary, brand, and semantic colors distinct", () => {
-    expect(lightTheme).toContain("--ledger-signal: #2f7f76");
+    expect(lightTheme).toContain("--ledger-signal: #286e66");
     expect(lightTheme).toContain("--brand-blue: #5d769c");
     expect(lightTheme).toContain("--brand-pink: #b5748a");
     expect(lightTheme).toContain("--green: #2f815f");
