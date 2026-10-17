@@ -10,10 +10,10 @@ for (const [path, heading] of publicRoutes) {
   test(`launch public route ${path} is usable on desktop and mobile`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(path);
-    await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+    await expect(page.locator("h1")).toHaveText(heading);
 
     await page.setViewportSize({ width: 390, height: 844 });
-    await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+    await expect(page.locator("h1")).toHaveText(heading);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   });
 }
@@ -21,9 +21,8 @@ for (const [path, heading] of publicRoutes) {
 test("launch conversion gates preserve public reports and expose the next action", async ({ page }) => {
   await page.route("**/api/deep-scans/health", (route) => route.fulfill({ contentType: "application/json", body: JSON.stringify({ accepting_requests: true, status: "ready" }) }));
   await page.goto("/extensions/GitHub.copilot/versions/1.388.0");
-  await expect(page.getByRole("link", { name: /Create workspace to monitor/i })).toHaveAttribute("href", "/account?next=%2Fmonitor%3Fextension%3DGitHub.copilot");
-  await expect(page.getByRole("link", { name: /Export evidence/i })).toHaveAttribute("href", /\/api\/extensions\/GitHub\.copilot\/versions\/1\.388\.0\/export/);
-  await expect(page.getByRole("button", { name: /Create free workspace to Deep Scan/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Sign in for Full Analysis/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Read README and releases/i })).toHaveAttribute("href", "/extensions/GitHub.copilot");
 
   await page.goto("/workspace");
   await expect(page.getByRole("link", { name: /Create your workspace/i })).toBeVisible();
