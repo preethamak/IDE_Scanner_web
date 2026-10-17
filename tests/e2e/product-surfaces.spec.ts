@@ -1,14 +1,14 @@
 import { expect, test } from "@playwright/test";
 
 const surfaces = [
-  ["/", /The security check before you click Install/i],
-  ["/registry", /Know what runs in your editor/i],
-  ["/analyze", /Check a file you already have/i],
-  ["/cli", /See what is already inside your editor/i],
-  ["/workspace", /Keep every extension decision in one trusted place/i],
-  ["/monitor", /Watch the release/i],
-  ["/account", /Keep watching after the first scan/i],
-  ["/benchmark", /Regression evidence with its limits intact/i],
+  ["/", /Know what an extension can do before you let it in/i],
+  ["/registry", /Know what runs\s+in your editor/i],
+  ["/analyze", /Start with what\s+you actually have/i],
+  ["/cli", /Audit every VS Code-based editor on your machine/i],
+  ["/workspace", /Keep every release decision beside its evidence/i],
+  ["/monitor", /Approve once\.\s*Return only when it changes/i],
+  ["/account", /Know what changed\.\s*Keep the decision/i],
+  ["/benchmark", /A benchmark that shows what it cannot prove/i],
 ] as const;
 
 for (const [path, heading] of surfaces) {
@@ -22,8 +22,8 @@ for (const [path, heading] of surfaces) {
 
 test("Registry search is the primary public route", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("textbox", { name: "Search extensions" }).first().fill("vyper guard");
-  await page.getByRole("button", { name: /Search extensions/i }).first().click({ noWaitAfter: true });
+  await page.getByRole("textbox", { name: "Find an extension" }).first().fill("vyper guard");
+  await page.getByRole("button", { name: "Check extension" }).first().click({ noWaitAfter: true });
   await expect(page).toHaveURL(/\/registry\?q=vyper(?:%20|\+)guard/);
 });
 

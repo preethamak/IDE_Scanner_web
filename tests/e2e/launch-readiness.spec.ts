@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 const publicRoutes = [
-  ["/", /The security check before you click Install/i],
-  ["/registry", /Browse completed extension analysis/i],
-  ["/benchmark", /Regression evidence with its limits intact/i],
+  ["/", /Know what an extension can do before you let it in/i],
+  ["/registry", /Know what runs\s+in your editor/i],
+  ["/benchmark", /A benchmark that shows what it cannot prove/i],
 ] as const;
 
 for (const [path, heading] of publicRoutes) {
