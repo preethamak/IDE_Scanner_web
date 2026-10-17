@@ -45,3 +45,41 @@ test("unavailable Deep Scan runner has an explicit non-submitting state", async 
   await expect(page.getByRole("button", { name: "Deep Scan unavailable" })).toBeDisabled();
   await expect(page.getByText("Deep Scan is temporarily unavailable. No scan job was created.")).toBeVisible();
 });
+
+test("a guest Deep Scan follows the exact release through completion to its report", async ({ page }) => {
+  const reportPath = "/extensions/GitHub.copilot/versions/1.388.0/scans/0975989d-c11f-4830-9bfb-082e732fad1a";
+  let submittedPayload: Record<string, unknown> | undefined;
+
+  await page.route("**/api/deep-scans/health", (route) => route.fulfill({
+    contentType: "application/json",
+    body: JSON.stringify({ accepting_requests: true, status: "ready" }),
+  }));
+  await page.route("**/api/deep-scans?extension_id=GitHub.copilot&version=1.388.0", (route) => route.fulfill({
+    contentType: "application/json",
+    body: JSON.stringify({ guest_trial_available: true, guest_trial_remaining: 5, guest_trial_limit: 5 }),
+  }));
+  await page.route("**/api/deep-scans", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    submittedPayload = route.request().postDataJSON() as Record<string, unknown>;
+    await route.fulfill({
+      status: 202,
+      contentType: "application/json",
+      body: JSON.stringify({ id: "guest-job-1", status: "queued", trial_remaining: 4 }),
+    });
+  });
+  await page.route("**/api/deep-scans/guest-job-1", (route) => route.fulfill({
+    contentType: "application/json",
+    body: JSON.stringify({ status: "complete", report_url: reportPath, guest_trial_available: true, guest_trial_remaining: 4 }),
+  }));
+  await page.route(`**${reportPath}`, (route) => route.fulfill({
+    contentType: "text/html",
+    body: "<!doctype html><html><head><title>Analysis Report</title></head><body><main><h1>Guest Analysis Report</h1><p>Exact release: GitHub.copilot 1.388.0</p></main></body></html>",
+  }));
+
+  await page.goto("/extensions/GitHub.copilot/versions/1.388.0");
+  await page.getByRole("button", { name: /Try 5 free scans/i }).click();
+
+  await expect(page).toHaveURL(new RegExp(`${reportPath.replaceAll("/", "\\/")}$`), { timeout: 30_000 });
+  await expect(page.getByRole("heading", { name: "Guest Analysis Report" })).toBeVisible();
+  expect(submittedPayload).toEqual({ extension_id: "GitHub.copilot", version: "1.388.0", force: false });
+});
