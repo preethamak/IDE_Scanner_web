@@ -261,6 +261,11 @@
 .mcpConnectGrid h3 { margin: 0; font-size: 1rem; }
 .mcpConnectGrid p { margin-top: 0.65rem; font-size: 0.9rem; }
 .mcpConnectGrid .codeBlock { margin-top: 0.45rem; padding: 0.8rem; font-size: 0.76rem; }
+.mcpQuickstart { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: 1rem 0 1.5rem; padding: 0; border: 1px solid var(--ledger-line); list-style: none; }
+.mcpQuickstart li { min-width: 0; padding: 1rem; background: var(--ledger-white); }
+.mcpQuickstart li + li { border-left: 1px solid var(--ledger-line); }
+.mcpQuickstart strong { color: var(--ledger-signal); }
+.mcpQuickstart p { margin: 0.45rem 0 0; color: var(--ledger-muted); font-size: 0.88rem; line-height: 1.55; }
 .mcpPromptGrid, .mcpFaq { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .mcpPrompt, .mcpFaq article { padding: 1.15rem; border-top: 2px solid var(--ledger-signal); background: var(--ledger-white); }
 .mcpPrompt span { color: var(--ledger-signal); font-size: 0.72rem; font-weight: 800; letter-spacing: 0; text-transform: uppercase; }
@@ -273,7 +278,8 @@
 .mcpBoundary div:last-child { display: grid; gap: 1rem; }
 
 @media (max-width: 720px) {
-  .mcpRecommendation, .mcpBoundary, .mcpConnectGrid, .mcpPromptGrid, .mcpFaq, .mcpBehaviorGrid { grid-template-columns: 1fr; }
+  .mcpRecommendation, .mcpBoundary, .mcpConnectGrid, .mcpQuickstart, .mcpPromptGrid, .mcpFaq, .mcpBehaviorGrid { grid-template-columns: 1fr; }
+  .mcpQuickstart li + li { border-top: 1px solid var(--ledger-line); border-left: 0; }
   .mcpRecommendation, .mcpBoundary { gap: 1.6rem; }
   .mcpHero { padding-top: 1rem; }
 }

@@ -59,6 +59,11 @@ export default function McpDocsPage() {
         <h2><Braces /> Connect GuardRails</h2>
         <p>GuardRails MCP is in early access. Use this Streamable HTTP endpoint in an MCP-compatible assistant to read published extension-package intelligence and, after browser OAuth approval, the workspaces you belong to. It cannot install extensions, change settings, retrieve local files, or act on a developer&apos;s behalf.</p>
         <span className={styles.endpoint}><span className={styles.method}>HTTP</span>{MCP_URL}</span>
+        <ol className={styles.mcpQuickstart} aria-label="Connect GuardRails in three steps">
+          <li><strong>Start with public evidence.</strong><p>Add the endpoint as a remote Streamable HTTP server. Public extension lookups are read-only and do not require workspace access.</p></li>
+          <li><strong>Ask about an exact release.</strong><p>Give the assistant a <code>publisher.extension</code> ID and version; ask it to report the decision, coverage, evidence, and anything the analysis cannot establish.</p></li>
+          <li><strong>Authorize workspace reads only when needed.</strong><p>Browser sign-in and consent are required for workspace tools. They are limited to workspaces you belong to and remain read-only.</p></li>
+        </ol>
         <p className={styles.note}>Machine-readable server card: <a href={MCP_SERVER_CARD_URL}>{MCP_SERVER_CARD_URL}</a>. It describes this canonical remote endpoint for MCP directories and clients without substituting marketing claims for release evidence.</p>
         <div className={styles.paramTable}><table><thead><tr><th>Setting</th><th>Value</th><th>Why it matters</th></tr></thead><tbody><tr><td>Connection name</td><td><code>guardrails</code></td><td>Shows the product name consistently in a tool picker and the assistant&apos;s answer.</td></tr><tr><td>Transport</td><td>HTTP / Streamable HTTP</td><td>Remote, stateless JSON-RPC 2.0 connection.</td></tr><tr><td>Authorization</td><td>Browser OAuth with PKCE</td><td>Public evidence is read-only. Workspace tools require a signed-in GuardRails account, consent, and <code>workspace:read</code>.</td></tr></tbody></table></div>
         <div className={styles.mcpConnectGrid}>
