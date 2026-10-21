@@ -17,7 +17,7 @@ import {
   canonicalAnalysisStatus,
   requiresReview,
 } from "@/lib/classificationContract";
-import { getImportedReport } from "@/lib/reportBundle";
+import { cyclonedxVulnerabilities, getImportedReport } from "@/lib/reportBundle";
 import type {
   Decision,
   ExtensionDetail,
@@ -98,6 +98,7 @@ export default function ReportExtensionPage({
     );
   const sbom = report.cyclonedx || {};
   const sbomComponents = Array.isArray(sbom.components) ? sbom.components.length : 0;
+  const sbomVulnerabilities = cyclonedxVulnerabilities(report.cyclonedx);
   return (
     <main className="shell canonicalReport">
       <Link className="backLink" href={`/reports/${route.id}`}>
@@ -364,7 +365,27 @@ export default function ReportExtensionPage({
                 <dd><code>{String(sbom.serialNumber || "Not recorded")}</code></dd>
                 <dt>Resolved components</dt>
                 <dd>{sbomComponents}</dd>
+                <dt>Actionable scanner evidence</dt>
+                <dd>{sbomVulnerabilities.length}</dd>
               </dl>
+              {sbomVulnerabilities.length ? (
+                <ul className="evidenceList">
+                  {sbomVulnerabilities.map((vulnerability) => (
+                    <li key={vulnerability.id}>
+                      <strong>{vulnerability.id}</strong>
+                      {vulnerability.severity ? (
+                        <span> {vulnerability.severity}</span>
+                      ) : null}
+                      {vulnerability.description ? (
+                        <p>{vulnerability.description}</p>
+                      ) : null}
+                      {vulnerability.affectedRefs.length ? (
+                        <code>{vulnerability.affectedRefs.join(", ")}</code>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </details> : null}
           </section>
         </div>

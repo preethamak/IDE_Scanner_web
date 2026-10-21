@@ -13,6 +13,48 @@ type ZipEntry = {
 const STORE_KEY = "ide-scanner.importedReports.v1";
 const BENCHMARK_STORE_KEY = "ide-scanner.importedBenchmarks.v1";
 
+export type CycloneDxVulnerability = {
+  id: string;
+  severity: string | null;
+  description: string | null;
+  affectedRefs: string[];
+};
+
+/** Returns only display-safe, scanner-exported decision evidence from a CycloneDX BOM. */
+export function cyclonedxVulnerabilities(
+  bom: Record<string, unknown> | undefined,
+): CycloneDxVulnerability[] {
+  if (!bom || !Array.isArray(bom.vulnerabilities)) return [];
+  return bom.vulnerabilities.flatMap((entry) => {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return [];
+    const vulnerability = entry as Record<string, unknown>;
+    const id = typeof vulnerability.id === "string" ? vulnerability.id.trim() : "";
+    if (!id) return [];
+    const ratings = Array.isArray(vulnerability.ratings) ? vulnerability.ratings : [];
+    const firstRating = ratings.find(
+      (rating): rating is Record<string, unknown> =>
+        Boolean(rating) && typeof rating === "object" && !Array.isArray(rating),
+    );
+    const affects = Array.isArray(vulnerability.affects) ? vulnerability.affects : [];
+    return [{
+      id,
+      severity:
+        firstRating && typeof firstRating.severity === "string"
+          ? firstRating.severity
+          : null,
+      description:
+        typeof vulnerability.description === "string"
+          ? vulnerability.description
+          : null,
+      affectedRefs: affects.flatMap((affected) => {
+        if (!affected || typeof affected !== "object" || Array.isArray(affected)) return [];
+        const ref = (affected as Record<string, unknown>).ref;
+        return typeof ref === "string" && ref ? [ref] : [];
+      }),
+    }];
+  });
+}
+
 export async function parseReportBundle(file: File): Promise<ImportedReportBundle> {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const jsonEntries = await readJsonEntries(bytes);
