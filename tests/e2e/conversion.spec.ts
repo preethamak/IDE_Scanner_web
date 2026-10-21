@@ -13,7 +13,7 @@ test("signed-out full analysis preserves the exact public report return target",
 
 test("public report stays readable and provides the full-analysis next step", async ({ page }) => {
   await page.goto("/extensions/GitHub.copilot/versions/1.388.0");
-  await expect(page.getByText("Extension Security Summary", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Use this completed analysis before you install." })).toBeVisible();
   await expect(page.getByRole("link", { name: /Sign in for Full Analysis/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /Read README and releases/i })).toHaveAttribute("href", "/extensions/GitHub.copilot");
 });
