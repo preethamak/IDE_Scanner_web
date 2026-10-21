@@ -21,6 +21,7 @@ workspace data, or grants access beyond the signed-in user’s memberships.
 | `get_workspace_extension_inventory` | Read observed extension inventory, versions, and monitoring state. |
 | `get_workspace_monitoring` | Read watchlists, release events, alerts, and monitoring status. |
 | `get_workspace_policies` | Read policy rules and monitoring preferences. |
+| `get_workspace_policy_bundle` | Build the current hash-bound, deny-by-default deployment policy from exact release decisions; unresolved approvals remain withheld. |
 | `get_workspace_decision_history` / `get_workspace_audit_history` | Read decision evidence and audit history. |
 
 An `unreviewed` result is unknown, not approval. Every completed-result payload
@@ -86,6 +87,12 @@ For workspace review, ask: “List my GuardRails workspaces. For the selected
 workspace, summarize monitored release events, unread alerts, extensions that
 need review, the relevant policy, and prior decision rationale. Do not change
 anything.”
+
+For deployment evidence, ask: “For this workspace, retrieve the current
+GuardRails deployment policy bundle. List every unresolved approval and every
+release that needs separate relationship review. Do not approve, deploy, or
+change the policy.” The returned bundle is read-only and hash-bound; it does
+not make an unreviewed child extension eligible because its parent was allowed.
 
 ## Reliability contract
 
