@@ -72,7 +72,7 @@ export async function POST(request: Request) {
   );
 }
 
-export async function lookupGateChecks(
+async function lookupGateChecks(
   db: NonNullable<ReturnType<typeof publicDb>>,
   checks: GateCheck[],
   failOnUnreviewed: boolean,
