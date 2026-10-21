@@ -22,6 +22,15 @@ export function buildCapabilityPolicyExport(policy: StoredCapabilityPolicy, grap
   return { ...payload, policy_hash: createHash("sha256").update(stableJson(payload)).digest("hex") };
 }
 
+export function simulateCapabilityPolicy(candidate: StoredCapabilityPolicy, current: StoredCapabilityPolicy, graph: CapabilityGraph, principalId = "workspace:enforcement") {
+  const evaluate = (policy: StoredCapabilityPolicy) => evaluateCapabilityGraph(graph, policy.grants, principalId, graph.generatedAt).map((item) => ({ subject_id: item.subject.id, name: item.subject.name, kind: item.subject.kind, evidence_state: item.subject.evidenceState, outcome: item.outcome, capabilities: item.requests.map((request) => ({ capability: request.request.capability, outcome: request.decision.outcome, reason: request.decision.reason, grant_id: request.decision.matchingGrantId || null })) }));
+  const before = new Map(evaluate(current).map((item) => [item.subject_id, item]));
+  const subjects = evaluate(candidate).map((item) => ({ ...item, previous_outcome: before.get(item.subject_id)?.outcome || "new", changed: before.get(item.subject_id)?.outcome !== item.outcome }));
+  const summary = { subjects: subjects.length, allow: 0, prompt: 0, deny: 0, changed: 0 };
+  for (const subject of subjects) { summary[subject.outcome] += 1; if (subject.changed) summary.changed += 1; }
+  return { default_action: "deny" as const, candidate_version: candidate.version, current_version: current.version, summary, subjects };
+}
+
 function stableJson(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
   if (value && typeof value === "object") { const row = value as Record<string, unknown>; return `{${Object.keys(row).sort().map((key) => `${JSON.stringify(key)}:${stableJson(row[key])}`).join(",")}}`; }
