@@ -4,6 +4,7 @@ import {
   BookOpen,
   Bot,
   Boxes,
+  FileJson,
   Layers,
   ShieldCheck,
 } from "lucide-react";
@@ -42,6 +43,7 @@ export default function DocsPage() {
             <a href="#bulk">Bulk gate</a>
             <a href="#badges">Badges</a>
             <a href="#inventory">Public inventory</a>
+            <a href="#sbom">CycloneDX SBOM</a>
             <a href="#mcp">MCP server</a>
           </nav>
         </section>
@@ -221,6 +223,27 @@ export default function DocsPage() {
             responses are cacheable for up to five minutes.
           </p>
           <Code label="curl">{`curl -fsS "${HOST}/api/public/inventory" | jq '.totals'`}</Code>
+        </section>
+
+        <section className={styles.section} id="sbom">
+          <h2>
+            <FileJson /> Export an exact-artifact SBOM
+          </h2>
+          <p>
+            The GuardRails CLI can emit a CycloneDX 1.5 SBOM from the resolved
+            scan result. It binds dependency components to the extension
+            release and artifact identity the scanner actually inspected; it
+            does not treat a repository manifest as proof of a published
+            marketplace package.
+          </p>
+          <Code label="GuardRails CLI">{`guardrails scan --file extension.vsix \\
+  --format cyclonedx.json \\
+  --output extension.cdx.json`}</Code>
+          <p className={styles.note}>
+            Keep the SBOM beside its GuardRails report when passing it to a
+            vulnerability platform or compliance record. A valid SBOM records
+            components and identity; it is not an approval of the extension.
+          </p>
         </section>
 
         <section className={styles.section} id="mcp">
