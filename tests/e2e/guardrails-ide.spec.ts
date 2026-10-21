@@ -8,14 +8,19 @@ test("GuardRails IDE demonstrates deny, allow, and approval decisions", async ({
   await expect(page.getByText("No ambient authority. Add a grant to change the decision.")).toBeVisible();
 
   await page.getByRole("button", { name: /Read source file/ }).click();
-  const decisionPanel = page.locator("aside").last();
+  await page.getByRole("button", { name: "Simulate request" }).click();
+  const decisionPanel = page.getByText("Decision preview").locator("..");
   await expect(decisionPanel.getByText("deny", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Add scoped grant" }).click();
+  await page.getByRole("button", { name: "Simulate request" }).click();
   await expect(decisionPanel.getByText("allow", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Read environment file" }).click();
+  await page.getByRole("button", { name: "Simulate request" }).click();
   await expect(decisionPanel.getByText("deny", { exact: true })).toBeVisible();
   await expect(decisionPanel.locator("code")).toContainText("protected-environment-files");
   await page.getByRole("button", { name: "Run test command" }).click();
+  await page.getByRole("button", { name: "Simulate request" }).click();
   await page.getByRole("button", { name: "Add scoped grant" }).click();
+  await page.getByRole("button", { name: "Simulate request" }).click();
   await expect(decisionPanel.getByText("prompt", { exact: true })).toBeVisible();
 });

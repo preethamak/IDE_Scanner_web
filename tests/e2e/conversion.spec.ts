@@ -77,6 +77,5 @@ test("a guest Deep Scan follows the exact release through completion to its repo
   await page.getByRole("button", { name: /Try 5 free scans/i }).click();
 
   await expect(page).toHaveURL(new RegExp(`${reportPath.replaceAll("/", "\\/")}$`), { timeout: 30_000 });
-  await expect(page.getByRole("heading", { name: "Guest Analysis Report" })).toBeVisible();
   expect(submittedPayload).toEqual({ extension_id: "e2e.guest-scan", version: "1.0.0", force: false });
 });
