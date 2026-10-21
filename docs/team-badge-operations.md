@@ -46,6 +46,22 @@ Weekly digests are opt-in (`weekly_digest=true`) and follow each workspace’s U
 weekday/hour preferences. They are only generated for enabled channels and are
 recorded in the workspace digest history.
 
+### Signed generic webhooks
+
+Cloudflare generic webhook channels may have a 16-512 character signing secret.
+The secret remains inside the encrypted channel target envelope and is never
+returned from the channel API, workspace state response, or delivery history.
+For a signed delivery, verify the following headers:
+
+- `X-GuardRails-Event`: the event name.
+- `X-GuardRails-Timestamp`: Unix seconds.
+- `X-GuardRails-Signature`: `v1=<hex HMAC-SHA-256>`.
+
+The signature input is the literal UTF-8 string `<timestamp>.<body>`, where
+`body` is the exact JSON request body as received. Reject unexpected signature
+versions, invalid HMACs, and timestamps outside a receiver-defined replay
+window. Do not parse and reserialize the JSON before verification.
+
 Deep Scan runner heartbeats are written when the worker claims the queue, even
 when no job is available. A stale heartbeat means the worker schedule or runner
 credentials need attention; it does not reject new signed-in requests, which
