@@ -28,6 +28,7 @@ export type CloudflareWorkspaceState = {
   };
   capability_graph?: CapabilityGraph | null;
   capability_policy?: StoredCapabilityPolicy | null;
+  capability_policy_history?: StoredCapabilityPolicy[];
 };
 
 export const defaultWorkspaceState: CloudflareWorkspaceState = {
@@ -35,6 +36,7 @@ export const defaultWorkspaceState: CloudflareWorkspaceState = {
   preferences: { release_alerts: true, scan_alerts: true, decision_alerts: true, high_evidence_alerts: true, provenance_alerts: true, coverage_alerts: true, due_alerts: true, weekly_digest: false, digest_weekday: 1, digest_hour_utc: 9 },
   capability_graph: null,
   capability_policy: null,
+  capability_policy_history: [],
 };
 
 export async function getWorkspaceState(teamId: string): Promise<CloudflareWorkspaceState> {
@@ -42,7 +44,7 @@ export async function getWorkspaceState(teamId: string): Promise<CloudflareWorks
   return {
     ...defaultWorkspaceState,
     ...raw,
-    watchlist: array(raw.watchlist), alerts: array(raw.alerts), decisions: array(raw.decisions), members: array(raw.members), channels: array(raw.channels), deliveries: array(raw.deliveries), digest_deliveries: array(raw.digest_deliveries), policies: array(raw.policies), release_events: array(raw.release_events), trust_records: array(raw.trust_records), recall_events: array(raw.recall_events), audit: array(raw.audit), invitations: array(raw.invitations), monitoring: jsonValue(raw.monitoring), inventory: inventory(raw.inventory), preferences: { ...defaultWorkspaceState.preferences, ...jsonValue(raw.preferences) },
+    watchlist: array(raw.watchlist), alerts: array(raw.alerts), decisions: array(raw.decisions), members: array(raw.members), channels: array(raw.channels), deliveries: array(raw.deliveries), digest_deliveries: array(raw.digest_deliveries), policies: array(raw.policies), release_events: array(raw.release_events), trust_records: array(raw.trust_records), recall_events: array(raw.recall_events), audit: array(raw.audit), invitations: array(raw.invitations), monitoring: jsonValue(raw.monitoring), inventory: inventory(raw.inventory), preferences: { ...defaultWorkspaceState.preferences, ...jsonValue(raw.preferences) }, capability_policy_history: Array.isArray(raw.capability_policy_history) ? raw.capability_policy_history.filter((item): item is StoredCapabilityPolicy => Boolean(item && typeof item === "object")) : [],
   };
 }
 export async function saveState(teamId: string, state: CloudflareWorkspaceState): Promise<void> {
