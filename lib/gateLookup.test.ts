@@ -35,6 +35,24 @@ describe("formatGateResult", () => {
     expect(result.report).toContain("/extensions/publisher.name/versions/1.2.3/scans/s1");
   });
 
+  it("fails an allowed parent release when a declared child lacks exact evidence", () => {
+    const result = formatGateResult(check, {
+      id: "s1",
+      decision: "allow",
+      extension_id: "publisher.name",
+      version: "1.2.3",
+      artifact_inventory: {
+        extension_relationship_inventory: {
+          entries: [{ extension_id: "partner.child", relationship: "extensionDependencies" }],
+          resolution: [{ extension_id: "partner.child", relationship: "extensionDependencies", status: "acquisition_failed", resolved_version: null, resolved_artifact_sha256: null }],
+        },
+      },
+    }, false);
+    expect(result.verdict).toBe("fail");
+    expect(result.relationship_review).toEqual({ declared: 1, scanned: 0, required: true });
+    expect(result.reason).toContain("related extensions lack completed");
+  });
+
   it("fails a block decision even when fail-on-unreviewed is off", () => {
     const result = formatGateResult(check, { id: "s1", decision: "block", extension_id: "publisher.name", version: "1.2.3" }, false);
     expect(result.verdict).toBe("fail");
