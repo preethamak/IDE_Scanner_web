@@ -3,7 +3,7 @@ use std::{
     ffi::CString,
     fmt,
     fs::File,
-    io::{self, Read},
+    io::{self, Read, Write},
     os::fd::{AsRawFd, FromRawFd, OwnedFd},
     path::Path,
 };
@@ -15,6 +15,7 @@ pub enum FilesystemError {
     InvalidResource,
     EscapeRejected,
     NotFound,
+    AlreadyExists,
     NotAFile,
     TooLarge,
     SensitiveAuthorizationRequired,
@@ -29,6 +30,7 @@ impl fmt::Display for FilesystemError {
             Self::InvalidResource => "INVALID_FILESYSTEM_RESOURCE",
             Self::EscapeRejected => "WORKSPACE_ESCAPE_REJECTED",
             Self::NotFound => "RESOURCE_NOT_FOUND",
+            Self::AlreadyExists => "RESOURCE_ALREADY_EXISTS",
             Self::NotAFile => "RESOURCE_NOT_A_FILE",
             Self::TooLarge => "RESOURCE_TOO_LARGE",
             Self::SensitiveAuthorizationRequired => "SENSITIVE_RESOURCE_AUTHORIZATION_REQUIRED",
@@ -39,7 +41,7 @@ impl fmt::Display for FilesystemError {
 
 impl std::error::Error for FilesystemError {}
 
-/// Linux-only, read-only workspace broker. `openat2` resolves the complete path
+/// Linux-only workspace broker. `openat2` resolves the complete path
 /// beneath a pinned workspace directory descriptor, so validation and opening
 /// are one kernel operation rather than a check-then-open sequence.
 pub struct FilesystemBroker {
@@ -101,6 +103,50 @@ impl FilesystemBroker {
         self.read_resource(resource)
     }
 
+    /// Creates a new, non-sensitive workspace file after an exact
+    /// `filesystem/write` decision. Existing files are never overwritten;
+    /// replacement and sensitive-file creation require separate operations.
+    pub fn create(
+        &self,
+        request: &PolicyRequest,
+        decision: &Decision,
+        content: &[u8],
+    ) -> Result<(), FilesystemError> {
+        authorize_write(request, decision)?;
+        if content.len() > self.max_read_bytes {
+            return Err(FilesystemError::TooLarge);
+        }
+        let resource = normalized_relative_resource(&request.resource)?;
+        if is_sensitive_resource(resource) {
+            return Err(FilesystemError::SensitiveAuthorizationRequired);
+        }
+        let resource = CString::new(resource).map_err(|_| FilesystemError::InvalidResource)?;
+        let mut how: libc::open_how = unsafe { std::mem::zeroed() };
+        how.flags =
+            (libc::O_WRONLY | libc::O_CREAT | libc::O_EXCL | libc::O_CLOEXEC | libc::O_NOFOLLOW)
+                as u64;
+        how.mode = 0o600;
+        how.resolve =
+            libc::RESOLVE_BENEATH | libc::RESOLVE_NO_MAGICLINKS | libc::RESOLVE_NO_SYMLINKS;
+        // SAFETY: arguments point to initialized values for the duration of the syscall.
+        let fd = unsafe {
+            libc::syscall(
+                libc::SYS_openat2,
+                self.root.as_raw_fd(),
+                resource.as_ptr(),
+                &how,
+                size_of::<libc::open_how>(),
+            ) as libc::c_int
+        };
+        if fd < 0 {
+            return Err(map_openat2(io::Error::last_os_error()));
+        }
+        // SAFETY: `openat2` returned a new owned descriptor.
+        let mut file = unsafe { File::from_raw_fd(fd) };
+        file.write_all(content).map_err(|_| FilesystemError::Io)?;
+        file.sync_all().map_err(|_| FilesystemError::Io)
+    }
+
     fn read_resource(&self, resource: &str) -> Result<Vec<u8>, FilesystemError> {
         let resource = CString::new(resource).map_err(|_| FilesystemError::InvalidResource)?;
         // `open_how` is non-exhaustive; zeroing is the kernel-defined initialization.
@@ -127,7 +173,7 @@ impl FilesystemBroker {
             return Err(FilesystemError::NotAFile);
         }
         let mut content = Vec::new();
-        file.by_ref()
+        Read::by_ref(&mut file)
             .take(self.max_read_bytes as u64 + 1)
             .read_to_end(&mut content)
             .map_err(|_| FilesystemError::Io)?;
@@ -146,6 +192,22 @@ fn authorize_read(request: &PolicyRequest, decision: &Decision) -> Result<(), Fi
         return Err(FilesystemError::AuthorizationMismatch);
     }
     if request.capability != Capability::Filesystem || request.action != "read" {
+        return Err(FilesystemError::AuthorizationMismatch);
+    }
+    if decision.outcome != DecisionOutcome::Allow {
+        return Err(FilesystemError::Denied);
+    }
+    Ok(())
+}
+
+fn authorize_write(request: &PolicyRequest, decision: &Decision) -> Result<(), FilesystemError> {
+    if request.request_id != decision.request_id
+        || request.policy_version != decision.policy_version
+        || decision.audit_hash.is_none()
+    {
+        return Err(FilesystemError::AuthorizationMismatch);
+    }
+    if request.capability != Capability::Filesystem || request.action != "write" {
         return Err(FilesystemError::AuthorizationMismatch);
     }
     if decision.outcome != DecisionOutcome::Allow {
@@ -224,6 +286,7 @@ fn is_sensitive_resource(resource: &str) -> bool {
 fn map_openat2(error: io::Error) -> FilesystemError {
     match error.raw_os_error() {
         Some(libc::ENOENT) => FilesystemError::NotFound,
+        Some(libc::EEXIST) => FilesystemError::AlreadyExists,
         Some(code) if code == libc::ELOOP || code == libc::EXDEV => FilesystemError::EscapeRejected,
         _ => FilesystemError::Io,
     }
