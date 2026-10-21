@@ -126,13 +126,18 @@ export default function DocsPage() {
   gate-extension-release:
     runs-on: ubuntu-latest
     steps:
-      - name: Gate the pinned extension release
-        run: |
-          curl -fsS "${HOST}/api/gate?extension=publisher.name&version=1.2.3&fail-on=unreviewed"`}</Code>
+      - uses: preethamak/IDE_Scanner_web/.github/actions/guardrails-extension-gate@main
+        with:
+          extension: publisher.name
+          version: 1.2.3
+          fail-on: unreviewed`}</Code>
           <p className={styles.note}>
-            Responses are cacheable for up to five minutes. Pin the exact
-            version your workspace installs; the gate never substitutes a
-            different release.
+            The action fails closed on outages, malformed responses, unknown
+            verdicts, review-required releases, and unreviewed releases when
+            <code>fail-on</code> is set. Pin the exact version your workspace
+            installs; the gate never substitutes a different release. Pin a
+            release tag or commit SHA after choosing an action version for a
+            long-lived production workflow.
           </p>
         </section>
 
