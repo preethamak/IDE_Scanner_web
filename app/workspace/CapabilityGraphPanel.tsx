@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Box, CheckCircle2, CircleHelp, FileJson, GitBranch, LoaderCircle, RefreshCw, ShieldCheck } from "lucide-react";
 import styles from "./capabilityGraph.module.css";
+import { getLocalCapabilityGraph } from "@/lib/localCapabilityCollector";
 
 type Subject = { id: string; kind: string; name: string; version: string | null; publisher: string | null; artifactSha256: string | null; evidenceState: "verified" | "observed" | "unknown"; capabilities: string[]; source: string };
 type GraphPayload = { graph: { generatedAt: string; subjects: Subject[]; relationships: Array<{ from: string; to: string; type: string }> }; summary: { subjects: number; by_kind: Record<string, number>; verified: number; unknown_capabilities: number } };
@@ -38,34 +39,29 @@ export default function CapabilityGraphPanel({ teamId, role, getAuthHeaders }: {
 
   const grouped = useMemo(() => Object.entries(data?.summary.by_kind || {}).filter(([, count]) => count > 0), [data]);
   async function saveGraph(parsed: unknown) {
-    setSaving(true); setError("");
-    try {
-      const response = await fetch(`/api/teams/${encodeURIComponent(teamId)}/capability-graph`, { method: "POST", headers: { ...(await getAuthHeaders()), "Content-Type": "application/json" }, body: JSON.stringify(parsed) });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(String(body.error || "Capability graph could not be imported."));
-      setData(body as GraphPayload); setOpen(false); setDocument("");
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "Capability graph could not be imported."); }
-    finally { setSaving(false); }
+    const response = await fetch(`/api/teams/${encodeURIComponent(teamId)}/capability-graph`, { method: "POST", headers: { ...(await getAuthHeaders()), "Content-Type": "application/json" }, body: JSON.stringify(parsed) });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(String(body.error || "Capability graph could not be imported."));
+    setData(body as GraphPayload); setOpen(false); setDocument("");
   }
   async function importGraph() {
+    setSaving(true); setError("");
     try { await saveGraph(JSON.parse(document)); }
     catch (cause) { setError(cause instanceof Error ? cause.message : "Capability graph could not be imported."); }
+    finally { setSaving(false); }
   }
   async function importLocalCollector() {
     setSaving(true); setError("");
     try {
-      const response = await fetch("http://127.0.0.1:17865/capability-graph");
-      const graph = await response.json().catch(() => null);
-      if (!response.ok || !graph) throw new Error("The local collector did not return a capability graph. Start it from your workspace directory.");
-      setSaving(false);
-      await saveGraph(graph);
-    } catch (cause) { setSaving(false); setError(cause instanceof Error ? cause.message : "Local collector is unavailable."); }
+      await saveGraph(await getLocalCapabilityGraph());
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Local collector is unavailable."); }
+    finally { setSaving(false); }
   }
 
   return <section className={styles.surface}>
     <header className={styles.title}><div><span>Developer capability control</span><h1>See every executable capability.</h1><p>Extensions, MCP servers, agent skills, CLIs, and browser extensions live in one inventory. GuardRails records what was actually observed and never infers permissions it cannot verify.</p></div><button onClick={() => void load()}><RefreshCw /> Refresh</button></header>
     {error ? <div className={styles.error}><AlertTriangle /><span>{error}</span>{state === "error" ? <button onClick={() => void load()}>Try again</button> : null}</div> : null}
-    {data ? <div className={styles.metrics}><article><Box /><strong>{data.summary.subjects}</strong><span>capabilities tracked</span></article><article><ShieldCheck /><strong>{data.summary.verified}</strong><span>artifact-verified</span></article><article><CircleHelp /><strong>{data.summary.unknown_capabilities}</strong><span>need capability evidence</span></article><article><GitBranch /><strong>{data.graph.relationships.length}</strong><span>recorded relationships</span></article></div> : null}
+    {data ? <div className={styles.metrics}><article><Box /><strong>{data.summary.subjects}</strong><span>subjects tracked</span></article><article><ShieldCheck /><strong>{data.summary.verified}</strong><span>artifact-verified</span></article><article><CircleHelp /><strong>{data.summary.unknown_capabilities}</strong><span>need capability evidence</span></article><article><GitBranch /><strong>{data.graph.relationships.length}</strong><span>recorded relationships</span></article></div> : null}
     <div className={styles.kindRow}>{grouped.map(([kind, count]) => <span key={kind}>{label(kind)} <b>{count}</b></span>)}</div>
     {canManage ? <div className={styles.importCard}><div><FileJson /><div><strong>Import collector results</strong><small>Only identity, observed permissions, hashes, and relationships are stored. Local source files and secret values are never imported.</small></div></div><div><button disabled={saving} onClick={() => void importLocalCollector()}>Import local collector</button><button onClick={() => { setDocument(example); setOpen(true); }}>Import JSON</button></div></div> : null}
     {open ? <section className={styles.editor}><header><div><span>Collector import</span><h2>Update non-extension inventory</h2></div><button onClick={() => setOpen(false)}>Cancel</button></header><textarea value={document} onChange={(event) => setDocument(event.target.value)} spellCheck={false} aria-label="Capability graph JSON" /><footer><small>Extensions already in the workspace inventory remain visible separately and cannot be overwritten here.</small><button className={styles.primary} disabled={saving || !document.trim()} onClick={() => void importGraph()}>{saving ? <LoaderCircle className={styles.spin} /> : <CheckCircle2 />}{saving ? "Importing..." : "Import capability graph"}</button></footer></section> : null}
