@@ -63,7 +63,16 @@ const document = {
             },
           },
           "401": { description: "Missing or invalid API key" },
-          "502": { description: "No policy result was produced; retry later" },
+          "403": { description: "The API key belongs to a workspace without the required Team entitlement", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          "429": {
+            description: "The per-key bulk-gate budget is exhausted; retry after the advertised window.",
+            headers: {
+              "Retry-After": { description: "Seconds until the current per-key rate-budget window resets.", schema: { type: "integer", minimum: 1 } },
+              "Cache-Control": { description: "Always private, no-store for a rate-limited response.", schema: { type: "string" } },
+            },
+            content: { "application/json": { schema: { $ref: "#/components/schemas/RateLimitError" } } },
+          },
+          "503": { description: "Authentication, rate-budget, or analysis storage is temporarily unavailable", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
         },
       },
     },
@@ -93,6 +102,17 @@ const document = {
             },
           },
         },
+      },
+      Error: {
+        type: "object",
+        required: ["error"],
+        properties: { error: { type: "string" }, code: { type: "string" } },
+      },
+      RateLimitError: {
+        allOf: [
+          { $ref: "#/components/schemas/Error" },
+          { type: "object", required: ["code"], properties: { code: { type: "string", const: "RATE_LIMITED" } } },
+        ],
       },
     },
   },
