@@ -71,6 +71,8 @@ describe("public MCP endpoint", () => {
 
     const promptResponse = await POST(request({ jsonrpc: "2.0", id: 3, method: "prompts/get", params: { name: "review_vscode_extension", arguments: { extension: "ms-python.python", version: "1.2.3" } } }));
     await expect(promptResponse.json()).resolves.toMatchObject({ result: { messages: [expect.objectContaining({ content: expect.objectContaining({ text: expect.stringContaining("ms-python.python version 1.2.3") }) })] } });
+    const policyPrompt = await POST(request({ jsonrpc: "2.0", id: 4, method: "prompts/get", params: { name: "review_workspace_capability_policy", arguments: { workspace_id: "workspace-1" } } }));
+    await expect(policyPrompt.json()).resolves.toMatchObject({ result: { messages: [expect.objectContaining({ content: expect.objectContaining({ text: expect.stringContaining("export hash") }) })] } });
   });
 
   it("challenges unauthenticated workspace calls with protected-resource metadata", async () => {
