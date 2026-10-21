@@ -22,10 +22,12 @@ def main() -> int:
     parser.add_argument("--host", default="127.0.0.1", help="Bridge bind host. Defaults to 127.0.0.1.")
     parser.add_argument("--port", type=int, default=17865, help="Bridge port. Defaults to 17865.")
     parser.add_argument("--workspace", type=Path, default=Path.cwd(), help="Workspace directory used to discover declared extensions and MCP servers.")
+    parser.add_argument("--allowed-origin", action="append", default=[], help="Additional browser origin allowed to read the local bridge. Repeat as needed.")
     args = parser.parse_args()
 
     if args.serve:
-        serve_bridge(args.host, args.port, args.workspace)
+        origins = {"https://abscissa.dev", "http://localhost:3000", *args.allowed_origin}
+        serve_bridge(args.host, args.port, args.workspace, origins)
         return 0
     if not args.server:
         parser.error("--server is required unless --serve is used")
@@ -301,7 +303,7 @@ def post_report(server: str, payload: dict, token: str) -> dict:
         return json.loads(raw) if raw.strip() else {}
 
 
-def serve_bridge(host: str, port: int, workspace: Path) -> None:
+def serve_bridge(host: str, port: int, workspace: Path, allowed_origins: set[str]) -> None:
     class Handler(BaseHTTPRequestHandler):
         def do_OPTIONS(self) -> None:
             self.send_response(204)
@@ -343,7 +345,10 @@ def serve_bridge(host: str, port: int, workspace: Path) -> None:
             self.wfile.write(body)
 
         def _cors(self) -> None:
-            self.send_header("Access-Control-Allow-Origin", "*")
+            origin = self.headers.get("Origin", "")
+            if origin in allowed_origins:
+                self.send_header("Access-Control-Allow-Origin", origin)
+                self.send_header("Vary", "Origin")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
             self.send_header("Access-Control-Allow-Private-Network", "true")
