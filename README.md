@@ -95,21 +95,27 @@ The production redirect is pinned in `wrangler.jsonc` as `GOOGLE_OAUTH_REDIRECT_
 Build and deploy the production Worker with:
 
 ```bash
+npx wrangler d1 migrations apply abscissa-registry --remote --config wrangler.jsonc
+npx wrangler d1 migrations apply abscissa-scan-data --remote --config wrangler.jsonc
 npm run cf:build
 npx wrangler deploy --config wrangler.jsonc
 ```
 
-`wrangler.jsonc` routes `abscissa.dev/*` to the `abscissa-web-production` Worker. Vercel is not required for production and may remain paused.
+Apply migrations before the Worker deploy. Schema-backed paths, including
+durable agent reports, fail closed when their table is absent rather than
+falling back to process-local production storage. `wrangler.jsonc` routes
+`abscissa.dev/*` to the `abscissa-web-production` Worker. Vercel is not
+required for production and may remain paused.
 
 ### Automatic GitHub deployments
 
-In Cloudflare Dashboard, open **Workers & Pages → abscissa-web-production → Settings → Builds → Connect** and select `preethamak/IDE_Scanner_web`. Use `main` as the production branch, `npm run cf:build` as the build command, and `npx wrangler deploy --config wrangler.jsonc` as the deploy command. After the one-time connection, every push to `main` creates a new Cloudflare deployment.
-
-The repository also contains a GitHub Actions deployment path in
-`.github/workflows/cloudflare-deploy.yml`. It applies the tracked D1 migrations
-and deploys the Worker when the `CLOUDFLARE_API_TOKEN` repository secret is
-present. The catalog refresh workflow mirrors the generated public snapshot
-into D1 using `scripts/import-public-registry-d1.mjs`.
+Use `.github/workflows/cloudflare-deploy.yml` as the production deployment
+path. It serializes operations, applies both tracked D1 migration stores before
+building and deploying, and verifies public routes when the
+`CLOUDFLARE_API_TOKEN` repository secret is present. Do not rely on a
+dashboard-only build connection for `main`: its `wrangler deploy` command does
+not apply database migrations. The catalog refresh workflow mirrors the
+generated public snapshot into D1 using `scripts/import-public-registry-d1.mjs`.
 
 The first Cloudflare migration is intentionally read-only for application
 behavior: public routes prefer D1 and fall back to the GitHub snapshot if D1 is
