@@ -172,6 +172,14 @@ const TOOLS = [
     annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
   },
   {
+    name: "get_extension_release_evidence",
+    title: "Get exact release evidence receipt",
+    description: "Return a compact, exact-release GuardRails evidence receipt for a published VS Code extension version. Includes artifact SHA-256 when available, scanner/ruleset identity, coverage, decision, and the decision boundary. Use this before stating that a specific release is suitable to recommend or needs review; an unreviewed result is not approval.",
+    inputSchema: { type: "object", properties: { extension: { type: "string", description: "Extension id in publisher.name form." }, version: { type: "string", description: "Exact published extension version to assess." } }, required: ["extension", "version"] },
+    outputSchema: { type: "object", required: ["extension", "version", "analysis_state", "artifact", "assessment", "decision_boundary", "report_url"], properties: { extension: { type: "string" }, version: { type: "string" }, analysis_state: { type: "string", enum: ["analyzed", "unreviewed", "not_found"] }, artifact: { type: "object" }, assessment: { type: ["object", "null"] }, decision_boundary: { type: "string" }, report_url: { type: ["string", "null"] } } },
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+  },
+  {
     name: "list_published_extension_scans",
     title: "List published extension scans",
     description: "List recent publicly published GuardRails analyses. Use this for ecosystem research, not as proof about releases absent from the list.",
@@ -372,6 +380,7 @@ async function handleToolCall(id: JsonRpcId, params: Record<string, unknown>, re
     if (name === "find_reputable_alternatives") return rpcResult(id, await findReputableAlternatives(args, origin));
     if (name === "search_vscode_extensions") return rpcResult(id, await searchVsCodeExtensions(args, origin));
     if (name === "get_extension_release") return rpcResult(id, await getExtensionRelease(args, origin));
+    if (name === "get_extension_release_evidence") return rpcResult(id, await getExtensionReleaseEvidence(args, origin));
     if (name === "list_published_extension_scans") return rpcResult(id, await listPublishedExtensionScans(args, origin));
     if (name === "get_extension_scan_history") return rpcResult(id, await getExtensionScanHistory(args, origin));
     if (name === "get_guardrails_analysis_rules") return rpcResult(id, await getAnalysisRules());
@@ -529,6 +538,57 @@ async function getExtensionRelease(args: Record<string, unknown>, origin: string
     analysis_state: scan ? "analyzed" : "unreviewed",
     report_url: scanId && scannedVersion ? `${origin}/extensions/${encodeURIComponent(extension)}/versions/${encodeURIComponent(scannedVersion)}/scans/${encodeURIComponent(scanId)}` : `${origin}/extensions/${encodeURIComponent(extension)}`,
     note: scan ? "This analysis applies only to the returned release and artifact evidence." : "No completed published analysis is available for this release. This is not an approval.",
+  });
+}
+
+async function getExtensionReleaseEvidence(args: Record<string, unknown>, origin: string) {
+  const extension = String(args.extension || "").trim();
+  const version = String(args.version || "").trim();
+  if (!EXTENSION_PATTERN.test(extension)) return toolError("Provide extension as publisher.name, e.g. ms-python.python.");
+  if (!version || !isValidGateCheck({ extension, version })) return toolError("Provide an exact valid version string, e.g. 1.2.3.");
+  const product = await getVersionProduct(extension, version);
+  if (!product) return toolJson({
+    extension,
+    version,
+    analysis_state: "not_found",
+    artifact: { sha256: null, identity_status: "not_found" },
+    assessment: null,
+    decision_boundary: "No matching published release was found. This is not a security assessment.",
+    report_url: null,
+  });
+  const record = product as Record<string, unknown>;
+  const scan = record.scan && typeof record.scan === "object" ? record.scan as Record<string, unknown> : null;
+  const scanId = scan?.id ? String(scan.id) : null;
+  if (!scan) return toolJson({
+    extension,
+    version,
+    analysis_state: "unreviewed",
+    artifact: { sha256: null, identity_status: "unreviewed" },
+    assessment: null,
+    decision_boundary: "No completed published GuardRails analysis is available for this exact release. This is not approval, and it does not establish artifact safety.",
+    report_url: `${origin}/extensions/${encodeURIComponent(extension)}/versions/${encodeURIComponent(version)}`,
+  });
+  return toolJson({
+    extension,
+    version,
+    analysis_state: "analyzed",
+    artifact: {
+      sha256: typeof scan.artifact_sha256 === "string" && scan.artifact_sha256 ? scan.artifact_sha256 : null,
+      scanner_build: scan.scanner_build || null,
+      ruleset_version: scan.ruleset_version || null,
+      scanned_at: scan.scanned_at || null,
+    },
+    assessment: {
+      analysis_status: scan.analysis_status || null,
+      coverage_percent: scan.coverage_percent ?? null,
+      decision: scan.decision || null,
+      severity: scan.severity || null,
+      public_outcome: scan.public_outcome || null,
+      evidence_confidence: scan.evidence_confidence || null,
+      decision_reason: scan.decision_reason || null,
+    },
+    decision_boundary: "This evidence applies to the returned published release and artifact identity only. It does not approve future releases or replace source-code, dependency, repository, and runtime-specific review.",
+    report_url: scanId ? `${origin}/extensions/${encodeURIComponent(extension)}/versions/${encodeURIComponent(version)}/scans/${encodeURIComponent(scanId)}` : `${origin}/extensions/${encodeURIComponent(extension)}/versions/${encodeURIComponent(version)}`,
   });
 }
 
