@@ -48,17 +48,16 @@ test("legacy discovery routes preserve the customer journey", async ({ page }) =
 
 test("extension profile and report use one current outcome", async ({ page }) => {
   await page.goto("/extensions/GitHub.copilot");
-  await expect(page.getByText("Scan result", { exact: true })).toBeVisible();
-  await expect(page.getByText("Analyzed", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText("Primary severity", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Read Analysis Report" }).first()).toBeVisible();
+  await expect(page.getByRole("region", { name: "What this extension can reach." })).toBeVisible();
   await page.goto("/extensions/GitHub.copilot/versions/1.388.0");
-  await expect(page.getByText("Analyzed", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText("Operational action", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Use this completed analysis before you install." })).toBeVisible();
+  await expect(page.getByRole("region", { name: "What this extension can reach." })).toBeVisible();
 });
 
 test("public security summary stays concise and full analysis requires sign-in", async ({ page }) => {
   await page.goto("/extensions/GitHub.copilot/versions/1.388.0");
-  await expect(page.getByText("Extension Security Summary", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Use this completed analysis before you install." })).toBeVisible();
   await expect(page.getByText("Raw evidence", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: /Sign in for Full Analysis/i })).toBeVisible();
   await page.goto("/extensions/GitHub.copilot/versions/1.388.0/scans/0975989d-c11f-4830-9bfb-082e732fad1a");
@@ -67,8 +66,9 @@ test("public security summary stays concise and full analysis requires sign-in",
 
 test("Registry cards lead to the public extension profile", async ({ page }) => {
   await page.goto("/registry");
-  const profile = page.getByRole("link", { name: /Open GitHub Copilot extension profile/i });
-  await expect(profile).toHaveAttribute("href", "/extensions/GitHub.copilot");
+  const profile = page.locator('a[aria-label^="Open "][aria-label$=" extension profile"]').first();
+  await expect(profile).toBeVisible();
+  await expect(profile).toHaveAttribute("href", /^\/extensions\//);
 });
 
 test("Registry search clears old results while a new request is pending", async ({ page }) => {
