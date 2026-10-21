@@ -22,6 +22,7 @@ export async function parseReportBundle(file: File): Promise<ImportedReportBundl
   const leaderboard = requireObject<{ extensions: ImportedReportBundle["leaderboard"]["extensions"] }>(jsonEntries.get("leaderboard.json"), "leaderboard.json");
   const posture = objectOrEmpty(jsonEntries.get("posture.json"));
   const rules = requireObject<{ ruleset_version?: string; rules: RuleMetadata[] }>(jsonEntries.get("rules.json"), "rules.json");
+  const cyclonedx = objectOrEmpty(jsonEntries.get("cyclonedx.json"));
   const details: Record<string, ExtensionDetail> = {};
   for (const [name, value] of jsonEntries) {
     if (name.startsWith("extensions/")) {
@@ -38,6 +39,7 @@ export async function parseReportBundle(file: File): Promise<ImportedReportBundl
     leaderboard,
     posture,
     rules,
+    cyclonedx: Object.keys(cyclonedx).length ? cyclonedx : undefined,
     details,
   };
 }

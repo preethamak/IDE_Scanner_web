@@ -96,6 +96,8 @@ export default function ReportExtensionPage({
         detail.artifact_inventory?.package_hash ||
         "",
     );
+  const sbom = report.cyclonedx || {};
+  const sbomComponents = Array.isArray(sbom.components) ? sbom.components.length : 0;
   return (
     <main className="shell canonicalReport">
       <Link className="backLink" href={`/reports/${route.id}`}>
@@ -351,6 +353,19 @@ export default function ReportExtensionPage({
                 {JSON.stringify(detail.artifact_inventory || {}, null, 2)}
               </pre>
             </details>
+            {Object.keys(sbom).length ? <details>
+              <summary>
+                CycloneDX supply-chain evidence <ChevronDown />
+              </summary>
+              <dl>
+                <dt>Format</dt>
+                <dd>{String(sbom.bomFormat || "CycloneDX")}</dd>
+                <dt>Serial number</dt>
+                <dd><code>{String(sbom.serialNumber || "Not recorded")}</code></dd>
+                <dt>Resolved components</dt>
+                <dd>{sbomComponents}</dd>
+              </dl>
+            </details> : null}
           </section>
         </div>
       </div>
