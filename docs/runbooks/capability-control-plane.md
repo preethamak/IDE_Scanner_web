@@ -57,6 +57,10 @@ the device current.
 3. Simulate the draft against the current collected graph. Review allow,
    approval-required, deny, and changed-subject counts.
 4. Treat unknown capability evidence as approval-required, never as an allow.
+   An unknown subject must not carry asserted capabilities. A verified subject
+   must carry an exact SHA-256 from a collector or workspace source; manual
+   imports remain observed or unknown. Reject unsupported or duplicate graph
+   relationship edges rather than treating them as policy context.
 5. Save only after a human owner or admin approves the expected impact.
 6. Export the policy bundle and run CLI enforcement on a representative device.
 7. Record the export hash, policy version, approver, and receipt in the change
