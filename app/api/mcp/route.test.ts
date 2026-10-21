@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getBadgeDecision, getExtensionProduct, getPublicAnalysisHistory, getPublicInventory, getVersionProduct, listCatalog, lookupGateVerdict, isValidGateCheck, rankAlternatives, publicDb, getActiveRuleCatalog, getPublicStatus } = vi.hoisted(() => ({
+const { getBadgeDecision, getExtensionProduct, getPublicAnalysisHistory, getPublicInventory, getVersionProduct, getVersionScanProduct, listCatalog, lookupGateVerdict, isValidGateCheck, rankAlternatives, publicDb, getActiveRuleCatalog, getPublicStatus } = vi.hoisted(() => ({
   getBadgeDecision: vi.fn(),
   getExtensionProduct: vi.fn(),
   getPublicAnalysisHistory: vi.fn(),
   getPublicInventory: vi.fn(),
   getVersionProduct: vi.fn(),
+  getVersionScanProduct: vi.fn(),
   listCatalog: vi.fn(),
   lookupGateVerdict: vi.fn(),
   isValidGateCheck: vi.fn(),
@@ -15,7 +16,7 @@ const { getBadgeDecision, getExtensionProduct, getPublicAnalysisHistory, getPubl
   getPublicStatus: vi.fn(),
 }));
 
-vi.mock("@/lib/productData", () => ({ getBadgeDecision, getExtensionProduct, getPublicAnalysisHistory, getPublicInventory, getVersionProduct, listCatalog }));
+vi.mock("@/lib/productData", () => ({ getBadgeDecision, getExtensionProduct, getPublicAnalysisHistory, getPublicInventory, getVersionProduct, getVersionScanProduct, listCatalog }));
 vi.mock("@/lib/gateLookup", () => ({ lookupGateVerdict, isValidGateCheck }));
 vi.mock("@/lib/alternatives", () => ({ rankAlternatives }));
 vi.mock("@/lib/supabase", () => ({ publicDb }));
@@ -94,8 +95,12 @@ describe("public MCP endpoint", () => {
       version: { version: "1.2.3" },
       scan: { id: "scan-1", artifact_sha256: "a".repeat(64), scanner_build: "build-1", ruleset_version: "rules-1", scanned_at: "2026-10-21T00:00:00.000Z", analysis_status: "complete", coverage_percent: 100, decision: "allow", severity: "INFO", public_outcome: "clear", evidence_confidence: "high", decision_reason: "Complete analysis." },
     });
+    getVersionScanProduct.mockResolvedValue({ scan: { artifact_inventory: { extension_relationship_inventory: {
+      entries: [{ extension_id: "ms-vscode.cpptools", relationship: "extensionPack" }],
+      resolution: [{ extension_id: "ms-vscode.cpptools", relationship: "extensionPack", status: "scanned", resolved_version: "1.2.3", resolved_artifact_sha256: "b".repeat(64) }],
+    } } } });
     const analyzed = await POST(request({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "get_extension_release_evidence", arguments: { extension: "ms-python.python", version: "1.2.3" } } }));
-    await expect(analyzed.json()).resolves.toMatchObject({ result: { structuredContent: { analysis_state: "analyzed", artifact: { sha256: "a".repeat(64) }, assessment: { decision: "allow", coverage_percent: 100 }, decision_boundary: expect.stringContaining("future releases") } } });
+    await expect(analyzed.json()).resolves.toMatchObject({ result: { structuredContent: { analysis_state: "analyzed", artifact: { sha256: "a".repeat(64) }, assessment: { decision: "allow", coverage_percent: 100 }, relationship_context: { status: "reported", relationships: [expect.objectContaining({ extension: "ms-vscode.cpptools", status: "scanned", resolved_version: "1.2.3" })] }, decision_boundary: expect.stringContaining("future releases") } } });
 
     getVersionProduct.mockResolvedValue({ version: { version: "1.2.4" }, scan: null });
     const unreviewed = await POST(request({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "get_extension_release_evidence", arguments: { extension: "ms-python.python", version: "1.2.4" } } }));

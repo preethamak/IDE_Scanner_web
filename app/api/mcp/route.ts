@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { rankAlternatives } from "@/lib/alternatives";
 import { isValidGateCheck, lookupGateVerdict } from "@/lib/gateLookup";
-import { getBadgeDecision, getExtensionProduct, getPublicAnalysisHistory, getPublicInventory, getVersionProduct, listCatalog } from "@/lib/productData";
+import { getBadgeDecision, getExtensionProduct, getPublicAnalysisHistory, getPublicInventory, getVersionProduct, getVersionScanProduct, listCatalog } from "@/lib/productData";
 import { publicDb } from "@/lib/supabase";
 import { deriveTrustTier } from "@/lib/trustTiers";
 import { validBearerSecret } from "@/lib/internalRunnerAuth";
@@ -176,7 +176,7 @@ const TOOLS = [
     title: "Get exact release evidence receipt",
     description: "Return a compact, exact-release GuardRails evidence receipt for a published VS Code extension version. Includes artifact SHA-256 when available, scanner/ruleset identity, coverage, decision, and the decision boundary. Use this before stating that a specific release is suitable to recommend or needs review; an unreviewed result is not approval.",
     inputSchema: { type: "object", properties: { extension: { type: "string", description: "Extension id in publisher.name form." }, version: { type: "string", description: "Exact published extension version to assess." } }, required: ["extension", "version"] },
-    outputSchema: { type: "object", required: ["extension", "version", "analysis_state", "artifact", "assessment", "decision_boundary", "report_url"], properties: { extension: { type: "string" }, version: { type: "string" }, analysis_state: { type: "string", enum: ["analyzed", "unreviewed", "not_found"] }, artifact: { type: "object" }, assessment: { type: ["object", "null"] }, decision_boundary: { type: "string" }, report_url: { type: ["string", "null"] } } },
+    outputSchema: { type: "object", required: ["extension", "version", "analysis_state", "artifact", "assessment", "relationship_context", "decision_boundary", "report_url"], properties: { extension: { type: "string" }, version: { type: "string" }, analysis_state: { type: "string", enum: ["analyzed", "unreviewed", "not_found"] }, artifact: { type: "object" }, assessment: { type: ["object", "null"] }, relationship_context: { type: "object" }, decision_boundary: { type: "string" }, report_url: { type: ["string", "null"] } } },
     annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
   },
   {
@@ -553,6 +553,7 @@ async function getExtensionReleaseEvidence(args: Record<string, unknown>, origin
     analysis_state: "not_found",
     artifact: { sha256: null, identity_status: "not_found" },
     assessment: null,
+    relationship_context: { status: "not_available", relationships: [] },
     decision_boundary: "No matching published release was found. This is not a security assessment.",
     report_url: null,
   });
@@ -565,9 +566,14 @@ async function getExtensionReleaseEvidence(args: Record<string, unknown>, origin
     analysis_state: "unreviewed",
     artifact: { sha256: null, identity_status: "unreviewed" },
     assessment: null,
+    relationship_context: { status: "not_available", relationships: [] },
     decision_boundary: "No completed published GuardRails analysis is available for this exact release. This is not approval, and it does not establish artifact safety.",
     report_url: `${origin}/extensions/${encodeURIComponent(extension)}/versions/${encodeURIComponent(version)}`,
   });
+  const report = scanId
+    ? await getVersionScanProduct(extension, version, scanId, undefined, { compact: true, includePreviews: false }).catch(() => null)
+    : null;
+  const reportScan = report && typeof report.scan === "object" ? report.scan as Record<string, unknown> : null;
   return toolJson({
     extension,
     version,
@@ -587,9 +593,35 @@ async function getExtensionReleaseEvidence(args: Record<string, unknown>, origin
       evidence_confidence: scan.evidence_confidence || null,
       decision_reason: scan.decision_reason || null,
     },
+    relationship_context: releaseRelationshipContext(reportScan?.artifact_inventory),
     decision_boundary: "This evidence applies to the returned published release and artifact identity only. It does not approve future releases or replace source-code, dependency, repository, and runtime-specific review.",
     report_url: scanId ? `${origin}/extensions/${encodeURIComponent(extension)}/versions/${encodeURIComponent(version)}/scans/${encodeURIComponent(scanId)}` : `${origin}/extensions/${encodeURIComponent(extension)}/versions/${encodeURIComponent(version)}`,
   });
+}
+
+function releaseRelationshipContext(inventory: unknown) {
+  const root = inventory && typeof inventory === "object" && !Array.isArray(inventory) ? inventory as Record<string, unknown> : {};
+  const graph = root.extension_relationship_inventory && typeof root.extension_relationship_inventory === "object" && !Array.isArray(root.extension_relationship_inventory) ? root.extension_relationship_inventory as Record<string, unknown> : {};
+  const resolutions = Array.isArray(graph.resolution) ? graph.resolution : [];
+  const resolutionByKey = new Map(resolutions.map((raw) => {
+    const item = raw && typeof raw === "object" && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
+    return [`${String(item.relationship || "")}:${String(item.extension_id || "").toLowerCase()}`, item] as const;
+  }));
+  const relationships = (Array.isArray(graph.entries) ? graph.entries : []).flatMap((raw) => {
+    const item = raw && typeof raw === "object" && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
+    const extensionId = String(item.extension_id || "").trim().toLowerCase();
+    const relationship = String(item.relationship || "");
+    if (!extensionId || !["extensionPack", "extensionDependencies"].includes(relationship)) return [];
+    const resolution = resolutionByKey.get(`${relationship}:${extensionId}`) || {};
+    return [{
+      extension: extensionId,
+      relationship,
+      status: String(resolution.status || "declared_not_scanned"),
+      resolved_version: resolution.resolved_version ? String(resolution.resolved_version) : null,
+      resolved_artifact_sha256: resolution.resolved_artifact_sha256 ? String(resolution.resolved_artifact_sha256) : null,
+    }];
+  }).slice(0, 50);
+  return { status: relationships.length ? "reported" : "not_reported", relationships };
 }
 
 function compactScan(scan: Record<string, unknown>) {
