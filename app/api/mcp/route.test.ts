@@ -88,6 +88,16 @@ describe("public MCP endpoint", () => {
     expect(body.result.structuredContent).toMatchObject({ query: "python", extensions: [expect.objectContaining({ extension: "ms-python.python" })] });
   });
 
+  it("returns machine-readable, non-approving tool errors with retry guidance", async () => {
+    const invalid = await POST(request({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "check_extension_risk", arguments: { extension: "not an extension" } } }));
+    await expect(invalid.json()).resolves.toMatchObject({ result: { isError: true, structuredContent: { error: { code: "INVALID_ARGUMENT", retryable: false } } } });
+
+    isValidGateCheck.mockReturnValue(true);
+    publicDb.mockReturnValue(null);
+    const unavailable = await POST(request({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "check_extension_risk", arguments: { extension: "ms-python.python", version: "1.2.3" } } }));
+    await expect(unavailable.json()).resolves.toMatchObject({ result: { isError: true, structuredContent: { error: { code: "BACKEND_UNAVAILABLE", retryable: true } } } });
+  });
+
   it("returns an exact-release evidence receipt without turning an unreviewed release into approval", async () => {
     isValidGateCheck.mockReturnValue(true);
     getVersionProduct.mockResolvedValue({

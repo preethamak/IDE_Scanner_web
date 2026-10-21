@@ -88,7 +88,7 @@ anything.”
 - Supports `initialize`, `notifications/initialized`, `ping`, `tools/list`, and `tools/call`.
 - Advertises MCP protocol `2025-06-18`, explicit input/output schemas, and read-only safety annotations.
 - Request bodies are limited to 64 KiB. Oversized payloads receive HTTP 413.
-- Tool errors remain MCP results with `isError: true`; unknown methods use standard JSON-RPC errors.
+- Tool errors remain MCP results with `isError: true` and structured `error.code`, `error.message`, and `error.retryable` fields; unknown methods use standard JSON-RPC errors.
 - Responses use `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`.
 - OAuth metadata is public and cacheable; OAuth token, authorization, and MCP
   workspace responses are `no-store`.
