@@ -32,6 +32,31 @@ fn allowed() -> Decision {
     }
 }
 
+fn sensitive_request(resource: &str) -> PolicyRequest {
+    PolicyRequest {
+        request_id: "request:read-secret".into(),
+        workspace_id: "workspace:test".into(),
+        principal: "agent:test/reviewer@1".into(),
+        delegation_chain: vec!["user".into()],
+        capability: Capability::Secret,
+        action: "read".into(),
+        resource: resource.into(),
+        policy_version: 4,
+        requested_at_unix_ms: 1_786_118_400_000,
+    }
+}
+
+fn sensitive_allowed() -> Decision {
+    Decision {
+        request_id: "request:read-secret".into(),
+        outcome: DecisionOutcome::Allow,
+        reason: DecisionReason::GrantAllowed,
+        matching_grant_id: Some("grant:secret-read".into()),
+        policy_version: 4,
+        audit_hash: Some("b".repeat(64)),
+    }
+}
+
 #[test]
 fn reads_only_an_exact_authorized_workspace_file() {
     let workspace = tempdir().unwrap();
@@ -102,5 +127,54 @@ fn enforces_a_bounded_read() {
     assert_eq!(
         broker.read(&request("workspace/large.txt"), &allowed()),
         Err(FilesystemError::TooLarge)
+    );
+}
+
+#[test]
+fn requires_an_independent_secret_grant_for_credential_bearing_files() {
+    let workspace = tempdir().unwrap();
+    fs::write(workspace.path().join(".env"), b"TOKEN=private").unwrap();
+    let broker = FilesystemBroker::open(workspace.path(), 1024).unwrap();
+    let request = request("workspace/.env");
+
+    assert_eq!(
+        broker.read(&request, &allowed()),
+        Err(FilesystemError::SensitiveAuthorizationRequired)
+    );
+
+    let secret_request = sensitive_request("workspace/.env");
+    assert_eq!(
+        broker
+            .read_sensitive(&request, &allowed(), &secret_request, &sensitive_allowed())
+            .unwrap(),
+        b"TOKEN=private"
+    );
+}
+
+#[test]
+fn rejects_secret_grants_that_do_not_bind_the_same_file_and_identity() {
+    let workspace = tempdir().unwrap();
+    fs::write(workspace.path().join("id_ed25519"), b"private key").unwrap();
+    let broker = FilesystemBroker::open(workspace.path(), 1024).unwrap();
+    let request = request("workspace/id_ed25519");
+    let mut mismatched = sensitive_request("workspace/.env");
+    mismatched.principal = "agent:test/other@1".into();
+
+    assert_eq!(
+        broker.read_sensitive(&request, &allowed(), &mismatched, &sensitive_allowed()),
+        Err(FilesystemError::AuthorizationMismatch)
+    );
+}
+
+#[test]
+fn allows_an_env_example_through_the_normal_source_read_path() {
+    let workspace = tempdir().unwrap();
+    fs::write(workspace.path().join(".env.example"), b"TOKEN=").unwrap();
+    let broker = FilesystemBroker::open(workspace.path(), 1024).unwrap();
+    assert_eq!(
+        broker
+            .read(&request("workspace/.env.example"), &allowed())
+            .unwrap(),
+        b"TOKEN="
     );
 }
