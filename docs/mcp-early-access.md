@@ -37,8 +37,11 @@ dynamic client registration, PKCE S256, authorization-code exchange, and
 refresh-token rotation. Access tokens are short-lived and both access and
 refresh tokens are stored only as hashes in D1.
 
-`MCP_ACCESS_TOKEN` and `MCP_REQUIRE_AUTH` remain a legacy emergency guard for
-the public endpoint. They must not be used to grant workspace access.
+`MCP_ACCESS_TOKEN` and `MCP_REQUIRE_AUTH` can protect the public early-access
+endpoint. They never grant workspace access or the `workspace:read` scope. A
+valid OAuth workspace token remains accepted when a static public token is
+configured, so operators can protect public tools without blocking authorized
+workspace reviews.
 
 ## Connect an assistant
 

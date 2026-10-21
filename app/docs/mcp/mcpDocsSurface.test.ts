@@ -12,6 +12,7 @@ describe("public MCP discovery documentation", () => {
     expect(page).toContain("https://abscissa.dev/mcp/server.json");
     expect(page).toContain("GuardRails MCP is in early access");
     expect(page).toContain("OAuth 2.1 authorization code flow with PKCE");
+    expect(page).toContain("a valid OAuth workspace token continues to work when that guard is enabled");
     expect(page).toContain("VS Code extension package");
     expect(page).toContain("codex mcp add guardrails");
     expect(page).toContain("codex mcp login guardrails");
