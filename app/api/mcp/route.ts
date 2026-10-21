@@ -13,6 +13,7 @@ import { privateDb } from "@/lib/cloudflarePrivate";
 import { requireTeamRole } from "@/lib/teams";
 import { getWorkspaceState } from "@/lib/cloudflareWorkspace";
 import { graphWithWorkspaceExtensions } from "@/lib/teamCapabilityInventory";
+import { buildExtensionPolicyBundle, type ExtensionPolicyDecisionRow } from "@/lib/extensionPolicy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,6 +34,7 @@ const WORKSPACE_TOOLS = new Set([
   "get_workspace_security_posture",
   "get_workspace_monitoring",
   "get_workspace_policies",
+  "get_workspace_policy_bundle",
   "get_workspace_decision_history",
   "get_workspace_audit_history",
 ]);
@@ -260,6 +262,14 @@ const TOOLS = [
     annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
   },
   {
+    name: "get_workspace_policy_bundle",
+    title: "Get workspace deployment policy bundle",
+    description: "Build the current GuardRails deny-by-default deployment policy from a workspace's recorded exact-release decisions. Each entry is bound to an artifact SHA-256 and complete analysis; unresolved approvals are deliberately withheld. Requires workspace:read OAuth scope and workspace membership. Read-only: this does not change a decision or deploy a policy.",
+    inputSchema: { type: "object", properties: { workspace_id: { type: "string", description: "GuardRails workspace ID." } }, required: ["workspace_id"] },
+    outputSchema: { type: "object", required: ["workspace_id", "policy"], properties: { workspace_id: { type: "string" }, policy: { type: "object" } } },
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+  },
+  {
     name: "get_workspace_decision_history",
     title: "Get workspace decision history",
     description: "Read recorded extension decisions, rationale, owners, and evidence references for a GuardRails workspace. Requires workspace:read OAuth scope and workspace membership.",
@@ -391,6 +401,7 @@ async function handleToolCall(id: JsonRpcId, params: Record<string, unknown>, re
     if (name === "get_workspace_security_posture") return rpcResult(id, await getWorkspaceSecurityPosture(args, userId));
     if (name === "get_workspace_monitoring") return rpcResult(id, await getWorkspaceMonitoring(args, userId));
     if (name === "get_workspace_policies") return rpcResult(id, await getWorkspacePolicies(args, userId));
+    if (name === "get_workspace_policy_bundle") return rpcResult(id, await getWorkspacePolicyBundle(args, userId));
     if (name === "get_workspace_decision_history") return rpcResult(id, await getWorkspaceDecisionHistory(args, userId));
     if (name === "get_workspace_audit_history") return rpcResult(id, await getWorkspaceAuditHistory(args, userId));
     return rpcError(id, -32602, `Unknown tool: ${name || "(missing)"}`);
@@ -740,6 +751,88 @@ async function getWorkspacePolicies(args: Record<string, unknown>, userId: strin
   const workspace = await workspaceForMcp(args, userId);
   if ("error" in workspace) return workspace.error;
   return toolJson({ workspace_id: workspace.workspaceId, policies: workspace.state.policies, preferences: workspace.state.preferences });
+}
+
+async function getWorkspacePolicyBundle(args: Record<string, unknown>, userId: string | null) {
+  const workspace = await workspaceForMcp(args, userId);
+  if ("error" in workspace) return workspace.error;
+  const decisions = await workspacePolicyDecisions(workspace.state.decisions);
+  return toolJson({
+    workspace_id: workspace.workspaceId,
+    policy: buildExtensionPolicyBundle(workspace.workspaceId, decisions),
+    evidence_boundary: "Only completed, artifact-bound exact releases are deployable. Related extensions, later versions, and unresolved decisions require their own evidence and review.",
+  });
+}
+
+async function workspacePolicyDecisions(decisions: Array<Record<string, unknown>>): Promise<ExtensionPolicyDecisionRow[]> {
+  const scanIds = [...new Set(decisions.map((decision) => String(decision.scan_id || "")).filter(Boolean))];
+  const reports = new Map<string, Record<string, unknown>>();
+  for (let index = 0; index < scanIds.length; index += 50) {
+    const chunk = scanIds.slice(index, index + 50);
+    const placeholders = chunk.map(() => "?").join(",");
+    const result = await privateDb().prepare(
+      `SELECT scan_id,extension_id,version,artifact_sha256,report_json FROM app_scan_reports WHERE scan_id IN (${placeholders})`,
+    ).bind(...chunk).all<Record<string, unknown>>();
+    for (const report of result.results || []) {
+      const scanId = String(report.scan_id || "");
+      if (scanId) reports.set(scanId, report);
+    }
+  }
+  return decisions.map((decision) => {
+    const report = reports.get(String(decision.scan_id || "")) || null;
+    const extensionId = String(decision.extension_id || "");
+    const version = String(decision.version || "");
+    const exactReport = report && sameRelease(report, extensionId, version) ? report : null;
+    return {
+      ...decision,
+      ...(exactReport || {}),
+      artifact_identity_match: Boolean(exactReport),
+      ...workspaceReportFields(exactReport, extensionId, version),
+    } as ExtensionPolicyDecisionRow;
+  });
+}
+
+function workspaceReportFields(report: Record<string, unknown> | null, extensionId: string, version: string): Record<string, unknown> {
+  if (!report?.report_json) return {};
+  try {
+    const bundle = JSON.parse(String(report.report_json));
+    if (!bundle || typeof bundle !== "object" || Array.isArray(bundle)) return {};
+    const metadata = objectValue((bundle as Record<string, unknown>).metadata);
+    const extensions = (bundle as Record<string, unknown>).extensions;
+    const candidates = Array.isArray(extensions) ? extensions : extensions && typeof extensions === "object" ? Object.values(extensions) : [];
+    const detail = candidates.find((item) => item && typeof item === "object" && !Array.isArray(item) && sameRelease(item as Record<string, unknown>, extensionId, version)) as Record<string, unknown> | undefined;
+    if (!detail) return {};
+    const coverage = objectValue(detail.analysis_coverage);
+    return {
+      scanner_build: String(metadata.scanner_build || detail.scanner_build || "unknown"),
+      policy_version: String(metadata.policy_version || detail.policy_version || "unknown"),
+      score_schema_version: String(detail.score_schema_version || metadata.score_schema_version || "unknown"),
+      analysis_status: String(detail.analysis_status || "unknown"),
+      coverage_percent: numberValue(coverage.coverage_percent),
+      risk_score: numberValue(detail.risk_score),
+      malware_score: numberValue(detail.malware_score),
+      trust_tier: String(detail.trust_tier || ""),
+      public_outcome: String(detail.public_outcome || ""),
+      capabilities: detail.capabilities,
+      capability_assessment: detail.capability_assessment,
+      relationship_inventory: objectValue(detail.artifact_inventory).extension_relationship_inventory,
+    };
+  } catch {
+    return {};
+  }
+}
+
+function sameRelease(row: Record<string, unknown>, extensionId: string, version: string) {
+  return String(row.extension_id || "").toLowerCase() === extensionId.toLowerCase() && String(row.version || "") === version;
+}
+
+function objectValue(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function numberValue(value: unknown): number | null {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 async function getWorkspaceDecisionHistory(args: Record<string, unknown>, userId: string | null) {
