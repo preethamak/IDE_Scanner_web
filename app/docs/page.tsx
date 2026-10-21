@@ -126,11 +126,18 @@ export default function DocsPage() {
   gate-extension-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: preethamak/IDE_Scanner_web/.github/actions/guardrails-extension-gate@main
+      - id: guardrails
+        uses: preethamak/IDE_Scanner_web/.github/actions/guardrails-extension-gate@main
         with:
           extension: publisher.name
           version: 1.2.3
           fail-on: unreviewed`}</Code>
+          <Code label="Use gate outputs">{`      - name: Record the reviewed release
+        run: |
+          echo "Decision: \${{ steps.guardrails.outputs.decision }}"
+          echo "Coverage: \${{ steps.guardrails.outputs.coverage-percent }}%"
+        # Outputs are bounded values: verdict, decision, severity,
+        # coverage-percent, report-url, and http-status.`}</Code>
           <p className={styles.note}>
             The action fails closed on outages, malformed responses, unknown
             verdicts, review-required releases, and unreviewed releases when

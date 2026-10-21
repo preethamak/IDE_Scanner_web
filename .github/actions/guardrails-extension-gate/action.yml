@@ -27,6 +27,15 @@ outputs:
   http-status:
     description: HTTP status returned by the GuardRails gate.
     value: ${{ steps.gate.outputs.http-status }}
+  decision:
+    description: GuardRails allow, review, or block decision for the requested release.
+    value: ${{ steps.gate.outputs.decision }}
+  severity:
+    description: Highest reported severity for the requested release, when analyzed.
+    value: ${{ steps.gate.outputs.severity }}
+  coverage-percent:
+    description: Analysis coverage percentage for the requested release, when reported.
+    value: ${{ steps.gate.outputs.coverage-percent }}
 
 runs:
   using: composite
@@ -42,7 +51,7 @@ runs:
         set -euo pipefail
 
         api_url="${GUARDRAILS_API_URL%/}"
-        if [[ ! "$api_url" =~ ^https://[^[:space:]]+$ ]]; then
+        if [[ ! "$api_url" =~ ^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?$ ]]; then
           echo "::error::api-url must be an HTTPS origin."
           exit 1
         fi
@@ -83,9 +92,30 @@ runs:
         fi
 
         verdict="$(jq -r '.verdict // "unknown"' "$response_file")"
+        decision="$(jq -r '.decision // "unknown"' "$response_file")"
+        severity="$(jq -r '.severity // "unknown"' "$response_file")"
+        coverage_percent="$(jq -r '.coverage_percent // "unknown"' "$response_file")"
         report_path="$(jq -r '.report // empty' "$response_file")"
+        if [[ ! "$verdict" =~ ^(pass|fail|unreviewed)$ ]]; then
+          verdict="unknown"
+        fi
+        if [[ ! "$decision" =~ ^(allow|review|block)$ ]]; then
+          decision="unknown"
+        fi
+        if [[ ! "$severity" =~ ^(INFO|LOW|MEDIUM|HIGH|CRITICAL)$ ]]; then
+          severity="unknown"
+        fi
+        if [[ ! "$coverage_percent" =~ ^([0-9]|[1-9][0-9]|100)$ ]]; then
+          coverage_percent="unknown"
+        fi
+        if [[ -n "$report_path" && ! "$report_path" =~ ^/extensions/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+/scans/[A-Za-z0-9_-]+$ ]]; then
+          report_path=""
+        fi
         report_url="${report_path:+$api_url$report_path}"
         echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
+        echo "decision=$decision" >> "$GITHUB_OUTPUT"
+        echo "severity=$severity" >> "$GITHUB_OUTPUT"
+        echo "coverage-percent=$coverage_percent" >> "$GITHUB_OUTPUT"
         echo "report-url=$report_url" >> "$GITHUB_OUTPUT"
         echo "http-status=$http_status" >> "$GITHUB_OUTPUT"
 
@@ -93,9 +123,9 @@ runs:
           {
             echo "### GuardRails extension gate"
             echo
-            echo "| Release | Verdict | HTTP |"
-            echo "| --- | --- | --- |"
-            echo "| \`$GUARDRAILS_EXTENSION@$GUARDRAILS_VERSION\` | \`$verdict\` | \`$http_status\` |"
+            echo "| Release | Verdict | Decision | Severity | Coverage | HTTP |"
+            echo "| --- | --- | --- | --- | --- | --- |"
+            echo "| \`$GUARDRAILS_EXTENSION@$GUARDRAILS_VERSION\` | \`$verdict\` | \`$decision\` | \`$severity\` | \`$coverage_percent\` | \`$http_status\` |"
             if [[ -n "$report_url" ]]; then
               echo
               echo "[Open the exact release report]($report_url)"
