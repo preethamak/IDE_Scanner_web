@@ -168,6 +168,7 @@ export default function IntegrationsPage() {
         <div className={styles.ctaActions}>
           <Link href="/registry">Search extensions <ArrowRight /></Link>
           <Link href="/docs/mcp">Connect an AI assistant <ArrowRight /></Link>
+          <Link href="/docs/ci-gate">Gate a CI release <ArrowRight /></Link>
         </div>
       </section>
     </main>
