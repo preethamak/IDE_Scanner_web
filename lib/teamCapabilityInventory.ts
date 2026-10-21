@@ -52,7 +52,14 @@ export function graphWithWorkspaceExtensions(
     };
   }).filter((subject) => subject.id !== "extension:@");
   const savedSubjects = saved?.subjects || [];
-  const subjects = [...extensionSubjects, ...savedSubjects.filter((subject) => subject.kind !== "extension")];
+  const installedExtensionNames = new Set(extensionSubjects.map((subject) => subject.name.toLowerCase()));
+  // A local collector can see declared workspace recommendations before they
+  // are installed. Keep those declarations, but let a real device inventory
+  // replace the weaker declaration once it observes the extension release.
+  const subjects = [
+    ...extensionSubjects,
+    ...savedSubjects.filter((subject) => subject.kind !== "extension" || !installedExtensionNames.has(subject.name.toLowerCase())),
+  ];
   const known = new Set(subjects.map((subject) => subject.id));
   return buildCapabilityGraph({
     workspaceId,
