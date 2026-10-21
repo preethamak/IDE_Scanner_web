@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import { verifyProductionDeployment } from "./verify-production-deployment.mjs";
 
 function response(body, init = {}) { return new Response(body, init); }
