@@ -1,4 +1,5 @@
 import type { PrivateDatabase } from "@/lib/cloudflarePrivate";
+import { cloudflareQueuedTarget } from "@/lib/cloudflareNotificationTarget";
 
 export const MAX_NOTIFICATION_DELIVERY_ATTEMPTS = 6;
 
@@ -23,7 +24,7 @@ export async function deliverCloudflareNotifications(
     const attempts = Number(row.attempts || 0) + 1;
     try {
       const payload = JSON.parse(String(row.payload_json || "{}"));
-      const target = String(row.target);
+      const target = cloudflareQueuedTarget(String(row.target));
       const kind = String(row.kind || "generic_webhook");
       const delivery = workerSafeDelivery(kind, target, payload);
       const response = await fetch(delivery.destination, {
