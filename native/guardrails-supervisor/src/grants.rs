@@ -1,5 +1,5 @@
 use crate::Grant;
-use std::{fs, path::Path};
+use std::{fs::File, io::Read, path::Path};
 
 const MAX_GRANT_FILE_BYTES: u64 = 1024 * 1024;
 const MAX_GRANTS: usize = 10_000;
@@ -9,11 +9,9 @@ const MAX_GRANTS: usize = 10_000;
 /// from swapping policy between supervisor launches.
 pub fn load_grants(path: impl AsRef<Path>) -> Result<Vec<Grant>, GrantConfigError> {
     let path = path.as_ref();
-    let metadata = fs::symlink_metadata(path).map_err(|_| GrantConfigError::Unavailable)?;
-    if metadata.file_type().is_symlink()
-        || !metadata.is_file()
-        || metadata.len() > MAX_GRANT_FILE_BYTES
-    {
+    let mut file = open_grant_file(path)?;
+    let metadata = file.metadata().map_err(|_| GrantConfigError::Unavailable)?;
+    if !metadata.is_file() || metadata.len() > MAX_GRANT_FILE_BYTES {
         return Err(GrantConfigError::UnsafeFile);
     }
     #[cfg(unix)]
@@ -23,13 +21,40 @@ pub fn load_grants(path: impl AsRef<Path>) -> Result<Vec<Grant>, GrantConfigErro
             return Err(GrantConfigError::UnsafeFile);
         }
     }
-    let bytes = fs::read(path).map_err(|_| GrantConfigError::Unavailable)?;
+    let mut bytes = Vec::with_capacity(metadata.len() as usize);
+    file.read_to_end(&mut bytes)
+        .map_err(|_| GrantConfigError::Unavailable)?;
     let grants: Vec<Grant> =
         serde_json::from_slice(&bytes).map_err(|_| GrantConfigError::InvalidJson)?;
     if grants.len() > MAX_GRANTS {
         return Err(GrantConfigError::TooManyGrants);
     }
     Ok(grants)
+}
+
+#[cfg(unix)]
+fn open_grant_file(path: &Path) -> Result<File, GrantConfigError> {
+    use std::os::unix::fs::OpenOptionsExt;
+    std::fs::OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
+        .open(path)
+        .map_err(|error| {
+            if error.raw_os_error() == Some(libc::ELOOP) {
+                GrantConfigError::UnsafeFile
+            } else {
+                GrantConfigError::Unavailable
+            }
+        })
+}
+
+#[cfg(not(unix))]
+fn open_grant_file(path: &Path) -> Result<File, GrantConfigError> {
+    let metadata = std::fs::symlink_metadata(path).map_err(|_| GrantConfigError::Unavailable)?;
+    if metadata.file_type().is_symlink() {
+        return Err(GrantConfigError::UnsafeFile);
+    }
+    File::open(path).map_err(|_| GrantConfigError::Unavailable)
 }
 
 #[derive(Debug, PartialEq, Eq)]

@@ -47,3 +47,18 @@ fn rejects_a_group_or_world_writable_grant_file() {
         Err(GrantConfigError::UnsafeFile)
     ));
 }
+
+#[cfg(unix)]
+#[test]
+fn rejects_a_symlinked_grant_file() {
+    use std::os::unix::fs::symlink;
+    let directory = tempdir().unwrap();
+    let target = directory.path().join("actual-grants.json");
+    let link = directory.path().join("grants.json");
+    fs::write(&target, serde_json::to_vec(&vec![grant()]).unwrap()).unwrap();
+    symlink(&target, &link).unwrap();
+    assert!(matches!(
+        load_grants(link),
+        Err(GrantConfigError::UnsafeFile)
+    ));
+}
