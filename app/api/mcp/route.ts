@@ -13,6 +13,7 @@ import { privateDb } from "@/lib/cloudflarePrivate";
 import { requireTeamRole } from "@/lib/teams";
 import { getWorkspaceState } from "@/lib/cloudflareWorkspace";
 import { graphWithWorkspaceExtensions } from "@/lib/teamCapabilityInventory";
+import { buildCapabilityPolicyExport } from "@/lib/capabilityPolicyBundle";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,6 +33,7 @@ const WORKSPACE_TOOLS = new Set([
   "get_workspace_capability_graph",
   "get_workspace_monitoring",
   "get_workspace_policies",
+  "get_workspace_capability_policy",
   "get_workspace_decision_history",
   "get_workspace_audit_history",
 ]);
@@ -243,6 +245,14 @@ const TOOLS = [
     annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
   },
   {
+    name: "get_workspace_capability_policy",
+    title: "Get workspace capability policy",
+    description: "Read the workspace's deny-by-default developer capability policy, its evaluated enforcement export, and evidence-dependent approval requirements. Requires workspace:read OAuth scope and workspace membership.",
+    inputSchema: { type: "object", properties: { workspace_id: { type: "string", description: "GuardRails workspace ID." } }, required: ["workspace_id"] },
+    outputSchema: { type: "object", required: ["workspace_id", "policy", "export"], properties: { workspace_id: { type: "string" }, policy: { type: "object" }, export: { type: "object" } } },
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+  },
+  {
     name: "get_workspace_decision_history",
     title: "Get workspace decision history",
     description: "Read recorded extension decisions, rationale, owners, and evidence references for a GuardRails workspace. Requires workspace:read OAuth scope and workspace membership.",
@@ -372,6 +382,7 @@ async function handleToolCall(id: JsonRpcId, params: Record<string, unknown>, re
     if (name === "get_workspace_capability_graph") return rpcResult(id, await getWorkspaceCapabilityGraph(args, userId));
     if (name === "get_workspace_monitoring") return rpcResult(id, await getWorkspaceMonitoring(args, userId));
     if (name === "get_workspace_policies") return rpcResult(id, await getWorkspacePolicies(args, userId));
+    if (name === "get_workspace_capability_policy") return rpcResult(id, await getWorkspaceCapabilityPolicy(args, userId));
     if (name === "get_workspace_decision_history") return rpcResult(id, await getWorkspaceDecisionHistory(args, userId));
     if (name === "get_workspace_audit_history") return rpcResult(id, await getWorkspaceAuditHistory(args, userId));
     return rpcError(id, -32602, `Unknown tool: ${name || "(missing)"}`);
@@ -600,6 +611,14 @@ async function getWorkspacePolicies(args: Record<string, unknown>, userId: strin
   const workspace = await workspaceForMcp(args, userId);
   if ("error" in workspace) return workspace.error;
   return toolJson({ workspace_id: workspace.workspaceId, policies: workspace.state.policies, preferences: workspace.state.preferences });
+}
+
+async function getWorkspaceCapabilityPolicy(args: Record<string, unknown>, userId: string | null) {
+  const workspace = await workspaceForMcp(args, userId);
+  if ("error" in workspace) return workspace.error;
+  const policy = workspace.state.capability_policy || { schema: "guardrails.capability-policy.v1" as const, version: 0, grants: [], updated_at: "", updated_by: "" };
+  const graph = graphWithWorkspaceExtensions(workspace.workspaceId, workspace.state.inventory.installations, workspace.state.capability_graph);
+  return toolJson({ workspace_id: workspace.workspaceId, policy, export: buildCapabilityPolicyExport(policy, graph), note: "This read-only export is enforcement evidence. Unknown capability evidence requires approval; it is not an allow." });
 }
 
 async function getWorkspaceDecisionHistory(args: Record<string, unknown>, userId: string | null) {
