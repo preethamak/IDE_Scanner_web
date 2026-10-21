@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ getVersionScanProduct: vi.fn() }));
+const mocks = vi.hoisted(() => ({ getVersionScanProduct: vi.fn(), reportAccessUser: vi.fn() }));
 vi.mock("@/lib/productData", () => ({
   getVersionScanProduct: mocks.getVersionScanProduct,
 }));
+vi.mock("@/lib/reportAccess", () => ({ reportAccessUser: mocks.reportAccessUser }));
 import { GET } from "./route";
 
 const context = {
@@ -15,7 +16,10 @@ const context = {
 };
 
 describe("immutable scan evidence export", () => {
-  beforeEach(() => mocks.getVersionScanProduct.mockReset());
+  beforeEach(() => {
+    mocks.getVersionScanProduct.mockReset();
+    mocks.reportAccessUser.mockResolvedValue({ id: "user-1" });
+  });
 
   it("exports only the requested terminal scan with immutable caching", async () => {
     mocks.getVersionScanProduct.mockResolvedValue({
@@ -63,5 +67,11 @@ describe("immutable scan evidence export", () => {
     expect(
       (await GET(new Request("https://example.test"), context)).status,
     ).toBe(409);
+  });
+
+  it("requires an authenticated viewer before fetching report evidence", async () => {
+    mocks.reportAccessUser.mockResolvedValue(null);
+    expect((await GET(new Request("https://example.test"), context)).status).toBe(401);
+    expect(mocks.getVersionScanProduct).not.toHaveBeenCalled();
   });
 });
