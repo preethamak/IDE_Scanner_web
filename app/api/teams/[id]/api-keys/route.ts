@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateApiKey } from "@/lib/apiKeys";
+import { normalizeApiKeyScopes } from "@/lib/apiKeyScopes";
 import { authenticated } from "@/lib/auth";
 import { teamApiError } from "@/lib/teamApiError";
 import { requireTeamRole } from "@/lib/teams";
@@ -20,7 +21,7 @@ export async function GET(request: Request, context: Context) {
     const db = serviceDb();
     const { data, error } = await db
       .from("api_keys")
-      .select("id,label,key_prefix,last_used_at,revoked_at,created_at")
+      .select("id,label,key_prefix,scopes,last_used_at,revoked_at,created_at")
       .eq("team_id", id)
       .order("created_at", { ascending: false });
     if (error) throw error;
@@ -55,6 +56,10 @@ export async function POST(request: Request, context: Context) {
     if (!label || label.length > 80) {
       return NextResponse.json({ error: "Key label must be between 1 and 80 characters." }, { status: 400 });
     }
+    const scopes = normalizeApiKeyScopes(body.scopes);
+    if (!scopes) {
+      return NextResponse.json({ error: "Provide one or more supported API key scopes." }, { status: 400 });
+    }
 
     const db = serviceDb();
     const { count, error: countError } = await db
@@ -73,8 +78,8 @@ export async function POST(request: Request, context: Context) {
     const { raw, prefix, hash } = generateApiKey();
     const { data, error } = await db
       .from("api_keys")
-      .insert({ team_id: id, label, key_prefix: prefix, key_hash: hash, created_by: user.id })
-      .select("id,label,key_prefix,created_at")
+      .insert({ team_id: id, label, key_prefix: prefix, key_hash: hash, scopes, created_by: user.id })
+      .select("id,label,key_prefix,scopes,created_at")
       .single();
     if (error) throw error;
     return NextResponse.json({ api_key: { ...data, key: raw } }, { status: 201 });

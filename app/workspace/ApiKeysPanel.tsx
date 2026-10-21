@@ -8,6 +8,7 @@ type ApiKeyRow = {
   id: string;
   label: string;
   key_prefix: string;
+  scopes: string[];
   last_used_at: string | null;
   revoked_at: string | null;
   created_at: string;
@@ -46,7 +47,7 @@ export default function ApiKeysPanel({ teamId, getAuthHeaders }: { teamId: strin
       const response = await fetch(`/api/teams/${encodeURIComponent(teamId)}/api-keys`, {
         method: "POST",
         headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({ label: trimmed }),
+        body: JSON.stringify({ label: trimmed, scopes: ["gate:read"] }),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) { setCreateError(String(body.error || "The key could not be created.")); setCreating(false); return; }
@@ -122,6 +123,7 @@ export default function ApiKeysPanel({ teamId, getAuthHeaders }: { teamId: strin
         <header>
           <span>Label</span>
           <span>Key</span>
+          <span>Scope</span>
           <span>Last used</span>
           <span />
         </header>
@@ -129,6 +131,7 @@ export default function ApiKeysPanel({ teamId, getAuthHeaders }: { teamId: strin
           <article key={key.id}>
             <strong>{key.label}</strong>
             <code>{key.key_prefix}…</code>
+            <span>{Array.isArray(key.scopes) ? key.scopes.join(", ") : "gate:read"}</span>
             <span>{key.last_used_at ? new Date(key.last_used_at).toLocaleString() : "Never used"}</span>
             <button
               aria-label={`Revoke ${key.label}`}
