@@ -62,5 +62,23 @@ export function graphWithWorkspaceExtensions(
   });
 }
 
+/** Replaces only a collector's current observations; manual records survive a device refresh. */
+export function mergeCollectorCapabilityGraph(
+  workspaceId: string,
+  existing: CapabilityGraph | null | undefined,
+  incoming: CapabilityGraph,
+): CapabilityGraph {
+  const subjects = [
+    ...(existing?.subjects || []).filter((subject) => subject.source !== "collector"),
+    ...incoming.subjects,
+  ];
+  const known = new Set(subjects.map((subject) => subject.id));
+  const relationships = [
+    ...(existing?.relationships || []).filter((relationship) => known.has(relationship.from) && known.has(relationship.to)),
+    ...incoming.relationships,
+  ].filter((relationship, index, items) => items.findIndex((candidate) => candidate.from === relationship.from && candidate.to === relationship.to && candidate.type === relationship.type) === index);
+  return buildCapabilityGraph({ workspaceId, generatedAt: incoming.generatedAt, subjects, relationships });
+}
+
 function text(value: unknown): string { return typeof value === "string" ? value.trim() : ""; }
 function validTime(value: string): boolean { return Boolean(value) && Number.isFinite(Date.parse(value)); }

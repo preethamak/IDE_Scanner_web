@@ -21,7 +21,7 @@ const MAX_CHECKS_PER_REQUEST = 200;
 export async function POST(request: Request) {
   let auth;
   try {
-    auth = await authenticatedByApiKey(request);
+    auth = await authenticatedByApiKey(request, "gate:read");
   } catch (error) {
     if (error instanceof AuthenticationError) return NextResponse.json({ error: error.message }, { status: 401 });
     if (error instanceof EntitlementError) return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
