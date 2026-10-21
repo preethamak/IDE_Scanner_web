@@ -3,6 +3,14 @@ import { expect, test } from "@playwright/test";
 
 const routes = ["/", "/analyze", "/registry", "/benchmark", "/extensions/GitHub.copilot/versions/1.388.0"];
 
+test("product demonstration provides English captions", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('video track[kind="captions"][srclang="en"]')).toHaveAttribute(
+    "src",
+    "/demos/guardrails-product-overview.en.vtt",
+  );
+});
+
 for (const route of routes) {
   test(`${route} has no serious WCAG 2.1 A/AA violations`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });

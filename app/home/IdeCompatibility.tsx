@@ -17,14 +17,14 @@ export default function IdeCompatibility() {
         <h2 id="ide-support-heading">Scan from the editor you already use.</h2>
         <Link href="/cli">See the local workflow <ArrowUpRight /></Link>
       </div>
-      <div className={styles.editorList} aria-label="Supported editors">
+      <nav className={styles.editorList} aria-label="Supported editors">
         {editors.map(({ name, detail, href, src, size }) => (
           <a className={styles.editor} href={href} key={name} target="_blank" rel="noreferrer">
             <Image className={styles.logo} src={src} alt={`${name} logo`} width={size} height={size} unoptimized />
             <span><strong>{name}</strong><small>{detail}</small></span>
           </a>
         ))}
-      </div>
+      </nav>
       <p className={styles.disclaimer}>Editor names and logos belong to their respective owners. No endorsement implied.</p>
     </section>
   );

@@ -6,6 +6,14 @@
   color: #ffffff !important;
 }
 
+.extensionIcon {
+  background: #29465e !important;
+}
+
+.consentBanner p {
+  background: #fff;
+}
+
 .inventoryCard .extensionIcon > .extensionIconFallback {
   color: #182433 !important;
 }

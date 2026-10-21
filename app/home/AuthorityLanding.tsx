@@ -33,9 +33,9 @@ export default async function AuthorityLanding() {
             <span className={styles.heroSearchLabel}>Search Marketplace / Open VSX</span>
             <ExtensionSearch submitLabel="Check extension" />
             <p className={styles.trialHint}>Five Deep Scans per 30 days. No account required.</p>
-            <div className={styles.searchExamples} aria-label="Example extension searches">
+            <nav className={styles.searchExamples} aria-label="Example extension searches">
               <span>Try:</span>{["GitHub Copilot", "Cline", "ESLint"].map((name) => <Link key={name} href={`/registry?q=${encodeURIComponent(name)}`}>{name}</Link>)}
-            </div>
+            </nav>
           </div>
           <div className={styles.actions}><Link className={styles.heroTextLink} href="#how">See how it works <ArrowUpRight /></Link></div>
         </div>
@@ -67,6 +67,7 @@ export default async function AuthorityLanding() {
         <div className={styles.heroMovieFrame}>
           <video autoPlay controls muted loop playsInline preload="metadata" poster="/demos/guardrails-product-overview-poster.jpg" aria-label="GuardRails product demo">
             <source src="/demos/guardrails-product-overview.mp4" type="video/mp4" />
+            <track kind="captions" srcLang="en" src="/demos/guardrails-product-overview.en.vtt" label="English" default />
             Your browser does not support video playback.
           </video>
           <div className={styles.heroMovieCaption}><span>From a new capability to a saved decision.</span><Link href="/demos">Open the full demo <ArrowUpRight /></Link></div>
@@ -94,11 +95,11 @@ export default async function AuthorityLanding() {
         <h2 id="trial-heading">Five scans.<br /><em>No account required.</em></h2>
         <p>Inspect the package, capabilities, and evidence before you decide whether GuardRails belongs in your workflow.</p>
       </div>
-      <div className={styles.trialSteps} aria-label="Free scan details">
+      <section className={styles.trialSteps} aria-label="Free scan details">
         <span><strong>01</strong><b>No card</b><small>Start from a public extension.</small></span>
         <span><strong>05</strong><b>Scans / 30 days</b><small>Start with any public extension.</small></span>
         <Link href="/registry">Start a free scan <ArrowRight /></Link>
-      </div>
+      </section>
     </section>
 
     <section className={styles.demoSection} id="how" aria-labelledby="demo-heading">

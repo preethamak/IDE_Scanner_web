@@ -9,7 +9,7 @@
 }
 
 .newsletter label {
-  color: var(--faint, #655c57);
+  color: #52606b;
   font: 650 12px var(--mono, monospace);
   letter-spacing: 0.1em;
 }
