@@ -284,7 +284,7 @@ async function fetchCloudflarePublicStatus(
     newestRegistryRefresh: refresh?.generated_at ? String(refresh.generated_at) : null,
     scanFailureRate: ratio(scanFailures, analyzedScans.length),
     notificationFailureRate: ratio(
-      deliveryRows.filter((row) => row.status === "failed").length,
+      deliveryRows.filter((row) => row.status === "failed" || row.status === "dead_letter").length,
       deliveryRows.length,
     ),
     notificationConfigured: Boolean(teams?.results?.some((row) => hasConfiguredNotificationChannel(row.state_json))),
