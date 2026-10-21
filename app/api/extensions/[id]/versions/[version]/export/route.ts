@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getVersionProduct } from "@/lib/productData";
+import { exportRelationshipEvidence } from "@/lib/relationshipEvidenceExport";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     findings: product.findings,
     capabilities: scan.capabilities || {},
     dependencies: product.dependencies,
+    relationship_evidence: exportRelationshipEvidence(scan.artifact_inventory),
   };
   const fileName = `guardrails-${safePart(id)}-${safePart(version)}-evidence.json`;
   return new NextResponse(JSON.stringify(payload, null, 2), { headers: { "Content-Type": "application/json; charset=utf-8", "Content-Disposition": `attachment; filename="${fileName}"`, "Cache-Control": "private, max-age=0, no-store" } });
