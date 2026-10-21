@@ -7,6 +7,11 @@ describe("shouldNotify", () => {
   it("keeps incomplete analysis actionable", () => expect(shouldNotify({ ...base, coveragePercent: 74 })).toBe(true));
   it("keeps an investigation public outcome actionable below the channel threshold", () => expect(shouldNotify({ ...base, publicOutcome: "investigate" })).toBe(true));
   it("honors disabled release alerts", () => expect(shouldNotify({ ...base, event: "release", releaseAlerts: false })).toBe(false));
+  it("normalizes stored severity values before comparing a channel threshold", () => {
+    expect(shouldNotify({ ...base, severity: "medium", minimumSeverity: "high" })).toBe(false);
+    expect(shouldNotify({ ...base, severity: "HIGH", minimumSeverity: "low" })).toBe(true);
+    expect(shouldNotify({ ...base, severity: "INFO", minimumSeverity: "LOW" })).toBe(false);
+  });
 });
 
 describe("delivery controls", () => {
