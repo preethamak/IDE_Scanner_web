@@ -53,6 +53,7 @@ describe("public MCP endpoint", () => {
       expect.objectContaining({ name: "list_published_extension_scans", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "get_guardrails_analysis_rules", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "get_workspace_extension_inventory", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
+      expect.objectContaining({ name: "get_workspace_capability_graph", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
     ]));
   });
 

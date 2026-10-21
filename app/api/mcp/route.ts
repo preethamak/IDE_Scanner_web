@@ -12,6 +12,7 @@ import { mcpOAuthToken } from "@/lib/mcpOAuth";
 import { privateDb } from "@/lib/cloudflarePrivate";
 import { requireTeamRole } from "@/lib/teams";
 import { getWorkspaceState } from "@/lib/cloudflareWorkspace";
+import { graphWithWorkspaceExtensions } from "@/lib/teamCapabilityInventory";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,6 +29,7 @@ const MCP_ACCESS_TOKEN_ENV = "MCP_ACCESS_TOKEN";
 const WORKSPACE_TOOLS = new Set([
   "list_guardrails_workspaces",
   "get_workspace_extension_inventory",
+  "get_workspace_capability_graph",
   "get_workspace_monitoring",
   "get_workspace_policies",
   "get_workspace_decision_history",
@@ -217,6 +219,14 @@ const TOOLS = [
     annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
   },
   {
+    name: "get_workspace_capability_graph",
+    title: "Get workspace capability graph",
+    description: "Read a GuardRails workspace's developer capability inventory across extensions, MCP servers, agent skills, CLIs, and browser extensions. Returns exact artifact identity when observed and explicitly marks capability evidence that is unknown. Requires workspace:read OAuth scope and workspace membership.",
+    inputSchema: { type: "object", properties: { workspace_id: { type: "string", description: "GuardRails workspace ID." } }, required: ["workspace_id"] },
+    outputSchema: { type: "object", required: ["workspace_id", "graph", "summary"], properties: { workspace_id: { type: "string" }, graph: { type: "object" }, summary: { type: "object" } } },
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+  },
+  {
     name: "get_workspace_monitoring",
     title: "Get workspace monitoring",
     description: "Read GuardRails workspace watchlist entries, monitoring status, release events, and active alerts. Requires workspace:read OAuth scope and workspace membership.",
@@ -359,6 +369,7 @@ async function handleToolCall(id: JsonRpcId, params: Record<string, unknown>, re
     if (name === "get_guardrails_service_status") return rpcResult(id, await getServiceStatus());
     if (name === "list_guardrails_workspaces") return rpcResult(id, await listGuardRailsWorkspaces(userId));
     if (name === "get_workspace_extension_inventory") return rpcResult(id, await getWorkspaceExtensionInventory(args, userId));
+    if (name === "get_workspace_capability_graph") return rpcResult(id, await getWorkspaceCapabilityGraph(args, userId));
     if (name === "get_workspace_monitoring") return rpcResult(id, await getWorkspaceMonitoring(args, userId));
     if (name === "get_workspace_policies") return rpcResult(id, await getWorkspacePolicies(args, userId));
     if (name === "get_workspace_decision_history") return rpcResult(id, await getWorkspaceDecisionHistory(args, userId));
@@ -568,6 +579,14 @@ async function getWorkspaceExtensionInventory(args: Record<string, unknown>, use
   if ("error" in workspace) return workspace.error;
   const installations = workspace.state.inventory.installations;
   return toolJson({ workspace_id: workspace.workspaceId, inventory: { devices: workspace.state.inventory.devices, installations, last_import_at: workspace.state.inventory.last_import_at, summary: { devices: workspace.state.inventory.devices.length, installations: installations.length, unique_extensions: new Set(installations.map((item) => String(item.extension_id).toLowerCase())).size, monitored: installations.filter((item) => workspace.state.watchlist.some((watch) => String(watch.extension_id).toLowerCase() === String(item.extension_id).toLowerCase())).length } } });
+}
+
+async function getWorkspaceCapabilityGraph(args: Record<string, unknown>, userId: string | null) {
+  const workspace = await workspaceForMcp(args, userId);
+  if ("error" in workspace) return workspace.error;
+  const graph = graphWithWorkspaceExtensions(workspace.workspaceId, workspace.state.inventory.installations, workspace.state.capability_graph);
+  const byKind = Object.fromEntries(["extension", "mcp_server", "agent_skill", "cli", "browser_extension"].map((kind) => [kind, graph.subjects.filter((subject) => subject.kind === kind).length]));
+  return toolJson({ workspace_id: workspace.workspaceId, graph, summary: { subjects: graph.subjects.length, by_kind: byKind, verified: graph.subjects.filter((subject) => subject.evidenceState === "verified").length, unknown_capabilities: graph.subjects.filter((subject) => subject.capabilities.length === 0).length } });
 }
 
 async function getWorkspaceMonitoring(args: Record<string, unknown>, userId: string | null) {
