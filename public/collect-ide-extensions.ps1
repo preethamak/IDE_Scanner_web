@@ -1,7 +1,8 @@
 param(
-  [Parameter(Mandatory=$true)]
   [string]$Server,
-  [string]$Token = $env:IDE_SCANNER_AGENT_TOKEN
+  [string]$Token = $env:IDE_SCANNER_AGENT_TOKEN,
+  [switch]$WorkspaceCapabilityGraph,
+  [string]$Workspace = (Get-Location).Path
 )
 
 $ErrorActionPreference = "Stop"
@@ -51,6 +52,58 @@ function Compact-Manifest {
     scripts = $scripts
   }
 }
+
+function Read-WorkspaceJson {
+  param([string]$Path)
+  if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $null }
+  try {
+    if ((Get-Item -LiteralPath $Path).Length -gt 512000) { return $null }
+    return Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json -Depth 32
+  } catch { return $null }
+}
+
+function Add-CapabilitySubject {
+  param([System.Collections.ArrayList]$Subjects, [hashtable]$Seen, [string]$Id, [string]$Kind, [string]$Name, [string[]]$Capabilities, [string]$ObservedAt)
+  if ($Seen.ContainsKey($Id)) { return }
+  $Seen[$Id] = $true
+  [void]$Subjects.Add([pscustomobject]@{ id=$Id; kind=$Kind; name=$Name; version=$null; publisher=$null; artifactSha256=$null; evidenceState="observed"; observedAt=$ObservedAt; capabilities=$Capabilities; source="collector" })
+}
+
+function Get-WorkspaceCapabilityGraph {
+  param([string]$Root)
+  $resolved = (Resolve-Path -LiteralPath $Root).Path
+  $observedAt = [DateTime]::UtcNow.ToString("o")
+  $subjects = [System.Collections.ArrayList]::new(); $seen = @{}
+  $extensionFiles = @((Join-Path $resolved ".vscode\extensions.json")) + @(Get-ChildItem -LiteralPath $resolved -Filter "*.code-workspace" -File -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+  foreach ($file in $extensionFiles) {
+    $config = Read-WorkspaceJson $file
+    $ids = @($config.recommendations)
+    if ($config.customizations.vscode.extensions) { $ids += @($config.customizations.vscode.extensions) }
+    foreach ($id in $ids) {
+      if ($id -is [string] -and $id -match '^[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+$') {
+        Add-CapabilitySubject $subjects $seen ("extension:" + $id.ToLower()) "extension" $id @("editor") $observedAt
+      }
+    }
+  }
+  foreach ($file in @((Join-Path $resolved ".vscode\mcp.json"), (Join-Path $resolved ".cursor\mcp.json"), (Join-Path $resolved ".mcp.json"))) {
+    $config = Read-WorkspaceJson $file
+    if ($config.mcpServers) { foreach ($property in $config.mcpServers.psobject.Properties) {
+      $safe = ($property.Name.ToLower() -replace '[^a-z0-9._-]', '-').Trim('.','-')
+      if (-not $safe) { continue }
+      $capabilities = @("tool")
+      if ($property.Value.url -is [string]) { $capabilities += "network" }
+      if ($property.Value.command -is [string]) { $capabilities += "process" }
+      Add-CapabilitySubject $subjects $seen ("mcp_server:" + $safe) "mcp_server" $property.Name $capabilities $observedAt
+    } }
+  }
+  return [pscustomobject]@{ generatedAt=$observedAt; subjects=$subjects | Select-Object -First 500; relationships=@() }
+}
+
+if ($WorkspaceCapabilityGraph) {
+  (Get-WorkspaceCapabilityGraph $Workspace) | ConvertTo-Json -Depth 32
+  exit 0
+}
+if (-not $Server) { throw "-Server is required unless -WorkspaceCapabilityGraph is used." }
 
 $roots = [System.Collections.ArrayList]::new()
 $homeDir = [Environment]::GetFolderPath("UserProfile")
