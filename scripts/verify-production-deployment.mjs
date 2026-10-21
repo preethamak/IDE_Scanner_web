@@ -5,6 +5,7 @@ export async function verifyProductionDeployment({ origin = process.env.GUARDRAI
   const base = new URL(origin);
   const checks = [];
   await checkApplicationShells(base, fetchImpl, checks);
+  await checkPublicStatus(base, fetchImpl, checks);
   await checkGateValidation(base, fetchImpl, checks);
   await checkMcpBoundary(base, fetchImpl, mcpBearerToken, checks);
   const failed = checks.filter((check) => check.ok === false);
@@ -18,7 +19,30 @@ async function checkApplicationShells(base, fetchImpl, checks) {
     const text = await response.text();
     const html = String(response.headers.get("content-type") || "").includes("text/html");
     checks.push({ name: `application-shell:${path}`, ok: response.ok && html && /guardrails/i.test(text), detail: response.ok && html ? "GuardRails application shell responded." : `HTTP ${response.status} ${response.headers.get("content-type") || "without content type"}` });
+    const requiredHeaders = [
+      ["strict-transport-security", /max-age=63072000/i],
+      ["x-content-type-options", /^nosniff$/i],
+      ["x-frame-options", /^DENY$/i],
+      ["referrer-policy", /^strict-origin-when-cross-origin$/i],
+      ["content-security-policy", /default-src 'self'/i],
+    ];
+    const missing = requiredHeaders
+      .filter(([name, pattern]) => !pattern.test(String(response.headers.get(name) || "")))
+      .map(([name]) => name);
+    checks.push({ name: `security-headers:${path}`, ok: missing.length === 0, detail: missing.length === 0 ? "Required browser security headers are present." : `Missing or invalid headers: ${missing.join(", ")}` });
   }
+}
+
+async function checkPublicStatus(base, fetchImpl, checks) {
+  const response = await request(fetchImpl, new URL("/api/status", base), { headers: { Accept: "application/json" } });
+  const body = await json(response);
+  const validState = ["operational", "degraded", "outage", "unknown"].includes(body?.overall);
+  const services = Array.isArray(body?.services) ? body.services : [];
+  const stableServices = ["registry", "deep-scan", "analysis", "notifications", "api"];
+  const missingServices = stableServices.filter((id) => !services.some((service) => service?.id === id));
+  const contractValid = validState && Array.isArray(body?.incidents) && missingServices.length === 0;
+  const expectedStatus = response.status === 200 || response.status === 503;
+  checks.push({ name: "public-status-contract", ok: expectedStatus && contractValid, detail: expectedStatus && contractValid ? `Public status contract is valid (${body.overall}).` : `Expected a valid status payload with HTTP 200 or 503; received HTTP ${response.status}` });
 }
 
 async function checkGateValidation(base, fetchImpl, checks) {
