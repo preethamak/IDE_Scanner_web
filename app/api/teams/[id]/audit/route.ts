@@ -106,12 +106,20 @@ export async function GET(request: Request, context: Context) {
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })
       .limit(500);
+    let apiKeyUsageQuery = db
+      .from("api_key_usage")
+      .select("id,key_id,method,endpoint,created_at")
+      .eq("team_id", id)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(500);
     if (bounds.from) {
       decisionsQuery = decisionsQuery.gte("updated_at", bounds.from);
       alertsQuery = alertsQuery.gte("created_at", bounds.from);
       deliveriesQuery = deliveriesQuery.gte("created_at", bounds.from);
       digestsQuery = digestsQuery.gte("created_at", bounds.from);
       domainEventsQuery = domainEventsQuery.gte("created_at", bounds.from);
+      apiKeyUsageQuery = apiKeyUsageQuery.gte("created_at", bounds.from);
     }
     if (bounds.to) {
       decisionsQuery = decisionsQuery.lte("updated_at", bounds.to);
@@ -119,16 +127,18 @@ export async function GET(request: Request, context: Context) {
       deliveriesQuery = deliveriesQuery.lte("created_at", bounds.to);
       digestsQuery = digestsQuery.lte("created_at", bounds.to);
       domainEventsQuery = domainEventsQuery.lte("created_at", bounds.to);
+      apiKeyUsageQuery = apiKeyUsageQuery.lte("created_at", bounds.to);
     }
-    const [decisions, alerts, deliveries, digests, domainEvents] =
+    const [decisions, alerts, deliveries, digests, domainEvents, apiKeyUsage] =
       await Promise.all([
         decisionsQuery,
         alertsQuery,
         deliveriesQuery,
         digestsQuery,
         domainEventsQuery,
+        apiKeyUsageQuery,
       ]);
-    const failure = [decisions, alerts, deliveries, digests, domainEvents].find(
+    const failure = [decisions, alerts, deliveries, digests, domainEvents, apiKeyUsage].find(
       (result) => result.error,
     );
     if (failure?.error) throw failure.error;
@@ -140,6 +150,7 @@ export async function GET(request: Request, context: Context) {
         deliveries: deliveries.data || [],
         digests: digests.data || [],
         domainEvents: domainEvents.data || [],
+        apiKeyUsage: apiKeyUsage.data || [],
       }),
       filters,
     );
@@ -184,7 +195,7 @@ export async function GET(request: Request, context: Context) {
   }
 }
 
-function normalizeEvents(
+export function normalizeEvents(
   workspaceId: string,
   sources: {
     decisions: Row[];
@@ -192,6 +203,7 @@ function normalizeEvents(
     deliveries: Row[];
     digests: Row[];
     domainEvents: Row[];
+    apiKeyUsage: Row[];
   },
 ): TeamAuditEvent[] {
   const events: TeamAuditEvent[] = [];
@@ -303,6 +315,27 @@ function normalizeEvents(
       risk_level: null,
       receipt_id: String(digest.id),
       occurred_at: String(digest.delivered_at || digest.created_at),
+    });
+  }
+  for (const usage of sources.apiKeyUsage) {
+    events.push({
+      event_id: `api-key-usage:${String(usage.id)}`,
+      workspace_id: workspaceId,
+      actor_id: null,
+      action: "api_key_used",
+      object_type: "api_key",
+      object_id: String(usage.key_id),
+      extension_id: null,
+      version: null,
+      previous_state: null,
+      resulting_state: {
+        method: text(usage.method),
+        endpoint: text(usage.endpoint),
+      },
+      rationale: "Machine credential accessed the GuardRails API.",
+      risk_level: null,
+      receipt_id: String(usage.id),
+      occurred_at: String(usage.created_at),
     });
   }
   return events;

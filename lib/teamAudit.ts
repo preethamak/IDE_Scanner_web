@@ -16,6 +16,7 @@ export type TeamAuditEvent = {
     | "channel"
     | "preference"
     | "badge"
+    | "api_key"
     | "unknown";
   object_id: string;
   extension_id: string | null;
