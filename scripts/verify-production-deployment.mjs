@@ -1,34 +1,71 @@
-const baseUrl = (process.env.GUARDRAILS_DEPLOYMENT_URL || "https://abscissa.dev").replace(/\/$/, "");
-const paths = ["/", "/registry", "/status"];
+const DEFAULT_ORIGIN = "https://abscissa.dev";
+const TIMEOUT_MS = 15_000;
 
-async function request(url) {
+export async function verifyProductionDeployment({ origin = process.env.GUARDRAILS_PRODUCTION_URL || process.env.GUARDRAILS_DEPLOYMENT_URL || DEFAULT_ORIGIN, mcpBearerToken = process.env.GUARDRAILS_VERIFY_MCP_BEARER_TOKEN || "", fetchImpl = fetch } = {}) {
+  const base = new URL(origin);
+  const checks = [];
+  await checkApplicationShells(base, fetchImpl, checks);
+  await checkGateValidation(base, fetchImpl, checks);
+  await checkMcpBoundary(base, fetchImpl, mcpBearerToken, checks);
+  const failed = checks.filter((check) => check.ok === false);
+  if (failed.length) throw new Error(`Production contract verification failed: ${failed.map((check) => `${check.name}: ${check.detail}`).join("; ")}`);
+  return checks;
+}
+
+async function checkApplicationShells(base, fetchImpl, checks) {
+  for (const path of ["/", "/registry", "/status"]) {
+    const response = await request(fetchImpl, new URL(path, base), { headers: { Accept: "text/html" } });
+    const text = await response.text();
+    const html = String(response.headers.get("content-type") || "").includes("text/html");
+    checks.push({ name: `application-shell:${path}`, ok: response.ok && html && /guardrails/i.test(text), detail: response.ok && html ? "GuardRails application shell responded." : `HTTP ${response.status} ${response.headers.get("content-type") || "without content type"}` });
+  }
+}
+
+async function checkGateValidation(base, fetchImpl, checks) {
+  const response = await request(fetchImpl, new URL("/api/gate", base));
+  const body = await json(response);
+  checks.push({ name: "gate-validation", ok: response.status === 400 && typeof body?.error === "string", detail: response.status === 400 ? "Gate rejects an incomplete exact-release request." : `Expected HTTP 400, received ${response.status}` });
+}
+
+async function checkMcpBoundary(base, fetchImpl, mcpBearerToken, checks) {
+  const headers = { "Content-Type": "application/json" };
+  if (mcpBearerToken) headers.Authorization = `Bearer ${mcpBearerToken}`;
+  const response = await request(fetchImpl, new URL("/api/mcp", base), { method: "POST", headers, body: JSON.stringify({ jsonrpc: "2.0", id: "deployment-verification", method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "guardrails-deployment-verifier", version: "1" } } }) });
+  const body = await json(response);
+  const initialized = response.status === 200 && body?.result?.protocolVersion === "2025-06-18";
+  const mcpProtected = response.status === 401 && String(response.headers.get("www-authenticate") || "").includes("Bearer");
+  checks.push({ name: "mcp-protocol-or-auth-boundary", ok: initialized || mcpProtected, detail: initialized ? "MCP initialize response is valid." : mcpProtected ? "MCP bearer boundary is active." : `Unexpected MCP response HTTP ${response.status}` });
+}
+
+async function request(fetchImpl, url, init = {}) {
   let lastError;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
     try {
-      return await fetch(url, {
-        headers: { Accept: "text/html" },
-        signal: AbortSignal.timeout(20_000),
-      });
+      return await fetchImpl(url, { ...init, redirect: "error", signal: controller.signal });
     } catch (error) {
       lastError = error;
       if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 1_000));
+    } finally {
+      clearTimeout(timer);
     }
   }
   throw lastError;
 }
 
-for (const path of paths) {
-  const response = await request(`${baseUrl}${path}`);
-  if (!response.ok) {
-    throw new Error(`${path} returned ${response.status}.`);
-  }
-  const contentType = response.headers.get("content-type") || "";
-  if (!contentType.includes("text/html")) {
-    throw new Error(`${path} returned ${contentType || "no content type"}, not HTML.`);
-  }
-  const body = await response.text();
-  if (!body.includes("GuardRails")) {
-    throw new Error(`${path} did not return the GuardRails application shell.`);
-  }
-  console.log(`Verified ${baseUrl}${path}`);
+async function json(response) {
+  try { return await response.json(); } catch { return null; }
+}
+
+export async function main() {
+  const checks = await verifyProductionDeployment();
+  for (const check of checks) console.log(`verified ${check.name}: ${check.detail}`);
+}
+
+if (import.meta.url === new URL(process.argv[1], "file:").href) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  });
 }
