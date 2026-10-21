@@ -17,6 +17,8 @@ export function parseCapabilityGraphImport(value: unknown, workspaceId: string):
   const raw = value as Record<string, unknown>;
   if (!Array.isArray(raw.subjects)) throw new CapabilityInventoryValidationError("Capability graph subjects must be an array.");
   if (raw.subjects.length > 500) throw new CapabilityInventoryValidationError("One capability graph can contain at most 500 subjects.");
+  if (raw.relationships !== undefined && !Array.isArray(raw.relationships)) throw new CapabilityInventoryValidationError("Capability graph relationships must be an array.");
+  if (Array.isArray(raw.relationships) && raw.relationships.length > 2_000) throw new CapabilityInventoryValidationError("One capability graph can contain at most 2,000 relationships.");
   try {
     return buildCapabilityGraph({
       workspaceId,

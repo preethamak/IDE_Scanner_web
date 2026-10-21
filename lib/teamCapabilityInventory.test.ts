@@ -30,4 +30,11 @@ describe("team capability inventory", () => {
   it("refuses malformed subject identity", () => {
     expect(() => parseCapabilityGraphImport({ subjects: [{ id: "mcp_server:has space", kind: "mcp_server" }] }, "team-1")).toThrow("invalid");
   });
+
+  it("rejects unsupported and unbounded capability relationships", () => {
+    const subject = { id: "mcp_server:github", kind: "mcp_server", name: "GitHub MCP", version: null, publisher: null, artifactSha256: null, evidenceState: "observed", observedAt: "2026-10-21T10:00:00.000Z", capabilities: ["tool"], source: "collector" };
+
+    expect(() => parseCapabilityGraphImport({ subjects: [subject], relationships: [{ from: subject.id, to: subject.id, type: "exfiltrates_to" }] }, "team-1")).toThrow("relationship type is invalid");
+    expect(() => parseCapabilityGraphImport({ subjects: [], relationships: Array.from({ length: 2_001 }, () => ({})) }, "team-1")).toThrow("at most 2,000 relationships");
+  });
 });
