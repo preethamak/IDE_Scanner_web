@@ -1,0 +1,144 @@
+name: GuardRails extension gate
+description: Fail a GitHub Actions job when one exact VS Code extension release lacks the required GuardRails evidence.
+
+inputs:
+  api-url:
+    description: GuardRails API origin, without a trailing slash.
+    required: false
+    default: https://abscissa.dev
+  extension:
+    description: Exact VS Code extension identifier in publisher.name form.
+    required: true
+  version:
+    description: Exact extension release version to verify.
+    required: true
+  fail-on:
+    description: Set to unreviewed to reject releases that do not yet have completed analysis.
+    required: false
+    default: unreviewed
+
+outputs:
+  verdict:
+    description: GuardRails verdict for the requested release.
+    value: ${{ steps.gate.outputs.verdict }}
+  report-url:
+    description: Absolute URL for the exact release report, when one exists.
+    value: ${{ steps.gate.outputs.report-url }}
+  http-status:
+    description: HTTP status returned by the GuardRails gate.
+    value: ${{ steps.gate.outputs.http-status }}
+  decision:
+    description: GuardRails allow, review, or block decision for the requested release.
+    value: ${{ steps.gate.outputs.decision }}
+  severity:
+    description: Highest reported severity for the requested release, when analyzed.
+    value: ${{ steps.gate.outputs.severity }}
+  coverage-percent:
+    description: Analysis coverage percentage for the requested release, when reported.
+    value: ${{ steps.gate.outputs.coverage-percent }}
+
+runs:
+  using: composite
+  steps:
+    - id: gate
+      shell: bash
+      env:
+        GUARDRAILS_API_URL: ${{ inputs.api-url }}
+        GUARDRAILS_EXTENSION: ${{ inputs.extension }}
+        GUARDRAILS_VERSION: ${{ inputs.version }}
+        GUARDRAILS_FAIL_ON: ${{ inputs.fail-on }}
+      run: |
+        set -euo pipefail
+
+        api_url="${GUARDRAILS_API_URL%/}"
+        if [[ ! "$api_url" =~ ^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?$ ]]; then
+          echo "::error::api-url must be an HTTPS origin."
+          exit 1
+        fi
+        if [[ ! "$GUARDRAILS_EXTENSION" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*\.[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
+          echo "::error::extension must use publisher.name form."
+          exit 1
+        fi
+        if [[ -z "$GUARDRAILS_VERSION" || "$GUARDRAILS_VERSION" =~ [[:space:]] ]]; then
+          echo "::error::version must be an exact, non-empty release version without whitespace."
+          exit 1
+        fi
+        if [[ "$GUARDRAILS_FAIL_ON" != "" && "$GUARDRAILS_FAIL_ON" != "unreviewed" ]]; then
+          echo "::error::fail-on must be empty or unreviewed."
+          exit 1
+        fi
+
+        response_file="$(mktemp)"
+        trap 'rm -f "$response_file"' EXIT
+        curl_args=(
+          --silent --show-error --location
+          --connect-timeout 10 --max-time 30
+          --output "$response_file" --write-out '%{http_code}'
+          --get "$api_url/api/gate"
+          --data-urlencode "extension=$GUARDRAILS_EXTENSION"
+          --data-urlencode "version=$GUARDRAILS_VERSION"
+        )
+        if [[ "$GUARDRAILS_FAIL_ON" == "unreviewed" ]]; then
+          curl_args+=(--data-urlencode 'fail-on=unreviewed')
+        fi
+
+        http_status="$(curl "${curl_args[@]}")" || {
+          echo "::error::GuardRails gate could not be reached. No release approval was inferred."
+          exit 1
+        }
+        if ! jq -e 'type == "object"' "$response_file" >/dev/null 2>&1; then
+          echo "::error::GuardRails returned a non-JSON response (HTTP $http_status)."
+          exit 1
+        fi
+
+        verdict="$(jq -r '.verdict // "unknown"' "$response_file")"
+        decision="$(jq -r '.decision // "unknown"' "$response_file")"
+        severity="$(jq -r '.severity // "unknown"' "$response_file")"
+        coverage_percent="$(jq -r '.coverage_percent // "unknown"' "$response_file")"
+        report_path="$(jq -r '.report // empty' "$response_file")"
+        if [[ ! "$verdict" =~ ^(pass|fail|unreviewed)$ ]]; then
+          verdict="unknown"
+        fi
+        if [[ ! "$decision" =~ ^(allow|review|block)$ ]]; then
+          decision="unknown"
+        fi
+        if [[ ! "$severity" =~ ^(INFO|LOW|MEDIUM|HIGH|CRITICAL)$ ]]; then
+          severity="unknown"
+        fi
+        if [[ ! "$coverage_percent" =~ ^([0-9]|[1-9][0-9]|100)$ ]]; then
+          coverage_percent="unknown"
+        fi
+        if [[ -n "$report_path" && ! "$report_path" =~ ^/extensions/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+/scans/[A-Za-z0-9_-]+$ ]]; then
+          report_path=""
+        fi
+        report_url="${report_path:+$api_url$report_path}"
+        echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
+        echo "decision=$decision" >> "$GITHUB_OUTPUT"
+        echo "severity=$severity" >> "$GITHUB_OUTPUT"
+        echo "coverage-percent=$coverage_percent" >> "$GITHUB_OUTPUT"
+        echo "report-url=$report_url" >> "$GITHUB_OUTPUT"
+        echo "http-status=$http_status" >> "$GITHUB_OUTPUT"
+
+        if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+          {
+            echo "### GuardRails extension gate"
+            echo
+            echo "| Release | Verdict | Decision | Severity | Coverage | HTTP |"
+            echo "| --- | --- | --- | --- | --- | --- |"
+            echo "| \`$GUARDRAILS_EXTENSION@$GUARDRAILS_VERSION\` | \`$verdict\` | \`$decision\` | \`$severity\` | \`$coverage_percent\` | \`$http_status\` |"
+            if [[ -n "$report_url" ]]; then
+              echo
+              echo "[Open the exact release report]($report_url)"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+        if [[ "$http_status" == "200" && "$verdict" == "pass" ]]; then
+          exit 0
+        fi
+        if [[ "$http_status" == "422" ]]; then
+          echo "::error::GuardRails rejected $GUARDRAILS_EXTENSION@$GUARDRAILS_VERSION with verdict $verdict."
+          exit 1
+        fi
+        echo "::error::GuardRails did not return a passing decision for $GUARDRAILS_EXTENSION@$GUARDRAILS_VERSION (HTTP $http_status, verdict $verdict)."
+        exit 1
