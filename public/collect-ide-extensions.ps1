@@ -109,7 +109,8 @@ function Read-WorkspaceJson {
   if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $null }
   try {
     if ((Get-Item -LiteralPath $Path).Length -gt 512000) { return $null }
-    return Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | Remove-JsoncSyntax | ConvertFrom-Json -Depth 32
+    $content = Get-Content -LiteralPath $Path -Raw -Encoding UTF8
+    return ConvertFrom-Json (Remove-JsoncSyntax $content) -Depth 32
   } catch { return $null }
 }
 
