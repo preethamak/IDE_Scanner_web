@@ -35,7 +35,7 @@ export default function NotificationCenter({
 }) {
   const failures = alerts.filter((alert) =>
     alert.team_notification_deliveries?.some(
-      (delivery) => delivery.status === "failed",
+      (delivery) => delivery.status === "failed" || delivery.status === "dead_letter",
     ),
   );
   return (
@@ -73,7 +73,10 @@ export default function NotificationCenter({
       <div className={styles.feed}>
         {alerts.slice(0, 6).map((alert) => {
           const failed = alert.team_notification_deliveries?.some(
-            (delivery) => delivery.status === "failed",
+            (delivery) => delivery.status === "failed" || delivery.status === "dead_letter",
+          );
+          const terminal = alert.team_notification_deliveries?.some(
+            (delivery) => delivery.status === "dead_letter",
           );
           const sent = alert.team_notification_deliveries?.some(
             (delivery) => delivery.status === "sent",
@@ -93,7 +96,9 @@ export default function NotificationCenter({
                 <small>
                   {alert.extension_id}@{alert.version} ·{" "}
                   {failed
-                    ? "Delivery needs attention"
+                    ? terminal
+                      ? "Delivery stopped; validate the channel"
+                      : "Delivery needs attention"
                     : sent
                       ? "Delivered"
                       : "In-app"}
