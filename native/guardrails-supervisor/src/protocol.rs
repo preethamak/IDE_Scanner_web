@@ -34,7 +34,7 @@ pub struct PolicyRequest {
     pub requested_at_unix_ms: u64,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Grant {
     pub id: String,
     pub workspace_id: String,
