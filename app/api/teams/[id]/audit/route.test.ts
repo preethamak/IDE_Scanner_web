@@ -16,7 +16,8 @@ vi.mock("@/lib/teams", () => ({
 vi.mock("@/lib/supabase", () => ({ serviceDb: mocks.serviceDb }));
 vi.mock("@/lib/entitlements", () => ({ requireEntitlement: vi.fn(), EntitlementError: class EntitlementError extends Error {} }));
 
-import { GET, normalizeEvents } from "./route";
+import { apiKeyUsageAuditEvents } from "@/lib/apiKeyAuditEvents";
+import { GET } from "./route";
 
 describe("workspace audit route authorization", () => {
   beforeEach(() => {
@@ -50,10 +51,7 @@ describe("workspace audit route authorization", () => {
   });
 
   it("includes API key use in the administrator audit trail without secret material", () => {
-    const events = normalizeEvents("team-1", {
-      decisions: [], alerts: [], deliveries: [], digests: [], domainEvents: [],
-      apiKeyUsage: [{ id: "usage-1", key_id: "key-1", method: "POST", endpoint: "/api/gate/bulk", created_at: "2026-10-22T00:00:00.000Z" }],
-    });
+    const events = apiKeyUsageAuditEvents("team-1", [{ id: "usage-1", key_id: "key-1", method: "POST", endpoint: "/api/gate/bulk", created_at: "2026-10-22T00:00:00.000Z" }]);
     expect(events).toContainEqual(expect.objectContaining({
       action: "api_key_used",
       object_type: "api_key",

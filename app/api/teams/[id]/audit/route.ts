@@ -11,6 +11,7 @@ import { requireTeamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
 import { requireEntitlement } from "@/lib/entitlements";
 import { getWorkspaceState } from "@/lib/cloudflareWorkspace";
+import { apiKeyUsageAuditEvents } from "@/lib/apiKeyAuditEvents";
 
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
@@ -195,7 +196,7 @@ export async function GET(request: Request, context: Context) {
   }
 }
 
-export function normalizeEvents(
+function normalizeEvents(
   workspaceId: string,
   sources: {
     decisions: Row[];
@@ -317,27 +318,7 @@ export function normalizeEvents(
       occurred_at: String(digest.delivered_at || digest.created_at),
     });
   }
-  for (const usage of sources.apiKeyUsage) {
-    events.push({
-      event_id: `api-key-usage:${String(usage.id)}`,
-      workspace_id: workspaceId,
-      actor_id: null,
-      action: "api_key_used",
-      object_type: "api_key",
-      object_id: String(usage.key_id),
-      extension_id: null,
-      version: null,
-      previous_state: null,
-      resulting_state: {
-        method: text(usage.method),
-        endpoint: text(usage.endpoint),
-      },
-      rationale: "Machine credential accessed the GuardRails API.",
-      risk_level: null,
-      receipt_id: String(usage.id),
-      occurred_at: String(usage.created_at),
-    });
-  }
+  events.push(...apiKeyUsageAuditEvents(workspaceId, sources.apiKeyUsage));
   return events;
 }
 
