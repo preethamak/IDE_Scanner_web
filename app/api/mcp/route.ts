@@ -272,7 +272,8 @@ export function OPTIONS() {
 }
 
 export async function POST(request: Request) {
-  const authorization = authorize(request);
+  const oauth = await mcpOAuthToken(request).catch(() => null);
+  const authorization = authorize(request, oauth);
   if (authorization) return authorization;
   if (contentLength(request) > MAX_BODY_BYTES) return rpcError(null, -32600, "Invalid request: body exceeds 64 KiB.", 413);
   let message: JsonRpcRequest;
@@ -290,7 +291,6 @@ export async function POST(request: Request) {
   const method = typeof message.method === "string" ? message.method : "";
   const params = (message.params && typeof message.params === "object" ? message.params : {}) as Record<string, unknown>;
   const toolName = method === "tools/call" ? String(params.name || "") : "";
-  const oauth = await mcpOAuthToken(request).catch(() => null);
   if (WORKSPACE_TOOLS.has(toolName) && (!oauth || !oauth.scopes.includes("workspace:read"))) return oauthRequired();
 
   switch (method) {
@@ -640,14 +640,14 @@ function rpcError(id: JsonRpcId, code: number, message: string, status = 200) {
   );
 }
 
-function authorize(request: Request): NextResponse | null {
+function authorize(request: Request, oauth: { userId: string } | null): NextResponse | null {
   const accessToken = runtimeEnv(MCP_ACCESS_TOKEN_ENV).trim();
   const requireAuth = runtimeEnv("MCP_REQUIRE_AUTH").trim().toLowerCase() === "true";
   if (!accessToken && !requireAuth) return null;
   if (!accessToken) {
     return NextResponse.json({ error: "MCP authentication is required but not configured." }, { status: 503, headers: { ...rpcHeaders(), "WWW-Authenticate": 'Bearer realm="guardrails-mcp"' } });
   }
-  if (validBearerSecret(request.headers.get("authorization"), accessToken)) return null;
+  if (validBearerSecret(request.headers.get("authorization"), accessToken) || oauth) return null;
   return NextResponse.json({ error: "Unauthorized MCP request." }, { status: 401, headers: { ...rpcHeaders(), "WWW-Authenticate": 'Bearer realm="guardrails-mcp"' } });
 }
 
