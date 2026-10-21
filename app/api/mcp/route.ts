@@ -57,6 +57,15 @@ const RESOURCES = [
   },
 ] as const;
 
+const RESOURCE_TEMPLATES = [
+  {
+    uriTemplate: "guardrails://extensions/{extension}/versions/{version}/evidence",
+    name: "GuardRails exact release evidence",
+    description: "Public, bounded evidence summary for one completed published VS Code extension release. Use only after resolving the exact publisher.name and version.",
+    mimeType: "application/json",
+  },
+] as const;
+
 const RESOURCE_TEXT: Record<(typeof RESOURCES)[number]["uri"], string> = {
   "guardrails://product/overview": `# GuardRails by Abscissa
 
@@ -312,6 +321,8 @@ export async function POST(request: Request) {
       return rpcResult(id, { tools: TOOLS });
     case "resources/list":
       return rpcResult(id, { resources: RESOURCES });
+    case "resources/templates/list":
+      return rpcResult(id, { resourceTemplates: RESOURCE_TEMPLATES });
     case "resources/read":
       return handleResourceRead(id, params);
     case "prompts/list":
@@ -325,11 +336,44 @@ export async function POST(request: Request) {
   }
 }
 
-function handleResourceRead(id: JsonRpcId, params: Record<string, unknown>) {
+async function handleResourceRead(id: JsonRpcId, params: Record<string, unknown>) {
   const uri = String(params.uri || "") as keyof typeof RESOURCE_TEXT;
   const text = RESOURCE_TEXT[uri];
-  if (!text) return rpcError(id, -32602, "Unknown GuardRails resource URI.");
-  return rpcResult(id, { contents: [{ uri, mimeType: "text/markdown", text }] });
+  if (text) return rpcResult(id, { contents: [{ uri, mimeType: "text/markdown", text }] });
+
+  const release = parseReleaseEvidenceUri(uri);
+  if (!release) return rpcError(id, -32602, "Unknown GuardRails resource URI.");
+  const product = await getVersionProduct(release.extension, release.version);
+  const scan = product?.scan as Record<string, unknown> | null | undefined;
+  if (!product || !scan || String(scan.analysis_status || "complete") !== "complete") {
+    return rpcError(id, -32602, "No completed public analysis exists for this exact release.");
+  }
+  const payload = publicReleaseEvidenceResource(release.extension, release.version, scan, Array.isArray(product.findings) ? product.findings : []);
+  return rpcResult(id, { contents: [{ uri, mimeType: "application/json", text: JSON.stringify(payload, null, 2) }] });
+}
+
+function parseReleaseEvidenceUri(uri: string): { extension: string; version: string } | null {
+  const match = /^guardrails:\/\/extensions\/([^/]+)\/versions\/([^/]+)\/evidence$/.exec(uri);
+  if (!match) return null;
+  try {
+    const extension = decodeURIComponent(match[1]);
+    const version = decodeURIComponent(match[2]);
+    return EXTENSION_PATTERN.test(extension) && isValidGateCheck({ extension, version }) ? { extension, version } : null;
+  } catch {
+    return null;
+  }
+}
+
+function publicReleaseEvidenceResource(extension: string, version: string, scan: Record<string, unknown>, findings: unknown[]) {
+  const findingRows = Array.isArray(findings) ? findings.filter((finding) => finding && typeof finding === "object" && !Array.isArray(finding)) as Array<Record<string, unknown>> : [];
+  return {
+    schema_version: "guardrails-mcp-release-evidence-v1",
+    identity: Object.fromEntries(["id", "extension_id", "version", "artifact_sha256", "scanned_at", "scanner_build", "ruleset_version"].map((key) => [key, scan[key] ?? null])),
+    outcome: Object.fromEntries(["decision", "severity", "public_outcome", "decision_reason", "evidence_confidence", "coverage_percent", "analysis_status"].map((key) => [key, scan[key] ?? null])),
+    findings: findingRows.slice(0, 100).map((finding) => Object.fromEntries(["rule_id", "category", "severity", "confidence", "summary", "recommendation", "file_refs", "actionability", "evidence_class"].map((key) => [key, finding[key] ?? null]))),
+    report_url: `https://abscissa.dev/extensions/${encodeURIComponent(extension)}/versions/${encodeURIComponent(version)}/scans/${encodeURIComponent(String(scan.id || ""))}`,
+    boundary: "This resource describes only the exact completed published release. It excludes source previews, raw evidence, and internal analyzer fields. An unreviewed or incomplete release is not returned as approval.",
+  };
 }
 
 function handlePromptGet(id: JsonRpcId, params: Record<string, unknown>) {

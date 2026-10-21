@@ -38,6 +38,7 @@ describe("public MCP endpoint", () => {
     delete process.env.MCP_ACCESS_TOKEN;
     delete process.env.MCP_REQUIRE_AUTH;
     vi.clearAllMocks();
+    isValidGateCheck.mockReturnValue(true);
   });
 
   it("advertises read-only tools with schemas and safety annotations", async () => {
@@ -70,6 +71,27 @@ describe("public MCP endpoint", () => {
 
     const promptResponse = await POST(request({ jsonrpc: "2.0", id: 3, method: "prompts/get", params: { name: "review_vscode_extension", arguments: { extension: "ms-python.python", version: "1.2.3" } } }));
     await expect(promptResponse.json()).resolves.toMatchObject({ result: { messages: [expect.objectContaining({ content: expect.objectContaining({ text: expect.stringContaining("ms-python.python version 1.2.3") }) })] } });
+  });
+
+  it("advertises and serves bounded exact-release evidence resources", async () => {
+    const templatesResponse = await POST(request({ jsonrpc: "2.0", id: 1, method: "resources/templates/list" }));
+    await expect(templatesResponse.json()).resolves.toMatchObject({ result: { resourceTemplates: [expect.objectContaining({ uriTemplate: "guardrails://extensions/{extension}/versions/{version}/evidence", mimeType: "application/json" })] } });
+
+    getVersionProduct.mockResolvedValue({
+      scan: { id: "scan-1", analysis_status: "complete", extension_id: "ms-python.python", version: "1.2.3", artifact_sha256: "a".repeat(64), decision: "review", source_preview: "must not export" },
+      findings: [{ rule_id: "network", summary: "Network access", raw_evidence: "must not export" }],
+    });
+    const response = await POST(request({ jsonrpc: "2.0", id: 2, method: "resources/read", params: { uri: "guardrails://extensions/ms-python.python/versions/1.2.3/evidence" } }));
+    const body = await response.json();
+    const payload = JSON.parse(body.result.contents[0].text);
+    expect(payload).toMatchObject({ schema_version: "guardrails-mcp-release-evidence-v1", identity: { artifact_sha256: "a".repeat(64) }, findings: [{ rule_id: "network" }] });
+    expect(JSON.stringify(payload)).not.toContain("must not export");
+  });
+
+  it("refuses an exact-release resource without a completed public analysis", async () => {
+    getVersionProduct.mockResolvedValue({ scan: { analysis_status: "incomplete" } });
+    const response = await POST(request({ jsonrpc: "2.0", id: 1, method: "resources/read", params: { uri: "guardrails://extensions/ms-python.python/versions/1.2.3/evidence" } }));
+    await expect(response.json()).resolves.toMatchObject({ error: { code: -32602, message: expect.stringContaining("No completed public analysis") } });
   });
 
   it("challenges unauthenticated workspace calls with protected-resource metadata", async () => {
