@@ -6,11 +6,22 @@ export async function verifyProductionDeployment({ origin = process.env.GUARDRAI
   const checks = [];
   await checkApplicationShells(base, fetchImpl, checks);
   await checkPublicStatus(base, fetchImpl, checks);
+  await checkOpenApiContract(base, fetchImpl, checks);
   await checkGateValidation(base, fetchImpl, checks);
   await checkMcpBoundary(base, fetchImpl, mcpBearerToken, checks);
   const failed = checks.filter((check) => check.ok === false);
   if (failed.length) throw new Error(`Production contract verification failed: ${failed.map((check) => `${check.name}: ${check.detail}`).join("; ")}`);
   return checks;
+}
+
+async function checkOpenApiContract(base, fetchImpl, checks) {
+  const response = await request(fetchImpl, new URL("/openapi.json", base), { headers: { Accept: "application/json" } });
+  const body = await json(response);
+  const paths = body?.paths && typeof body.paths === "object" ? body.paths : {};
+  const gate = paths["/api/gate"];
+  const bulkGate = paths["/api/gate/bulk"];
+  const valid = response.status === 200 && typeof body?.openapi === "string" && gate?.get && bulkGate?.post;
+  checks.push({ name: "openapi-public-contract", ok: valid, detail: valid ? "OpenAPI publishes the single and bulk exact-release gates." : `Expected OpenAPI gate paths with HTTP 200, received HTTP ${response.status}` });
 }
 
 async function checkApplicationShells(base, fetchImpl, checks) {
@@ -59,6 +70,18 @@ async function checkMcpBoundary(base, fetchImpl, mcpBearerToken, checks) {
   const initialized = response.status === 200 && body?.result?.protocolVersion === "2025-06-18";
   const mcpProtected = response.status === 401 && String(response.headers.get("www-authenticate") || "").includes("Bearer");
   checks.push({ name: "mcp-protocol-or-auth-boundary", ok: initialized || mcpProtected, detail: initialized ? "MCP initialize response is valid." : mcpProtected ? "MCP bearer boundary is active." : `Unexpected MCP response HTTP ${response.status}` });
+  if (!initialized) return;
+
+  const toolsResponse = await request(fetchImpl, new URL("/api/mcp", base), {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ jsonrpc: "2.0", id: "deployment-verification-tools", method: "tools/list" }),
+  });
+  const toolsBody = await json(toolsResponse);
+  const tools = Array.isArray(toolsBody?.result?.tools) ? toolsBody.result.tools : [];
+  const requiredTools = ["check_extension_risk", "get_extension_release", "search_vscode_extensions", "get_guardrails_analysis_rules"];
+  const missing = requiredTools.filter((name) => !tools.some((tool) => tool?.name === name && tool?.annotations?.readOnlyHint === true));
+  checks.push({ name: "mcp-public-tool-contract", ok: toolsResponse.status === 200 && missing.length === 0, detail: missing.length === 0 ? "Required public MCP tools remain read-only and available." : `Missing or non-read-only MCP tools: ${missing.join(", ")}` });
 }
 
 async function request(fetchImpl, url, init = {}) {
