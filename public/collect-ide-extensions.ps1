@@ -53,12 +53,63 @@ function Compact-Manifest {
   }
 }
 
+function Remove-JsoncSyntax {
+  param([string]$Value)
+  $withoutComments = [System.Text.StringBuilder]::new()
+  $index = 0; $quoted = $false; $escaped = $false
+  while ($index -lt $Value.Length) {
+    $char = $Value[$index]
+    if ($quoted) {
+      [void]$withoutComments.Append($char)
+      if ($escaped) { $escaped = $false }
+      elseif ($char -eq '\') { $escaped = $true }
+      elseif ($char -eq '"') { $quoted = $false }
+      $index += 1; continue
+    }
+    if ($char -eq '"') { $quoted = $true; [void]$withoutComments.Append($char); $index += 1; continue }
+    if ($char -eq '/' -and $index + 1 -lt $Value.Length -and $Value[$index + 1] -eq '/') {
+      $index += 2
+      while ($index -lt $Value.Length -and $Value[$index] -ne "`n") { $index += 1 }
+      if ($index -lt $Value.Length) { [void]$withoutComments.Append("`n"); $index += 1 }
+      continue
+    }
+    if ($char -eq '/' -and $index + 1 -lt $Value.Length -and $Value[$index + 1] -eq '*') {
+      $index += 2
+      while ($index + 1 -lt $Value.Length -and -not ($Value[$index] -eq '*' -and $Value[$index + 1] -eq '/')) { $index += 1 }
+      if ($index + 1 -lt $Value.Length) { $index += 2 } else { $index = $Value.Length }
+      continue
+    }
+    [void]$withoutComments.Append($char); $index += 1
+  }
+
+  $result = [System.Text.StringBuilder]::new()
+  $text = $withoutComments.ToString(); $index = 0; $quoted = $false; $escaped = $false
+  while ($index -lt $text.Length) {
+    $char = $text[$index]
+    if ($quoted) {
+      [void]$result.Append($char)
+      if ($escaped) { $escaped = $false }
+      elseif ($char -eq '\') { $escaped = $true }
+      elseif ($char -eq '"') { $quoted = $false }
+      $index += 1; continue
+    }
+    if ($char -eq '"') { $quoted = $true; [void]$result.Append($char); $index += 1; continue }
+    if ($char -eq ',') {
+      $next = $index + 1
+      while ($next -lt $text.Length -and [char]::IsWhiteSpace($text[$next])) { $next += 1 }
+      if ($next -lt $text.Length -and ($text[$next] -eq '}' -or $text[$next] -eq ']')) { $index += 1; continue }
+    }
+    [void]$result.Append($char); $index += 1
+  }
+  return $result.ToString()
+}
+
 function Read-WorkspaceJson {
   param([string]$Path)
   if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $null }
   try {
     if ((Get-Item -LiteralPath $Path).Length -gt 512000) { return $null }
-    return Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json -Depth 32
+    return Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | Remove-JsoncSyntax | ConvertFrom-Json -Depth 32
   } catch { return $null }
 }
 

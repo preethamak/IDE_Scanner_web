@@ -9,6 +9,13 @@ permissions:
   contents: read
 
 jobs:
+  collector-windows-contract:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - shell: pwsh
+        run: ./tests/collector_windows_contract.ps1
+
   verify:
     runs-on: ubuntu-latest
     steps:
