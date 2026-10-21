@@ -146,8 +146,9 @@ export default function DocsPage() {
           </span>
           <p>
             Checks up to <strong>200 releases</strong> in one call.
-            Authentication is a team API key sent as a Bearer token; keys are
-            managed in your team workspace settings. Unlike the single gate,
+            Authentication is a team API key with the <code>gate:read</code>{" "}
+            scope, sent as a Bearer token; keys are managed in your team
+            workspace settings. Unlike the single gate,
             the bulk endpoint always returns HTTP 200 with per-item verdicts
             and a summary, because a partial failure is meaningful data for a
             bulk caller.
@@ -168,7 +169,7 @@ export default function DocsPage() {
   "team_id": "<your team id>"
 }`}</Code>
           <p>
-            A missing or invalid key returns HTTP 401. An empty{" "}
+            A missing, invalid, or insufficiently scoped key returns HTTP 401. An empty{" "}
             <code>checks</code> array, more than 200 checks, or an entry
             without a valid <code>publisher.name</code> and version returns
             HTTP 400 with the invalid entries listed.
