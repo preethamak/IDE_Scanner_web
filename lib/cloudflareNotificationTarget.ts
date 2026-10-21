@@ -19,6 +19,12 @@ export function cloudflareChannelTarget(channel: Channel): string {
   return typeof channel.target === "string" ? channel.target : "";
 }
 
+/** Preserve a configured encrypted envelope when queueing a delivery. */
+export function cloudflareChannelEncryptedTarget(channel: Channel): string {
+  const encrypted = typeof channel.target_encrypted === "string" ? channel.target_encrypted : "";
+  return encrypted || encryptedCloudflareTarget(cloudflareChannelTarget(channel));
+}
+
 export function cloudflareQueuedTarget(target: string): string {
   return cloudflareTargetConfig(target).url;
 }
