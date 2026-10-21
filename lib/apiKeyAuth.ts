@@ -1,5 +1,6 @@
 import { hashApiKey } from "@/lib/apiKeys";
 import { hasApiKeyScopes, type ApiKeyScope } from "@/lib/apiKeyScopes";
+import { apiKeyUsageRecord } from "@/lib/apiKeyUsage";
 import { AuthenticationError } from "@/lib/auth";
 import { EntitlementError, workspaceEntitlements } from "@/lib/entitlements";
 import { serviceDb } from "@/lib/supabase";
@@ -34,10 +35,12 @@ export async function authenticatedByApiKey(
     throw new EntitlementError("ENTITLEMENT_REQUIRED", "Bulk API access requires the Team plan or higher.");
   }
 
-  void db.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", data.id).then(
-    () => {},
-    () => {},
-  );
+  // Authentication remains available if audit storage has a transient issue.
+  // The audit record never includes the raw bearer secret or request payload.
+  void Promise.allSettled([
+    db.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", data.id),
+    db.from("api_key_usage").insert(apiKeyUsageRecord({ teamId: data.team_id, keyId: data.id, request })),
+  ]);
 
   return { teamId: data.team_id, keyId: data.id, scopes: data.scopes as ApiKeyScope[] };
 }

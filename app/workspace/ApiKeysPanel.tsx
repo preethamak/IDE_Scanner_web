@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ClipboardCheck, KeyRound, LoaderCircle, Plus, RefreshCw, ShieldAlert, Trash2 } from "lucide-react";
+import { ClipboardCheck, Clock3, KeyRound, LoaderCircle, Plus, RefreshCw, ShieldAlert, Trash2 } from "lucide-react";
 import styles from "./apiKeysPanel.module.css";
 
 type ApiKeyRow = {
@@ -14,6 +14,8 @@ type ApiKeyRow = {
   created_at: string;
 };
 
+type ApiKeyUsageRow = { id: string; key_id: string; method: string; endpoint: string; created_at: string };
+
 export default function ApiKeysPanel({ teamId, getAuthHeaders }: { teamId: string; getAuthHeaders: () => Promise<Record<string, string>> }) {
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [keys, setKeys] = useState<ApiKeyRow[]>([]);
@@ -24,15 +26,22 @@ export default function ApiKeysPanel({ teamId, getAuthHeaders }: { teamId: strin
   const [issued, setIssued] = useState<{ label: string; key: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [revoking, setRevoking] = useState<string | null>(null);
+  const [usage, setUsage] = useState<ApiKeyUsageRow[] | null>(null);
 
   const load = useCallback(async () => {
     setState("loading"); setMessage("");
     try {
       const headers = await getAuthHeaders();
-      const response = await fetch(`/api/teams/${encodeURIComponent(teamId)}/api-keys`, { headers });
+      const [response, usageResponse] = await Promise.all([
+        fetch(`/api/teams/${encodeURIComponent(teamId)}/api-keys`, { headers }),
+        fetch(`/api/teams/${encodeURIComponent(teamId)}/api-key-usage?limit=10`, { headers }),
+      ]);
       const body = await response.json().catch(() => ({}));
       if (!response.ok) { setMessage(String(body.error || "API keys could not be loaded.")); setState("error"); return; }
-      setKeys(Array.isArray(body.api_keys) ? body.api_keys : []); setState("ready");
+      const usageBody = await usageResponse.json().catch(() => ({}));
+      setKeys(Array.isArray(body.api_keys) ? body.api_keys : []);
+      setUsage(usageResponse.ok && Array.isArray(usageBody.usage) ? usageBody.usage : null);
+      setState("ready");
     } catch { setMessage("API keys could not be loaded."); setState("error"); }
   }, [getAuthHeaders, teamId]);
 
@@ -144,6 +153,28 @@ export default function ApiKeysPanel({ teamId, getAuthHeaders }: { teamId: strin
         ))}
         {!active.length ? <p>No active API keys. Create one to script bulk gate checks in CI.</p> : null}
       </div>
+
+      {usage ? (
+        <section className={styles.activity} aria-labelledby="api-key-activity">
+          <div className={styles.activityHead}>
+            <div>
+              <span>Administrative audit</span>
+              <h3 id="api-key-activity">Recent API key activity</h3>
+            </div>
+            <Clock3 />
+          </div>
+          {usage.length ? <div className={styles.activityList}>
+            {usage.map((entry) => (
+              <article key={entry.id}>
+                <code>{keys.find((key) => key.id === entry.key_id)?.key_prefix || "Revoked key"}…</code>
+                <strong>{entry.method}</strong>
+                <span>{entry.endpoint}</span>
+                <time dateTime={entry.created_at}>{new Date(entry.created_at).toLocaleString()}</time>
+              </article>
+            ))}
+          </div> : <p className={styles.activityEmpty}>No recorded API key requests yet.</p>}
+        </section>
+      ) : null}
     </div>
   );
 }

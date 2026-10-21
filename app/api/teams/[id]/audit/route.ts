@@ -11,6 +11,7 @@ import { requireTeamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
 import { requireEntitlement } from "@/lib/entitlements";
 import { getWorkspaceState } from "@/lib/cloudflareWorkspace";
+import { apiKeyUsageAuditEvents } from "@/lib/apiKeyAuditEvents";
 
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
@@ -106,12 +107,20 @@ export async function GET(request: Request, context: Context) {
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })
       .limit(500);
+    let apiKeyUsageQuery = db
+      .from("api_key_usage")
+      .select("id,key_id,method,endpoint,created_at")
+      .eq("team_id", id)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(500);
     if (bounds.from) {
       decisionsQuery = decisionsQuery.gte("updated_at", bounds.from);
       alertsQuery = alertsQuery.gte("created_at", bounds.from);
       deliveriesQuery = deliveriesQuery.gte("created_at", bounds.from);
       digestsQuery = digestsQuery.gte("created_at", bounds.from);
       domainEventsQuery = domainEventsQuery.gte("created_at", bounds.from);
+      apiKeyUsageQuery = apiKeyUsageQuery.gte("created_at", bounds.from);
     }
     if (bounds.to) {
       decisionsQuery = decisionsQuery.lte("updated_at", bounds.to);
@@ -119,16 +128,18 @@ export async function GET(request: Request, context: Context) {
       deliveriesQuery = deliveriesQuery.lte("created_at", bounds.to);
       digestsQuery = digestsQuery.lte("created_at", bounds.to);
       domainEventsQuery = domainEventsQuery.lte("created_at", bounds.to);
+      apiKeyUsageQuery = apiKeyUsageQuery.lte("created_at", bounds.to);
     }
-    const [decisions, alerts, deliveries, digests, domainEvents] =
+    const [decisions, alerts, deliveries, digests, domainEvents, apiKeyUsage] =
       await Promise.all([
         decisionsQuery,
         alertsQuery,
         deliveriesQuery,
         digestsQuery,
         domainEventsQuery,
+        apiKeyUsageQuery,
       ]);
-    const failure = [decisions, alerts, deliveries, digests, domainEvents].find(
+    const failure = [decisions, alerts, deliveries, digests, domainEvents, apiKeyUsage].find(
       (result) => result.error,
     );
     if (failure?.error) throw failure.error;
@@ -140,6 +151,7 @@ export async function GET(request: Request, context: Context) {
         deliveries: deliveries.data || [],
         digests: digests.data || [],
         domainEvents: domainEvents.data || [],
+        apiKeyUsage: apiKeyUsage.data || [],
       }),
       filters,
     );
@@ -192,6 +204,7 @@ function normalizeEvents(
     deliveries: Row[];
     digests: Row[];
     domainEvents: Row[];
+    apiKeyUsage: Row[];
   },
 ): TeamAuditEvent[] {
   const events: TeamAuditEvent[] = [];
@@ -305,6 +318,7 @@ function normalizeEvents(
       occurred_at: String(digest.delivered_at || digest.created_at),
     });
   }
+  events.push(...apiKeyUsageAuditEvents(workspaceId, sources.apiKeyUsage));
   return events;
 }
 
