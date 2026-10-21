@@ -23,6 +23,11 @@ export type PermissionPassportModel = {
   freshness: "current" | "newer_release" | "pending" | "unavailable";
   scanned_at: string | null;
   artifact_sha256: string | null;
+  relationship_summary: {
+    declared: number;
+    scanned: number;
+    requires_separate_review: boolean;
+  };
   categories: PermissionCategory[];
 };
 
@@ -137,6 +142,7 @@ export function buildPermissionPassport(input: {
     freshness,
     scanned_at: text(scan?.scanned_at) || text(scan?.created_at),
     artifact_sha256: text(scan?.artifact_sha256),
+    relationship_summary: relationshipSummary(scan),
     categories: definitions.map((definition) => {
       const signals = capabilityKeys.filter((key) =>
         definition.patterns.some((pattern) => pattern.test(key.toLowerCase())),
@@ -148,6 +154,29 @@ export function buildPermissionPassport(input: {
         state: !scan ? "unknown" : signals.length ? "observed" : "not_observed",
         signals: signals.map(humanize).slice(0, 4),
       };
+    }),
+  };
+}
+
+function relationshipSummary(scan: Record<string, unknown> | null) {
+  const inventory = object(scan?.artifact_inventory);
+  const relationships = object(inventory.extension_relationship_inventory);
+  const declared = Array.isArray(relationships.entries) ? relationships.entries : [];
+  const resolution = Array.isArray(relationships.resolution) ? relationships.resolution : [];
+  const scanned = resolution.filter((item) => object(item).status === "scanned").length;
+  return {
+    declared: declared.length,
+    scanned,
+    requires_separate_review: declared.some((entry) => {
+      const relationship = object(entry);
+      const extensionId = text(relationship.extension_id)?.toLowerCase();
+      const kind = text(relationship.relationship);
+      const related = resolution.find((candidate) => {
+        const value = object(candidate);
+        return text(value.extension_id)?.toLowerCase() === extensionId && text(value.relationship) === kind;
+      });
+      const state = object(related);
+      return state.status !== "scanned" || !text(state.resolved_version) || !text(state.resolved_artifact_sha256);
     }),
   };
 }

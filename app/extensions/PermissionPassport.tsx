@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Clipboard,
   FileCode2,
+  GitFork,
   KeyRound,
   Network,
   Share2,
@@ -126,6 +127,25 @@ export default function PermissionPassport({
           );
         })}
       </div>
+      {passport.relationship_summary.declared ? (
+        <aside
+          className={`${styles.relationships} ${passport.relationship_summary.requires_separate_review ? styles.relationshipReview : ""}`}
+          aria-label="Declared extension relationships"
+        >
+          <GitFork />
+          <div>
+            <strong>Declared extension relationships</strong>
+            <p>
+              {passport.relationship_summary.scanned} of {passport.relationship_summary.declared} related release{passport.relationship_summary.declared === 1 ? "" : "s"} have exact scan evidence.
+            </p>
+          </div>
+          <em>
+            {passport.relationship_summary.requires_separate_review
+              ? "Separate review required"
+              : "Evidence complete"}
+          </em>
+        </aside>
+      ) : null}
       <footer>
         <span>This passport never carries forward to another version.</span>
         <div>
