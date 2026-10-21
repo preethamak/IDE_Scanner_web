@@ -1,6 +1,10 @@
 import "server-only";
 
-import { decryptTarget, encryptTarget } from "@/lib/notificationCrypto";
+import {
+  decryptTarget,
+  encryptTarget,
+  notificationTargetConfig,
+} from "@/lib/notificationCrypto";
 
 type Channel = Record<string, unknown>;
 
@@ -30,10 +34,5 @@ export function cloudflareQueuedTarget(target: string): string {
 }
 
 export function cloudflareTargetConfig(target: string): { url: string; signingSecret: string } {
-  const raw = target.startsWith("v1.") ? decryptTarget(target) : target;
-  try {
-    const parsed = JSON.parse(raw) as { url?: unknown; signing_secret?: unknown };
-    if (typeof parsed.url === "string") return { url: parsed.url, signingSecret: typeof parsed.signing_secret === "string" ? parsed.signing_secret : "" };
-  } catch { /* legacy URL */ }
-  return { url: raw, signingSecret: "" };
+  return notificationTargetConfig(target);
 }
