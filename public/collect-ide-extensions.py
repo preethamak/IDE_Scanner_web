@@ -21,11 +21,10 @@ def main() -> int:
     parser.add_argument("--serve", action="store_true", help="Run a local bridge server for the website to query.")
     parser.add_argument("--host", default="127.0.0.1", help="Bridge bind host. Defaults to 127.0.0.1.")
     parser.add_argument("--port", type=int, default=17865, help="Bridge port. Defaults to 17865.")
-    parser.add_argument("--workspace", type=Path, default=Path.cwd(), help="Workspace directory used to discover declared extensions and MCP servers.")
     args = parser.parse_args()
 
     if args.serve:
-        serve_bridge(args.host, args.port, args.workspace)
+        serve_bridge(args.host, args.port)
         return 0
     if not args.server:
         parser.error("--server is required unless --serve is used")
@@ -73,81 +72,6 @@ def discover_extensions(compact: bool = False) -> list[dict]:
                 "icon_data_url": "" if compact else extension_icon_data_url(package_file.parent, manifest),
             })
     return sorted(found, key=lambda item: (item["client"], item["path"]))
-
-
-def discover_workspace_capabilities(root: Path) -> dict:
-    """Build a bounded, secret-free graph from declared workspace tooling."""
-    root = root.expanduser().resolve()
-    observed_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-    subjects: list[dict] = []
-    seen: set[str] = set()
-
-    for extension_id in workspace_extension_ids(root):
-        subject_id = f"extension:{extension_id.lower()}"
-        if subject_id in seen:
-            continue
-        seen.add(subject_id)
-        publisher = extension_id.split(".", 1)[0] if "." in extension_id else None
-        subjects.append({"id": subject_id, "kind": "extension", "name": extension_id, "version": None, "publisher": publisher, "artifactSha256": None, "evidenceState": "observed", "observedAt": observed_at, "capabilities": ["editor"], "source": "collector"})
-
-    for name, config in workspace_mcp_servers(root):
-        subject_id = f"mcp_server:{safe_identity(name)}"
-        if subject_id in seen:
-            continue
-        seen.add(subject_id)
-        capabilities = ["tool"]
-        if isinstance(config.get("url"), str):
-            capabilities.append("network")
-        if isinstance(config.get("command"), str):
-            capabilities.append("process")
-        subjects.append({"id": subject_id, "kind": "mcp_server", "name": name, "version": None, "publisher": None, "artifactSha256": None, "evidenceState": "observed", "observedAt": observed_at, "capabilities": capabilities, "source": "collector"})
-
-    return {"generatedAt": observed_at, "subjects": subjects[:500], "relationships": []}
-
-
-def workspace_extension_ids(root: Path) -> list[str]:
-    values: set[str] = set()
-    for path in [root / ".vscode" / "extensions.json", *root.glob("*.code-workspace")]:
-        data = read_workspace_json(path)
-        if not isinstance(data, dict):
-            continue
-        recommendations = data.get("recommendations")
-        if isinstance(recommendations, list):
-            values.update(item.strip() for item in recommendations if valid_extension_id(item))
-        customizations = data.get("customizations")
-        vscode = customizations.get("vscode") if isinstance(customizations, dict) else None
-        extensions = vscode.get("extensions") if isinstance(vscode, dict) else None
-        if isinstance(extensions, list):
-            values.update(item.strip() for item in extensions if valid_extension_id(item))
-    return sorted(values)
-
-
-def workspace_mcp_servers(root: Path) -> list[tuple[str, dict]]:
-    found: list[tuple[str, dict]] = []
-    for path in (root / ".vscode" / "mcp.json", root / ".cursor" / "mcp.json", root / ".mcp.json"):
-        data = read_workspace_json(path)
-        servers = data.get("mcpServers") if isinstance(data, dict) else None
-        if isinstance(servers, dict):
-            for name, config in list(servers.items())[:100]:
-                if isinstance(name, str) and isinstance(config, dict) and name.strip():
-                    found.append((name.strip()[:160], config))
-    return found
-
-
-def read_workspace_json(path: Path) -> object:
-    try:
-        return json.loads(path.read_text(encoding="utf-8")) if path.is_file() and path.stat().st_size <= 512_000 else None
-    except (OSError, json.JSONDecodeError):
-        return None
-
-
-def valid_extension_id(value: object) -> bool:
-    return isinstance(value, str) and 1 <= value.count(".") and " " not in value and len(value) <= 300
-
-
-def safe_identity(value: str) -> str:
-    normalized = "".join(char.lower() if char.isalnum() or char in "._-" else "-" for char in value).strip(".-")
-    return normalized[:300] or "unnamed"
 
 
 def rich_manifest(manifest: dict) -> dict:
@@ -301,7 +225,7 @@ def post_report(server: str, payload: dict, token: str) -> dict:
         return json.loads(raw) if raw.strip() else {}
 
 
-def serve_bridge(host: str, port: int, workspace: Path) -> None:
+def serve_bridge(host: str, port: int) -> None:
     class Handler(BaseHTTPRequestHandler):
         def do_OPTIONS(self) -> None:
             self.send_response(204)
@@ -314,9 +238,6 @@ def serve_bridge(host: str, port: int, workspace: Path) -> None:
                 return
             if self.path.split("?", 1)[0] == "/inventory":
                 self._json({"agent": agent_metadata(), "extensions": discover_extensions(compact=False)})
-                return
-            if self.path.split("?", 1)[0] == "/capability-graph":
-                self._json(discover_workspace_capabilities(workspace))
                 return
             self.send_response(404)
             self._cors()
