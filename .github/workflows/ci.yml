@@ -17,6 +17,10 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m unittest tests/collector_contract.py
       - run: npm ci
       - run: npm run lint
       - run: npx tsc --noEmit
