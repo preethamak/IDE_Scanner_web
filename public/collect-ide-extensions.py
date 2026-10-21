@@ -7,6 +7,7 @@ import json
 import mimetypes
 import os
 import platform
+import re
 import socket
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -138,9 +139,49 @@ def workspace_mcp_servers(root: Path) -> list[tuple[str, dict]]:
 
 def read_workspace_json(path: Path) -> object:
     try:
-        return json.loads(path.read_text(encoding="utf-8")) if path.is_file() and path.stat().st_size <= 512_000 else None
+        return json.loads(strip_jsonc(path.read_text(encoding="utf-8"))) if path.is_file() and path.stat().st_size <= 512_000 else None
     except (OSError, json.JSONDecodeError):
         return None
+
+
+def strip_jsonc(value: str) -> str:
+    """Remove JSONC comments and trailing commas without touching strings."""
+    output: list[str] = []
+    index = 0
+    quoted = False
+    escaped = False
+    while index < len(value):
+        char = value[index]
+        if quoted:
+            output.append(char)
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                quoted = False
+            index += 1
+            continue
+        if char == '"':
+            quoted = True
+            output.append(char)
+            index += 1
+            continue
+        if value.startswith("//", index):
+            index = value.find("\n", index)
+            if index < 0:
+                break
+            output.append("\n")
+            index += 1
+            continue
+        if value.startswith("/*", index):
+            end = value.find("*/", index + 2)
+            index = len(value) if end < 0 else end + 2
+            continue
+        output.append(char)
+        index += 1
+    without_comments = "".join(output)
+    return re.sub(r",\s*([}\]])", r"\1", without_comments)
 
 
 def valid_extension_id(value: object) -> bool:
