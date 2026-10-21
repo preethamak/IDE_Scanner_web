@@ -38,6 +38,12 @@ class CollectorContractTests(unittest.TestCase):
         self.assertNotIn("private-value", json.dumps(graph))
         self.assertNotIn("secret", json.dumps(graph))
 
+    def test_allowed_origin_accepts_only_http_origin_shape(self) -> None:
+        collector = collector_module()
+        self.assertEqual(collector.allowed_origin("https://guardrails.example"), "https://guardrails.example")
+        self.assertIsNone(collector.allowed_origin("https://guardrails.example/path"))
+        self.assertIsNone(collector.allowed_origin("javascript:alert(1)"))
+
 
 if __name__ == "__main__":
     unittest.main()

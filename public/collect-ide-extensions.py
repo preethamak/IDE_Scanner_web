@@ -12,6 +12,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.request import Request, urlopen
+from urllib.parse import urlparse
 
 
 def main() -> int:
@@ -26,7 +27,12 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.serve:
-        origins = {"https://abscissa.dev", "http://localhost:3000", *args.allowed_origin}
+        origins = {"https://abscissa.dev", "http://localhost:3000"}
+        for origin in args.allowed_origin:
+            normalized = allowed_origin(origin)
+            if not normalized:
+                parser.error("--allowed-origin must be an http(s) origin without a path, query, or fragment")
+            origins.add(normalized)
         serve_bridge(args.host, args.port, args.workspace, origins)
         return 0
     if not args.server:
@@ -220,6 +226,16 @@ def valid_extension_id(value: object) -> bool:
 def safe_identity(value: str) -> str:
     normalized = "".join(char.lower() if char.isalnum() or char in "._-" else "-" for char in value).strip(".-")
     return normalized[:300] or "unnamed"
+
+
+def allowed_origin(value: str) -> str | None:
+    try:
+        parsed = urlparse(value)
+    except ValueError:
+        return None
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc or parsed.path or parsed.params or parsed.query or parsed.fragment or parsed.username or parsed.password:
+        return None
+    return f"{parsed.scheme}://{parsed.netloc}"
 
 
 def rich_manifest(manifest: dict) -> dict:
