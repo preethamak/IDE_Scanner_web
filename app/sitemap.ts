@@ -12,6 +12,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ["/vsix-audit", 0.8, "monthly"],
     ["/ide", 0.9, "weekly"],
     ["/docs/mcp", 0.8, "monthly"],
+    ["/llms.txt", 0.6, "monthly"],
+    ["/llms-full.txt", 0.6, "monthly"],
     ["/cli", 0.8, "weekly"],
     ["/analyze", 0.8, "weekly"],
     ["/monitor", 0.7, "weekly"],

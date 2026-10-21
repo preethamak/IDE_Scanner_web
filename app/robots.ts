@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/api/", "/auth/", "/account", "/settings", "/reports/", "/history", "/inventory", "/extensions/"],
+      disallow: ["/api/", "/auth/", "/account", "/settings", "/reports/", "/history", "/inventory"],
     },
     sitemap: "https://abscissa.dev/sitemap.xml",
     host: "https://abscissa.dev",
