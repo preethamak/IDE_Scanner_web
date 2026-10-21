@@ -6,6 +6,7 @@ vi.mock("@/lib/cloudflareWorkspace", () => ({ getWorkspaceState: mocks.state, sa
 vi.mock("@/lib/cloudflarePrivate", () => ({ newId: mocks.newId, nowIso: mocks.now }));
 
 import { POST } from "./route";
+import { collectorSnapshotFingerprint, parseCollectorSnapshot } from "@/lib/capabilityCollector";
 
 const body = { inventory: { device: { id: "laptop-1", name: "Developer laptop", platform: "linux" }, reported_at: "2026-10-21T10:00:00.000Z", extensions: [{ extension_id: "GitHub.copilot", version: "1.2.3", registry: "vs-marketplace", artifact_sha256: null }] }, graph: { subjects: [{ id: "mcp_server:github", kind: "mcp_server", name: "GitHub MCP", version: "1", publisher: "GitHub", artifactSha256: null, evidenceState: "observed", observedAt: "2026-10-21T10:00:00.000Z", capabilities: ["network"], source: "collector" }], relationships: [] } };
 
@@ -38,5 +39,15 @@ describe("capability collector API", () => {
     const response = await POST(new Request("http://localhost", { method: "POST", body: JSON.stringify({}) }));
     expect(response.status).toBe(400);
     expect(mocks.save).not.toHaveBeenCalled();
+  });
+
+  it("returns the original receipt for a retry and rejects key reuse with different content", async () => {
+    const fingerprint = collectorSnapshotFingerprint(parseCollectorSnapshot(body, "team-from-key"));
+    mocks.state.mockResolvedValue({ inventory: { devices: [], installations: [], last_import_at: null }, capability_graph: null, audit: [], collector_receipts: [{ key: "retry-key-000000", snapshot_sha256: fingerprint, receipt_id: "receipt-old", device_id: "laptop-1", reported_at: body.inventory.reported_at }] });
+    const duplicate = await POST(new Request("http://localhost", { method: "POST", headers: { "Idempotency-Key": "retry-key-000000" }, body: JSON.stringify(body) }));
+    await expect(duplicate.json()).resolves.toMatchObject({ accepted: true, duplicate: true, receipt_id: "receipt-old" });
+    expect(mocks.save).not.toHaveBeenCalled();
+    const conflict = await POST(new Request("http://localhost", { method: "POST", headers: { "Idempotency-Key": "retry-key-000000" }, body: JSON.stringify({ ...body, inventory: { ...body.inventory, extensions: [{ ...body.inventory.extensions[0], version: "9.9.9" }] } }) }));
+    expect(conflict.status).toBe(409);
   });
 });

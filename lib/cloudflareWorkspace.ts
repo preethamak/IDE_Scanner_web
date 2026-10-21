@@ -26,12 +26,14 @@ export type CloudflareWorkspaceState = {
     last_import_at: string | null;
   };
   capability_graph?: CapabilityGraph | null;
+  collector_receipts?: Array<Record<string, unknown>>;
 };
 
 export const defaultWorkspaceState: CloudflareWorkspaceState = {
   watchlist: [], alerts: [], decisions: [], members: [], channels: [], deliveries: [], digest_deliveries: [], policies: [], release_events: [], trust_records: [], recall_events: [], audit: [], invitations: [], monitoring: { status: "unknown", last_checked_at: null, next_check_at: null, cadence_hours: 6, error: "Monitoring has not completed its first scheduled check." }, inventory: { devices: [], installations: [], last_import_at: null },
   preferences: { release_alerts: true, scan_alerts: true, decision_alerts: true, high_evidence_alerts: true, provenance_alerts: true, coverage_alerts: true, due_alerts: true, weekly_digest: false, digest_weekday: 1, digest_hour_utc: 9 },
   capability_graph: null,
+  collector_receipts: [],
 };
 
 export async function getWorkspaceState(teamId: string): Promise<CloudflareWorkspaceState> {
@@ -39,7 +41,7 @@ export async function getWorkspaceState(teamId: string): Promise<CloudflareWorks
   return {
     ...defaultWorkspaceState,
     ...raw,
-    watchlist: array(raw.watchlist), alerts: array(raw.alerts), decisions: array(raw.decisions), members: array(raw.members), channels: array(raw.channels), deliveries: array(raw.deliveries), digest_deliveries: array(raw.digest_deliveries), policies: array(raw.policies), release_events: array(raw.release_events), trust_records: array(raw.trust_records), recall_events: array(raw.recall_events), audit: array(raw.audit), invitations: array(raw.invitations), monitoring: jsonValue(raw.monitoring), inventory: inventory(raw.inventory), preferences: { ...defaultWorkspaceState.preferences, ...jsonValue(raw.preferences) },
+    watchlist: array(raw.watchlist), alerts: array(raw.alerts), decisions: array(raw.decisions), members: array(raw.members), channels: array(raw.channels), deliveries: array(raw.deliveries), digest_deliveries: array(raw.digest_deliveries), policies: array(raw.policies), release_events: array(raw.release_events), trust_records: array(raw.trust_records), recall_events: array(raw.recall_events), audit: array(raw.audit), invitations: array(raw.invitations), monitoring: jsonValue(raw.monitoring), inventory: inventory(raw.inventory), preferences: { ...defaultWorkspaceState.preferences, ...jsonValue(raw.preferences) }, collector_receipts: array(raw.collector_receipts),
   };
 }
 export async function saveState(teamId: string, state: CloudflareWorkspaceState): Promise<void> {
