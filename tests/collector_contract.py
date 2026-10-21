@@ -28,15 +28,19 @@ class CollectorContractTests(unittest.TestCase):
             root = Path(directory)
             (root / ".vscode").mkdir()
             (root / ".cursor").mkdir()
+            (root / ".codex" / "skills" / "release-review").mkdir(parents=True)
             (root / ".vscode" / "extensions.json").write_text('{"recommendations": ["ms-python.python",],}')
             (root / ".cursor" / "mcp.json").write_text(json.dumps({"mcpServers": {"review": {"command": "node", "args": ["private-value"], "env": {"TOKEN": "secret"}}}}))
+            (root / ".codex" / "skills" / "release-review" / "SKILL.md").write_text("private skill instruction")
             graph = collector.discover_workspace_capabilities(root)
 
         subjects = {subject["id"]: subject for subject in graph["subjects"]}
         self.assertEqual(subjects["extension:ms-python.python"]["capabilities"], ["editor"])
         self.assertEqual(subjects["mcp_server:review"]["capabilities"], ["tool", "process"])
+        self.assertEqual(subjects["agent_skill:codex-release-review"]["capabilities"], [])
         self.assertNotIn("private-value", json.dumps(graph))
         self.assertNotIn("secret", json.dumps(graph))
+        self.assertNotIn("private skill instruction", json.dumps(graph))
 
     def test_allowed_origin_accepts_only_http_origin_shape(self) -> None:
         collector = collector_module()

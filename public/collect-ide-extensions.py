@@ -110,6 +110,15 @@ def discover_workspace_capabilities(root: Path) -> dict:
             capabilities.append("process")
         subjects.append({"id": subject_id, "kind": "mcp_server", "name": name, "version": None, "publisher": None, "artifactSha256": None, "evidenceState": "observed", "observedAt": observed_at, "capabilities": capabilities, "source": "collector"})
 
+    for skill_name, identity in workspace_agent_skills(root):
+        subject_id = f"agent_skill:{identity}"
+        if subject_id in seen:
+            continue
+        seen.add(subject_id)
+        # A skill instruction file proves presence, not the permissions of a
+        # host agent or any tool it may later invoke. Do not read its content.
+        subjects.append({"id": subject_id, "kind": "agent_skill", "name": skill_name, "version": None, "publisher": None, "artifactSha256": None, "evidenceState": "observed", "observedAt": observed_at, "capabilities": [], "source": "collector"})
+
     return {"generatedAt": observed_at, "subjects": subjects[:500], "relationships": []}
 
 
@@ -139,6 +148,18 @@ def workspace_mcp_servers(root: Path) -> list[tuple[str, dict]]:
             for name, config in list(servers.items())[:100]:
                 if isinstance(name, str) and isinstance(config, dict) and name.strip():
                     found.append((name.strip()[:160], config))
+    return found
+
+
+def workspace_agent_skills(root: Path) -> list[tuple[str, str]]:
+    found: list[tuple[str, str]] = []
+    for host, directory in (("codex", root / ".codex" / "skills"), ("agents", root / ".agents" / "skills"), ("cursor", root / ".cursor" / "skills")):
+        if not directory.is_dir():
+            continue
+        for manifest in sorted(directory.glob("*/SKILL.md"))[:100]:
+            name = manifest.parent.name.strip()[:160]
+            if name:
+                found.append((name, safe_identity(f"{host}-{name}")))
     return found
 
 

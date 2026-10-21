@@ -148,6 +148,18 @@ function Get-WorkspaceCapabilityGraph {
       Add-CapabilitySubject $subjects $seen ("mcp_server:" + $safe) "mcp_server" $property.Name $capabilities $observedAt
     } }
   }
+  foreach ($skillRoot in @(
+    [pscustomobject]@{ host = "codex"; path = (Join-Path $resolved ".codex\skills") },
+    [pscustomobject]@{ host = "agents"; path = (Join-Path $resolved ".agents\skills") },
+    [pscustomobject]@{ host = "cursor"; path = (Join-Path $resolved ".cursor\skills") }
+  )) {
+    Get-ChildItem -LiteralPath $skillRoot.path -Directory -ErrorAction SilentlyContinue | Select-Object -First 100 | ForEach-Object {
+      if (Test-Path -LiteralPath (Join-Path $_.FullName "SKILL.md") -PathType Leaf) {
+        $safe = (($skillRoot.host + "-" + $_.Name).ToLower() -replace '[^a-z0-9._-]', '-').Trim('.','-')
+        if ($safe) { Add-CapabilitySubject $subjects $seen ("agent_skill:" + $safe) "agent_skill" $_.Name @() $observedAt }
+      }
+    }
+  }
   return [pscustomobject]@{ generatedAt=$observedAt; subjects=$subjects | Select-Object -First 500; relationships=@() }
 }
 
