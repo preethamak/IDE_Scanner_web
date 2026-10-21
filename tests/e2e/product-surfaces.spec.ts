@@ -55,17 +55,17 @@ test("extension profile and report use one current outcome", async ({ page }) =>
   await expect(page.getByRole("region", { name: "What this extension can reach." })).toBeVisible();
 });
 
-test("public security summary stays concise and the exact completed report stays public", async ({ page }) => {
+test("public security summary stays concise and the profile links to its public version evidence", async ({ page }) => {
   await page.goto("/extensions/GitHub.copilot/versions/1.388.0");
   await expect(page.getByRole("heading", { name: "Use this completed analysis before you install." })).toBeVisible();
   await expect(page.getByText("Raw evidence", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: /Sign in for Full Analysis/i })).toBeVisible();
   await page.goto("/extensions/GitHub.copilot");
   const report = page.getByRole("link", { name: "Read Analysis Report" }).first();
-  await expect(report).toHaveAttribute("href", /\/extensions\/GitHub\.copilot\/versions\/1\.388\.0\/scans\//);
+  await expect(report).toHaveAttribute("href", "/extensions/GitHub.copilot/versions/1.388.0");
   await report.click();
-  await expect(page.getByText("Immutable Deep Scan report", { exact: true })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Immutable report identity" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Use this completed analysis before you install." })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Sign in for Full Analysis/i })).toBeVisible();
 });
 
 test("Registry cards lead to the public extension profile", async ({ page }) => {
