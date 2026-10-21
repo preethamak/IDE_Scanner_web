@@ -7,7 +7,6 @@ import json
 import mimetypes
 import os
 import platform
-import re
 import socket
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -181,7 +180,37 @@ def strip_jsonc(value: str) -> str:
         output.append(char)
         index += 1
     without_comments = "".join(output)
-    return re.sub(r",\s*([}\]])", r"\1", without_comments)
+    output = []
+    index = 0
+    quoted = False
+    escaped = False
+    while index < len(without_comments):
+        char = without_comments[index]
+        if quoted:
+            output.append(char)
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                quoted = False
+            index += 1
+            continue
+        if char == '"':
+            quoted = True
+            output.append(char)
+            index += 1
+            continue
+        if char == ",":
+            next_index = index + 1
+            while next_index < len(without_comments) and without_comments[next_index].isspace():
+                next_index += 1
+            if next_index < len(without_comments) and without_comments[next_index] in "}]":
+                index += 1
+                continue
+        output.append(char)
+        index += 1
+    return "".join(output)
 
 
 def valid_extension_id(value: object) -> bool:
