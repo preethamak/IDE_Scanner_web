@@ -19,7 +19,13 @@ export function parseCapabilityPolicy(value: unknown, workspaceId: string, actor
 export function buildCapabilityPolicyExport(policy: StoredCapabilityPolicy, graph: CapabilityGraph, principalId = "workspace:enforcement") {
   const evaluations = evaluateCapabilityGraph(graph, policy.grants, principalId, graph.generatedAt);
   const payload = { schema: CAPABILITY_POLICY_SCHEMA, generated_at: new Date().toISOString(), workspace_id: graph.workspaceId, policy_version: policy.version, default_action: "deny" as const, grants: policy.grants, graph: { generated_at: graph.generatedAt, subjects: graph.subjects.map((subject) => ({ id: subject.id, kind: subject.kind, version: subject.version, artifact_sha256: subject.artifactSha256, evidence_state: subject.evidenceState, capabilities: subject.capabilities })) }, evaluations: evaluations.map((item) => ({ subject_id: item.subject.id, outcome: item.outcome, requests: item.requests.map((request) => ({ capability: request.request.capability, decision: request.decision.outcome, reason: request.decision.reason, grant_id: request.decision.matchingGrantId || null })) })) };
-  return { ...payload, policy_hash: createHash("sha256").update(JSON.stringify(payload)).digest("hex") };
+  return { ...payload, policy_hash: createHash("sha256").update(stableJson(payload)).digest("hex") };
+}
+
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+  if (value && typeof value === "object") { const row = value as Record<string, unknown>; return `{${Object.keys(row).sort().map((key) => `${JSON.stringify(key)}:${stableJson(row[key])}`).join(",")}}`; }
+  return JSON.stringify(value);
 }
 
 function validateGrant(value: unknown, workspaceId: string, ids: Set<string>, index: number): CapabilityGrant {
