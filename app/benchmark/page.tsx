@@ -176,7 +176,7 @@ export default async function BenchmarkPage() {
             outcome. Open any published row to inspect its immutable Deep Scan.
           </p>
         </header>
-        <div className={styles.tableWrap} tabIndex={0} aria-label="Scrollable benchmark evidence table">
+        <section className={styles.tableWrap} tabIndex={0} aria-label="Scrollable benchmark evidence table">
           <div className={styles.table}>
             <div className={styles.tableHead}>
               <span>Exact artifact</span>
@@ -244,7 +244,7 @@ export default async function BenchmarkPage() {
               );
             })}
           </div>
-        </div>
+        </section>
       </section>
 
       <section className={styles.refusals}>

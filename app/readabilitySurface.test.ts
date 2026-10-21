@@ -27,7 +27,7 @@ describe("cross-site readability contract", () => {
     expect(lightTheme).toContain("--ledger-signal: #286e66");
     expect(lightTheme).toContain("--brand-blue: #5d769c");
     expect(lightTheme).toContain("--brand-pink: #b5748a");
-    expect(lightTheme).toContain("--green: #2f815f");
+    expect(lightTheme).toContain("--green: #24645f");
     expect(lightTheme).not.toContain("--brand-pink: var(--ledger-signal)");
   });
 });

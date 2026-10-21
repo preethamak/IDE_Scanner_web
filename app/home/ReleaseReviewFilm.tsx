@@ -19,7 +19,7 @@ export default function ReleaseReviewFilm() {
     setStage("saved");
   };
 
-  return <div className={`${styles.film} ${styles[stage]}`} aria-label="GuardRails release review in action">
+  return <section className={`${styles.film} ${styles[stage]}`} aria-label="GuardRails release review in action">
     <header className={styles.chrome}><div><i /><i /><i /></div><b>GuardRails</b><span>Acme workspace <ChevronRight /> Review queue</span><small>Live preview</small></header>
     <div className={styles.body} style={{ position: "relative" }}>
       <aside className={styles.side}><b>WORKSPACE</b><span className={styles.active}>Review queue <i>1</i></span><span>Inventory</span><span>Decisions</span><span>Monitoring</span><footer><i /> Connected</footer></aside>
@@ -43,5 +43,5 @@ export default function ReleaseReviewFilm() {
       </AnimatePresence>
     </div>
     <footer className={styles.caption}><span>Watch a release become a decision.</span><div><i className={stage === "arrived" ? styles.on : ""} /><i className={stage === "explained" ? styles.on : ""} /><i className={stage === "saved" ? styles.on : ""} /></div></footer>
-  </div>;
+  </section>;
 }

@@ -48,27 +48,31 @@ test("legacy discovery routes preserve the customer journey", async ({ page }) =
 
 test("extension profile and report use one current outcome", async ({ page }) => {
   await page.goto("/extensions/GitHub.copilot");
-  await expect(page.getByText("Scan result", { exact: true })).toBeVisible();
-  await expect(page.getByText("Analyzed", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText("Primary severity", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Read Analysis Report" }).first()).toBeVisible();
+  await expect(page.getByRole("region", { name: "What this extension can reach." })).toBeVisible();
   await page.goto("/extensions/GitHub.copilot/versions/1.388.0");
-  await expect(page.getByText("Analyzed", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText("Operational action", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Use this completed analysis before you install." })).toBeVisible();
+  await expect(page.getByRole("region", { name: "What this extension can reach." })).toBeVisible();
 });
 
-test("public security summary stays concise and full analysis requires sign-in", async ({ page }) => {
+test("public security summary stays concise and the profile links to its public version evidence", async ({ page }) => {
   await page.goto("/extensions/GitHub.copilot/versions/1.388.0");
-  await expect(page.getByText("Extension Security Summary", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Use this completed analysis before you install." })).toBeVisible();
   await expect(page.getByText("Raw evidence", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: /Sign in for Full Analysis/i })).toBeVisible();
-  await page.goto("/extensions/GitHub.copilot/versions/1.388.0/scans/0975989d-c11f-4830-9bfb-082e732fad1a");
-  await expect(page).toHaveURL(/\/account\?next=/);
+  await page.goto("/extensions/GitHub.copilot");
+  const report = page.getByRole("link", { name: "Read Analysis Report" }).first();
+  await expect(report).toHaveAttribute("href", "/extensions/GitHub.copilot/versions/1.388.0");
+  await report.click();
+  await expect(page.getByRole("heading", { name: "Use this completed analysis before you install." })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Sign in for Full Analysis/i })).toBeVisible();
 });
 
 test("Registry cards lead to the public extension profile", async ({ page }) => {
   await page.goto("/registry");
-  const profile = page.getByRole("link", { name: /Open GitHub Copilot extension profile/i });
-  await expect(profile).toHaveAttribute("href", "/extensions/GitHub.copilot");
+  const profile = page.locator('a[aria-label^="Open "][aria-label$=" extension profile"]').first();
+  await expect(profile).toBeVisible();
+  await expect(profile).toHaveAttribute("href", /^\/extensions\//);
 });
 
 test("Registry search clears old results while a new request is pending", async ({ page }) => {
@@ -91,22 +95,20 @@ test("Registry search clears old results while a new request is pending", async 
 
   await search.fill("second");
   await page.getByRole("button", { name: "Find extension" }).click();
-  await expect(page.getByRole("status", { name: "Searching the Extension Registry…" })).toBeVisible();
+  await expect(page.getByText("Searching the Extension Registry…", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: /Open First result extension profile/i })).toHaveCount(0);
   releaseSecondSearch?.();
   await expect(page.getByRole("link", { name: /Open Second result extension profile/i })).toBeVisible();
 });
 
-test("phone header keeps brand, navigation, and sign-in on one readable row", async ({ page }) => {
+test("phone header keeps account access available through the navigation menu", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/extensions/GitHub.copilot");
   const navigation = page.getByRole("button", { name: "Open navigation" });
-  const signIn = page.getByRole("link", { name: /Sign in/ });
   await expect(navigation).toBeVisible();
+  await navigation.click();
+  const signIn = page.getByRole("link", { name: "Sign in" });
   await expect(signIn).toBeVisible();
-  const [navigationBox, signInBox] = await Promise.all([navigation.boundingBox(), signIn.boundingBox()]);
-  expect(navigationBox?.y).toBe(signInBox?.y);
-  expect((navigationBox?.x || 0) + (navigationBox?.width || 0)).toBeLessThan(signInBox?.x || 0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 

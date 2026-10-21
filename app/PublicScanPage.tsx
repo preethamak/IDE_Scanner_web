@@ -26,7 +26,7 @@ export default async function ExtensionRegistryPage({ searchParams }: { searchPa
   const spotlight = inventory.items.find((item) => item.decision === "review" || item.decision === "block") || inventory.items[0];
   return <main className={styles.page}>
     <section className={styles.hero}>
-      <div className={styles.heroCopy}><span className={styles.eyebrow}><i/> Extension intelligence</span><h1>Know what runs<br/>in your editor.</h1><p>Search any VS Code or Open VSX extension. Search by name or ID, confirm you found the right one, and read what each release can access before installing.</p></div>
+      <div className={styles.heroCopy}><span className={styles.eyebrow}><i/> Extension intelligence</span><h1>Know what runs<br />{" "}in your editor.</h1><p>Search any VS Code or Open VSX extension. Search by name or ID, confirm you found the right one, and read what each release can access before installing.</p></div>
       <div className={styles.searchPanel}><div className={styles.searchHeading}><span><ScanSearch/> Search the registry</span><small>Marketplace + Open VSX</small></div><div className={styles.discoverySearch}><ExtensionSearch initialQuery={q || ""} submitLabel="Find extension"/></div><div className={styles.popular}><span>Popular</span>{popular.map((name) => <Link key={name} href={`/registry?q=${encodeURIComponent(name)}`}>{name}</Link>)}</div><footer><ShieldCheck/><span>Results separate exact matches from similar names.</span></footer></div>
     </section>
 

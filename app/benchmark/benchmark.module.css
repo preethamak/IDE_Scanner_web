@@ -47,7 +47,7 @@
   border-radius: 30px;
   padding: 7px 10px;
   background: #f4faf8;
-  color: #2f7f76;
+  color: #24645f;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -457,7 +457,7 @@
   border-radius: 20px;
   background: #f4faf8;
   padding: 5px 8px;
-  color: #2f7f76;
+  color: #24645f;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }

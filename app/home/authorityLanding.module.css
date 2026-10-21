@@ -2,9 +2,10 @@
   --ledger-paper: #fbfaf7;
   --ledger-white: #ffffff;
   --ledger-ink: #141622;
-  --ledger-muted: #66707d;
+  --ledger-muted: #485a6a;
   --ledger-line: #d8dce5;
-  --ledger-signal: #7ea7cc;
+  /* This token carries text labels throughout the public review narrative. */
+  --ledger-signal: #29465e;
   --ledger-signal-soft: #eef5fb;
   --ledger-signal-strong: #bfd4e7;
   --ledger-signal-ink: #29465e;
@@ -63,7 +64,7 @@
   background: var(--ledger-signal);
 }
 
-.heroIssue b { color: #ef785d; }
+.heroIssue b { color: #ad403b; }
 
 .heroLayout {
   display: grid;
@@ -479,6 +480,7 @@
 .teamGrid article:hover span { color: inherit; }
 .teamGrid h3 { margin: 65px 0 8px; font-size: 18px; letter-spacing: -.03em; }
 .teamGrid p { max-width: 210px; color: var(--ledger-muted); font-size: 12px; line-height: 1.55; }
+.teamGrid article:nth-child(3) p { color: #2b3540; }
 .teamGrid article:hover p { color: var(--ledger-muted); }
 
 .proof,
@@ -541,7 +543,7 @@
 .close .sectionKicker { align-self: start; color: var(--ledger-signal-ink); }
 .close h2 { font-size: clamp(44px, 6vw, 88px); line-height: .86; letter-spacing: -.09em; }
 .close h2 em { color: var(--ledger-signal-ink); }
-.close a { border: 1px solid var(--ledger-ink); background: var(--ledger-signal); padding: 15px 17px; color: var(--ledger-ink); }
+.close a { border: 1px solid var(--ledger-ink); background: var(--ledger-signal); padding: 15px 17px; color: #fff; }
 .close a:hover { background: var(--ledger-ink); }
 
 @media (max-width: 940px) {

@@ -74,7 +74,7 @@ export default function AnalyzePage() {
         <h1>
           Start with what
           <br />
-          <em>you actually have.</em>
+          {" "}<em>you actually have.</em>
         </h1>
         <p>
           A published extension, an installed editor, and a portable report need

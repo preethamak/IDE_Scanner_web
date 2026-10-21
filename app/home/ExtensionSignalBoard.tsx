@@ -37,7 +37,7 @@ export default function ExtensionSignalBoard({ items, total }: Props) {
 
   if (!featured) {
     return (
-      <div className={styles.board} aria-label="GuardRails public registry status">
+      <section className={styles.board} aria-label="GuardRails public registry status">
         <BoardHeader empty />
         <div className={styles.empty}>
           <span className={styles.emptyMark}><ScanSearch /></span>
@@ -46,12 +46,12 @@ export default function ExtensionSignalBoard({ items, total }: Props) {
           <Link href="/registry">Browse the registry <ArrowUpRight /></Link>
         </div>
         <BoardFooter total={total} />
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className={styles.board} aria-label="GuardRails extension evidence preview">
+    <section className={styles.board} aria-label="GuardRails extension evidence preview">
       <BoardHeader />
       <div className={styles.featured}>
         <div className={styles.featuredIdentity}>
@@ -103,7 +103,7 @@ export default function ExtensionSignalBoard({ items, total }: Props) {
         </div>
       ) : null}
       <BoardFooter total={total} />
-    </div>
+    </section>
   );
 }
 
