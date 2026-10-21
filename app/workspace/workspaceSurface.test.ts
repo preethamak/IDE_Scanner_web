@@ -26,6 +26,7 @@ describe("GuardRails workspace product surface", () => {
     for (const label of [
       "Overview",
       "Inventory",
+      "Capabilities",
       "Review inbox",
       "Extensions",
       "Decisions",

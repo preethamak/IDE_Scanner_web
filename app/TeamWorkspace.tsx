@@ -49,6 +49,7 @@ import NotificationSettings, {
 import BillingPanel from "@/app/workspace/BillingPanel";
 import TeamInventoryPanel from "@/app/workspace/TeamInventoryPanel";
 import TrustLedgerPanel from "@/app/workspace/TrustLedgerPanel";
+import CapabilityGraphPanel from "@/app/workspace/CapabilityGraphPanel";
 import ExtensionsView from "@/app/workspace/views/ExtensionsView";
 import BadgeStudioView from "@/app/workspace/views/BadgeStudioView";
 import { browserDb } from "@/lib/supabase";
@@ -129,6 +130,7 @@ type View =
   | "overview"
   | "inventory"
   | "trust"
+  | "capabilities"
   | "inbox"
   | "extensions"
   | "badges"
@@ -140,6 +142,7 @@ const nav = [
   ["overview", "Overview", LayoutDashboard],
   ["inventory", "Inventory", Laptop],
   ["trust", "Trust ledger", KeyRound],
+  ["capabilities", "Capabilities", Radar],
   ["inbox", "Review inbox", Inbox],
   ["extensions", "Extensions", Blocks],
   ["badges", "Badges", BadgeCheck],
@@ -1043,6 +1046,13 @@ export default function TeamWorkspace(
               key={activeTeam.id}
               teamId={activeTeam.id}
               role={activeTeam.role}
+              getAuthHeaders={getAuthHeaders}
+            />
+          ) : null}
+          {view === "capabilities" ? (
+            <CapabilityGraphPanel
+              teamId={activeTeamId}
+              role={activeTeam?.role || "viewer"}
               getAuthHeaders={getAuthHeaders}
             />
           ) : null}

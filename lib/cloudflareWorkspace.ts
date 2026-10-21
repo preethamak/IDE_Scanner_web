@@ -2,6 +2,7 @@ import "server-only";
 
 import { privateDb, jsonValue, newId, nowIso, saveWorkspaceState, workspaceState, type AppAuthUser } from "@/lib/cloudflarePrivate";
 import { getCloudflareRegistryProduct } from "@/lib/cloudflareRegistry";
+import type { CapabilityGraph } from "@/lib/capabilityGraph";
 
 export type CloudflareWorkspaceState = {
   watchlist: Array<Record<string, unknown>>;
@@ -24,11 +25,13 @@ export type CloudflareWorkspaceState = {
     installations: Array<Record<string, unknown>>;
     last_import_at: string | null;
   };
+  capability_graph?: CapabilityGraph | null;
 };
 
 export const defaultWorkspaceState: CloudflareWorkspaceState = {
   watchlist: [], alerts: [], decisions: [], members: [], channels: [], deliveries: [], digest_deliveries: [], policies: [], release_events: [], trust_records: [], recall_events: [], audit: [], invitations: [], monitoring: { status: "unknown", last_checked_at: null, next_check_at: null, cadence_hours: 6, error: "Monitoring has not completed its first scheduled check." }, inventory: { devices: [], installations: [], last_import_at: null },
   preferences: { release_alerts: true, scan_alerts: true, decision_alerts: true, high_evidence_alerts: true, provenance_alerts: true, coverage_alerts: true, due_alerts: true, weekly_digest: false, digest_weekday: 1, digest_hour_utc: 9 },
+  capability_graph: null,
 };
 
 export async function getWorkspaceState(teamId: string): Promise<CloudflareWorkspaceState> {

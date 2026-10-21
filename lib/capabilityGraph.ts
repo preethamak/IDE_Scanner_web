@@ -27,7 +27,7 @@ export type CapabilitySubject = {
   artifactSha256: string | null;
   evidenceState: CapabilityEvidenceState;
   observedAt: string;
-  capabilities: Capability[];
+  capabilities: readonly Capability[];
   source: "collector" | "workspace" | "manual";
 };
 
