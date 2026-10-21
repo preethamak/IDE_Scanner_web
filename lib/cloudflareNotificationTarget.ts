@@ -9,8 +9,8 @@ type Channel = Record<string, unknown>;
  * form. The legacy `target` fallback exists solely to deliver already queued
  * channels during migration; callers should re-save those channels on change.
  */
-export function encryptedCloudflareTarget(target: string): string {
-  return encryptTarget(target);
+export function encryptedCloudflareTarget(target: string, signingSecret = ""): string {
+  return encryptTarget(signingSecret ? JSON.stringify({ url: target, signing_secret: signingSecret }) : target);
 }
 
 export function cloudflareChannelTarget(channel: Channel): string {
@@ -19,7 +19,21 @@ export function cloudflareChannelTarget(channel: Channel): string {
   return typeof channel.target === "string" ? channel.target : "";
 }
 
+/** Preserve a configured encrypted envelope when queueing a delivery. */
+export function cloudflareChannelEncryptedTarget(channel: Channel): string {
+  const encrypted = typeof channel.target_encrypted === "string" ? channel.target_encrypted : "";
+  return encrypted || encryptedCloudflareTarget(cloudflareChannelTarget(channel));
+}
+
 export function cloudflareQueuedTarget(target: string): string {
-  if (!target.startsWith("v1.")) return target;
-  return decryptTarget(target);
+  return cloudflareTargetConfig(target).url;
+}
+
+export function cloudflareTargetConfig(target: string): { url: string; signingSecret: string } {
+  const raw = target.startsWith("v1.") ? decryptTarget(target) : target;
+  try {
+    const parsed = JSON.parse(raw) as { url?: unknown; signing_secret?: unknown };
+    if (typeof parsed.url === "string") return { url: parsed.url, signingSecret: typeof parsed.signing_secret === "string" ? parsed.signing_secret : "" };
+  } catch { /* legacy URL */ }
+  return { url: raw, signingSecret: "" };
 }
