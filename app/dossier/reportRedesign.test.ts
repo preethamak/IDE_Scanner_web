@@ -24,11 +24,11 @@ describe("exact-release report redesign", () => {
   });
 
   it("makes the policy path inspectable instead of presenting an unexplained score", () => {
-    const overview = read("./OverviewSection.tsx");
-    for (const step of ["Artifact bound", "Analysis checked", "Evidence grouped", "Policy applied"]) {
-      expect(overview).toContain(step);
+    const tree = read("./DecisionTree.tsx");
+    for (const step of ["Artifact bound", "Analysis complete", "Coverage recorded", "Evidence grouped", "Decision"]) {
+      expect(tree).toContain(step);
     }
-    expect(overview).toContain('aria-label="Decision trace"');
+    expect(tree).toContain('aria-label="Decision tree"');
   });
 
   it("uses a route-scoped dense shell with responsive and sticky navigation", () => {
