@@ -47,5 +47,7 @@ describe("workspace audit route authorization", () => {
     expect(source).toContain('"badge"');
     expect(source).toContain('return mapping[String(value)] || "unknown"');
     expect(source).toContain('.order("id", { ascending: false })');
+    expect(source).toContain("teamAuditEvidenceSummary");
+    expect(source).toContain('"Audit format must be json, csv, or summary."');
   });
 });
