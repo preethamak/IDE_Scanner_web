@@ -23,6 +23,7 @@ export type ExtensionPolicyDecisionRow = {
   malware_score?: number | null;
   capabilities?: unknown;
   capability_assessment?: unknown;
+  relationship_inventory?: unknown;
   trust_tier?: string | null;
   public_outcome?: string | null;
 };
@@ -47,6 +48,16 @@ export type ExtensionPolicyEntry = {
     observed: string[];
     requires_explicit_review: boolean;
     review_reason: string | null;
+  };
+  relationship_contract: {
+    declared: Array<{
+      extension_id: string;
+      relationship: "extensionPack" | "extensionDependencies";
+      status: string;
+      resolved_version: string | null;
+      resolved_artifact_sha256: string | null;
+    }>;
+    requires_separate_review: boolean;
   };
   trust_tier: string;
   public_outcome: string;
@@ -207,6 +218,7 @@ export function buildExtensionPolicyBundle(
       risk_score: numberOrNull(row.risk_score),
       malware_score: numberOrNull(row.malware_score),
       capability_contract: capabilityContract(row),
+      relationship_contract: relationshipContract(row.relationship_inventory),
       trust_tier: String(row.trust_tier || ""),
       public_outcome: String(row.public_outcome || ""),
     });
@@ -292,6 +304,50 @@ function capabilityContract(row: ExtensionPolicyDecisionRow): ExtensionPolicyEnt
       ? "This exact release exposes a high-impact capability surface; keep the approval attached to the release and review changes before update."
       : null,
   };
+}
+
+function relationshipContract(value: unknown): ExtensionPolicyEntry["relationship_contract"] {
+  const inventory = objectValue(value);
+  const entries = Array.isArray(inventory.entries) ? inventory.entries : [];
+  const resolutions = Array.isArray(inventory.resolution) ? inventory.resolution : [];
+  const resolutionByKey = new Map<string, Record<string, unknown>>();
+  for (const candidate of resolutions) {
+    const resolution = objectValue(candidate);
+    const extensionId = String(resolution.extension_id || "").trim().toLowerCase();
+    const relationship = String(resolution.relationship || "");
+    if (extensionId && isRelationship(relationship)) resolutionByKey.set(`${relationship}:${extensionId}`, resolution);
+  }
+  const declared = new Map<string, ExtensionPolicyEntry["relationship_contract"]["declared"][number]>();
+  for (const candidate of entries) {
+    const entry = objectValue(candidate);
+    const extensionId = String(entry.extension_id || "").trim().toLowerCase();
+    const relationship = String(entry.relationship || "");
+    if (!EXTENSION_ID.test(extensionId) || !isRelationship(relationship)) continue;
+    const resolution = resolutionByKey.get(`${relationship}:${extensionId}`) || {};
+    const artifactSha = String(resolution.resolved_artifact_sha256 || "").toLowerCase();
+    declared.set(`${relationship}:${extensionId}`, {
+      extension_id: extensionId,
+      relationship,
+      status: String(resolution.status || "declared_not_scanned"),
+      resolved_version: resolution.resolved_version ? String(resolution.resolved_version) : null,
+      resolved_artifact_sha256: SHA256.test(artifactSha) ? artifactSha : null,
+    });
+  }
+  const records = [...declared.values()].sort((left, right) =>
+    `${left.relationship}:${left.extension_id}`.localeCompare(`${right.relationship}:${right.extension_id}`),
+  );
+  return {
+    declared: records,
+    requires_separate_review: records.some((item) => item.status !== "scanned" || !item.resolved_version || !item.resolved_artifact_sha256),
+  };
+}
+
+function isRelationship(value: string): value is "extensionPack" | "extensionDependencies" {
+  return value === "extensionPack" || value === "extensionDependencies";
+}
+
+function objectValue(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
 
 function capabilityIds(value: unknown): string[] {

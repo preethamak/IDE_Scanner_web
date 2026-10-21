@@ -44,6 +44,14 @@ layer is being completed. `guardrails policy verify` also hashes a published
 VSIX before installation, closing the gap that editor settings alone cannot
 close.
 
+Policy entries also retain a relationship contract for every declared
+`extensionPack` and `extensionDependencies` member. An approval for the parent
+release is never an approval for those members: each declared child needs its
+own exact-release evidence before the policy consumer can treat the combined
+installation as reviewed. The contract records the declared relationship,
+resolution state, and any observed child version and artifact SHA-256, then
+sets `requires_separate_review` when that evidence is incomplete.
+
 ## Why this is differentiated
 
 Socket and similar products are strong reference points for package and
