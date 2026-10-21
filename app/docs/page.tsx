@@ -4,6 +4,7 @@ import {
   BookOpen,
   Bot,
   Boxes,
+  FileCheck2,
   Layers,
   ShieldCheck,
 } from "lucide-react";
@@ -42,6 +43,7 @@ export default function DocsPage() {
             <a href="#bulk">Bulk gate</a>
             <a href="#badges">Badges</a>
             <a href="#inventory">Public inventory</a>
+            <a href="#exports">Evidence exports</a>
             <a href="#mcp">MCP server</a>
           </nav>
         </section>
@@ -221,6 +223,41 @@ export default function DocsPage() {
             responses are cacheable for up to five minutes.
           </p>
           <Code label="curl">{`curl -fsS "${HOST}/api/public/inventory" | jq '.totals'`}</Code>
+        </section>
+
+        <section className={styles.section} id="exports">
+          <h2>
+            <FileCheck2 /> Portable evidence exports
+          </h2>
+          <span className={styles.endpoint}>
+            <span className={styles.method}>GET</span>
+            {"/api/extensions/{publisher.name}/versions/{version}/export"}
+          </span>
+          <span className={styles.endpoint}>
+            <span className={styles.method}>GET</span>
+            {"/api/extensions/{publisher.name}/versions/{version}/scans/{scan_id}/export"}
+          </span>
+          <p>
+            Download a machine-readable evidence record for an exact published
+            release. The release export returns the current completed public
+            report for that version. The immutable scan export pins the
+            specific scan ID and remains cacheable forever, including when a
+            later scan supersedes it.
+          </p>
+          <p>
+            Both exports include artifact SHA-256, scanner and ruleset identity,
+            outcome, findings, declared capabilities, dependencies, and
+            relationship evidence. <code>relationship_evidence</code> lists
+            declared extension packs or dependencies, their observed child
+            release identity when available, and <code>requires_separate_review</code>.
+            A parent&apos;s approval never approves a related extension by itself.
+          </p>
+          <Code label="curl">{`curl -fsS -OJ "${HOST}/api/extensions/publisher.name/versions/1.2.3/export"\ncurl -fsS -OJ "${HOST}/api/extensions/publisher.name/versions/1.2.3/scans/<scan_id>/export"`}</Code>
+          <p className={styles.note}>
+            Exports intentionally omit raw source previews, private notes,
+            unredacted manifest content, and internal acquisition errors.
+            They are evidence records, not an executable installation plan.
+          </p>
         </section>
 
         <section className={styles.section} id="mcp">
