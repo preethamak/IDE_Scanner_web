@@ -4,6 +4,7 @@ import {
   BookOpen,
   Bot,
   Boxes,
+  FileJson,
   Layers,
   ShieldCheck,
 } from "lucide-react";
@@ -40,6 +41,7 @@ export default function DocsPage() {
           <nav className={styles.toc} aria-label="Sections">
             <a href="#gate">CI release gate</a>
             <a href="#bulk">Bulk gate</a>
+            <a href="#sarif">SARIF export</a>
             <a href="#badges">Badges</a>
             <a href="#inventory">Public inventory</a>
             <a href="#mcp">MCP server</a>
@@ -185,6 +187,30 @@ export default function DocsPage() {
             <code>checks</code> array, more than 200 checks, or an entry
             without a valid <code>publisher.name</code> and version returns
             HTTP 400 with the invalid entries listed.
+          </p>
+        </section>
+
+        <section className={styles.section} id="sarif">
+          <h2>
+            <FileJson /> Export exact-release findings as SARIF
+          </h2>
+          <span className={styles.endpoint}>
+            <span className={styles.method}>GET</span>
+            /api/extensions/{"{id}"}/versions/{"{version}"}/sarif
+          </span>
+          <p>
+            Download a completed public report as SARIF 2.1.0 for code-scanning
+            and evidence systems. The document contains only public finding
+            summaries, safe package paths, artifact identity, coverage, and a
+            link to the exact GuardRails report. It never exports source
+            previews, raw evidence, or internal analyzer fields.
+          </p>
+          <Code label="curl">{`curl -fsS -o extension.sarif \\
+  "${HOST}/api/extensions/publisher.name/versions/1.2.3/sarif"`}</Code>
+          <p className={styles.note}>
+            The export is only available for the exact release with a
+            completed public analysis. A missing, unfinished, or non-public
+            report returns HTTP 404 rather than a fabricated clean result.
           </p>
         </section>
 
