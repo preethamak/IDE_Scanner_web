@@ -6,7 +6,7 @@ export function validRunnerSecret(authorization: string | null): boolean {
 }
 
 export function validBearerSecret(authorization: string | null, expected: string): boolean {
-  const supplied = authorization?.startsWith("Bearer ") ? authorization.slice(7) : "";
+  const supplied = authorization?.match(/^Bearer\s+(.+)$/i)?.[1].trim() || "";
   if (!expected || !supplied) return false;
   const left = createHash("sha256").update(expected).digest();
   const right = createHash("sha256").update(supplied).digest();
