@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { localScannerEnabled, runPythonBridge } from "@/lib/pythonBridge";
-import { dispatchGithubMcpScan, getGithubMcpScan, githubMcpScanConfigured } from "@/lib/githubMcpScan";
+import { dispatchGithubMcpScan, getGithubMcpScan, githubMcpScanConfigured, isGithubMcpScanRequestId } from "@/lib/githubMcpScan";
 import { runtimeEnv } from "@/lib/runtimeEnv";
 
 export const runtime = "nodejs";
@@ -11,11 +11,14 @@ const REMOTE_TIMEOUT_MS = 120_000;
 
 export async function GET(request: Request) {
   const requestId = new URL(request.url).searchParams.get("request_id") || "";
+  if (!isGithubMcpScanRequestId(requestId))
+    return NextResponse.json({ error: "Provide a valid MCP assessment request ID." }, { status: 400, headers: { "Cache-Control": "no-store" } });
   try {
     const status = await getGithubMcpScan(requestId);
     return NextResponse.json(status, { status: status.status === "failed" ? 502 : 200, headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "MCP assessment status lookup failed." }, { status: 502 });
+    console.error("MCP assessment status lookup failed", error instanceof Error ? error.message : String(error));
+    return NextResponse.json({ error: "MCP assessment status is temporarily unavailable." }, { status: 502, headers: { "Cache-Control": "no-store" } });
   }
 }
 
@@ -45,7 +48,8 @@ export async function POST(request: Request) {
     const report = localEnabled ? await runPythonBridge<Record<string, unknown>>("mcp_scan", payload) : await runRemoteScanner(remoteScannerUrl, raw);
     return NextResponse.json(report, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "MCP assessment failed." }, { status: 502 });
+    console.error("MCP assessment failed", error instanceof Error ? error.message : String(error));
+    return NextResponse.json({ error: "MCP assessment is temporarily unavailable. Try again shortly." }, { status: 502, headers: { "Cache-Control": "no-store" } });
   }
 }
 
