@@ -146,6 +146,51 @@
   background: var(--ledger-signal-soft, #edf7f4);
   color: var(--ledger-signal-ink, #24645f);
 }
+.relationships {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid #e1e6eb;
+  padding: 16px 22px;
+  background: #f8fafb;
+}
+.relationships > svg {
+  width: 20px;
+  color: #2f7f76;
+}
+.relationships > div {
+  display: grid;
+  gap: 3px;
+}
+.relationships strong {
+  font-size: 13px;
+}
+.relationships p {
+  margin: 0;
+  color: #65717d;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.relationships em {
+  border-radius: 20px;
+  padding: 5px 8px;
+  background: #edf7f4;
+  color: #24645f;
+  font: 800 12px var(--mono);
+  font-style: normal;
+  white-space: nowrap;
+}
+.relationshipReview {
+  background: #fff8e8;
+}
+.relationshipReview > svg,
+.relationshipReview em {
+  color: #8a5b00;
+}
+.relationshipReview em {
+  background: #fff0c9;
+}
 .passport > footer {
   display: flex;
   align-items: center;
@@ -222,6 +267,13 @@
     grid-template-columns: 38px minmax(0, 1fr);
   }
   .categories em {
+    grid-column: 2;
+    width: max-content;
+  }
+  .relationships {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+  .relationships em {
     grid-column: 2;
     width: max-content;
   }

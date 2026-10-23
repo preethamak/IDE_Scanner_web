@@ -14,11 +14,11 @@ export async function GET(
     const { user, provider } = await authenticated(request);
     const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst", "viewer"]);
-    if (provider === "cloudflare") return NextResponse.json({ decisions: (await getWorkspaceState(id)).decisions });
+    if (provider === "cloudflare") return NextResponse.json({ decisions: await cloudflareDecisions(id) });
     const { data, error } = await serviceDb()
       .from("team_decisions")
       .select(
-        "*,team_decision_events(*),scans(capabilities,capability_assessment,analysis_status,scanned_at,artifact_sha256)",
+        "*,team_decision_events(*),scans(id,capabilities,capability_assessment,analysis_status,scanned_at,artifact_sha256,artifact_inventory)",
       )
       .eq("team_id", id)
       .order("updated_at", { ascending: false })
@@ -28,6 +28,47 @@ export async function GET(
   } catch (error) {
     const failure = teamApiError(error, "Decision lookup failed.");
     return NextResponse.json({ error: failure.error }, { status: failure.status });
+  }
+}
+
+async function cloudflareDecisions(teamId: string) {
+  const state = await getWorkspaceState(teamId);
+  const scanIds = [...new Set(state.decisions.map((decision) => String(decision.scan_id || "")).filter(Boolean))];
+  const reports = new Map<string, Record<string, unknown>>();
+  for (let index = 0; index < scanIds.length; index += 50) {
+    const chunk = scanIds.slice(index, index + 50);
+    const placeholders = chunk.map(() => "?").join(",");
+    const result = await privateDb().prepare(
+      `SELECT scan_id,extension_id,version,artifact_sha256,report_json FROM app_scan_reports WHERE scan_id IN (${placeholders})`,
+    ).bind(...chunk).all<Record<string, unknown>>();
+    for (const report of result.results || []) reports.set(String(report.scan_id || ""), report);
+  }
+  return state.decisions.map((decision) => {
+    const report = reports.get(String(decision.scan_id || ""));
+    const scan = report ? cloudflareScan(report, String(decision.extension_id || ""), String(decision.version || "")) : null;
+    return { ...decision, scans: scan ? [scan] : [] };
+  });
+}
+
+function cloudflareScan(report: Record<string, unknown>, extensionId: string, version: string) {
+  try {
+    const bundle = JSON.parse(String(report.report_json || "")) as Record<string, unknown>;
+    const extensions = Array.isArray(bundle.extensions)
+      ? bundle.extensions
+      : bundle.extensions && typeof bundle.extensions === "object"
+        ? Object.values(bundle.extensions)
+        : [];
+    const detail = extensions.find((item) => item && typeof item === "object" && !Array.isArray(item)
+      && String((item as Record<string, unknown>).extension_id || "").toLowerCase() === extensionId.toLowerCase()
+      && String((item as Record<string, unknown>).version || "") === version);
+    if (!detail || typeof detail !== "object" || Array.isArray(detail)) return null;
+    return {
+      ...detail as Record<string, unknown>,
+      id: String(report.scan_id || ""),
+      artifact_sha256: (detail as Record<string, unknown>).artifact_sha256 || report.artifact_sha256 || null,
+    };
+  } catch {
+    return null;
   }
 }
 
