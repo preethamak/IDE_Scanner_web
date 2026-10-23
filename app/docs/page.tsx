@@ -237,7 +237,9 @@ export default function DocsPage() {
             server-side write operations) so coding agents can consult the
             public analysis corpus before suggesting an extension. It speaks
             MCP protocol version 2025-06-18; each request is a self-contained
-            JSON-RPC 2.0 message. The early-access endpoint is anonymous until
+            JSON-RPC 2.0 message. Malformed protocol envelopes are rejected
+            with a standard JSON-RPC invalid-request error before any tool
+            dispatch. The early-access endpoint is anonymous until
             an operator configures an access token, then every request requires
             a bearer token.
           </p>
