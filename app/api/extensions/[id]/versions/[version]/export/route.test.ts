@@ -9,7 +9,7 @@ describe("public evidence export", () => {
   it("exports stable public evidence without source previews or internal scan fields", async () => {
     mocks.getVersionProduct.mockResolvedValue({
       scan: {
-        id: "scan-1", extension_id: "publisher.extension", version: "1.2.3", artifact_sha256: "a".repeat(64), analysis_status: "complete", decision: "review", public_outcome: "investigate", private_notes: "must never export", source_preview: "secret source",
+        id: "scan-1", extension_id: "publisher.extension", version: "1.2.3", artifact_sha256: "a".repeat(64), analysis_status: "complete", decision: "review", public_outcome: "investigate", private_notes: "must never export", source_preview: "secret source", artifact_inventory: { extension_relationship_inventory: { entries: [{ extension_id: "partner.child", relationship: "extension_dependency" }], resolution: [] } },
       },
       findings: [{ rule_id: "network" }], capabilities: [], dependencies: [],
     });
@@ -19,6 +19,7 @@ describe("public evidence export", () => {
     expect(response.headers.get("content-disposition")).toBe('attachment; filename="guardrails-publisher.extension-1.2.3-evidence.json"');
     const payload = await response.json();
     expect(payload.identity).toMatchObject({ id: "scan-1", artifact_sha256: "a".repeat(64) });
+    expect(payload.relationship_evidence).toMatchObject({ declared: [{ extension_id: "partner.child" }], requires_separate_review: true });
     expect(payload).not.toHaveProperty("private_notes");
     expect(payload).not.toHaveProperty("source_preview");
     expect(JSON.stringify(payload)).not.toContain("must never export");
