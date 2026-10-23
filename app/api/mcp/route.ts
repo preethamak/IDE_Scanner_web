@@ -30,6 +30,7 @@ const WORKSPACE_TOOLS = new Set([
   "list_guardrails_workspaces",
   "get_workspace_extension_inventory",
   "get_workspace_capability_graph",
+  "get_workspace_security_posture",
   "get_workspace_monitoring",
   "get_workspace_policies",
   "get_workspace_decision_history",
@@ -227,6 +228,14 @@ const TOOLS = [
     annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
   },
   {
+    name: "get_workspace_security_posture",
+    title: "Get workspace security posture evidence",
+    description: "Return a compact, evidence-bound workspace posture across observed extensions and developer capabilities, unresolved capability evidence, active monitoring alerts, release events, recorded decisions, and configured policy counts. Requires workspace:read OAuth scope and workspace membership. This tool does not infer a global safety score or make changes.",
+    inputSchema: { type: "object", properties: { workspace_id: { type: "string", description: "GuardRails workspace ID." } }, required: ["workspace_id"] },
+    outputSchema: { type: "object", required: ["workspace_id", "inventory", "capability_evidence", "monitoring", "decisions", "policies", "evidence_boundary"], properties: { workspace_id: { type: "string" }, inventory: { type: "object" }, capability_evidence: { type: "object" }, monitoring: { type: "object" }, decisions: { type: "object" }, policies: { type: "object" }, evidence_boundary: { type: "string" } } },
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+  },
+  {
     name: "get_workspace_monitoring",
     title: "Get workspace monitoring",
     description: "Read GuardRails workspace watchlist entries, monitoring status, release events, and active alerts. Requires workspace:read OAuth scope and workspace membership.",
@@ -370,6 +379,7 @@ async function handleToolCall(id: JsonRpcId, params: Record<string, unknown>, re
     if (name === "list_guardrails_workspaces") return rpcResult(id, await listGuardRailsWorkspaces(userId));
     if (name === "get_workspace_extension_inventory") return rpcResult(id, await getWorkspaceExtensionInventory(args, userId));
     if (name === "get_workspace_capability_graph") return rpcResult(id, await getWorkspaceCapabilityGraph(args, userId));
+    if (name === "get_workspace_security_posture") return rpcResult(id, await getWorkspaceSecurityPosture(args, userId));
     if (name === "get_workspace_monitoring") return rpcResult(id, await getWorkspaceMonitoring(args, userId));
     if (name === "get_workspace_policies") return rpcResult(id, await getWorkspacePolicies(args, userId));
     if (name === "get_workspace_decision_history") return rpcResult(id, await getWorkspaceDecisionHistory(args, userId));
@@ -587,6 +597,44 @@ async function getWorkspaceCapabilityGraph(args: Record<string, unknown>, userId
   const graph = graphWithWorkspaceExtensions(workspace.workspaceId, workspace.state.inventory.installations, workspace.state.capability_graph);
   const byKind = Object.fromEntries(["extension", "mcp_server", "agent_skill", "cli", "browser_extension"].map((kind) => [kind, graph.subjects.filter((subject) => subject.kind === kind).length]));
   return toolJson({ workspace_id: workspace.workspaceId, graph, summary: { subjects: graph.subjects.length, by_kind: byKind, verified: graph.subjects.filter((subject) => subject.evidenceState === "verified").length, unknown_capabilities: graph.subjects.filter((subject) => subject.capabilities.length === 0).length } });
+}
+
+async function getWorkspaceSecurityPosture(args: Record<string, unknown>, userId: string | null) {
+  const workspace = await workspaceForMcp(args, userId);
+  if ("error" in workspace) return workspace.error;
+  const state = workspace.state;
+  const installations = state.inventory.installations;
+  const graph = graphWithWorkspaceExtensions(workspace.workspaceId, installations, state.capability_graph);
+  const activeAlerts = state.alerts.filter((alert) => !["dismissed", "resolved"].includes(String(alert.state || "").toLowerCase()));
+  const currentReleaseEvents = state.release_events.filter((event) => String(event.state) !== "superseded");
+  const decisionCounts = Object.fromEntries(["allow", "review", "block"].map((decision) => [decision, state.decisions.filter((item) => String(item.decision).toLowerCase() === decision).length]));
+  const byKind = Object.fromEntries(["extension", "mcp_server", "agent_skill", "cli", "browser_extension"].map((kind) => [kind, graph.subjects.filter((subject) => subject.kind === kind).length]));
+  return toolJson({
+    workspace_id: workspace.workspaceId,
+    inventory: {
+      devices: state.inventory.devices.length,
+      installations: installations.length,
+      unique_extensions: new Set(installations.map((item) => String(item.extension_id).toLowerCase())).size,
+      monitored_installations: installations.filter((item) => state.watchlist.some((watch) => String(watch.extension_id).toLowerCase() === String(item.extension_id).toLowerCase())).length,
+      last_import_at: state.inventory.last_import_at || null,
+    },
+    capability_evidence: {
+      subjects: graph.subjects.length,
+      by_kind: byKind,
+      verified_subjects: graph.subjects.filter((subject) => subject.evidenceState === "verified").length,
+      observed_subjects: graph.subjects.filter((subject) => subject.evidenceState === "observed").length,
+      subjects_without_capability_evidence: graph.subjects.filter((subject) => subject.capabilities.length === 0).map((subject) => ({ id: subject.id, kind: subject.kind, evidence_state: subject.evidenceState })),
+    },
+    monitoring: {
+      watchlist_entries: state.watchlist.length,
+      active_alerts: activeAlerts.length,
+      active_alerts_by_severity: Object.fromEntries(["critical", "high", "medium", "low"].map((severity) => [severity, activeAlerts.filter((alert) => String(alert.severity || "").toLowerCase() === severity).length])),
+      current_release_events: currentReleaseEvents.length,
+    },
+    decisions: { recorded: state.decisions.length, by_outcome: decisionCounts },
+    policies: { configured: state.policies.length, enabled: state.policies.filter((policy) => policy.enabled !== false).length },
+    evidence_boundary: "This is a summary of recorded workspace evidence. It does not prove a workspace is safe, turn unknown evidence into approval, or replace the exact release analysis behind an individual extension decision.",
+  });
 }
 
 async function getWorkspaceMonitoring(args: Record<string, unknown>, userId: string | null) {
