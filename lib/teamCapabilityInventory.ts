@@ -17,6 +17,8 @@ export function parseCapabilityGraphImport(value: unknown, workspaceId: string):
   const raw = value as Record<string, unknown>;
   if (!Array.isArray(raw.subjects)) throw new CapabilityInventoryValidationError("Capability graph subjects must be an array.");
   if (raw.subjects.length > 500) throw new CapabilityInventoryValidationError("One capability graph can contain at most 500 subjects.");
+  if (raw.relationships !== undefined && !Array.isArray(raw.relationships)) throw new CapabilityInventoryValidationError("Capability graph relationships must be an array.");
+  if (Array.isArray(raw.relationships) && raw.relationships.length > 2_000) throw new CapabilityInventoryValidationError("One capability graph can contain at most 2,000 relationships.");
   try {
     return buildCapabilityGraph({
       workspaceId,
@@ -52,7 +54,14 @@ export function graphWithWorkspaceExtensions(
     };
   }).filter((subject) => subject.id !== "extension:@");
   const savedSubjects = saved?.subjects || [];
-  const subjects = [...extensionSubjects, ...savedSubjects.filter((subject) => subject.kind !== "extension")];
+  const installedExtensionNames = new Set(extensionSubjects.map((subject) => subject.name.toLowerCase()));
+  // A local collector can see declared workspace recommendations before they
+  // are installed. Keep those declarations, but let a real device inventory
+  // replace the weaker declaration once it observes the extension release.
+  const subjects = [
+    ...extensionSubjects,
+    ...savedSubjects.filter((subject) => subject.kind !== "extension" || !installedExtensionNames.has(subject.name.toLowerCase())),
+  ];
   const known = new Set(subjects.map((subject) => subject.id));
   return buildCapabilityGraph({
     workspaceId,

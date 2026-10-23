@@ -9,6 +9,13 @@ permissions:
   contents: read
 
 jobs:
+  collector-windows-contract:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - shell: pwsh
+        run: ./tests/collector_windows_contract.ps1
+
   verify:
     runs-on: ubuntu-latest
     steps:
@@ -17,6 +24,10 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m unittest tests/collector_contract.py
       - run: npm ci
       - run: npm run lint
       - run: npx tsc --noEmit

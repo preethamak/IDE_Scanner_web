@@ -14,9 +14,16 @@ export const CAPABILITY_SUBJECT_KINDS = [
   "browser_extension",
 ] as const;
 
+export const CAPABILITY_RELATIONSHIP_TYPES = [
+  "installed_on",
+  "uses",
+  "approved_by",
+  "governed_by",
+] as const;
+
 export type CapabilitySubjectKind = (typeof CAPABILITY_SUBJECT_KINDS)[number];
 export type CapabilityEvidenceState = "verified" | "observed" | "unknown";
-export type CapabilityRelationshipType = "installed_on" | "uses" | "approved_by" | "governed_by";
+export type CapabilityRelationshipType = (typeof CAPABILITY_RELATIONSHIP_TYPES)[number];
 
 export type CapabilitySubject = {
   id: string;
@@ -75,10 +82,17 @@ export function buildCapabilityGraph(input: CapabilityGraphInput): CapabilityGra
   const subjects = input.subjects.map((subject) => normalizeSubject(subject, seen));
   const knownSubjects = new Set(subjects.map((subject) => subject.id));
   const relationships = (input.relationships || []).map((relationship) => {
+    if (!relationship || typeof relationship !== "object" || typeof relationship.from !== "string" || typeof relationship.to !== "string") {
+      throw new Error("Capability relationship is invalid.");
+    }
+    const type = String((relationship as { type?: unknown }).type || "");
+    if (!(CAPABILITY_RELATIONSHIP_TYPES as readonly string[]).includes(type)) {
+      throw new Error("Capability relationship type is invalid.");
+    }
     if (!knownSubjects.has(relationship.from) || !knownSubjects.has(relationship.to)) {
       throw new Error("Capability relationships must reference known subjects.");
     }
-    return { ...relationship };
+    return { ...relationship, type: type as CapabilityRelationshipType };
   });
   return {
     schemaVersion: "2026-10-01",
