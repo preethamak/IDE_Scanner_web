@@ -94,7 +94,7 @@ async function supabaseDecisions(teamId: string): Promise<ExtensionPolicyDecisio
   for (let offset = 0; offset < scanIds.length; offset += 500) {
     const scanResult = await db
       .from("scans")
-      .select("id,extension_id,version,artifact_sha256,scanner_build,policy_version,score_schema_version,analysis_status,coverage_percent,risk_score,malware_score,public_outcome,capabilities,capability_assessment")
+      .select("id,extension_id,version,artifact_sha256,scanner_build,policy_version,score_schema_version,analysis_status,coverage_percent,risk_score,malware_score,public_outcome,capabilities,capability_assessment,artifact_inventory")
       .in("id", scanIds.slice(offset, offset + 500));
     if (scanResult.error) throw scanResult.error;
     for (const row of scanResult.data || []) scans.set(String(row.id), row);
@@ -162,6 +162,7 @@ function cloudflareReportFields(
     public_outcome: String(detail.public_outcome || ""),
     capabilities: detail.capabilities,
     capability_assessment: detail.capability_assessment,
+    relationship_inventory: objectValue(detail.artifact_inventory).extension_relationship_inventory,
   };
 }
 
