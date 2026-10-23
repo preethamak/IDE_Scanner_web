@@ -3,7 +3,7 @@ import { AuthenticationError } from "@/lib/auth";
 import { EntitlementError, workspaceEntitlements } from "@/lib/entitlements";
 import { serviceDb } from "@/lib/supabase";
 
-export type ApiKeyAuth = { teamId: string; keyId: string };
+export type ApiKeyAuth = { teamId: string; keyId: string; plan: string };
 
 /**
  * Authenticates a request against a workspace `api_keys` row (distinct from
@@ -32,5 +32,5 @@ export async function authenticatedByApiKey(request: Request): Promise<ApiKeyAut
     () => {},
   );
 
-  return { teamId: data.team_id, keyId: data.id };
+  return { teamId: data.team_id, keyId: data.id, plan: entitlements.plan };
 }

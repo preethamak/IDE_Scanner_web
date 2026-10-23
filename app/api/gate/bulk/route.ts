@@ -4,6 +4,7 @@ import { AuthenticationError } from "@/lib/auth";
 import { EntitlementError } from "@/lib/entitlements";
 import { isValidGateCheck, lookupGateVerdict, type GateCheck } from "@/lib/gateLookup";
 import { publicDb } from "@/lib/supabase";
+import { consumeBulkGateBudget } from "@/lib/apiRateBudget";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,15 @@ export async function POST(request: Request) {
     if (error instanceof AuthenticationError) return NextResponse.json({ error: error.message }, { status: 401 });
     if (error instanceof EntitlementError) return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
     return NextResponse.json({ error: "Bulk gate is temporarily unavailable." }, { status: 503 });
+  }
+  try {
+    const budget = await consumeBulkGateBudget(auth.keyId, auth.plan);
+    if (!budget.allowed) return NextResponse.json(
+      { error: "Bulk gate rate limit reached. Retry after the current minute window.", code: "RATE_LIMITED" },
+      { status: 429, headers: { "Retry-After": String(budget.retryAfter), "Cache-Control": "private, no-store" } },
+    );
+  } catch {
+    return NextResponse.json({ error: "Bulk gate rate budget is temporarily unavailable." }, { status: 503 });
   }
 
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;

@@ -147,10 +147,9 @@ export default function DocsPage() {
           <p>
             Checks up to <strong>200 releases</strong> in one call.
             Authentication is a team API key sent as a Bearer token; keys are
-            managed in your team workspace settings. Unlike the single gate,
-            the bulk endpoint always returns HTTP 200 with per-item verdicts
-            and a summary, because a partial failure is meaningful data for a
-            bulk caller.
+            managed in your team workspace settings. A successful request
+            returns HTTP 200 with per-item verdicts and a summary, because a
+            partial failure is meaningful data for a bulk caller.
           </p>
           <Code label="curl">{`curl -fsS -X POST "${HOST}/api/gate/bulk" \\
   -H "Authorization: Bearer $GUARDRAILS_API_KEY" \\
@@ -172,6 +171,14 @@ export default function DocsPage() {
             <code>checks</code> array, more than 200 checks, or an entry
             without a valid <code>publisher.name</code> and version returns
             HTTP 400 with the invalid entries listed.
+          </p>
+          <p>
+            To protect shared team capacity, each API key has a one-minute
+            bulk-gate budget: 60 requests on Team and 300 on Enterprise. An
+            exhausted budget returns HTTP 429 with <code>RATE_LIMITED</code>,
+            a <code>Retry-After</code> header, and no cached response. Retry
+            only after the header value; do not treat a rate limit as a
+            release verdict.
           </p>
         </section>
 
