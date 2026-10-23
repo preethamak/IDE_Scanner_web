@@ -3,6 +3,7 @@ import { authenticated } from "@/lib/auth";
 import {
   auditManifest,
   filterTeamAuditEvents,
+  teamAuditEvidenceSummary,
   teamAuditCsv,
   type TeamAuditEvent,
 } from "@/lib/teamAudit";
@@ -28,6 +29,8 @@ export async function GET(request: Request, context: Context) {
     ]);
     const url = new URL(request.url);
     const format = url.searchParams.get("format") || "json";
+    if (!["json", "csv", "summary"].includes(format))
+      return NextResponse.json({ error: "Audit format must be json, csv, or summary." }, { status: 400 });
     const wantsDownload =
       format === "csv" || url.searchParams.get("download") === "1";
     const filters = {
@@ -53,6 +56,7 @@ export async function GET(request: Request, context: Context) {
       const visibleEvents = role === "analyst" || role === "viewer" ? events.filter((event) => ["decision", "monitoring", "badge"].includes(event.object_type)) : events;
       const manifest = auditManifest(id, visibleEvents);
       if (format === "csv") return new Response(teamAuditCsv(visibleEvents), { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="guardrails-audit-${id}.csv"`, "X-GuardRails-SHA256": manifest.sha256, "Cache-Control": "private, no-store" } });
+      if (format === "summary") return NextResponse.json(teamAuditEvidenceSummary(id, visibleEvents), { headers: { "Cache-Control": "private, no-store" } });
       return NextResponse.json({ manifest, events: visibleEvents }, { headers: { "Cache-Control": "private, no-store" } });
     }
     if (wantsDownload) await requireEntitlement(id, "audit_export");
@@ -150,6 +154,12 @@ export async function GET(request: Request, context: Context) {
           )
         : events;
     const manifest = auditManifest(id, visibleEvents);
+
+    if (format === "summary") {
+      return NextResponse.json(teamAuditEvidenceSummary(id, visibleEvents), {
+        headers: { "Cache-Control": "private, no-store" },
+      });
+    }
 
     if (format === "csv") {
       return new Response(teamAuditCsv(visibleEvents), {

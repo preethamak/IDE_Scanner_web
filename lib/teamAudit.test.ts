@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   auditManifest,
   filterTeamAuditEvents,
+  teamAuditEvidenceSummary,
   teamAuditCsv,
   type TeamAuditEvent,
 } from "@/lib/teamAudit";
@@ -70,6 +71,15 @@ describe("team audit exports", () => {
       auditManifest("team-1", events).sha256,
     );
     expect(auditManifest("team-1", events).sha256).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it("summarizes only the returned historical audit evidence", () => {
+    const summary = teamAuditEvidenceSummary("team-1", events);
+    expect(summary.events).toMatchObject({ total: 2, by_object_type: { decision: 1, notification: 1 }, unique_extensions: 2 });
+    expect(summary.decisions.by_outcome).toEqual({ allow: 1 });
+    expect(summary.delivery.by_status).toEqual({ failed: 1 });
+    expect(summary.evidence_boundary).toContain("historical evidence");
+    expect(summary.manifest.sha256).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it("escapes CSV values and includes state snapshots", () => {
