@@ -130,6 +130,9 @@ function normalizeSubject(subject: CapabilitySubject, seen: Set<string>): Capabi
 }
 
 function aggregateOutcome(outcomes: readonly PolicyDecision["outcome"][]): CapabilityEvaluation["outcome"] {
+  // No observed capability is never permission to run. A collector gap must
+  // surface for approval rather than appear as a clean allow.
+  if (!outcomes.length) return "prompt";
   if (outcomes.includes("deny")) return "deny";
   if (outcomes.includes("prompt")) return "prompt";
   return "allow";
