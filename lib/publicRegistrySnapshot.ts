@@ -106,6 +106,26 @@ export async function getPublicRegistryProduct(
   if (cloudflareProduct) return cloudflareProduct;
   const snapshot = await getPublicRegistrySnapshot();
   if (!snapshot) return null;
+  if (process.env.PLAYWRIGHT_TEST_FIXTURES === "1" && id.toLowerCase() === "e2e.guest-scan") {
+    const source = snapshot.products["github.copilot"];
+    if (!source) return null;
+    const latest = source.versions.find((item) => item.is_latest) || source.versions[0];
+    if (!latest) return null;
+    return {
+      detail_state: "summary_only",
+      extension: {
+        ...source.extension,
+        id: "e2e.guest-scan",
+        name: "guest-scan",
+        display_name: "Guest Scan Test Fixture",
+        publisher: "E2E",
+        latest_version: "1.0.0",
+        latest_scan: null,
+      },
+      versions: [{ ...latest, extension_id: "e2e.guest-scan", version: "1.0.0", is_latest: true, latest_scan_id: null, scan_state: null, decision: null }],
+      scans: [],
+    };
+  }
   const key = Object.keys(snapshot.products).find(
     (candidate) => candidate.toLowerCase() === id.toLowerCase(),
   );
