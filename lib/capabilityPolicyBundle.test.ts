@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCapabilityPolicyExport, parseCapabilityPolicy } from "./capabilityPolicyBundle";
+import { buildCapabilityPolicyExport, parseCapabilityPolicy, simulateCapabilityPolicy } from "./capabilityPolicyBundle";
 import { buildCapabilityGraph } from "./capabilityGraph";
 
 const graph = buildCapabilityGraph({ workspaceId: "team-1", generatedAt: "2026-10-21T10:00:00.000Z", subjects: [{ id: "mcp_server:github", kind: "mcp_server", name: "GitHub", version: null, publisher: null, artifactSha256: null, evidenceState: "observed", observedAt: "2026-10-21T10:00:00.000Z", capabilities: ["network"], source: "collector" }] });
@@ -18,5 +18,10 @@ describe("capability policy bundle", () => {
     const unknown = buildCapabilityGraph({ workspaceId: "team-1", subjects: [{ id: "cli:internal", kind: "cli", name: "Internal", version: null, publisher: null, artifactSha256: null, evidenceState: "unknown", observedAt: "2026-10-21T10:00:00.000Z", capabilities: [], source: "manual" }] });
     const policy = parseCapabilityPolicy({ grants: [] }, "team-1", "owner");
     expect(buildCapabilityPolicyExport(policy, unknown).evaluations[0].outcome).toBe("prompt");
+  });
+  it("shows the policy impact against the currently saved policy", () => {
+    const current = parseCapabilityPolicy({ grants: [] }, "team-1", "user-1");
+    const candidate = parseCapabilityPolicy({ grants: [{ id: "allow-network", principalId: "workspace:enforcement", capability: "network", actions: ["use"], resourcePattern: "mcp_server:*", effect: "allow", approval: "automatic" }] }, "team-1", "user-1", current.version);
+    expect(simulateCapabilityPolicy(candidate, current, graph).summary).toMatchObject({ subjects: 1, allow: 1, changed: 1 });
   });
 });
