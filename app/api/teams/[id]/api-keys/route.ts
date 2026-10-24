@@ -5,6 +5,7 @@ import { teamApiError } from "@/lib/teamApiError";
 import { requireTeamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
 import { workspaceEntitlements } from "@/lib/entitlements";
+import { countActiveCloudflareApiKeys, createCloudflareApiKey, listCloudflareApiKeys, revokeCloudflareApiKey } from "@/lib/cloudflareApiKeys";
 
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
@@ -16,7 +17,7 @@ export async function GET(request: Request, context: Context) {
     const { user, provider } = await authenticated(request);
     const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst", "viewer"]);
-    if (provider === "cloudflare") return NextResponse.json({ api_keys: [] }, { headers: { "Cache-Control": "private, no-store" } });
+    if (provider === "cloudflare") return NextResponse.json({ api_keys: await listCloudflareApiKeys(id) }, { headers: { "Cache-Control": "private, no-store" } });
     const db = serviceDb();
     const { data, error } = await db
       .from("api_keys")
@@ -40,14 +41,14 @@ export async function POST(request: Request, context: Context) {
     const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin"]);
 
-    if (provider === "cloudflare") return NextResponse.json({ error: "API keys are available on the Team plan and above. Upgrade to generate one." }, { status: 403 });
-
-    const entitlements = await workspaceEntitlements(id);
-    if (entitlements.plan === "free") {
+    if (provider !== "cloudflare") {
+      const entitlements = await workspaceEntitlements(id);
+      if (entitlements.plan === "free") {
       return NextResponse.json(
         { error: "API keys are available on the Team plan and above. Upgrade to generate one." },
         { status: 403, },
       );
+      }
     }
 
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
@@ -56,6 +57,12 @@ export async function POST(request: Request, context: Context) {
       return NextResponse.json({ error: "Key label must be between 1 and 80 characters." }, { status: 400 });
     }
 
+    if (provider === "cloudflare") {
+      if (await countActiveCloudflareApiKeys(id) >= MAX_KEYS_PER_TEAM) return NextResponse.json({ error: `This workspace already has ${MAX_KEYS_PER_TEAM} active API keys. Revoke one before creating another.` }, { status: 403 });
+      const { raw, prefix, hash } = generateApiKey();
+      const apiKey = await createCloudflareApiKey({ teamId: id, label, keyPrefix: prefix, keyHash: hash, scopes: ["gate:read", "collector:write"], createdBy: user.id });
+      return NextResponse.json({ api_key: { ...apiKey, key: raw } }, { status: 201 });
+    }
     const db = serviceDb();
     const { count, error: countError } = await db
       .from("api_keys")
@@ -92,7 +99,10 @@ export async function DELETE(request: Request, context: Context) {
     const url = new URL(request.url);
     const keyId = url.searchParams.get("key_id") || "";
     if (!keyId) return NextResponse.json({ error: "key_id is required." }, { status: 400 });
-    if (provider === "cloudflare") return NextResponse.json({ error: "Active API key not found in this workspace." }, { status: 404 });
+    if (provider === "cloudflare") {
+      if (!await revokeCloudflareApiKey(id, keyId)) return NextResponse.json({ error: "Active API key not found in this workspace." }, { status: 404 });
+      return NextResponse.json({ revoked: true });
+    }
     const db = serviceDb();
     const { data, error } = await db
       .from("api_keys")
