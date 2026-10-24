@@ -171,6 +171,13 @@ const TOOLS = [
     annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
   },
   {
+    name: "compare_extension_releases", title: "Compare two extension releases",
+    description: "Compare published GuardRails evidence for two exact versions before approving an update. Missing analysis remains unknown, never approval.",
+    inputSchema: { type: "object", properties: { extension: { type: "string" }, from_version: { type: "string" }, to_version: { type: "string" } }, required: ["extension", "from_version", "to_version"] },
+    outputSchema: { type: "object", required: ["extension", "from", "to", "changes", "recommendation"], properties: { extension: { type: "string" }, from: { type: "object" }, to: { type: "object" }, changes: { type: "object" }, recommendation: { type: "string" } } },
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
+  },
+  {
     name: "list_published_extension_scans",
     title: "List published extension scans",
     description: "List recent publicly published GuardRails analyses. Use this for ecosystem research, not as proof about releases absent from the list.",
@@ -363,6 +370,7 @@ async function handleToolCall(id: JsonRpcId, params: Record<string, unknown>, re
     if (name === "find_reputable_alternatives") return rpcResult(id, await findReputableAlternatives(args, origin));
     if (name === "search_vscode_extensions") return rpcResult(id, await searchVsCodeExtensions(args, origin));
     if (name === "get_extension_release") return rpcResult(id, await getExtensionRelease(args, origin));
+    if (name === "compare_extension_releases") return rpcResult(id, await compareExtensionReleases(args, origin));
     if (name === "list_published_extension_scans") return rpcResult(id, await listPublishedExtensionScans(args, origin));
     if (name === "get_extension_scan_history") return rpcResult(id, await getExtensionScanHistory(args, origin));
     if (name === "get_guardrails_analysis_rules") return rpcResult(id, await getAnalysisRules());
@@ -521,6 +529,26 @@ async function getExtensionRelease(args: Record<string, unknown>, origin: string
     note: scan ? "This analysis applies only to the returned release and artifact evidence." : "No completed published analysis is available for this release. This is not an approval.",
   });
 }
+
+async function compareExtensionReleases(args: Record<string, unknown>, origin: string) {
+  const extension = String(args.extension || "").trim(); const fromVersion = String(args.from_version || "").trim(); const toVersion = String(args.to_version || "").trim();
+  if (!EXTENSION_PATTERN.test(extension)) return toolError("Provide extension as publisher.name, e.g. ms-python.python.");
+  if (!validReleaseVersion(fromVersion) || !validReleaseVersion(toVersion) || fromVersion === toVersion) return toolError("Provide two different non-empty exact release versions.");
+  const [fromProduct, toProduct] = await Promise.all([getVersionProduct(extension, fromVersion), getVersionProduct(extension, toVersion)]);
+  const from = releaseComparisonSide(extension, fromVersion, fromProduct, origin); const to = releaseComparisonSide(extension, toVersion, toProduct, origin);
+  const unknown = from.analysis_state !== "analyzed" || to.analysis_state !== "analyzed";
+  return toolJson({ extension, from: omitFindingIds(from), to: omitFindingIds(to), changes: { decision: from.decision !== to.decision, severity: from.severity !== to.severity, coverage_percent: from.coverage_percent !== to.coverage_percent, artifact_sha256: from.artifact_sha256 !== to.artifact_sha256, added_finding_ids: to.finding_ids.filter((id) => !from.finding_ids.includes(id)), removed_finding_ids: from.finding_ids.filter((id) => !to.finding_ids.includes(id)) }, recommendation: unknown ? "needs human review" : recommendation(to.decision), note: unknown ? "At least one exact release has no completed published analysis. This comparison is not an approval." : "Compare the exact release evidence with your workspace policy and approval history before installing the candidate." });
+}
+
+function validReleaseVersion(value: string) { return value.length > 0 && value.length <= 120 && !/[\r\n]/.test(value); }
+function stringValue(value: unknown) { return typeof value === "string" && value.trim() ? value.trim() : null; }
+function numberValue(value: unknown) { return typeof value === "number" && Number.isFinite(value) ? value : null; }
+function releaseComparisonSide(extension: string, version: string, product: Record<string, unknown> | null, origin: string) {
+  const record = product || {}; const scan = record.scan && typeof record.scan === "object" ? record.scan as Record<string, unknown> : null; const findings = Array.isArray(record.findings) ? record.findings : [];
+  const scanId = stringValue(scan?.id); const artifact = stringValue(scan?.artifact_sha256) || stringValue((scan?.artifact_identity as Record<string, unknown> | undefined)?.sha256);
+  return { version, analysis_state: scan ? "analyzed" : product ? "unreviewed" : "not_found", decision: stringValue(scan?.decision), severity: stringValue(scan?.severity), coverage_percent: numberValue(scan?.coverage_percent), artifact_sha256: artifact, scanner_build: stringValue(scan?.scanner_build), ruleset_version: stringValue(scan?.ruleset_version), report_url: scanId ? `${origin}/extensions/${encodeURIComponent(extension)}/versions/${encodeURIComponent(version)}/scans/${encodeURIComponent(scanId)}` : `${origin}/extensions/${encodeURIComponent(extension)}/versions/${encodeURIComponent(version)}`, finding_ids: [...new Set(findings.map((finding) => stringValue((finding as Record<string, unknown>).rule_id)).filter((id): id is string => Boolean(id)))].sort() };
+}
+function omitFindingIds(side: ReturnType<typeof releaseComparisonSide>) { const { finding_ids: _findingIds, ...result } = side; return result; }
 
 function compactScan(scan: Record<string, unknown>) {
   const keys = ["id", "extension_id", "version", "decision", "severity", "public_outcome", "decision_reason", "evidence_confidence", "coverage_percent", "artifact_sha256", "scanned_at", "scanner_build", "ruleset_version", "analysis_status"];

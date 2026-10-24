@@ -50,6 +50,7 @@ describe("public MCP endpoint", () => {
       expect.objectContaining({ name: "find_reputable_alternatives", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "search_vscode_extensions", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "get_extension_release", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
+      expect.objectContaining({ name: "compare_extension_releases", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "list_published_extension_scans", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "get_guardrails_analysis_rules", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "get_workspace_extension_inventory", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
@@ -84,6 +85,12 @@ describe("public MCP endpoint", () => {
     const response = await POST(request({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "search_vscode_extensions", arguments: { query: "python" } } }));
     const body = await response.json();
     expect(body.result.structuredContent).toMatchObject({ query: "python", extensions: [expect.objectContaining({ extension: "ms-python.python" })] });
+  });
+
+  it("compares two exact releases and fails closed when the candidate is unreviewed", async () => {
+    getVersionProduct.mockResolvedValueOnce({ scan: { id: "scan-old", decision: "allow", severity: "low", coverage_percent: 100, artifact_sha256: "a".repeat(64) }, findings: [{ rule_id: "network-request" }] }).mockResolvedValueOnce({ version: { version: "2.0.0" }, scan: null, findings: [] });
+    const response = await POST(request({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "compare_extension_releases", arguments: { extension: "sample.extension", from_version: "1.0.0", to_version: "2.0.0" } } }));
+    await expect(response.json()).resolves.toMatchObject({ result: { structuredContent: { from: { analysis_state: "analyzed", decision: "allow" }, to: { analysis_state: "unreviewed" }, changes: { artifact_sha256: true, removed_finding_ids: ["network-request"] }, recommendation: "needs human review" } } });
   });
 
   it("requires the configured early-access bearer token", async () => {
