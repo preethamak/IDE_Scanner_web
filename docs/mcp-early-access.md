@@ -17,6 +17,7 @@ workspace data, or grants access beyond the signed-in user’s memberships.
 | `list_published_extension_scans` / `get_extension_scan_history` | Research published analysis coverage without treating absence as approval. |
 | `get_guardrails_analysis_rules` / `get_guardrails_service_status` | Explain the active rules and confirm public service availability. |
 | `list_guardrails_workspaces` | List workspaces available to the signed-in MCP user. |
+| `get_workspace_security_posture` | Return evidence-bound workspace inventory, capability, monitoring, decision, and policy counts without an inferred safety score. |
 | `get_workspace_extension_inventory` | Read observed extension inventory, versions, and monitoring state. |
 | `get_workspace_monitoring` | Read watchlists, release events, alerts, and monitoring status. |
 | `get_workspace_policies` | Read policy rules and monitoring preferences. |
