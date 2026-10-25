@@ -56,7 +56,7 @@ test("extension profile and report use one current outcome", async ({ page }) =>
   await expect(page.getByText("Operational action", { exact: true })).toHaveCount(0);
 });
 
-test("public security summary stays concise and full analysis requires sign-in", async ({ page }) => {
+test("public security summary stays concise and immutable reports remain shareable", async ({ page }) => {
   await page.goto("/extensions/GitHub.copilot/versions/1.388.0");
   await expect(page.getByText("Extension Security Summary", { exact: true })).toBeVisible();
   await expect(page.getByText("Raw evidence", { exact: true })).toHaveCount(0);
@@ -65,8 +65,8 @@ test("public security summary stays concise and full analysis requires sign-in",
   const next = new URL(await action.getAttribute("href") || "", "http://localhost").searchParams.get("next");
   expect(next).toMatch(/^\/extensions\/GitHub\.copilot\/versions\/1\.388\.0\/scans\/[^/]+$/);
   await page.goto(next!);
-  await expect(page.getByRole("link", { name: /Sign in for Full Analysis/i })).toBeVisible();
-  await expect(page.getByText("Raw evidence", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Immutable Deep Scan report", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Copy link", exact: true })).toBeVisible();
 });
 
 test("Registry cards lead to the public extension profile", async ({ page }) => {
