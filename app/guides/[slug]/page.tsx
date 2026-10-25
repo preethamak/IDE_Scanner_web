@@ -3,8 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { seoGuides } from "@/lib/seoGuides";
 import styles from "../../docs/docs.module.css";
-export const dynamicParams = false;
-export function generateStaticParams() { return seoGuides.map(({ slug }) => ({ slug })); }
+// This host uses a stateless incremental cache: render articles on demand.
+export const dynamic = "force-dynamic";
 type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
