@@ -1,5 +1,5 @@
 const baseUrl = (process.env.GUARDRAILS_DEPLOYMENT_URL || "https://abscissa.dev").replace(/\/$/, "");
-const paths = ["/", "/registry", "/status"];
+const paths = ["/", "/registry", "/status", "/guides", "/guides/check-vscode-extension-safety", "/guides/scan-vsix-file", "/guides/vscode-extension-allowlist"];
 
 async function request(url) {
   let lastError;
