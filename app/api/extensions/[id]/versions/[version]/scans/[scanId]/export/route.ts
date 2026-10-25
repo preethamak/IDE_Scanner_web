@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getVersionScanProduct } from "@/lib/productData";
+import { exportRelationshipEvidence } from "@/lib/relationshipEvidenceExport";
 
 export const dynamic = "force-dynamic";
 
@@ -82,6 +83,7 @@ export async function GET(
           ]),
         )
       : [],
+    relationship_evidence: exportRelationshipEvidence(scan.artifact_inventory),
     files: Array.isArray(product.files)
       ? product.files.map((file) =>
           pick(file as Record<string, unknown>, [

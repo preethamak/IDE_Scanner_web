@@ -27,6 +27,7 @@ describe("immutable scan evidence export", () => {
         analysis_status: "incomplete",
         decision: "review",
         internal_note: "never export",
+        artifact_inventory: { extension_relationship_inventory: { entries: [{ extension_id: "partner.child", relationship: "extension_dependency" }], resolution: [] } },
       },
       findings: [{ rule_id: "network", evidence: { raw: "never export" } }],
       files: [{ path: "extension.js", content: "never export source" }],
@@ -49,6 +50,7 @@ describe("immutable scan evidence export", () => {
     expect(payload).toMatchObject({
       immutable_report: true,
       identity: { id: "scan-1" },
+      relationship_evidence: { requires_separate_review: true },
     });
     expect(JSON.stringify(payload)).not.toContain("internal_note");
     expect(JSON.stringify(payload)).not.toContain("never export source");
