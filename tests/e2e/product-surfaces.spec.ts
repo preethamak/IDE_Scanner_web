@@ -49,7 +49,7 @@ test("legacy discovery routes preserve the customer journey", async ({ page }) =
 test("extension profile and report use one current outcome", async ({ page }) => {
   await page.goto("/extensions/GitHub.copilot");
   await expect(page.getByText("Current release", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Read Analysis Report", exact: true })).toBeVisible();
+  await expect(page.locator("#overview").getByRole("link", { name: "Read Analysis Report", exact: true })).toHaveAttribute("href", "/extensions/GitHub.copilot/versions/1.388.0");
   await expect(page.getByText("Primary severity", { exact: true })).toHaveCount(0);
   await page.goto("/extensions/GitHub.copilot/versions/1.388.0");
   await expect(page.getByText("Analyzed", { exact: true }).first()).toBeVisible();
