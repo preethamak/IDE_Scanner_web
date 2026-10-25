@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 // The page itself is a client component, so its metadata lives here.
 export const metadata: Metadata = {
-  title: "Release Monitoring",
+  title: "VS Code Extension Release Monitoring",
   description:
     "Approve an exact extension release once, then get one notification when a new version changes permissions, provenance, or coverage.",
   alternates: { canonical: "/monitor" },
