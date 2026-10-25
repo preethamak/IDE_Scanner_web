@@ -2,14 +2,14 @@
   --ledger-paper: #fbfaf7;
   --ledger-white: #ffffff;
   --ledger-ink: #141622;
-  --ledger-muted: #66707d;
+  --ledger-muted: #404c58;
   --ledger-line: #d8dce5;
-  --ledger-signal: #7ea7cc;
+  --ledger-signal: #396b98;
   --ledger-signal-soft: #eef5fb;
   --ledger-signal-strong: #bfd4e7;
   --ledger-signal-ink: #29465e;
   --ledger-signal-hover: #dfedf7;
-  --ledger-focus: #557f9f;
+  --ledger-focus: #426d8d;
   --faint: #655c57;
   overflow: hidden;
   background: var(--ledger-paper);
@@ -541,7 +541,7 @@
 .close .sectionKicker { align-self: start; color: var(--ledger-signal-ink); }
 .close h2 { font-size: clamp(44px, 6vw, 88px); line-height: .86; letter-spacing: -.09em; }
 .close h2 em { color: var(--ledger-signal-ink); }
-.close a { border: 1px solid var(--ledger-ink); background: var(--ledger-signal); padding: 15px 17px; color: var(--ledger-ink); }
+.close a { border: 1px solid var(--ledger-ink); background: var(--ledger-signal); padding: 15px 17px; color: #ffffff; }
 .close a:hover { background: var(--ledger-ink); }
 
 @media (max-width: 940px) {
@@ -643,3 +643,6 @@
 .reportExample dd { margin: 6px 0 0; font-size: 14px; line-height: 1.5; }
 .reportExample > a { display: inline-flex; align-items: center; gap: 8px; margin-top: 18px; color: var(--ledger-signal-ink); font-size: 13px; font-weight: 700; }
 .reportExample > a svg { width: 16px; }
+
+/* Dark text remains readable on the gold trial surface. */
+.trialCallout .sectionKicker { color: var(--ledger-ink); }

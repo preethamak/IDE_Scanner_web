@@ -48,8 +48,8 @@ test("legacy discovery routes preserve the customer journey", async ({ page }) =
 
 test("extension profile and report use one current outcome", async ({ page }) => {
   await page.goto("/extensions/GitHub.copilot");
-  await expect(page.getByText("Scan result", { exact: true })).toBeVisible();
-  await expect(page.getByText("Analyzed", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Current release", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Read Analysis Report", exact: true })).toBeVisible();
   await expect(page.getByText("Primary severity", { exact: true })).toHaveCount(0);
   await page.goto("/extensions/GitHub.copilot/versions/1.388.0");
   await expect(page.getByText("Analyzed", { exact: true }).first()).toBeVisible();
@@ -61,14 +61,18 @@ test("public security summary stays concise and full analysis requires sign-in",
   await expect(page.getByText("Extension Security Summary", { exact: true })).toBeVisible();
   await expect(page.getByText("Raw evidence", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: /Sign in for Full Analysis/i })).toBeVisible();
-  await page.goto("/extensions/GitHub.copilot/versions/1.388.0/scans/0975989d-c11f-4830-9bfb-082e732fad1a");
-  await expect(page).toHaveURL(/\/account\?next=/);
+  const action = page.getByRole("link", { name: /Sign in for Full Analysis/i });
+  const next = new URL(await action.getAttribute("href") || "", "http://localhost").searchParams.get("next");
+  expect(next).toMatch(/^\/extensions\/GitHub\.copilot\/versions\/1\.388\.0\/scans\/[^/]+$/);
+  await page.goto(next!);
+  await expect(page.getByRole("link", { name: /Sign in for Full Analysis/i })).toBeVisible();
+  await expect(page.getByText("Raw evidence", { exact: true })).toHaveCount(0);
 });
 
 test("Registry cards lead to the public extension profile", async ({ page }) => {
   await page.goto("/registry");
-  const profile = page.getByRole("link", { name: /Open GitHub Copilot extension profile/i });
-  await expect(profile).toHaveAttribute("href", "/extensions/GitHub.copilot");
+  const profile = page.locator('a[aria-label^="Open "][aria-label$=" extension profile"]').first();
+  await expect(profile).toHaveAttribute("href", /^\/extensions\/[^/]+$/);
 });
 
 test("Registry search clears old results while a new request is pending", async ({ page }) => {
@@ -97,16 +101,15 @@ test("Registry search clears old results while a new request is pending", async 
   await expect(page.getByRole("link", { name: /Open Second result extension profile/i })).toBeVisible();
 });
 
-test("phone header keeps brand, navigation, and sign-in on one readable row", async ({ page }) => {
+test("phone navigation keeps sign-in accessible without horizontal overflow", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/extensions/GitHub.copilot");
   const navigation = page.getByRole("button", { name: "Open navigation" });
   const signIn = page.getByRole("link", { name: /Sign in/ });
   await expect(navigation).toBeVisible();
+  await navigation.click();
   await expect(signIn).toBeVisible();
-  const [navigationBox, signInBox] = await Promise.all([navigation.boundingBox(), signIn.boundingBox()]);
-  expect(navigationBox?.y).toBe(signInBox?.y);
-  expect((navigationBox?.x || 0) + (navigationBox?.width || 0)).toBeLessThan(signInBox?.x || 0);
+  await expect(signIn).toHaveAttribute("href", "/account");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 

@@ -15,6 +15,7 @@ test("signed-in account control does not resize the header", async ({ page }) =>
   await page.route("**/api/auth/session", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ user }) }));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
+  await page.getByRole("button", { name: "Open navigation" }).click();
   await expect(page.getByRole("button", { name: "Open account menu" })).toBeVisible();
   await assertHeaderBounds(page, 390);
   await page.getByRole("button", { name: "Open account menu" }).click();

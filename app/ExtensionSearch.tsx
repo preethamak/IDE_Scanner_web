@@ -48,7 +48,7 @@ export default function ExtensionSearch({ initialQuery = "", onSelect, submitLab
       <Search size={18}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name, publisher.extension, Marketplace URL, or VS Code URI" aria-label="Find an extension"/>
       <button className="button buttonDark" disabled={loading}>{loading ? "Searching…" : submitLabel}</button>
     </form>
-    {loading ? <p className="discoveryLoading" role="status">Searching the Extension Registry…</p> : null}
+    {loading ? <p className="discoveryLoading" role="status" aria-label="Searching the Extension Registry…">Searching the Extension Registry…</p> : null}
     {error ? <p className="discoveryError">{error}</p> : null}
     {data ? <div className="discoveryResults" aria-live="polite">
       {data.matching_publishers?.length ? <section className="publisherMatches"><span>Publisher</span>{data.matching_publishers.map((publisher) => <Link key={`${publisher.registry}-${publisher.publisher}`} href={`/publishers/${encodeURIComponent(publisher.publisher)}`}><UsersRound/><div><strong>{publisher.display_name}{publisher.verified ? <BadgeCheck aria-label="Verified Marketplace publisher"/> : null}</strong><small>@{publisher.publisher} · View published extensions</small></div><ArrowRight/></Link>)}</section> : null}

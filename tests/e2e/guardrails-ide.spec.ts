@@ -8,7 +8,7 @@ test("GuardRails IDE demonstrates deny, allow, and approval decisions", async ({
   await expect(page.getByText("No ambient authority. Add a grant to change the decision.")).toBeVisible();
 
   await page.getByRole("button", { name: /Read source file/ }).click();
-  const decisionPanel = page.locator("aside").last();
+  const decisionPanel = page.locator("aside").filter({ hasText: "Decision preview" });
   await expect(decisionPanel.getByText("deny", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Add scoped grant" }).click();
   await expect(decisionPanel.getByText("allow", { exact: true })).toBeVisible();
