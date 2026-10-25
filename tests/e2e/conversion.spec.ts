@@ -70,13 +70,15 @@ test("a guest Deep Scan follows the exact release through completion to its repo
   }));
   await page.route(`**${reportPath}`, (route) => route.fulfill({
     contentType: "text/html",
-    body: "<!doctype html><html><head><title>Analysis Report</title></head><body><main><h1>Guest Analysis Report</h1><p>Exact release: GitHub.copilot 1.388.0</p></main></body></html>",
+    body: "<!doctype html><html><head><title>Analysis Report</title></head><body><main><h1>Guest Analysis Report</h1><p>Exact release: e2e.guest-scan 1.0.0</p></main></body></html>",
   }));
 
   await page.goto("/extensions/e2e.guest-scan");
   await page.getByRole("button", { name: /Try 5 free scans/i }).click();
 
   await expect(page).toHaveURL(new RegExp(`${reportPath.replaceAll("/", "\\/")}$`), { timeout: 30_000 });
+  // The client router requests RSC; reload to exercise the mocked document handoff.
+  await page.reload();
   await expect(page.getByRole("heading", { name: "Guest Analysis Report" })).toBeVisible();
   expect(submittedPayload).toEqual({ extension_id: "e2e.guest-scan", version: "1.0.0", force: false });
 });

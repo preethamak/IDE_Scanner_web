@@ -17,7 +17,7 @@
   --ledger-signal-hover: #dcefeb;
   --ledger-signal-strong: #a6cec8;
   --ledger-signal-ink: #24645f;
-  --ledger-focus: #2f7f76;
+  --ledger-focus: #286f67;
   --ledger-amber: #986300;
   --ledger-night: #213447;
 
@@ -26,16 +26,16 @@
   --ink: var(--ledger-ink);
   --ink-2: #334255;
   --muted: var(--ledger-muted);
-  --faint: #65737d;
+  --faint: #5b6974;
   --line: var(--ledger-line);
   --line-dark: #9aacbc;
   --wash: #f3f6f5;
   --acid: #e1f3ef;
   --acid-dark: var(--ledger-signal-ink);
   --acid-pale: #f4faf8;
-  --green: #2f815f;
+  --green: #246e50;
   --green-2: #75b89a;
-  --allow: #2f815f;
+  --allow: #246e50;
   --allow-bg: #e9f6ef;
   --allow-line: #add7bc;
   --brand-blue: #5d769c;

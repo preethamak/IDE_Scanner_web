@@ -47,7 +47,7 @@
   border-radius: 30px;
   padding: 7px 10px;
   background: #f4faf8;
-  color: #2f7f76;
+  color: #286f67;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -62,7 +62,7 @@
   letter-spacing: -0.067em;
 }
 .hero h1 em {
-  color: #2f7f76;
+  color: #286f67;
   font-style: normal;
 }
 .hero > div > p {
@@ -120,7 +120,7 @@
 }
 .gateCard header svg {
   width: 22px;
-  color: #2f7f76;
+  color: #286f67;
 }
 .gateCard header span {
   display: grid;
@@ -138,7 +138,7 @@
 }
 .gauge > strong {
   display: block;
-  color: #2f7f76;
+  color: #286f67;
   font-size: 48px;
   line-height: 1;
 }
@@ -155,7 +155,7 @@
   border-radius: 20px;
   background: linear-gradient(
     to right,
-    #2f7f76 var(--progress),
+    #286f67 var(--progress),
     #e6ebef var(--progress)
   );
   font-style: normal;
@@ -212,7 +212,7 @@
 }
 .metrics strong {
   display: block;
-  color: #2f7f76;
+  color: #286f67;
   font-size: 42px;
 }
 .metrics span {
@@ -240,7 +240,7 @@
 .gates header span,
 .evidence header span,
 .refusals > div > span {
-  color: #2f7f76;
+  color: #286f67;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -372,7 +372,7 @@
 .identity svg {
   flex: 0 0 auto;
   width: 13px;
-  color: #2f7f76;
+  color: #286f67;
 }
 .identity code {
   display: block;
@@ -407,7 +407,7 @@
   text-transform: uppercase;
 }
 .allow {
-  color: #2f7f76;
+  color: #286f67;
 }
 .review {
   color: #8b6908;
@@ -457,7 +457,7 @@
   border-radius: 20px;
   background: #f4faf8;
   padding: 5px 8px;
-  color: #2f7f76;
+  color: #286f67;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
@@ -475,7 +475,7 @@
   color: #e7578b;
 }
 .cta small {
-  color: #2f7f76;
+  color: #286f67;
   font: 800 12px var(--mono);
   text-transform: uppercase;
 }
