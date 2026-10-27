@@ -293,6 +293,8 @@ export async function POST(request: Request) {
   if (!message || typeof message !== "object" || Array.isArray(message)) {
     return rpcError(null, -32600, "Invalid request: batch messages are not supported.");
   }
+  const invalidEnvelope = invalidJsonRpcEnvelope(message);
+  if (invalidEnvelope) return rpcError(null, -32600, invalidEnvelope);
   const id = message.id === undefined ? null : message.id;
   const method = typeof message.method === "string" ? message.method : "";
   const params = (message.params && typeof message.params === "object" ? message.params : {}) as Record<string, unknown>;
@@ -330,6 +332,18 @@ export async function POST(request: Request) {
     default:
       return rpcError(id, -32601, `Method not found: ${method || "(missing)"}`);
   }
+}
+
+function invalidJsonRpcEnvelope(message: JsonRpcRequest): string | null {
+  if (message.jsonrpc !== "2.0") return "Invalid request: jsonrpc must be \"2.0\".";
+  if (typeof message.method !== "string" || !message.method.trim()) return "Invalid request: method must be a non-empty string.";
+  if (message.id !== undefined && message.id !== null && typeof message.id !== "string" && (typeof message.id !== "number" || !Number.isFinite(message.id))) {
+    return "Invalid request: id must be a string, finite number, null, or omitted notification id.";
+  }
+  if (message.params !== undefined && (typeof message.params !== "object" || message.params === null || Array.isArray(message.params))) {
+    return "Invalid request: params must be an object when provided.";
+  }
+  return null;
 }
 
 function handleResourceRead(id: JsonRpcId, params: Record<string, unknown>) {

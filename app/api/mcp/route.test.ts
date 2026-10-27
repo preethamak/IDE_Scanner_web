@@ -114,6 +114,20 @@ describe("public MCP endpoint", () => {
     await expect(response.json()).resolves.toMatchObject({ error: { code: -32600 } });
   });
 
+  it("rejects malformed JSON-RPC envelopes before dispatch", async () => {
+    const invalidMessages = [
+      { jsonrpc: "1.0", id: 1, method: "ping" },
+      { jsonrpc: "2.0", id: { unexpected: true }, method: "ping" },
+      { jsonrpc: "2.0", id: 1, method: "" },
+      { jsonrpc: "2.0", id: 1, method: "ping", params: [] },
+    ];
+
+    for (const message of invalidMessages) {
+      const response = await POST(request(message));
+      await expect(response.json()).resolves.toMatchObject({ error: { code: -32600 } });
+    }
+  });
+
   it("keeps the endpoint stateless and advertises supported methods", async () => {
     expect((await GET()).status).toBe(405);
     const options = OPTIONS();
