@@ -102,6 +102,7 @@ const PROMPTS = [
     title: "Review workspace extension changes",
     description: "Read the signed-in user's GuardRails workspace monitoring context without changing it.",
   },
+  { name: "review_workspace_capability_policy", title: "Review workspace capability policy", description: "Read an authorized workspace's evaluated capability policy and produce an evidence-bound human review.", arguments: [{ name: "workspace_id", description: "GuardRails workspace ID from list_guardrails_workspaces.", required: true }] },
 ] as const;
 
 type JsonRpcId = string | number | null;
@@ -355,6 +356,7 @@ function handlePromptGet(id: JsonRpcId, params: Record<string, unknown>) {
   const extension = String(args.extension || "").trim();
   const version = String(args.version || "").trim();
   const query = String(args.query || "").trim();
+  const workspaceId = String(args.workspace_id || "").trim();
 
   if (name === "review_vscode_extension") {
     if (!EXTENSION_PATTERN.test(extension)) return rpcError(id, -32602, "extension must use publisher.name form.");
@@ -367,6 +369,10 @@ function handlePromptGet(id: JsonRpcId, params: Record<string, unknown>) {
   }
   if (name === "review_workspace_extension_changes") {
     return rpcResult(id, { description: "Review authorized workspace extension monitoring without making changes.", messages: [{ role: "user", content: { type: "text", text: "Use GuardRails to list my available workspaces. For the workspace I select, summarize monitored release events, active alerts, extension inventory that needs review, relevant policies, and recent decisions. Keep the review read-only and distinguish policy context from a release-specific analysis result." } }] });
+  }
+  if (name === "review_workspace_capability_policy") {
+    if (!workspaceId) return rpcError(id, -32602, "workspace_id is required.");
+    return rpcResult(id, { description: "Review an evaluated workspace capability policy without changing it.", messages: [{ role: "user", content: { type: "text", text: `Use GuardRails to read the capability policy for workspace ${workspaceId}. Report the policy version and export hash, deny-by-default posture, subjects that are allowed, denied, or approval-required, and every subject with unknown evidence. Cite the exact grant or evaluation reason for each material conclusion. Do not call the policy approved, install anything, or change the workspace; identify any decision that needs a human owner or admin.` } }] });
   }
   return rpcError(id, -32602, `Unknown prompt: ${name || "(missing)"}`);
 }
