@@ -17,6 +17,7 @@ export const dynamic = "force-dynamic";
 // /api/gate endpoint, which relies on the HTTP status for `curl -fsS`).
 
 const MAX_CHECKS_PER_REQUEST = 200;
+const MAX_CONCURRENT_LOOKUPS = 8;
 
 export async function POST(request: Request) {
   let auth;
@@ -52,7 +53,15 @@ export async function POST(request: Request) {
   const db = publicDb();
   if (!db) return NextResponse.json({ error: "Analysis backend is unavailable." }, { status: 503 });
 
-  const results = await Promise.all(checks.map((check) => lookupGateVerdict(db, check, failOnUnreviewed)));
+  let results;
+  try {
+    results = await lookupGateChecks(db, checks, failOnUnreviewed);
+  } catch {
+    return NextResponse.json(
+      { error: "Bulk gate lookup failed. No policy result was produced; retry after the analysis backend recovers." },
+      { status: 502, headers: { "Cache-Control": "no-store", "Retry-After": "30" } },
+    );
+  }
   const summary = results.reduce(
     (acc, result) => ({ ...acc, [result.verdict]: acc[result.verdict] + 1 }),
     { pass: 0, fail: 0, unreviewed: 0 },
@@ -61,4 +70,17 @@ export async function POST(request: Request) {
     { results, summary, team_id: auth.teamId },
     { headers: { "Cache-Control": "private, no-store" } },
   );
+}
+
+async function lookupGateChecks(
+  db: NonNullable<ReturnType<typeof publicDb>>,
+  checks: GateCheck[],
+  failOnUnreviewed: boolean,
+) {
+  const results = [];
+  for (let index = 0; index < checks.length; index += MAX_CONCURRENT_LOOKUPS) {
+    const batch = checks.slice(index, index + MAX_CONCURRENT_LOOKUPS);
+    results.push(...await Promise.all(batch.map((check) => lookupGateVerdict(db, check, failOnUnreviewed))));
+  }
+  return results;
 }
