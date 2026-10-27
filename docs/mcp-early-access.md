@@ -104,3 +104,6 @@ Run the focused contract test before deployment:
 ```bash
 npx vitest run lib/mcpOAuth.test.ts app/api/mcp/route.test.ts
 ```
+Connected clients can revoke an access or refresh token through the OAuth
+revocation endpoint. Revocation requests return success for unknown tokens to
+avoid token enumeration; a revoked token no longer authorizes MCP calls.
