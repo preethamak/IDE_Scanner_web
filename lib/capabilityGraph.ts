@@ -17,6 +17,12 @@ export const CAPABILITY_SUBJECT_KINDS = [
 export type CapabilitySubjectKind = (typeof CAPABILITY_SUBJECT_KINDS)[number];
 export type CapabilityEvidenceState = "verified" | "observed" | "unknown";
 export type CapabilityRelationshipType = "installed_on" | "uses" | "approved_by" | "governed_by";
+export const CAPABILITY_RELATIONSHIP_TYPES = [
+  "installed_on",
+  "uses",
+  "approved_by",
+  "governed_by",
+] as const satisfies readonly CapabilityRelationshipType[];
 
 export type CapabilitySubject = {
   id: string;
@@ -74,11 +80,18 @@ export function buildCapabilityGraph(input: CapabilityGraphInput): CapabilityGra
   const seen = new Set<string>();
   const subjects = input.subjects.map((subject) => normalizeSubject(subject, seen));
   const knownSubjects = new Set(subjects.map((subject) => subject.id));
-  const relationships = (input.relationships || []).map((relationship) => {
+  const relationshipKeys = new Set<string>();
+  const relationships = (input.relationships || []).flatMap((relationship) => {
     if (!knownSubjects.has(relationship.from) || !knownSubjects.has(relationship.to)) {
       throw new Error("Capability relationships must reference known subjects.");
     }
-    return { ...relationship };
+    if (!CAPABILITY_RELATIONSHIP_TYPES.includes(relationship.type)) {
+      throw new Error("Capability relationship type is invalid.");
+    }
+    const key = `${relationship.from}\0${relationship.type}\0${relationship.to}`;
+    if (relationshipKeys.has(key)) return [];
+    relationshipKeys.add(key);
+    return [{ ...relationship }];
   });
   return {
     schemaVersion: "2026-10-01",
@@ -125,6 +138,15 @@ function normalizeSubject(subject: CapabilitySubject, seen: Set<string>): Capabi
   const capabilities = [...new Set(subject.capabilities)];
   if (capabilities.some((capability) => !["filesystem", "network", "process", "secret", "clipboard", "editor", "tool"].includes(capability))) {
     throw new Error("Capability subject contains an unsupported capability.");
+  }
+  if (subject.evidenceState === "unknown" && capabilities.length) {
+    throw new Error("Unknown capability evidence cannot assert capabilities.");
+  }
+  if (subject.evidenceState === "verified" && !subject.artifactSha256) {
+    throw new Error("Verified capability evidence requires an artifact SHA-256.");
+  }
+  if (subject.evidenceState === "verified" && subject.source === "manual") {
+    throw new Error("Manual capability imports cannot claim verified evidence.");
   }
   return { ...subject, name: subject.name.trim(), capabilities, artifactSha256: subject.artifactSha256?.toLowerCase() || null };
 }

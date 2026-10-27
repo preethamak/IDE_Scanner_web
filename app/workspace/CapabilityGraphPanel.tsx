@@ -12,7 +12,7 @@ const example = JSON.stringify({
   generatedAt: new Date().toISOString(),
   subjects: [
     { id: "mcp_server:github", kind: "mcp_server", name: "GitHub MCP", version: "1", publisher: "GitHub", artifactSha256: null, evidenceState: "observed", observedAt: new Date().toISOString(), capabilities: ["network", "tool"], source: "collector" },
-    { id: "agent_skill:release-review", kind: "agent_skill", name: "Release review", version: "1", publisher: "Internal", artifactSha256: null, evidenceState: "unknown", observedAt: new Date().toISOString(), capabilities: ["filesystem"], source: "manual" },
+    { id: "agent_skill:release-review", kind: "agent_skill", name: "Release review", version: "1", publisher: "Internal", artifactSha256: null, evidenceState: "unknown", observedAt: new Date().toISOString(), capabilities: [], source: "manual" },
   ],
   relationships: [],
 }, null, 2);
