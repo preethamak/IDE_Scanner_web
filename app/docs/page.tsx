@@ -106,7 +106,10 @@ export default function DocsPage() {
             The response verdict is <code>pass</code>, <code>fail</code>, or{" "}
             <code>unreviewed</code>, alongside the underlying decision,
             severity, public outcome, coverage percentage, a reason, and a
-            report path for the exact scan. Missing or malformed parameters
+            report path for the exact scan. It also returns relationship-review
+            counts; an allowed parent still fails when a declared extension
+            pack or dependency lacks its own completed exact-release evidence.
+            Missing or malformed parameters
             return HTTP 400; backend outages return 502 or 503 rather than a
             verdict.
           </p>
@@ -134,7 +137,8 @@ export default function DocsPage() {
           <p className={styles.note}>
             Responses are cacheable for up to five minutes. Pin the exact
             version your workspace installs; the gate never substitutes a
-            different release.
+            different release or treats a parent approval as approval of its
+            related extensions.
           </p>
         </section>
 
