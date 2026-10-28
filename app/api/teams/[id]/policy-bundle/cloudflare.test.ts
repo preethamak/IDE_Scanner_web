@@ -37,7 +37,7 @@ describe("Cloudflare enterprise policy export", () => {
             artifact_sha256: "a".repeat(64),
             report_json: JSON.stringify({ metadata: { scanner_build: "build-1", policy_version: "policy-1" }, extensions: [
               { extension_id: "wrong.extension", version: "9.9.9", analysis_status: "incomplete", analysis_coverage: { coverage_percent: 0 }, risk_score: 99, malware_score: 0, public_outcome: "incomplete", capabilities: [] },
-              { extension_id: "publisher.one", version: "1.0.0", analysis_status: "complete", analysis_coverage: { coverage_percent: 100 }, risk_score: 10, malware_score: 0, public_outcome: "clear", capabilities: [] },
+              { extension_id: "publisher.one", version: "1.0.0", analysis_status: "complete", analysis_coverage: { coverage_percent: 100 }, risk_score: 10, malware_score: 0, public_outcome: "clear", capabilities: [], artifact_inventory: { extension_relationship_inventory: { entries: [{ extension_id: "publisher.child", relationship: "extensionPack" }], resolution: [{ extension_id: "publisher.child", relationship: "extensionPack", status: "scanned", resolved_version: "2.0.0", resolved_artifact_sha256: "c".repeat(64) }] } } },
             ] }),
           },
           {
@@ -65,5 +65,9 @@ describe("Cloudflare enterprise policy export", () => {
       "publisher.one",
       "publisher.two",
     ]);
+    expect(body.entries[0].relationship_contract).toMatchObject({
+      requires_separate_review: false,
+      declared: [expect.objectContaining({ extension_id: "publisher.child", status: "scanned" })],
+    });
   });
 });
