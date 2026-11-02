@@ -148,7 +148,7 @@ async function getCloudflarePublicationHealth(): Promise<PublicationHealth> {
   const jobCount = jobRows.reduce((sum, row) => sum + Number(row.count || 0), 0);
   const failedJobs = jobRows.filter((row) => String(row.status) === "failed").reduce((sum, row) => sum + Number(row.count || 0), 0);
   const deliveryCount = deliveryRows.reduce((sum, row) => sum + Number(row.count || 0), 0);
-  const failedDeliveries = deliveryRows.filter((row) => String(row.status) === "failed").reduce((sum, row) => sum + Number(row.count || 0), 0);
+  const failedDeliveries = deliveryRows.filter((row) => ["failed", "dead_letter"].includes(String(row.status))).reduce((sum, row) => sum + Number(row.count || 0), 0);
   return evaluatePublicationHealth({
     active_release: release ? {
       id: String(release.id),

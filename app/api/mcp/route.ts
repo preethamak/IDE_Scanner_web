@@ -13,6 +13,7 @@ import { privateDb } from "@/lib/cloudflarePrivate";
 import { requireTeamRole } from "@/lib/teams";
 import { getWorkspaceState } from "@/lib/cloudflareWorkspace";
 import { graphWithWorkspaceExtensions } from "@/lib/teamCapabilityInventory";
+import { buildCapabilityPolicyExport } from "@/lib/capabilityPolicyBundle";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,8 +31,10 @@ const WORKSPACE_TOOLS = new Set([
   "list_guardrails_workspaces",
   "get_workspace_extension_inventory",
   "get_workspace_capability_graph",
+  "get_workspace_security_posture",
   "get_workspace_monitoring",
   "get_workspace_policies",
+  "get_workspace_capability_policy",
   "get_workspace_decision_history",
   "get_workspace_audit_history",
 ]);
@@ -54,6 +57,15 @@ const RESOURCES = [
     name: "GuardRails workspace access",
     description: "The OAuth scope, membership rule, and read-only boundary for workspace intelligence.",
     mimeType: "text/markdown",
+  },
+] as const;
+
+const RESOURCE_TEMPLATES = [
+  {
+    uriTemplate: "guardrails://extensions/{extension}/versions/{version}/evidence",
+    name: "GuardRails exact release evidence",
+    description: "Public, bounded evidence summary for one completed published VS Code extension release. Use only after resolving the exact publisher.name and version.",
+    mimeType: "application/json",
   },
 ] as const;
 
@@ -100,6 +112,7 @@ const PROMPTS = [
     title: "Review workspace extension changes",
     description: "Read the signed-in user's GuardRails workspace monitoring context without changing it.",
   },
+  { name: "review_workspace_capability_policy", title: "Review workspace capability policy", description: "Read an authorized workspace's evaluated capability policy and produce an evidence-bound human review.", arguments: [{ name: "workspace_id", description: "GuardRails workspace ID from list_guardrails_workspaces.", required: true }] },
 ] as const;
 
 type JsonRpcId = string | number | null;
@@ -171,6 +184,13 @@ const TOOLS = [
     annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
   },
   {
+    name: "compare_extension_releases", title: "Compare two extension releases",
+    description: "Compare published GuardRails evidence for two exact versions before approving an update. Missing analysis remains unknown, never approval.",
+    inputSchema: { type: "object", properties: { extension: { type: "string" }, from_version: { type: "string" }, to_version: { type: "string" } }, required: ["extension", "from_version", "to_version"] },
+    outputSchema: { type: "object", required: ["extension", "from", "to", "changes", "recommendation"], properties: { extension: { type: "string" }, from: { type: "object" }, to: { type: "object" }, changes: { type: "object" }, recommendation: { type: "string" } } },
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
+  },
+  {
     name: "list_published_extension_scans",
     title: "List published extension scans",
     description: "List recent publicly published GuardRails analyses. Use this for ecosystem research, not as proof about releases absent from the list.",
@@ -227,6 +247,14 @@ const TOOLS = [
     annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
   },
   {
+    name: "get_workspace_security_posture",
+    title: "Get workspace security posture evidence",
+    description: "Return a compact, evidence-bound workspace posture across observed extensions and developer capabilities, unresolved capability evidence, active monitoring alerts, release events, recorded decisions, and configured policy counts. Requires workspace:read OAuth scope and workspace membership. This tool does not infer a global safety score or make changes.",
+    inputSchema: { type: "object", properties: { workspace_id: { type: "string", description: "GuardRails workspace ID." } }, required: ["workspace_id"] },
+    outputSchema: { type: "object", required: ["workspace_id", "inventory", "capability_evidence", "monitoring", "decisions", "policies", "evidence_boundary"], properties: { workspace_id: { type: "string" }, inventory: { type: "object" }, capability_evidence: { type: "object" }, monitoring: { type: "object" }, decisions: { type: "object" }, policies: { type: "object" }, evidence_boundary: { type: "string" } } },
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+  },
+  {
     name: "get_workspace_monitoring",
     title: "Get workspace monitoring",
     description: "Read GuardRails workspace watchlist entries, monitoring status, release events, and active alerts. Requires workspace:read OAuth scope and workspace membership.",
@@ -240,6 +268,14 @@ const TOOLS = [
     description: "Read the enabled GuardRails workspace policy set and monitoring preferences. Requires workspace:read OAuth scope and workspace membership.",
     inputSchema: { type: "object", properties: { workspace_id: { type: "string", description: "GuardRails workspace ID." } }, required: ["workspace_id"] },
     outputSchema: { type: "object", required: ["workspace_id", "policies", "preferences"], properties: { workspace_id: { type: "string" }, policies: { type: "array" }, preferences: { type: "object" } } },
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+  },
+  {
+    name: "get_workspace_capability_policy",
+    title: "Get workspace capability policy",
+    description: "Read the workspace's deny-by-default developer capability policy, its evaluated enforcement export, and evidence-dependent approval requirements. Requires workspace:read OAuth scope and workspace membership.",
+    inputSchema: { type: "object", properties: { workspace_id: { type: "string", description: "GuardRails workspace ID." } }, required: ["workspace_id"] },
+    outputSchema: { type: "object", required: ["workspace_id", "policy", "export"], properties: { workspace_id: { type: "string" }, policy: { type: "object" }, export: { type: "object" } } },
     annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
   },
   {
@@ -287,6 +323,8 @@ export async function POST(request: Request) {
   if (!message || typeof message !== "object" || Array.isArray(message)) {
     return rpcError(null, -32600, "Invalid request: batch messages are not supported.");
   }
+  const invalidEnvelope = invalidJsonRpcEnvelope(message);
+  if (invalidEnvelope) return rpcError(null, -32600, invalidEnvelope);
   const id = message.id === undefined ? null : message.id;
   const method = typeof message.method === "string" ? message.method : "";
   const params = (message.params && typeof message.params === "object" ? message.params : {}) as Record<string, unknown>;
@@ -312,6 +350,8 @@ export async function POST(request: Request) {
       return rpcResult(id, { tools: TOOLS });
     case "resources/list":
       return rpcResult(id, { resources: RESOURCES });
+    case "resources/templates/list":
+      return rpcResult(id, { resourceTemplates: RESOURCE_TEMPLATES });
     case "resources/read":
       return handleResourceRead(id, params);
     case "prompts/list":
@@ -325,11 +365,56 @@ export async function POST(request: Request) {
   }
 }
 
-function handleResourceRead(id: JsonRpcId, params: Record<string, unknown>) {
+function invalidJsonRpcEnvelope(message: JsonRpcRequest): string | null {
+  if (message.jsonrpc !== "2.0") return "Invalid request: jsonrpc must be \"2.0\".";
+  if (typeof message.method !== "string" || !message.method.trim()) return "Invalid request: method must be a non-empty string.";
+  if (message.id !== undefined && message.id !== null && typeof message.id !== "string" && (typeof message.id !== "number" || !Number.isFinite(message.id))) {
+    return "Invalid request: id must be a string, finite number, null, or omitted notification id.";
+  }
+  if (message.params !== undefined && (typeof message.params !== "object" || message.params === null || Array.isArray(message.params))) {
+    return "Invalid request: params must be an object when provided.";
+  }
+  return null;
+}
+
+async function handleResourceRead(id: JsonRpcId, params: Record<string, unknown>) {
   const uri = String(params.uri || "") as keyof typeof RESOURCE_TEXT;
   const text = RESOURCE_TEXT[uri];
-  if (!text) return rpcError(id, -32602, "Unknown GuardRails resource URI.");
-  return rpcResult(id, { contents: [{ uri, mimeType: "text/markdown", text }] });
+  if (text) return rpcResult(id, { contents: [{ uri, mimeType: "text/markdown", text }] });
+
+  const release = parseReleaseEvidenceUri(uri);
+  if (!release) return rpcError(id, -32602, "Unknown GuardRails resource URI.");
+  const product = await getVersionProduct(release.extension, release.version);
+  const scan = product?.scan as Record<string, unknown> | null | undefined;
+  if (!product || !scan || String(scan.analysis_status || "complete") !== "complete") {
+    return rpcError(id, -32602, "No completed public analysis exists for this exact release.");
+  }
+  const payload = publicReleaseEvidenceResource(release.extension, release.version, scan, Array.isArray(product.findings) ? product.findings : []);
+  return rpcResult(id, { contents: [{ uri, mimeType: "application/json", text: JSON.stringify(payload, null, 2) }] });
+}
+
+function parseReleaseEvidenceUri(uri: string): { extension: string; version: string } | null {
+  const match = /^guardrails:\/\/extensions\/([^/]+)\/versions\/([^/]+)\/evidence$/.exec(uri);
+  if (!match) return null;
+  try {
+    const extension = decodeURIComponent(match[1]);
+    const version = decodeURIComponent(match[2]);
+    return EXTENSION_PATTERN.test(extension) && isValidGateCheck({ extension, version }) ? { extension, version } : null;
+  } catch {
+    return null;
+  }
+}
+
+function publicReleaseEvidenceResource(extension: string, version: string, scan: Record<string, unknown>, findings: unknown[]) {
+  const findingRows = Array.isArray(findings) ? findings.filter((finding) => finding && typeof finding === "object" && !Array.isArray(finding)) as Array<Record<string, unknown>> : [];
+  return {
+    schema_version: "guardrails-mcp-release-evidence-v1",
+    identity: Object.fromEntries(["id", "extension_id", "version", "artifact_sha256", "scanned_at", "scanner_build", "ruleset_version"].map((key) => [key, scan[key] ?? null])),
+    outcome: Object.fromEntries(["decision", "severity", "public_outcome", "decision_reason", "evidence_confidence", "coverage_percent", "analysis_status"].map((key) => [key, scan[key] ?? null])),
+    findings: findingRows.slice(0, 100).map((finding) => Object.fromEntries(["rule_id", "category", "severity", "confidence", "summary", "recommendation", "file_refs", "actionability", "evidence_class"].map((key) => [key, finding[key] ?? null]))),
+    report_url: `https://abscissa.dev/extensions/${encodeURIComponent(extension)}/versions/${encodeURIComponent(version)}/scans/${encodeURIComponent(String(scan.id || ""))}`,
+    boundary: "This resource describes only the exact completed published release. It excludes source previews, raw evidence, and internal analyzer fields. An unreviewed or incomplete release is not returned as approval.",
+  };
 }
 
 function handlePromptGet(id: JsonRpcId, params: Record<string, unknown>) {
@@ -338,6 +423,7 @@ function handlePromptGet(id: JsonRpcId, params: Record<string, unknown>) {
   const extension = String(args.extension || "").trim();
   const version = String(args.version || "").trim();
   const query = String(args.query || "").trim();
+  const workspaceId = String(args.workspace_id || "").trim();
 
   if (name === "review_vscode_extension") {
     if (!EXTENSION_PATTERN.test(extension)) return rpcError(id, -32602, "extension must use publisher.name form.");
@@ -351,6 +437,10 @@ function handlePromptGet(id: JsonRpcId, params: Record<string, unknown>) {
   if (name === "review_workspace_extension_changes") {
     return rpcResult(id, { description: "Review authorized workspace extension monitoring without making changes.", messages: [{ role: "user", content: { type: "text", text: "Use GuardRails to list my available workspaces. For the workspace I select, summarize monitored release events, active alerts, extension inventory that needs review, relevant policies, and recent decisions. Keep the review read-only and distinguish policy context from a release-specific analysis result." } }] });
   }
+  if (name === "review_workspace_capability_policy") {
+    if (!workspaceId) return rpcError(id, -32602, "workspace_id is required.");
+    return rpcResult(id, { description: "Review an evaluated workspace capability policy without changing it.", messages: [{ role: "user", content: { type: "text", text: `Use GuardRails to read the capability policy for workspace ${workspaceId}. Report the policy version and export hash, deny-by-default posture, subjects that are allowed, denied, or approval-required, and every subject with unknown evidence. Cite the exact grant or evaluation reason for each material conclusion. Do not call the policy approved, install anything, or change the workspace; identify any decision that needs a human owner or admin.` } }] });
+  }
   return rpcError(id, -32602, `Unknown prompt: ${name || "(missing)"}`);
 }
 
@@ -363,6 +453,7 @@ async function handleToolCall(id: JsonRpcId, params: Record<string, unknown>, re
     if (name === "find_reputable_alternatives") return rpcResult(id, await findReputableAlternatives(args, origin));
     if (name === "search_vscode_extensions") return rpcResult(id, await searchVsCodeExtensions(args, origin));
     if (name === "get_extension_release") return rpcResult(id, await getExtensionRelease(args, origin));
+    if (name === "compare_extension_releases") return rpcResult(id, await compareExtensionReleases(args, origin));
     if (name === "list_published_extension_scans") return rpcResult(id, await listPublishedExtensionScans(args, origin));
     if (name === "get_extension_scan_history") return rpcResult(id, await getExtensionScanHistory(args, origin));
     if (name === "get_guardrails_analysis_rules") return rpcResult(id, await getAnalysisRules());
@@ -370,8 +461,10 @@ async function handleToolCall(id: JsonRpcId, params: Record<string, unknown>, re
     if (name === "list_guardrails_workspaces") return rpcResult(id, await listGuardRailsWorkspaces(userId));
     if (name === "get_workspace_extension_inventory") return rpcResult(id, await getWorkspaceExtensionInventory(args, userId));
     if (name === "get_workspace_capability_graph") return rpcResult(id, await getWorkspaceCapabilityGraph(args, userId));
+    if (name === "get_workspace_security_posture") return rpcResult(id, await getWorkspaceSecurityPosture(args, userId));
     if (name === "get_workspace_monitoring") return rpcResult(id, await getWorkspaceMonitoring(args, userId));
     if (name === "get_workspace_policies") return rpcResult(id, await getWorkspacePolicies(args, userId));
+    if (name === "get_workspace_capability_policy") return rpcResult(id, await getWorkspaceCapabilityPolicy(args, userId));
     if (name === "get_workspace_decision_history") return rpcResult(id, await getWorkspaceDecisionHistory(args, userId));
     if (name === "get_workspace_audit_history") return rpcResult(id, await getWorkspaceAuditHistory(args, userId));
     return rpcError(id, -32602, `Unknown tool: ${name || "(missing)"}`);
@@ -522,6 +615,26 @@ async function getExtensionRelease(args: Record<string, unknown>, origin: string
   });
 }
 
+async function compareExtensionReleases(args: Record<string, unknown>, origin: string) {
+  const extension = String(args.extension || "").trim(); const fromVersion = String(args.from_version || "").trim(); const toVersion = String(args.to_version || "").trim();
+  if (!EXTENSION_PATTERN.test(extension)) return toolError("Provide extension as publisher.name, e.g. ms-python.python.");
+  if (!validReleaseVersion(fromVersion) || !validReleaseVersion(toVersion) || fromVersion === toVersion) return toolError("Provide two different non-empty exact release versions.");
+  const [fromProduct, toProduct] = await Promise.all([getVersionProduct(extension, fromVersion), getVersionProduct(extension, toVersion)]);
+  const from = releaseComparisonSide(extension, fromVersion, fromProduct, origin); const to = releaseComparisonSide(extension, toVersion, toProduct, origin);
+  const unknown = from.analysis_state !== "analyzed" || to.analysis_state !== "analyzed";
+  return toolJson({ extension, from: omitFindingIds(from), to: omitFindingIds(to), changes: { decision: from.decision !== to.decision, severity: from.severity !== to.severity, coverage_percent: from.coverage_percent !== to.coverage_percent, artifact_sha256: from.artifact_sha256 !== to.artifact_sha256, added_finding_ids: to.finding_ids.filter((id) => !from.finding_ids.includes(id)), removed_finding_ids: from.finding_ids.filter((id) => !to.finding_ids.includes(id)) }, recommendation: unknown ? "needs human review" : recommendation(to.decision), note: unknown ? "At least one exact release has no completed published analysis. This comparison is not an approval." : "Compare the exact release evidence with your workspace policy and approval history before installing the candidate." });
+}
+
+function validReleaseVersion(value: string) { return value.length > 0 && value.length <= 120 && !/[\r\n]/.test(value); }
+function stringValue(value: unknown) { return typeof value === "string" && value.trim() ? value.trim() : null; }
+function numberValue(value: unknown) { return typeof value === "number" && Number.isFinite(value) ? value : null; }
+function releaseComparisonSide(extension: string, version: string, product: Record<string, unknown> | null, origin: string) {
+  const record = product || {}; const scan = record.scan && typeof record.scan === "object" ? record.scan as Record<string, unknown> : null; const findings = Array.isArray(record.findings) ? record.findings : [];
+  const scanId = stringValue(scan?.id); const artifact = stringValue(scan?.artifact_sha256) || stringValue((scan?.artifact_identity as Record<string, unknown> | undefined)?.sha256);
+  return { version, analysis_state: scan ? "analyzed" : product ? "unreviewed" : "not_found", decision: stringValue(scan?.decision), severity: stringValue(scan?.severity), coverage_percent: numberValue(scan?.coverage_percent), artifact_sha256: artifact, scanner_build: stringValue(scan?.scanner_build), ruleset_version: stringValue(scan?.ruleset_version), report_url: scanId ? `${origin}/extensions/${encodeURIComponent(extension)}/versions/${encodeURIComponent(version)}/scans/${encodeURIComponent(scanId)}` : `${origin}/extensions/${encodeURIComponent(extension)}/versions/${encodeURIComponent(version)}`, finding_ids: [...new Set(findings.map((finding) => stringValue((finding as Record<string, unknown>).rule_id)).filter((id): id is string => Boolean(id)))].sort() };
+}
+function omitFindingIds(side: ReturnType<typeof releaseComparisonSide>) { const { finding_ids: _findingIds, ...result } = side; return result; }
+
 function compactScan(scan: Record<string, unknown>) {
   const keys = ["id", "extension_id", "version", "decision", "severity", "public_outcome", "decision_reason", "evidence_confidence", "coverage_percent", "artifact_sha256", "scanned_at", "scanner_build", "ruleset_version", "analysis_status"];
   return Object.fromEntries(keys.filter((key) => scan[key] !== undefined).map((key) => [key, scan[key]]));
@@ -589,6 +702,44 @@ async function getWorkspaceCapabilityGraph(args: Record<string, unknown>, userId
   return toolJson({ workspace_id: workspace.workspaceId, graph, summary: { subjects: graph.subjects.length, by_kind: byKind, verified: graph.subjects.filter((subject) => subject.evidenceState === "verified").length, unknown_capabilities: graph.subjects.filter((subject) => subject.capabilities.length === 0).length } });
 }
 
+async function getWorkspaceSecurityPosture(args: Record<string, unknown>, userId: string | null) {
+  const workspace = await workspaceForMcp(args, userId);
+  if ("error" in workspace) return workspace.error;
+  const state = workspace.state;
+  const installations = state.inventory.installations;
+  const graph = graphWithWorkspaceExtensions(workspace.workspaceId, installations, state.capability_graph);
+  const activeAlerts = state.alerts.filter((alert) => !["dismissed", "resolved"].includes(String(alert.state || "").toLowerCase()));
+  const currentReleaseEvents = state.release_events.filter((event) => String(event.state) !== "superseded");
+  const decisionCounts = Object.fromEntries(["allow", "review", "block"].map((decision) => [decision, state.decisions.filter((item) => String(item.decision).toLowerCase() === decision).length]));
+  const byKind = Object.fromEntries(["extension", "mcp_server", "agent_skill", "cli", "browser_extension"].map((kind) => [kind, graph.subjects.filter((subject) => subject.kind === kind).length]));
+  return toolJson({
+    workspace_id: workspace.workspaceId,
+    inventory: {
+      devices: state.inventory.devices.length,
+      installations: installations.length,
+      unique_extensions: new Set(installations.map((item) => String(item.extension_id).toLowerCase())).size,
+      monitored_installations: installations.filter((item) => state.watchlist.some((watch) => String(watch.extension_id).toLowerCase() === String(item.extension_id).toLowerCase())).length,
+      last_import_at: state.inventory.last_import_at || null,
+    },
+    capability_evidence: {
+      subjects: graph.subjects.length,
+      by_kind: byKind,
+      verified_subjects: graph.subjects.filter((subject) => subject.evidenceState === "verified").length,
+      observed_subjects: graph.subjects.filter((subject) => subject.evidenceState === "observed").length,
+      subjects_without_capability_evidence: graph.subjects.filter((subject) => subject.capabilities.length === 0).map((subject) => ({ id: subject.id, kind: subject.kind, evidence_state: subject.evidenceState })),
+    },
+    monitoring: {
+      watchlist_entries: state.watchlist.length,
+      active_alerts: activeAlerts.length,
+      active_alerts_by_severity: Object.fromEntries(["critical", "high", "medium", "low"].map((severity) => [severity, activeAlerts.filter((alert) => String(alert.severity || "").toLowerCase() === severity).length])),
+      current_release_events: currentReleaseEvents.length,
+    },
+    decisions: { recorded: state.decisions.length, by_outcome: decisionCounts },
+    policies: { configured: state.policies.length, enabled: state.policies.filter((policy) => policy.enabled !== false).length },
+    evidence_boundary: "This is a summary of recorded workspace evidence. It does not prove a workspace is safe, turn unknown evidence into approval, or replace the exact release analysis behind an individual extension decision.",
+  });
+}
+
 async function getWorkspaceMonitoring(args: Record<string, unknown>, userId: string | null) {
   const workspace = await workspaceForMcp(args, userId);
   if ("error" in workspace) return workspace.error;
@@ -600,6 +751,14 @@ async function getWorkspacePolicies(args: Record<string, unknown>, userId: strin
   const workspace = await workspaceForMcp(args, userId);
   if ("error" in workspace) return workspace.error;
   return toolJson({ workspace_id: workspace.workspaceId, policies: workspace.state.policies, preferences: workspace.state.preferences });
+}
+
+async function getWorkspaceCapabilityPolicy(args: Record<string, unknown>, userId: string | null) {
+  const workspace = await workspaceForMcp(args, userId);
+  if ("error" in workspace) return workspace.error;
+  const policy = workspace.state.capability_policy || { schema: "guardrails.capability-policy.v1" as const, version: 0, grants: [], updated_at: "", updated_by: "" };
+  const graph = graphWithWorkspaceExtensions(workspace.workspaceId, workspace.state.inventory.installations, workspace.state.capability_graph);
+  return toolJson({ workspace_id: workspace.workspaceId, policy, export: buildCapabilityPolicyExport(policy, graph), note: "This read-only export is enforcement evidence. Unknown capability evidence requires approval; it is not an allow." });
 }
 
 async function getWorkspaceDecisionHistory(args: Record<string, unknown>, userId: string | null) {

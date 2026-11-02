@@ -72,7 +72,7 @@ export default function AnalyzePage() {
           <ShieldCheck /> Choose the evidence boundary
         </span>
         <h1>
-          Start with what
+          Start with what{" "}
           <br />
           <em>you actually have.</em>
         </h1>

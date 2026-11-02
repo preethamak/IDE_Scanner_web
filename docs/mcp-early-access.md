@@ -13,12 +13,15 @@ workspace data, or grants access beyond the signed-in user’s memberships.
 | `find_reputable_alternatives` | Find up to five analyzed alternatives when a candidate needs review or is blocked. |
 | `search_vscode_extensions` | Resolve a marketplace query to an exact `publisher.name` identifier. |
 | `get_extension_release` | Retrieve catalog and evidence for an exact published extension release. |
+| `compare_extension_releases` | Compare two exact releases before approving an update, including evidence and artifact changes. |
 | `list_published_extension_scans` / `get_extension_scan_history` | Research published analysis coverage without treating absence as approval. |
 | `get_guardrails_analysis_rules` / `get_guardrails_service_status` | Explain the active rules and confirm public service availability. |
 | `list_guardrails_workspaces` | List workspaces available to the signed-in MCP user. |
+| `get_workspace_security_posture` | Return evidence-bound workspace inventory, capability, monitoring, decision, and policy counts without an inferred safety score. |
 | `get_workspace_extension_inventory` | Read observed extension inventory, versions, and monitoring state. |
 | `get_workspace_monitoring` | Read watchlists, release events, alerts, and monitoring status. |
 | `get_workspace_policies` | Read policy rules and monitoring preferences. |
+| `get_workspace_capability_policy` | Read the deny-by-default capability policy and evaluated enforcement export. |
 | `get_workspace_decision_history` / `get_workspace_audit_history` | Read decision evidence and audit history. |
 
 An `unreviewed` result is unknown, not approval. Every completed-result payload
@@ -78,6 +81,10 @@ exact-artifact verdict, and the second only searches analyzed releases.
 For an unpinned request, the MCP server returns the latest analyzed release.
 Use the exact `version` parameter for install, CI, or procurement decisions.
 
+For release governance, ask: “Compare `publisher.name` from `1.2.3` to `1.3.0`
+before we approve the update.” GuardRails returns decision, coverage, artifact,
+and rule-evidence changes, and treats an unreviewed side as unknown.
+
 For workspace review, ask: “List my GuardRails workspaces. For the selected
 workspace, summarize monitored release events, unread alerts, extensions that
 need review, the relevant policy, and prior decision rationale. Do not change
@@ -101,3 +108,6 @@ Run the focused contract test before deployment:
 ```bash
 npx vitest run lib/mcpOAuth.test.ts app/api/mcp/route.test.ts
 ```
+Connected clients can revoke an access or refresh token through the OAuth
+revocation endpoint. Revocation requests return success for unknown tokens to
+avoid token enumeration; a revoked token no longer authorizes MCP calls.

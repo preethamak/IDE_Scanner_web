@@ -3,6 +3,8 @@
 import { useSyncExternalStore } from "react";
 import styles from "./companyChrome.module.css";
 
+import { setGoogleAnalyticsEnabled } from "@/lib/googleAnalytics";
+
 const CONSENT_KEY = "guardrails-consent";
 type Consent = "granted" | "denied" | "unset";
 
@@ -43,8 +45,9 @@ export default function ConsentResetButton() {
     } catch {
       // Without storage the preference is session-only.
     }
+    setGoogleAnalyticsEnabled(next === "granted");
     if (next === "denied") {
-      // Removing the tag stops new hits; already-sent data cannot be recalled.
+      // Disable the already-loaded library as well as removing the loader.
       document.getElementById("gtag-script")?.remove();
     }
     notifyAll();

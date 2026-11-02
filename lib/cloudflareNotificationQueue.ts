@@ -1,9 +1,23 @@
 import type { PrivateDatabase } from "@/lib/cloudflarePrivate";
 
+type DeliveryRequest = (kind: string, target: string, payload: unknown) => {
+  destination: string;
+  payload: Record<string, unknown>;
+  headers: Record<string, string>;
+};
+
+export const MAX_NOTIFICATION_DELIVERY_ATTEMPTS = 6;
+
+export function notificationRetryAt(attempts: number, now = Date.now()): string {
+  const delayMinutes = Math.min(60, 2 ** Math.min(attempts, 5));
+  return new Date(now + delayMinutes * 60_000).toISOString();
+}
+
 /** Deliver due D1-backed workspace notifications from either cron entrypoint. */
 export async function deliverCloudflareNotifications(
   db: PrivateDatabase,
   now = new Date().toISOString(),
+  deliveryRequest: DeliveryRequest = workerSafeDelivery,
 ) {
   const pending = await db
     .prepare("SELECT id,kind,target,payload_json,attempts FROM app_notification_deliveries WHERE status IN ('pending','failed') AND next_attempt_at<=? ORDER BY created_at LIMIT 50")
@@ -11,13 +25,14 @@ export async function deliverCloudflareNotifications(
     .all<Record<string, unknown>>();
   let sent = 0;
   let failed = 0;
+  let deadLettered = 0;
   for (const row of pending.results) {
     const attempts = Number(row.attempts || 0) + 1;
     try {
       const payload = JSON.parse(String(row.payload_json || "{}"));
       const target = String(row.target);
       const kind = String(row.kind || "generic_webhook");
-      const delivery = workerSafeDelivery(kind, target, payload);
+      const delivery = deliveryRequest(kind, target, payload);
       const response = await fetch(delivery.destination, {
         method: "POST",
         redirect: "manual",
@@ -31,13 +46,14 @@ export async function deliverCloudflareNotifications(
       sent += 1;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Notification delivery failed.";
-      const retryAt = new Date(Date.now() + Math.min(60, 2 ** Math.min(attempts, 5)) * 60_000).toISOString();
-      await db.prepare("UPDATE app_notification_deliveries SET status='failed',attempts=?,last_error=?,next_attempt_at=? WHERE id=?")
-        .bind(attempts, message.slice(0, 1000), retryAt, String(row.id)).run();
+      const status = attempts >= MAX_NOTIFICATION_DELIVERY_ATTEMPTS ? "dead_letter" : "failed";
+      await db.prepare("UPDATE app_notification_deliveries SET status=?,attempts=?,last_error=?,next_attempt_at=? WHERE id=?")
+        .bind(status, attempts, message.slice(0, 1000), notificationRetryAt(attempts), String(row.id)).run();
       failed += 1;
+      if (status === "dead_letter") deadLettered += 1;
     }
   }
-  return { attempted: pending.results.length, sent, failed };
+  return { attempted: pending.results.length, sent, failed, dead_lettered: deadLettered };
 }
 
 function workerSafeDelivery(kind: string, target: string, payload: unknown) {

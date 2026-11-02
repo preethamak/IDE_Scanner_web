@@ -295,6 +295,7 @@ export type ImportedReportBundle = {
   leaderboard: { extensions: BundleExtensionSummary[] };
   posture: Record<string, unknown>;
   rules: { ruleset_version?: string; rules: RuleMetadata[] };
+  cyclonedx?: Record<string, unknown>;
   details: Record<string, ExtensionDetail>;
 };
 

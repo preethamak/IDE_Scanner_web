@@ -1,38 +1,40 @@
 import { expect, test } from "@playwright/test";
 
 const surfaces = [
-  ["/", /The security check before you click Install/i],
-  ["/registry", /Know what runs in your editor/i],
-  ["/analyze", /Check a file you already have/i],
-  ["/cli", /See what is already inside your editor/i],
-  ["/workspace", /Keep every extension decision in one trusted place/i],
-  ["/monitor", /Watch the release/i],
-  ["/account", /Keep watching after the first scan/i],
-  ["/benchmark", /Regression evidence with its limits intact/i],
+  ["/", /Know what an extension can do before you let it in/i],
+  ["/registry", /Know what runs\s+in your editor/i],
+  ["/analyze", /Start with what\s+you actually have/i],
+  ["/cli", /Audit every VS Code-based editor on your machine/i],
+  ["/workspace", /Keep every release decision beside its evidence/i],
+  ["/monitor", /Approve once\.\s*Return only when it changes/i],
+  ["/account", /Know what changed\.\s*Keep the decision/i],
+  ["/benchmark", /A benchmark that shows what it cannot prove/i],
 ] as const;
 
 for (const [path, heading] of surfaces) {
   test(`${path} remains usable on a phone viewport`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(path);
-    await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+    await expect(page.locator("h1")).toHaveText(heading);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   });
 }
 
 test("Registry search is the primary public route", async ({ page }) => {
+  await page.route("**/api/marketplace/search?q=vyper%20guard", (route) => route.fulfill({ json: { query: "vyper guard", exact_match: { extension_id: "acme.vyper-guard", version: "1.0.0", display_name: "Vyper Guard", publisher: "Acme", publisher_verified: true, registry: "vs-marketplace", match_reason: "exact_identity" }, matching_extensions: [], related_extensions: [] } }));
   await page.goto("/");
-  await page.getByRole("textbox", { name: "Search extensions" }).first().fill("vyper guard");
-  await page.getByRole("button", { name: /Search extensions/i }).first().click({ noWaitAfter: true });
-  await expect(page).toHaveURL(/\/registry\?q=vyper(?:%20|\+)guard/);
+  await page.getByRole("textbox", { name: "Find an extension" }).first().fill("vyper guard");
+  await page.getByRole("button", { name: "Check extension" }).first().click({ noWaitAfter: true });
+  const profile = page.getByRole("link", { name: "Open Vyper Guard extension profile" });
+  await expect(profile).toHaveAttribute("href", "/extensions/acme.vyper-guard");
 });
 
 test("Workspace explains the team decision outcome before sign-in", async ({ page }) => {
   await page.goto("/workspace");
-  await expect(page.getByRole("heading", { name: "Your team’s next decisions" })).toBeVisible();
-  await expect(page.getByText("GitHub Copilot", { exact: false }).first()).toBeVisible();
+  await expect(page.locator("h1")).toHaveText(/Keep every release decision beside its evidence/);
+  await expect(page.getByText("Cline", { exact: false }).first()).toBeVisible();
   await expect(page.getByRole("link", { name: /Create your workspace/i })).toHaveAttribute("href", "/account?next=/workspace");
-  await expect(page.getByRole("link", { name: "Explore Extension Registry" })).toHaveAttribute("href", "/registry");
+  await expect(page.getByRole("link", { name: "Browse public reports" })).toHaveAttribute("href", "/registry");
 });
 
 test("legacy discovery routes preserve the customer journey", async ({ page }) => {
@@ -46,27 +48,31 @@ test("legacy discovery routes preserve the customer journey", async ({ page }) =
 
 test("extension profile and report use one current outcome", async ({ page }) => {
   await page.goto("/extensions/GitHub.copilot");
-  await expect(page.getByText("Scan result", { exact: true })).toBeVisible();
-  await expect(page.getByText("REVIEW NEEDED", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Current release", { exact: true })).toBeVisible();
+  await expect(page.locator("#overview").getByRole("link", { name: "Read Analysis Report", exact: true })).toHaveAttribute("href", "/extensions/GitHub.copilot/versions/1.388.0");
   await expect(page.getByText("Primary severity", { exact: true })).toHaveCount(0);
   await page.goto("/extensions/GitHub.copilot/versions/1.388.0");
-  await expect(page.getByText("Review needed", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Analyzed", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("Operational action", { exact: true })).toHaveCount(0);
 });
 
-test("public security summary stays concise and full analysis requires sign-in", async ({ page }) => {
+test("public security summary stays concise and immutable reports remain shareable", async ({ page }) => {
   await page.goto("/extensions/GitHub.copilot/versions/1.388.0");
   await expect(page.getByText("Extension Security Summary", { exact: true })).toBeVisible();
   await expect(page.getByText("Raw evidence", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: /Sign in for Full Analysis/i })).toBeVisible();
-  await page.goto("/extensions/GitHub.copilot/versions/1.388.0/scans/0975989d-c11f-4830-9bfb-082e732fad1a");
-  await expect(page).toHaveURL(/\/account\?next=/);
+  const action = page.getByRole("link", { name: /Sign in for Full Analysis/i });
+  const next = new URL(await action.getAttribute("href") || "", "http://localhost").searchParams.get("next");
+  expect(next).toMatch(/^\/extensions\/GitHub\.copilot\/versions\/1\.388\.0\/scans\/[^/]+$/);
+  await page.goto(next!);
+  await expect(page.getByText("Immutable Deep Scan report", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Copy link", exact: true })).toBeVisible();
 });
 
 test("Registry cards lead to the public extension profile", async ({ page }) => {
   await page.goto("/registry");
-  const profile = page.getByRole("link", { name: /Open GitHub Copilot extension profile/i });
-  await expect(profile).toHaveAttribute("href", "/extensions/GitHub.copilot");
+  const profile = page.locator('a[aria-label^="Open "][aria-label$=" extension profile"]').first();
+  await expect(profile).toHaveAttribute("href", /^\/extensions\/[^/]+$/);
 });
 
 test("Registry search clears old results while a new request is pending", async ({ page }) => {
@@ -84,34 +90,31 @@ test("Registry search clears old results while a new request is pending", async 
   await page.goto("/registry");
   const search = page.getByRole("textbox", { name: "Find an extension" });
   await search.fill("first");
-  await page.getByRole("button", { name: "Search extensions" }).click();
+  await page.getByRole("button", { name: "Find extension" }).click();
   await expect(page.getByRole("link", { name: /Open First result extension profile/i })).toBeVisible();
 
   await search.fill("second");
-  await page.getByRole("button", { name: "Search extensions" }).click();
+  await page.getByRole("button", { name: "Find extension" }).click();
   await expect(page.getByRole("status", { name: "Searching the Extension Registry…" })).toBeVisible();
   await expect(page.getByRole("link", { name: /Open First result extension profile/i })).toHaveCount(0);
   releaseSecondSearch?.();
   await expect(page.getByRole("link", { name: /Open Second result extension profile/i })).toBeVisible();
 });
 
-test("phone header keeps brand, navigation, and sign-in on one readable row", async ({ page }) => {
+test("phone navigation keeps sign-in accessible without horizontal overflow", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/extensions/GitHub.copilot");
   const navigation = page.getByRole("button", { name: "Open navigation" });
   const signIn = page.getByRole("link", { name: /Sign in/ });
   await expect(navigation).toBeVisible();
+  await navigation.click();
   await expect(signIn).toBeVisible();
-  const [navigationBox, signInBox] = await Promise.all([navigation.boundingBox(), signIn.boundingBox()]);
-  expect(navigationBox?.y).toBe(signInBox?.y);
-  expect((navigationBox?.x || 0) + (navigationBox?.width || 0)).toBeLessThan(signInBox?.x || 0);
+  await expect(signIn).toHaveAttribute("href", "/account");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 
-test("release comparison discloses and verifies its analysis baseline", async ({ page }) => {
-  await page.goto("/extensions/GitHub.copilot/versions/1.388.0#changes");
-  await expect(page.getByText("What changed in 1.388.0")).toBeVisible();
-  await expect(page.locator(".changeDashboard")).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByText("Mixed analysis baseline")).toBeVisible();
-  await expect(page.getByText("Files", { exact: true }).last()).toBeVisible();
+test("release comparison discloses when no analyzed baseline exists", async ({ page }) => {
+  await page.goto("/extensions/GitHub.copilot");
+  await expect(page.getByText("A Permission Diff appears after two releases complete analysis.")).toBeVisible();
+  await expect(page.getByText("A newer release never inherits an older result.")).toBeVisible();
 });

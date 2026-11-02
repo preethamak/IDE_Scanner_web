@@ -4,6 +4,8 @@ import {
   BookOpen,
   Bot,
   Boxes,
+  FileSearch,
+  FileJson,
   Layers,
   ShieldCheck,
 } from "lucide-react";
@@ -39,9 +41,11 @@ export default function DocsPage() {
           </p>
           <nav className={styles.toc} aria-label="Sections">
             <a href="#gate">CI release gate</a>
+            <a href="#release-evidence">Release evidence</a>
             <a href="#bulk">Bulk gate</a>
             <a href="#badges">Badges</a>
             <a href="#inventory">Public inventory</a>
+            <a href="#sbom">CycloneDX SBOM</a>
             <a href="#mcp">MCP server</a>
           </nav>
         </section>
@@ -136,6 +140,70 @@ export default function DocsPage() {
           </p>
         </section>
 
+        <section className={styles.section} id="release-evidence">
+          <h2>
+            <FileSearch /> Review the release, not the reputation
+          </h2>
+          <p>
+            A marketplace listing, source repository, and dependency audit can
+            each be useful, but none identifies the package that a developer is
+            about to install. GuardRails keeps the review anchored to one
+            published extension release and records what the analysis actually
+            covered.
+          </p>
+          <div className={styles.paramTable}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Review step</th>
+                  <th>Evidence to keep</th>
+                  <th>Decision boundary</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Pin the candidate</td>
+                  <td>Publisher, extension name, version, and artifact hash.</td>
+                  <td>Do not substitute a newer release or a repository commit.</td>
+                </tr>
+                <tr>
+                  <td>Inspect install surface</td>
+                  <td>Declared extension packs and extension dependencies, plus bundled runtime dependencies.</td>
+                  <td>Related extensions are separate packages; a clean parent report is not a scan of every related package.</td>
+                </tr>
+                <tr>
+                  <td>Read coverage and findings</td>
+                  <td>Completed providers, skipped or unreadable files, and the evidence tied to each finding.</td>
+                  <td>Incomplete coverage is a disclosed limitation, never a hidden pass.</td>
+                </tr>
+                <tr>
+                  <td>Record the decision</td>
+                  <td>Approver, rationale, policy version, and any exception expiry.</td>
+                  <td>A scanner result informs the decision; it does not silently approve software for a team.</td>
+                </tr>
+                <tr>
+                  <td>Monitor the baseline</td>
+                  <td>The exact approved version or hash and subsequent release-change events.</td>
+                  <td>Every new published version needs its own evidence before it inherits trust.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className={styles.note}>
+            Use a local package scanner such as <code>vsix-audit</code> when a
+            developer needs an independent, hands-on scan of a downloaded
+            <code>.vsix</code>. Use GuardRails for durable release evidence,
+            team decisions, monitoring, and the public report that an AI or
+            reviewer can cite. These are complementary controls, not competing
+            safety claims.
+          </p>
+          <Code label="A release review request">{`1. Download or identify publisher.extension@version.
+2. Check the exact release in GuardRails and open its report.
+3. Review artifact identity, install surface, coverage, and findings.
+4. Scan related extensions separately when they are part of the intended install.
+5. Record the team decision and monitor the approved baseline.`}</Code>
+        </section>
+
         <section className={styles.section} id="bulk">
           <h2>
             <Layers /> Bulk gate for team inventories
@@ -223,6 +291,27 @@ export default function DocsPage() {
           <Code label="curl">{`curl -fsS "${HOST}/api/public/inventory" | jq '.totals'`}</Code>
         </section>
 
+        <section className={styles.section} id="sbom">
+          <h2>
+            <FileJson /> Export an exact-artifact SBOM
+          </h2>
+          <p>
+            The GuardRails CLI can emit a CycloneDX 1.5 SBOM from the resolved
+            scan result. It binds dependency components to the extension
+            release and artifact identity the scanner actually inspected; it
+            does not treat a repository manifest as proof of a published
+            marketplace package.
+          </p>
+          <Code label="GuardRails CLI">{`guardrails scan --file extension.vsix \\
+  --format cyclonedx.json \\
+  --output extension.cdx.json`}</Code>
+          <p className={styles.note}>
+            Keep the SBOM beside its GuardRails report when passing it to a
+            vulnerability platform or compliance record. A valid SBOM records
+            components and identity; it is not an approval of the extension.
+          </p>
+        </section>
+
         <section className={styles.section} id="mcp">
           <h2>
             <Bot /> Let your AI agent check risk before it recommends an
@@ -237,7 +326,9 @@ export default function DocsPage() {
             server-side write operations) so coding agents can consult the
             public analysis corpus before suggesting an extension. It speaks
             MCP protocol version 2025-06-18; each request is a self-contained
-            JSON-RPC 2.0 message. The early-access endpoint is anonymous until
+            JSON-RPC 2.0 message. Malformed protocol envelopes are rejected
+            with a standard JSON-RPC invalid-request error before any tool
+            dispatch. The early-access endpoint is anonymous until
             an operator configures an access token, then every request requires
             a bearer token.
           </p>

@@ -17,7 +17,8 @@ import {
   canonicalAnalysisStatus,
   requiresReview,
 } from "@/lib/classificationContract";
-import { getImportedReport } from "@/lib/reportBundle";
+import { cyclonedxVulnerabilities, getImportedReport } from "@/lib/reportBundle";
+import { extensionRelationships, relationshipResolutionLabel } from "@/lib/extensionRelationships";
 import type {
   Decision,
   ExtensionDetail,
@@ -89,6 +90,7 @@ export default function ReportExtensionPage({
     contextual = findings.filter((x) => !requiresReview(x.actionability)),
     groups = groupFindings(findings),
     capabilities = capabilitySummary(findings),
+    relationships = extensionRelationships(detail.artifact_inventory),
     identity = detail.artifact_identity || {},
     hash = String(
       identity.sha256 ||
@@ -96,6 +98,9 @@ export default function ReportExtensionPage({
         detail.artifact_inventory?.package_hash ||
         "",
     );
+  const sbom = report.cyclonedx || {};
+  const sbomComponents = Array.isArray(sbom.components) ? sbom.components.length : 0;
+  const sbomVulnerabilities = cyclonedxVulnerabilities(report.cyclonedx);
   return (
     <main className="shell canonicalReport">
       <Link className="backLink" href={`/reports/${route.id}`}>
@@ -145,6 +150,7 @@ export default function ReportExtensionPage({
             ["behavior", "Behavior"],
             ["alerts", "Alerts"],
             ["dependencies", "Dependencies"],
+            ...(relationships.length ? [["relationships", "Related extensions"]] : []),
             ["coverage", "Coverage"],
             ["technical", "Technical evidence"],
           ].map(([id, label]) => (
@@ -282,6 +288,30 @@ export default function ReportExtensionPage({
               ) : null}
             </div>
           </section>
+          {relationships.length ? (
+            <section id="relationships" className="reportSection">
+              <SectionHead
+                eyebrow="Extension graph"
+                title="Declared related extensions"
+                detail="These manifest declarations are not part of this artifact. Any separately resolved package has its own version and evidence boundary."
+              />
+              <div className="relationshipReadable">
+                {relationships.map((item) => (
+                  <article key={`${item.relationship}:${item.extensionId}`}>
+                    <Package />
+                    <div>
+                      <strong>{item.extensionId}</strong>
+                      <p>{item.relationship} declared in {item.declaredIn}</p>
+                    </div>
+                    <span className={`relationshipStatus ${item.resolution?.status || "not_scanned"}`}>
+                      {relationshipResolutionLabel(item.resolution?.status)}
+                    </span>
+                    {item.resolution?.version ? <code>{item.resolution.version}</code> : <code>Version not resolved</code>}
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
           <section id="coverage" className="reportSection">
             <SectionHead
               eyebrow="Analysis boundary"
@@ -351,6 +381,39 @@ export default function ReportExtensionPage({
                 {JSON.stringify(detail.artifact_inventory || {}, null, 2)}
               </pre>
             </details>
+            {Object.keys(sbom).length ? <details>
+              <summary>
+                CycloneDX supply-chain evidence <ChevronDown />
+              </summary>
+              <dl>
+                <dt>Format</dt>
+                <dd>{String(sbom.bomFormat || "CycloneDX")}</dd>
+                <dt>Serial number</dt>
+                <dd><code>{String(sbom.serialNumber || "Not recorded")}</code></dd>
+                <dt>Resolved components</dt>
+                <dd>{sbomComponents}</dd>
+                <dt>Actionable scanner evidence</dt>
+                <dd>{sbomVulnerabilities.length}</dd>
+              </dl>
+              {sbomVulnerabilities.length ? (
+                <ul className="evidenceList">
+                  {sbomVulnerabilities.map((vulnerability) => (
+                    <li key={vulnerability.id}>
+                      <strong>{vulnerability.id}</strong>
+                      {vulnerability.severity ? (
+                        <span> {vulnerability.severity}</span>
+                      ) : null}
+                      {vulnerability.description ? (
+                        <p>{vulnerability.description}</p>
+                      ) : null}
+                      {vulnerability.affectedRefs.length ? (
+                        <code>{vulnerability.affectedRefs.join(", ")}</code>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </details> : null}
           </section>
         </div>
       </div>

@@ -123,8 +123,9 @@ launch health and must fail until this condition is restored.
 ## Notification provider outage
 
 Disable the affected team channel. The worker records bounded failures and
-stops after five attempts; re-enable a validated channel after the provider is
-healthy. Do not expose encrypted targets in debugging output.
+moves the delivery to `dead_letter` after six attempts; validate or replace the
+channel, then create a fresh delivery after the provider is healthy. Do not
+expose encrypted targets in debugging output.
 
 **Metric:** launch health `notification_failure_rate`, team delivery status, and retry attempt count.
 **Responsible role:** on-call platform engineer.

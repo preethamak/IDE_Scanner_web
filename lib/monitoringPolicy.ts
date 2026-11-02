@@ -27,7 +27,7 @@ export function shouldNotify(input: MonitoringInput): boolean {
   if (input.event === "decision_due") return input.dueAlerts !== false;
   if (["investigate", "blocked", "incomplete"].includes(String(input.publicOutcome || "").toLowerCase())) return true;
   if (input.coveragePercent < 100 || input.decision === "incomplete") return true;
-  return (weight[input.severity || "INFORMATIONAL"] || 1) >= (weight[input.minimumSeverity] || 3);
+  return severityWeight(input.severity) >= severityWeight(input.minimumSeverity, 3);
 }
 
 export const MAX_NOTIFICATION_ATTEMPTS = 5;
@@ -45,4 +45,10 @@ export function alertEvent(kind: unknown): MonitoringInput["event"] {
   if (value === "coverage_regressed" || value === "coverage_incomplete") return "coverage_regressed";
   if (value === "review_required" || value === "confirmed_threat") return "high_evidence";
   return "scan";
+}
+
+function severityWeight(value: unknown, fallback = 1): number {
+  const normalized = String(value || "").trim().toUpperCase();
+  const severity = normalized === "INFO" ? "INFORMATIONAL" : normalized;
+  return weight[severity] || fallback;
 }

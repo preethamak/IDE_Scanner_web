@@ -40,6 +40,7 @@ describe("public MCP endpoint", () => {
     delete process.env.MCP_ACCESS_TOKEN;
     delete process.env.MCP_REQUIRE_AUTH;
     vi.clearAllMocks();
+    isValidGateCheck.mockReturnValue(true);
     mcpOAuthToken.mockResolvedValue(null);
   });
 
@@ -53,10 +54,13 @@ describe("public MCP endpoint", () => {
       expect.objectContaining({ name: "find_reputable_alternatives", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "search_vscode_extensions", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "get_extension_release", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
+      expect.objectContaining({ name: "compare_extension_releases", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "list_published_extension_scans", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "get_guardrails_analysis_rules", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "get_workspace_extension_inventory", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "get_workspace_capability_graph", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
+      expect.objectContaining({ name: "get_workspace_capability_policy", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
+      expect.objectContaining({ name: "get_workspace_security_posture", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
     ]));
   });
 
@@ -73,6 +77,29 @@ describe("public MCP endpoint", () => {
 
     const promptResponse = await POST(request({ jsonrpc: "2.0", id: 3, method: "prompts/get", params: { name: "review_vscode_extension", arguments: { extension: "ms-python.python", version: "1.2.3" } } }));
     await expect(promptResponse.json()).resolves.toMatchObject({ result: { messages: [expect.objectContaining({ content: expect.objectContaining({ text: expect.stringContaining("ms-python.python version 1.2.3") }) })] } });
+    const policyPrompt = await POST(request({ jsonrpc: "2.0", id: 4, method: "prompts/get", params: { name: "review_workspace_capability_policy", arguments: { workspace_id: "workspace-1" } } }));
+    await expect(policyPrompt.json()).resolves.toMatchObject({ result: { messages: [expect.objectContaining({ content: expect.objectContaining({ text: expect.stringContaining("export hash") }) })] } });
+  });
+
+  it("advertises and serves bounded exact-release evidence resources", async () => {
+    const templatesResponse = await POST(request({ jsonrpc: "2.0", id: 1, method: "resources/templates/list" }));
+    await expect(templatesResponse.json()).resolves.toMatchObject({ result: { resourceTemplates: [expect.objectContaining({ uriTemplate: "guardrails://extensions/{extension}/versions/{version}/evidence", mimeType: "application/json" })] } });
+
+    getVersionProduct.mockResolvedValue({
+      scan: { id: "scan-1", analysis_status: "complete", extension_id: "ms-python.python", version: "1.2.3", artifact_sha256: "a".repeat(64), decision: "review", source_preview: "must not export" },
+      findings: [{ rule_id: "network", summary: "Network access", raw_evidence: "must not export" }],
+    });
+    const response = await POST(request({ jsonrpc: "2.0", id: 2, method: "resources/read", params: { uri: "guardrails://extensions/ms-python.python/versions/1.2.3/evidence" } }));
+    const body = await response.json();
+    const payload = JSON.parse(body.result.contents[0].text);
+    expect(payload).toMatchObject({ schema_version: "guardrails-mcp-release-evidence-v1", identity: { artifact_sha256: "a".repeat(64) }, findings: [{ rule_id: "network" }] });
+    expect(JSON.stringify(payload)).not.toContain("must not export");
+  });
+
+  it("refuses an exact-release resource without a completed public analysis", async () => {
+    getVersionProduct.mockResolvedValue({ scan: { analysis_status: "incomplete" } });
+    const response = await POST(request({ jsonrpc: "2.0", id: 1, method: "resources/read", params: { uri: "guardrails://extensions/ms-python.python/versions/1.2.3/evidence" } }));
+    await expect(response.json()).resolves.toMatchObject({ error: { code: -32602, message: expect.stringContaining("No completed public analysis") } });
   });
 
   it("challenges unauthenticated workspace calls with protected-resource metadata", async () => {
@@ -87,6 +114,12 @@ describe("public MCP endpoint", () => {
     const response = await POST(request({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "search_vscode_extensions", arguments: { query: "python" } } }));
     const body = await response.json();
     expect(body.result.structuredContent).toMatchObject({ query: "python", extensions: [expect.objectContaining({ extension: "ms-python.python" })] });
+  });
+
+  it("compares two exact releases and fails closed when the candidate is unreviewed", async () => {
+    getVersionProduct.mockResolvedValueOnce({ scan: { id: "scan-old", decision: "allow", severity: "low", coverage_percent: 100, artifact_sha256: "a".repeat(64) }, findings: [{ rule_id: "network-request" }] }).mockResolvedValueOnce({ version: { version: "2.0.0" }, scan: null, findings: [] });
+    const response = await POST(request({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "compare_extension_releases", arguments: { extension: "sample.extension", from_version: "1.0.0", to_version: "2.0.0" } } }));
+    await expect(response.json()).resolves.toMatchObject({ result: { structuredContent: { from: { analysis_state: "analyzed", decision: "allow" }, to: { analysis_state: "unreviewed" }, changes: { artifact_sha256: true, removed_finding_ids: ["network-request"] }, recommendation: "needs human review" } } });
   });
 
   it("requires the configured early-access bearer token", async () => {
@@ -118,6 +151,20 @@ describe("public MCP endpoint", () => {
     const response = await POST(request("x".repeat(64 * 1024 + 1)));
     expect(response.status).toBe(413);
     await expect(response.json()).resolves.toMatchObject({ error: { code: -32600 } });
+  });
+
+  it("rejects malformed JSON-RPC envelopes before dispatch", async () => {
+    const invalidMessages = [
+      { jsonrpc: "1.0", id: 1, method: "ping" },
+      { jsonrpc: "2.0", id: { unexpected: true }, method: "ping" },
+      { jsonrpc: "2.0", id: 1, method: "" },
+      { jsonrpc: "2.0", id: 1, method: "ping", params: [] },
+    ];
+
+    for (const message of invalidMessages) {
+      const response = await POST(request(message));
+      await expect(response.json()).resolves.toMatchObject({ error: { code: -32600 } });
+    }
   });
 
   it("keeps the endpoint stateless and advertises supported methods", async () => {

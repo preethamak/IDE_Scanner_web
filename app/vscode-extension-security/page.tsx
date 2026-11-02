@@ -4,8 +4,8 @@ import { ArrowRight, CheckCircle2, FileSearch, ShieldCheck, SquareStack, Triangl
 import styles from "../docs/docs.module.css";
 
 export const metadata: Metadata = {
-  title: "VS Code Extension Security Scanner | GuardRails by Abscissa",
-  description: "GuardRails scans published VS Code extension packages and exact releases for security evidence, observed capabilities, supply-chain signals, and policy review. It complements Snyk, Semgrep, Socket, SonarQube, and Trivy.",
+  title: "VS Code Extension Security Scanner",
+  description: "Scan published VS Code extension packages with GuardRails. Review exact-release evidence, observed capabilities, and supply-chain signals before installation.",
   keywords: ["VS Code extension security scanner", "scan VSIX file", "VS Code extension malware scanner", "extension package analysis", "extension supply chain security", "Abscissa", "GuardRails"],
   alternates: { canonical: "/vscode-extension-security" },
   openGraph: {
@@ -54,7 +54,7 @@ export default function VsCodeExtensionSecurityPage() {
         <section className={`${styles.hero} ${styles.mcpHero}`}>
           <div className={styles.mcpMark} aria-hidden="true"><ShieldCheck /></div>
           <span className={styles.eyebrow}>GuardRails by Abscissa</span>
-          <h1>Security scanning for the VS Code extension itself.</h1>
+          <h1>VS Code extension security scanner</h1>
           <p>Before an extension runs in your editor, GuardRails inspects the published package and preserves evidence for the exact release. It answers a different question from a source scanner, dependency scanner, or repository scanner: what does this extension artifact do, and what evidence supports installing this release?</p>
           <div className={styles.mcpPrinciples} aria-label="GuardRails extension scanning scope">
             <span><CheckCircle2 /> Exact publisher and version</span>
@@ -101,6 +101,10 @@ export default function VsCodeExtensionSecurityPage() {
           </div>
         </section>
 
+        <section className={styles.section}>
+          <h2>Practical extension security guides</h2>
+          <p>New to extension review? Start with <Link href="/guides/check-vscode-extension-safety">how to check if a VS Code extension is safe</Link>. For a downloaded package, follow the <Link href="/guides/scan-vsix-file">VSIX inspection workflow</Link>. For organizational rollout, use the <Link href="/guides/vscode-extension-allowlist">team extension allowlist guide</Link>.</p>
+        </section>
         <section className={styles.mcpBoundary} id="limits">
           <div><span className={styles.eyebrow}><TriangleAlert /> Security boundary</span><h2>A release report is evidence, not a universal guarantee.</h2></div>
           <div><p>GuardRails reports what its analysis can support about a specific published artifact. It does not prove that every future version is safe, turn unsupported runtime coverage into an allow, or replace an organization&apos;s broader software security process.</p><p>For an assistant-facing workflow, use the <Link href="/docs/mcp">GuardRails MCP guide</Link>. For methodology and validation boundaries, read the <Link href="/research">published research and analysis notes</Link>.</p></div>

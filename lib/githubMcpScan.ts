@@ -30,6 +30,10 @@ export function githubMcpScanConfigured(): boolean {
   return Boolean(runtimeEnv("GITHUB_ACTIONS_TOKEN").trim() && runtimeEnv("MCP_SCAN_ENCRYPTION_KEY").trim());
 }
 
+export function isGithubMcpScanRequestId(value: string): boolean {
+  return REQUEST_ID_PATTERN.test(value);
+}
+
 export async function dispatchGithubMcpScan(raw: string): Promise<McpScanStatus> {
   const requestId = `mcp-${randomUUID()}`;
   const payloadBytes = new TextEncoder().encode(raw);
@@ -56,7 +60,7 @@ export async function dispatchGithubMcpScan(raw: string): Promise<McpScanStatus>
 }
 
 export async function getGithubMcpScan(requestId: string): Promise<McpScanStatus> {
-  if (!REQUEST_ID_PATTERN.test(requestId)) throw new Error("Invalid MCP assessment request.");
+  if (!isGithubMcpScanRequestId(requestId)) throw new Error("Invalid MCP assessment request.");
   const token = requireGithubToken();
   const { owner, repository } = githubRepository();
   const runsResponse = await githubFetch(

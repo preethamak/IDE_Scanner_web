@@ -1,5 +1,6 @@
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { privateDb, type PrivateDatabase } from "@/lib/cloudflarePrivate";
 import type { ReportSummary, ScanJobPublic } from "@/lib/types";
 
 export type AgentMetadata = {
@@ -25,6 +26,8 @@ export type UploadedAgentReport = {
 const reportsDir = process.env.VERCEL
   ? path.join("/tmp", ".ide-scanner-reports")
   : path.join(process.cwd(), ".ide-scanner-reports");
+const MAX_INLINE_REPORT_CHARS = 80_000;
+const REPORT_CHUNK_CHARS = 100_000;
 
 export async function saveAgentReport(payload: unknown): Promise<UploadedAgentReport> {
   if (!payload || typeof payload !== "object") {
@@ -48,12 +51,19 @@ export async function saveAgentReport(payload: unknown): Promise<UploadedAgentRe
     summary: data.summary as ReportSummary,
     report: redactReportSource(data.report)
   };
+  const cloudflare = agentReportDatabase();
+  if (cloudflare) {
+    await saveCloudflareAgentReport(cloudflare, item);
+    return item;
+  }
   await mkdir(reportsDir, { recursive: true });
   await writeFile(reportPath(item.id), JSON.stringify(item, null, 2) + "\n", "utf-8");
   return item;
 }
 
 export async function listAgentReports(): Promise<UploadedAgentReport[]> {
+  const cloudflare = agentReportDatabase();
+  if (cloudflare) return listCloudflareAgentReports(cloudflare);
   try {
     const entries = await readdir(reportsDir);
     const reports = await Promise.all(
@@ -76,6 +86,8 @@ export async function readAgentReport(id: string): Promise<UploadedAgentReport |
   if (!id.startsWith("agent-") || id.includes("/") || id.includes("\\")) {
     return null;
   }
+  const cloudflare = agentReportDatabase();
+  if (cloudflare) return readCloudflareAgentReport(cloudflare, id);
   try {
     const raw = await readFile(reportPath(id), "utf-8");
     const data = JSON.parse(raw) as UploadedAgentReport;
@@ -107,6 +119,93 @@ export function agentReportToJob(item: UploadedAgentReport): ScanJobPublic {
 
 function reportPath(id: string): string {
   return path.join(reportsDir, `${id}.json`);
+}
+
+function agentReportDatabase(): PrivateDatabase | null {
+  try {
+    return privateDb();
+  } catch {
+    return null;
+  }
+}
+
+async function saveCloudflareAgentReport(db: PrivateDatabase, item: UploadedAgentReport): Promise<void> {
+  const serializedReport = JSON.stringify(item.report);
+  const chunks = chunkReport(serializedReport);
+  const inlineReport = chunks.length ? JSON.stringify({ storage: "chunked" }) : serializedReport;
+  const insertReport = db.prepare(
+    "INSERT INTO app_agent_reports(id,created_at,updated_at,agent_json,summary_json,report_json,report_chunk_count) VALUES(?,?,?,?,?,?,?)",
+  ).bind(
+    item.id,
+    item.createdAt,
+    item.updatedAt,
+    JSON.stringify(item.agent),
+    JSON.stringify(item.summary),
+    inlineReport,
+    chunks.length,
+  );
+  const inserts = chunks.map((content, index) => db.prepare(
+      "INSERT INTO app_agent_report_chunks(report_id,chunk_index,content) VALUES(?,?,?)",
+    ).bind(item.id, index, content));
+  await db.batch([insertReport, ...inserts]);
+}
+
+async function listCloudflareAgentReports(db: PrivateDatabase): Promise<UploadedAgentReport[]> {
+  const rows = await db.prepare(
+    "SELECT id,created_at,updated_at,agent_json,summary_json,report_json,report_chunk_count FROM app_agent_reports ORDER BY created_at DESC",
+  ).all<Record<string, unknown>>();
+  return (await Promise.all(rows.results.map((row) => cloudflareAgentReportFromRow(db, row)))).filter(
+    (item): item is UploadedAgentReport => Boolean(item),
+  );
+}
+
+async function readCloudflareAgentReport(db: PrivateDatabase, id: string): Promise<UploadedAgentReport | null> {
+  const row = await db.prepare(
+    "SELECT id,created_at,updated_at,agent_json,summary_json,report_json,report_chunk_count FROM app_agent_reports WHERE id=? LIMIT 1",
+  ).bind(id).first<Record<string, unknown>>();
+  return row ? cloudflareAgentReportFromRow(db, row) : null;
+}
+
+async function cloudflareAgentReportFromRow(db: PrivateDatabase, row: Record<string, unknown>): Promise<UploadedAgentReport | null> {
+  const id = String(row.id || "");
+  if (!id.startsWith("agent-")) return null;
+  try {
+    const count = Number(row.report_chunk_count || 0);
+    const reportJson = count > 0 ? await loadCloudflareAgentReportChunks(db, id, count) : String(row.report_json || "");
+    const agent = JSON.parse(String(row.agent_json || "{}"));
+    const summary = JSON.parse(String(row.summary_json || "{}"));
+    const report = JSON.parse(reportJson);
+    if (!summary || typeof summary !== "object" || !report || typeof report !== "object") return null;
+    return {
+      id,
+      createdAt: Number(row.created_at || 0),
+      updatedAt: Number(row.updated_at || 0),
+      source: "agent",
+      agent: normalizeAgent(agent),
+      summary: summary as ReportSummary,
+      report,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function loadCloudflareAgentReportChunks(db: PrivateDatabase, reportId: string, expectedCount: number): Promise<string> {
+  const result = await db.prepare(
+    "SELECT chunk_index,content FROM app_agent_report_chunks WHERE report_id=? ORDER BY chunk_index",
+  ).bind(reportId).all<Record<string, unknown>>();
+  if (result.results.length !== expectedCount) throw new Error("Agent report chunks are incomplete.");
+  return result.results.map((row, index) => {
+    if (Number(row.chunk_index) !== index || typeof row.content !== "string") throw new Error("Agent report chunks are invalid.");
+    return row.content;
+  }).join("");
+}
+
+function chunkReport(report: string): string[] {
+  if (report.length <= MAX_INLINE_REPORT_CHARS) return [];
+  return Array.from({ length: Math.ceil(report.length / REPORT_CHUNK_CHARS) }, (_, index) =>
+    report.slice(index * REPORT_CHUNK_CHARS, (index + 1) * REPORT_CHUNK_CHARS),
+  );
 }
 
 // Defense in depth: even if an old or rogue agent uploads raw source-file

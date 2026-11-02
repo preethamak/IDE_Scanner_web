@@ -12,6 +12,18 @@ describe("Content Security Policy", () => {
     expect(policy).toContain("https://va.vercel-scripts.com");
   });
 
+  it("permits consented GA4 loading and collection without opening arbitrary hosts", () => {
+    const directives = Object.fromEntries(contentSecurityPolicy("production").split("; ").map(directive => {
+      const [name, ...sources] = directive.split(" ");
+      return [name, sources];
+    }));
+    expect(directives["script-src"]).toContain("https://www.googletagmanager.com");
+    expect(directives["connect-src"]).toContain("https://www.google-analytics.com");
+    expect(directives["connect-src"]).toContain("https://region1.google-analytics.com");
+    expect(directives["script-src"]).not.toContain("https:");
+    expect(directives["connect-src"]).not.toContain("*");
+  });
+
   it("keeps eval disabled in production", () => {
     const policy = contentSecurityPolicy("production");
     expect(policy).not.toContain("'unsafe-eval'");
