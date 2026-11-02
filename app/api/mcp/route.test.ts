@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getBadgeDecision, getExtensionProduct, getPublicAnalysisHistory, getPublicInventory, getVersionProduct, listCatalog, lookupGateVerdict, isValidGateCheck, rankAlternatives, publicDb, getActiveRuleCatalog, getPublicStatus } = vi.hoisted(() => ({
+const { getBadgeDecision, getExtensionProduct, getPublicAnalysisHistory, getPublicInventory, getVersionProduct, listCatalog, lookupGateVerdict, isValidGateCheck, rankAlternatives, publicDb, getActiveRuleCatalog, getPublicStatus, mcpOAuthToken } = vi.hoisted(() => ({
   getBadgeDecision: vi.fn(),
   getExtensionProduct: vi.fn(),
   getPublicAnalysisHistory: vi.fn(),
@@ -13,6 +13,7 @@ const { getBadgeDecision, getExtensionProduct, getPublicAnalysisHistory, getPubl
   publicDb: vi.fn(),
   getActiveRuleCatalog: vi.fn(),
   getPublicStatus: vi.fn(),
+  mcpOAuthToken: vi.fn(),
 }));
 
 vi.mock("@/lib/productData", () => ({ getBadgeDecision, getExtensionProduct, getPublicAnalysisHistory, getPublicInventory, getVersionProduct, listCatalog }));
@@ -22,6 +23,7 @@ vi.mock("@/lib/supabase", () => ({ publicDb }));
 vi.mock("@/lib/trustTiers", () => ({ deriveTrustTier: vi.fn(() => ({ tier: "verified", summary: "Verified" })) }));
 vi.mock("@/lib/activeRuleCatalog", () => ({ getActiveRuleCatalog }));
 vi.mock("@/lib/publicStatus", () => ({ getPublicStatus }));
+vi.mock("@/lib/mcpOAuth", () => ({ mcpOAuthToken }));
 
 import { GET, OPTIONS, POST } from "./route";
 
@@ -39,6 +41,7 @@ describe("public MCP endpoint", () => {
     delete process.env.MCP_REQUIRE_AUTH;
     vi.clearAllMocks();
     isValidGateCheck.mockReturnValue(true);
+    mcpOAuthToken.mockResolvedValue(null);
   });
 
   it("advertises read-only tools with schemas and safety annotations", async () => {
@@ -57,6 +60,7 @@ describe("public MCP endpoint", () => {
       expect.objectContaining({ name: "get_workspace_extension_inventory", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "get_workspace_capability_graph", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "get_workspace_capability_policy", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
+      expect.objectContaining({ name: "get_workspace_security_posture", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
     ]));
   });
 
@@ -127,6 +131,16 @@ describe("public MCP endpoint", () => {
     expect(authorized.status).toBe(200);
   });
 
+  it("accepts a valid OAuth workspace token when the early-access token is configured", async () => {
+    process.env.MCP_ACCESS_TOKEN = "early-access-secret";
+    mcpOAuthToken.mockResolvedValue({ userId: "user-1", clientId: "client-1", scopes: ["workspace:read"], resource: "https://abscissa.dev/api/mcp", expiresAt: "2026-10-22T12:00:00.000Z" });
+
+    const response = await POST(request({ jsonrpc: "2.0", id: 1, method: "ping" }, { Authorization: "Bearer mcp_access_workspace" }));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ result: {} });
+  });
+
   it("fails closed when authentication is required without a configured token", async () => {
     process.env.MCP_REQUIRE_AUTH = "true";
     const response = await POST(request({ jsonrpc: "2.0", id: 1, method: "ping" }));
@@ -137,6 +151,20 @@ describe("public MCP endpoint", () => {
     const response = await POST(request("x".repeat(64 * 1024 + 1)));
     expect(response.status).toBe(413);
     await expect(response.json()).resolves.toMatchObject({ error: { code: -32600 } });
+  });
+
+  it("rejects malformed JSON-RPC envelopes before dispatch", async () => {
+    const invalidMessages = [
+      { jsonrpc: "1.0", id: 1, method: "ping" },
+      { jsonrpc: "2.0", id: { unexpected: true }, method: "ping" },
+      { jsonrpc: "2.0", id: 1, method: "" },
+      { jsonrpc: "2.0", id: 1, method: "ping", params: [] },
+    ];
+
+    for (const message of invalidMessages) {
+      const response = await POST(request(message));
+      await expect(response.json()).resolves.toMatchObject({ error: { code: -32600 } });
+    }
   });
 
   it("keeps the endpoint stateless and advertises supported methods", async () => {

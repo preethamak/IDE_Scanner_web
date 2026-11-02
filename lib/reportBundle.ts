@@ -13,6 +13,48 @@ type ZipEntry = {
 const STORE_KEY = "ide-scanner.importedReports.v1";
 const BENCHMARK_STORE_KEY = "ide-scanner.importedBenchmarks.v1";
 
+export type CycloneDxVulnerability = {
+  id: string;
+  severity: string | null;
+  description: string | null;
+  affectedRefs: string[];
+};
+
+/** Returns only display-safe, scanner-exported decision evidence from a CycloneDX BOM. */
+export function cyclonedxVulnerabilities(
+  bom: Record<string, unknown> | undefined,
+): CycloneDxVulnerability[] {
+  if (!bom || !Array.isArray(bom.vulnerabilities)) return [];
+  return bom.vulnerabilities.flatMap((entry) => {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return [];
+    const vulnerability = entry as Record<string, unknown>;
+    const id = typeof vulnerability.id === "string" ? vulnerability.id.trim() : "";
+    if (!id) return [];
+    const ratings = Array.isArray(vulnerability.ratings) ? vulnerability.ratings : [];
+    const firstRating = ratings.find(
+      (rating): rating is Record<string, unknown> =>
+        Boolean(rating) && typeof rating === "object" && !Array.isArray(rating),
+    );
+    const affects = Array.isArray(vulnerability.affects) ? vulnerability.affects : [];
+    return [{
+      id,
+      severity:
+        firstRating && typeof firstRating.severity === "string"
+          ? firstRating.severity
+          : null,
+      description:
+        typeof vulnerability.description === "string"
+          ? vulnerability.description
+          : null,
+      affectedRefs: affects.flatMap((affected) => {
+        if (!affected || typeof affected !== "object" || Array.isArray(affected)) return [];
+        const ref = (affected as Record<string, unknown>).ref;
+        return typeof ref === "string" && ref ? [ref] : [];
+      }),
+    }];
+  });
+}
+
 export async function parseReportBundle(file: File): Promise<ImportedReportBundle> {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const jsonEntries = await readJsonEntries(bytes);
@@ -22,6 +64,7 @@ export async function parseReportBundle(file: File): Promise<ImportedReportBundl
   const leaderboard = requireObject<{ extensions: ImportedReportBundle["leaderboard"]["extensions"] }>(jsonEntries.get("leaderboard.json"), "leaderboard.json");
   const posture = objectOrEmpty(jsonEntries.get("posture.json"));
   const rules = requireObject<{ ruleset_version?: string; rules: RuleMetadata[] }>(jsonEntries.get("rules.json"), "rules.json");
+  const cyclonedx = objectOrEmpty(jsonEntries.get("cyclonedx.json"));
   const details: Record<string, ExtensionDetail> = {};
   for (const [name, value] of jsonEntries) {
     if (name.startsWith("extensions/")) {
@@ -38,6 +81,7 @@ export async function parseReportBundle(file: File): Promise<ImportedReportBundl
     leaderboard,
     posture,
     rules,
+    cyclonedx: Object.keys(cyclonedx).length ? cyclonedx : undefined,
     details,
   };
 }

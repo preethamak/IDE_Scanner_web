@@ -17,6 +17,7 @@ workspace data, or grants access beyond the signed-in user’s memberships.
 | `list_published_extension_scans` / `get_extension_scan_history` | Research published analysis coverage without treating absence as approval. |
 | `get_guardrails_analysis_rules` / `get_guardrails_service_status` | Explain the active rules and confirm public service availability. |
 | `list_guardrails_workspaces` | List workspaces available to the signed-in MCP user. |
+| `get_workspace_security_posture` | Return evidence-bound workspace inventory, capability, monitoring, decision, and policy counts without an inferred safety score. |
 | `get_workspace_extension_inventory` | Read observed extension inventory, versions, and monitoring state. |
 | `get_workspace_monitoring` | Read watchlists, release events, alerts, and monitoring status. |
 | `get_workspace_policies` | Read policy rules and monitoring preferences. |
@@ -39,8 +40,11 @@ dynamic client registration, PKCE S256, authorization-code exchange, and
 refresh-token rotation. Access tokens are short-lived and both access and
 refresh tokens are stored only as hashes in D1.
 
-`MCP_ACCESS_TOKEN` and `MCP_REQUIRE_AUTH` remain a legacy emergency guard for
-the public endpoint. They must not be used to grant workspace access.
+`MCP_ACCESS_TOKEN` and `MCP_REQUIRE_AUTH` can protect the public early-access
+endpoint. They never grant workspace access or the `workspace:read` scope. A
+valid OAuth workspace token remains accepted when a static public token is
+configured, so operators can protect public tools without blocking authorized
+workspace reviews.
 
 ## Connect an assistant
 

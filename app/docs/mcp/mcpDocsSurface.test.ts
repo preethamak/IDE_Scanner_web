@@ -15,6 +15,7 @@ describe("public MCP discovery documentation", () => {
     expect(page).toContain("Connect GuardRails in three steps");
     expect(page).toContain("Start with public evidence.");
     expect(page).toContain("Authorize workspace reads only when needed.");
+    expect(page).toContain("a valid OAuth workspace token continues to work when that guard is enabled");
     expect(page).toContain("VS Code extension package");
     expect(page).toContain("codex mcp add guardrails");
     expect(page).toContain("codex mcp login guardrails");

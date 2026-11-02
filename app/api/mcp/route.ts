@@ -31,6 +31,7 @@ const WORKSPACE_TOOLS = new Set([
   "list_guardrails_workspaces",
   "get_workspace_extension_inventory",
   "get_workspace_capability_graph",
+  "get_workspace_security_posture",
   "get_workspace_monitoring",
   "get_workspace_policies",
   "get_workspace_capability_policy",
@@ -246,6 +247,14 @@ const TOOLS = [
     annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
   },
   {
+    name: "get_workspace_security_posture",
+    title: "Get workspace security posture evidence",
+    description: "Return a compact, evidence-bound workspace posture across observed extensions and developer capabilities, unresolved capability evidence, active monitoring alerts, release events, recorded decisions, and configured policy counts. Requires workspace:read OAuth scope and workspace membership. This tool does not infer a global safety score or make changes.",
+    inputSchema: { type: "object", properties: { workspace_id: { type: "string", description: "GuardRails workspace ID." } }, required: ["workspace_id"] },
+    outputSchema: { type: "object", required: ["workspace_id", "inventory", "capability_evidence", "monitoring", "decisions", "policies", "evidence_boundary"], properties: { workspace_id: { type: "string" }, inventory: { type: "object" }, capability_evidence: { type: "object" }, monitoring: { type: "object" }, decisions: { type: "object" }, policies: { type: "object" }, evidence_boundary: { type: "string" } } },
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+  },
+  {
     name: "get_workspace_monitoring",
     title: "Get workspace monitoring",
     description: "Read GuardRails workspace watchlist entries, monitoring status, release events, and active alerts. Requires workspace:read OAuth scope and workspace membership.",
@@ -299,7 +308,8 @@ export function OPTIONS() {
 }
 
 export async function POST(request: Request) {
-  const authorization = authorize(request);
+  const oauth = await mcpOAuthToken(request).catch(() => null);
+  const authorization = authorize(request, oauth);
   if (authorization) return authorization;
   if (contentLength(request) > MAX_BODY_BYTES) return rpcError(null, -32600, "Invalid request: body exceeds 64 KiB.", 413);
   let message: JsonRpcRequest;
@@ -313,11 +323,12 @@ export async function POST(request: Request) {
   if (!message || typeof message !== "object" || Array.isArray(message)) {
     return rpcError(null, -32600, "Invalid request: batch messages are not supported.");
   }
+  const invalidEnvelope = invalidJsonRpcEnvelope(message);
+  if (invalidEnvelope) return rpcError(null, -32600, invalidEnvelope);
   const id = message.id === undefined ? null : message.id;
   const method = typeof message.method === "string" ? message.method : "";
   const params = (message.params && typeof message.params === "object" ? message.params : {}) as Record<string, unknown>;
   const toolName = method === "tools/call" ? String(params.name || "") : "";
-  const oauth = await mcpOAuthToken(request).catch(() => null);
   if (WORKSPACE_TOOLS.has(toolName) && (!oauth || !oauth.scopes.includes("workspace:read"))) return oauthRequired();
 
   switch (method) {
@@ -352,6 +363,18 @@ export async function POST(request: Request) {
     default:
       return rpcError(id, -32601, `Method not found: ${method || "(missing)"}`);
   }
+}
+
+function invalidJsonRpcEnvelope(message: JsonRpcRequest): string | null {
+  if (message.jsonrpc !== "2.0") return "Invalid request: jsonrpc must be \"2.0\".";
+  if (typeof message.method !== "string" || !message.method.trim()) return "Invalid request: method must be a non-empty string.";
+  if (message.id !== undefined && message.id !== null && typeof message.id !== "string" && (typeof message.id !== "number" || !Number.isFinite(message.id))) {
+    return "Invalid request: id must be a string, finite number, null, or omitted notification id.";
+  }
+  if (message.params !== undefined && (typeof message.params !== "object" || message.params === null || Array.isArray(message.params))) {
+    return "Invalid request: params must be an object when provided.";
+  }
+  return null;
 }
 
 async function handleResourceRead(id: JsonRpcId, params: Record<string, unknown>) {
@@ -438,6 +461,7 @@ async function handleToolCall(id: JsonRpcId, params: Record<string, unknown>, re
     if (name === "list_guardrails_workspaces") return rpcResult(id, await listGuardRailsWorkspaces(userId));
     if (name === "get_workspace_extension_inventory") return rpcResult(id, await getWorkspaceExtensionInventory(args, userId));
     if (name === "get_workspace_capability_graph") return rpcResult(id, await getWorkspaceCapabilityGraph(args, userId));
+    if (name === "get_workspace_security_posture") return rpcResult(id, await getWorkspaceSecurityPosture(args, userId));
     if (name === "get_workspace_monitoring") return rpcResult(id, await getWorkspaceMonitoring(args, userId));
     if (name === "get_workspace_policies") return rpcResult(id, await getWorkspacePolicies(args, userId));
     if (name === "get_workspace_capability_policy") return rpcResult(id, await getWorkspaceCapabilityPolicy(args, userId));
@@ -678,6 +702,44 @@ async function getWorkspaceCapabilityGraph(args: Record<string, unknown>, userId
   return toolJson({ workspace_id: workspace.workspaceId, graph, summary: { subjects: graph.subjects.length, by_kind: byKind, verified: graph.subjects.filter((subject) => subject.evidenceState === "verified").length, unknown_capabilities: graph.subjects.filter((subject) => subject.capabilities.length === 0).length } });
 }
 
+async function getWorkspaceSecurityPosture(args: Record<string, unknown>, userId: string | null) {
+  const workspace = await workspaceForMcp(args, userId);
+  if ("error" in workspace) return workspace.error;
+  const state = workspace.state;
+  const installations = state.inventory.installations;
+  const graph = graphWithWorkspaceExtensions(workspace.workspaceId, installations, state.capability_graph);
+  const activeAlerts = state.alerts.filter((alert) => !["dismissed", "resolved"].includes(String(alert.state || "").toLowerCase()));
+  const currentReleaseEvents = state.release_events.filter((event) => String(event.state) !== "superseded");
+  const decisionCounts = Object.fromEntries(["allow", "review", "block"].map((decision) => [decision, state.decisions.filter((item) => String(item.decision).toLowerCase() === decision).length]));
+  const byKind = Object.fromEntries(["extension", "mcp_server", "agent_skill", "cli", "browser_extension"].map((kind) => [kind, graph.subjects.filter((subject) => subject.kind === kind).length]));
+  return toolJson({
+    workspace_id: workspace.workspaceId,
+    inventory: {
+      devices: state.inventory.devices.length,
+      installations: installations.length,
+      unique_extensions: new Set(installations.map((item) => String(item.extension_id).toLowerCase())).size,
+      monitored_installations: installations.filter((item) => state.watchlist.some((watch) => String(watch.extension_id).toLowerCase() === String(item.extension_id).toLowerCase())).length,
+      last_import_at: state.inventory.last_import_at || null,
+    },
+    capability_evidence: {
+      subjects: graph.subjects.length,
+      by_kind: byKind,
+      verified_subjects: graph.subjects.filter((subject) => subject.evidenceState === "verified").length,
+      observed_subjects: graph.subjects.filter((subject) => subject.evidenceState === "observed").length,
+      subjects_without_capability_evidence: graph.subjects.filter((subject) => subject.capabilities.length === 0).map((subject) => ({ id: subject.id, kind: subject.kind, evidence_state: subject.evidenceState })),
+    },
+    monitoring: {
+      watchlist_entries: state.watchlist.length,
+      active_alerts: activeAlerts.length,
+      active_alerts_by_severity: Object.fromEntries(["critical", "high", "medium", "low"].map((severity) => [severity, activeAlerts.filter((alert) => String(alert.severity || "").toLowerCase() === severity).length])),
+      current_release_events: currentReleaseEvents.length,
+    },
+    decisions: { recorded: state.decisions.length, by_outcome: decisionCounts },
+    policies: { configured: state.policies.length, enabled: state.policies.filter((policy) => policy.enabled !== false).length },
+    evidence_boundary: "This is a summary of recorded workspace evidence. It does not prove a workspace is safe, turn unknown evidence into approval, or replace the exact release analysis behind an individual extension decision.",
+  });
+}
+
 async function getWorkspaceMonitoring(args: Record<string, unknown>, userId: string | null) {
   const workspace = await workspaceForMcp(args, userId);
   if ("error" in workspace) return workspace.error;
@@ -737,14 +799,14 @@ function rpcError(id: JsonRpcId, code: number, message: string, status = 200) {
   );
 }
 
-function authorize(request: Request): NextResponse | null {
+function authorize(request: Request, oauth: { userId: string } | null): NextResponse | null {
   const accessToken = runtimeEnv(MCP_ACCESS_TOKEN_ENV).trim();
   const requireAuth = runtimeEnv("MCP_REQUIRE_AUTH").trim().toLowerCase() === "true";
   if (!accessToken && !requireAuth) return null;
   if (!accessToken) {
     return NextResponse.json({ error: "MCP authentication is required but not configured." }, { status: 503, headers: { ...rpcHeaders(), "WWW-Authenticate": 'Bearer realm="guardrails-mcp"' } });
   }
-  if (validBearerSecret(request.headers.get("authorization"), accessToken)) return null;
+  if (validBearerSecret(request.headers.get("authorization"), accessToken) || oauth) return null;
   return NextResponse.json({ error: "Unauthorized MCP request." }, { status: 401, headers: { ...rpcHeaders(), "WWW-Authenticate": 'Bearer realm="guardrails-mcp"' } });
 }
 
