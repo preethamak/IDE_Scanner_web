@@ -5,10 +5,12 @@ import Link from "next/link";
 import { Cookie } from "lucide-react";
 import styles from "./companyChrome.module.css";
 
+import { GA_ID, setGoogleAnalyticsEnabled } from "@/lib/googleAnalytics";
+
 const CONSENT_KEY = "guardrails-consent";
-const GA_ID = "G-TRTLLGPJ5C";
 
 function loadGoogleAnalytics() {
+  setGoogleAnalyticsEnabled(true);
   if (document.getElementById("gtag-script")) return;
   const dataLayerScript = document.createElement("script");
   dataLayerScript.textContent = [
@@ -30,6 +32,7 @@ export default function CookieConsent() {
   useEffect(() => {
     const apply = () => {
       try {
+        setGoogleAnalyticsEnabled(window.localStorage.getItem(CONSENT_KEY) === "granted");
         if (window.localStorage.getItem(CONSENT_KEY) === "granted") {
           loadGoogleAnalytics();
         } else if (!window.localStorage.getItem(CONSENT_KEY)) {
@@ -52,6 +55,7 @@ export default function CookieConsent() {
       // Without storage the banner would nag every visit; hide it anyway.
     }
     setVisible(false);
+    setGoogleAnalyticsEnabled(choice === "granted");
     if (choice === "granted") loadGoogleAnalytics();
   }
 

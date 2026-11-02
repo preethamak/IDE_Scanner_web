@@ -82,7 +82,7 @@ export default function ApiKeysPanel({ teamId, getAuthHeaders }: { teamId: strin
         <div>
           <span>Programmatic access</span>
           <h2>API keys</h2>
-          <p>Check an entire extension inventory in one call with <code>POST /api/gate/bulk</code> instead of clicking through the UI one release at a time. Available on the Team plan and above.</p>
+          <p>Use a workspace key for CI gates and signed machine inventory. Keys can read bulk extension gates and submit capability snapshots to <code>POST /api/collector/capabilities</code>.</p>
         </div>
         <KeyRound />
       </header>

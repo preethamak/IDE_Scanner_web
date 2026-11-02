@@ -109,6 +109,22 @@ export async function exchangeRefreshToken(input: { refreshToken: string; client
   return issueTokens({ clientId: row.client_id, userId: row.user_id, scope: row.scope, resource: row.resource });
 }
 
+/** RFC 7009-style best-effort revocation. Unknown tokens deliberately produce
+ * the same successful response as known tokens to avoid token enumeration. */
+export async function revokeMcpToken(input: { token: string; clientId: string }): Promise<void> {
+  if (!input.token || !input.clientId) return;
+  const table = input.token.startsWith("mcp_access_")
+    ? "app_oauth_access_tokens"
+    : input.token.startsWith("mcp_refresh_")
+      ? "app_oauth_refresh_tokens"
+      : null;
+  if (!table) return;
+  await privateDb()
+    .prepare(`UPDATE ${table} SET revoked_at=? WHERE token_hash=? AND client_id=? AND revoked_at IS NULL`)
+    .bind(nowIso(), oauthHash(input.token), input.clientId)
+    .run();
+}
+
 export async function mcpOAuthToken(request: Request): Promise<McpOAuthToken | null> {
   const raw = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim() || "";
   if (!raw.startsWith("mcp_access_")) return null;

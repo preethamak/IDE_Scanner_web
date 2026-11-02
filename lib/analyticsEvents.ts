@@ -1,4 +1,5 @@
 import { track } from "@vercel/analytics";
+import { trackGoogleEvent } from "./googleAnalytics";
 
 type BaseEvent = {
   source_route: string;
@@ -31,5 +32,6 @@ export type ProductEvent =
 export function trackProductEvent(event: ProductEvent): void {
   if (typeof window === "undefined") return;
   const { name, ...properties } = event;
+  trackGoogleEvent(name, properties);
   track(name, properties);
 }

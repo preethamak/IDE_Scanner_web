@@ -1,5 +1,11 @@
 import type { PrivateDatabase } from "@/lib/cloudflarePrivate";
 
+type DeliveryRequest = (kind: string, target: string, payload: unknown) => {
+  destination: string;
+  payload: Record<string, unknown>;
+  headers: Record<string, string>;
+};
+
 export const MAX_NOTIFICATION_DELIVERY_ATTEMPTS = 6;
 
 export function notificationRetryAt(attempts: number, now = Date.now()): string {
@@ -11,6 +17,7 @@ export function notificationRetryAt(attempts: number, now = Date.now()): string 
 export async function deliverCloudflareNotifications(
   db: PrivateDatabase,
   now = new Date().toISOString(),
+  deliveryRequest: DeliveryRequest = workerSafeDelivery,
 ) {
   const pending = await db
     .prepare("SELECT id,kind,target,payload_json,attempts FROM app_notification_deliveries WHERE status IN ('pending','failed') AND next_attempt_at<=? ORDER BY created_at LIMIT 50")
@@ -25,7 +32,7 @@ export async function deliverCloudflareNotifications(
       const payload = JSON.parse(String(row.payload_json || "{}"));
       const target = String(row.target);
       const kind = String(row.kind || "generic_webhook");
-      const delivery = workerSafeDelivery(kind, target, payload);
+      const delivery = deliveryRequest(kind, target, payload);
       const response = await fetch(delivery.destination, {
         method: "POST",
         redirect: "manual",

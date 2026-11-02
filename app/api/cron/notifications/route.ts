@@ -22,6 +22,7 @@ import { privateDb, nowIso } from "@/lib/cloudflarePrivate";
 import { runtimeEnv } from "@/lib/runtimeEnv";
 import { queueCloudflareTeamDigests } from "@/lib/cloudflareTeamDigest";
 import { deliverCloudflareNotifications } from "@/lib/cloudflareNotificationQueue";
+import { cloudflareNotificationProvider, cloudflareNotificationRequest } from "@/lib/cloudflareNotificationDelivery";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,7 +55,8 @@ export async function POST(request: Request) {
       const db = privateDb();
       const now = nowIso();
       const digest = await queueCloudflareTeamDigests(db, now);
-      const delivery = await deliverCloudflareNotifications(db, now);
+      const delivery = await deliverCloudflareNotifications(db, now, (kind, target, payload) =>
+        cloudflareNotificationRequest(cloudflareNotificationProvider(kind, target, payload), target, payload));
       return NextResponse.json({ ...delivery, skipped: 0, queued_digests: digest.queued, storage: "cloudflare_d1" });
     } catch (error) {
       if (isD1DailyReadLimitError(error)) {
