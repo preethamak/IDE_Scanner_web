@@ -17,6 +17,7 @@ import {
   canonicalAnalysisStatus,
   requiresReview,
 } from "@/lib/classificationContract";
+import { extensionRelationships, relationshipResolutionLabel } from "@/lib/extensionRelationships";
 import { getImportedReport } from "@/lib/reportBundle";
 import type {
   Decision,
@@ -89,6 +90,7 @@ export default function ReportExtensionPage({
     contextual = findings.filter((x) => !requiresReview(x.actionability)),
     groups = groupFindings(findings),
     capabilities = capabilitySummary(findings),
+    relationships = extensionRelationships(detail.artifact_inventory),
     identity = detail.artifact_identity || {},
     hash = String(
       identity.sha256 ||
@@ -145,6 +147,7 @@ export default function ReportExtensionPage({
             ["behavior", "Behavior"],
             ["alerts", "Alerts"],
             ["dependencies", "Dependencies"],
+            ...(relationships.length ? [["relationships", "Related extensions"]] : []),
             ["coverage", "Coverage"],
             ["technical", "Technical evidence"],
           ].map(([id, label]) => (
@@ -282,6 +285,30 @@ export default function ReportExtensionPage({
               ) : null}
             </div>
           </section>
+          {relationships.length ? (
+            <section id="relationships" className="reportSection">
+              <SectionHead
+                eyebrow="Extension graph"
+                title="Declared related extensions"
+                detail="These manifest declarations are not part of this artifact. Any separately resolved package has its own version and evidence boundary."
+              />
+              <div className="relationshipReadable">
+                {relationships.map((item) => (
+                  <article key={`${item.relationship}:${item.extensionId}`}>
+                    <Package />
+                    <div>
+                      <strong>{item.extensionId}</strong>
+                      <p>{item.relationship} declared in {item.declaredIn}</p>
+                    </div>
+                    <span className={`relationshipStatus ${item.resolution?.status || "not_scanned"}`}>
+                      {relationshipResolutionLabel(item.resolution?.status)}
+                    </span>
+                    {item.resolution?.version ? <code>{item.resolution.version}</code> : <code>Version not resolved</code>}
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
           <section id="coverage" className="reportSection">
             <SectionHead
               eyebrow="Analysis boundary"
