@@ -36,7 +36,11 @@ Cloudflare queues provider-specific delivery rows for Slack, generic webhooks,
 Jira Cloud, or Resend email. `delivery_key` is unique for badge refreshes and
 digest periods, so retrying the protected notification cron cannot duplicate a
 message. Invalid or legacy targets are rejected at send time and recorded as a
-retryable failure.
+retryable failure. Delivery uses bounded exponential backoff and moves an event
+to `dead_letter` after six failed attempts. A terminal failure is not retried
+automatically: validate or replace the channel, then create a fresh delivery
+from the original alert or release event. Health reporting counts both retryable
+and terminal failures.
 
 Weekly digests are opt-in (`weekly_digest=true`) and follow each workspace’s UTC
 weekday/hour preferences. They are only generated for enabled channels and are
