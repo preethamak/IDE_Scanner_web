@@ -14,11 +14,11 @@ export function getSecurityHeaders(nodeEnv = process.env.NODE_ENV) {
       key: "Content-Security-Policy",
       value: [
         "default-src 'self'",
-        `script-src 'self' 'unsafe-inline'${developmentScriptSupport}${developmentAnalyticsSupport}`,
+        `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com${developmentScriptSupport}${developmentAnalyticsSupport}`,
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: blob: https:",
         "font-src 'self'",
-        "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.vercel-insights.com",
+        "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.vercel-insights.com https://www.google-analytics.com https://region1.google-analytics.com",
         "worker-src 'self' blob:",
         "frame-ancestors 'none'",
         "base-uri 'self'",

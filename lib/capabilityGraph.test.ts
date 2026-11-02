@@ -28,6 +28,19 @@ describe("capability graph", () => {
     expect(() => buildCapabilityGraph({ workspaceId, subjects: [extension], relationships: [{ from: extension.id, to: "mcp_server:unknown", type: "uses" }] })).toThrow("known subjects");
   });
 
+  it("fails closed when claimed capability evidence does not match its evidence state", () => {
+    expect(() => buildCapabilityGraph({ workspaceId, subjects: [{ ...extension, evidenceState: "unknown", capabilities: ["network"] }] })).toThrow("Unknown capability evidence");
+    expect(() => buildCapabilityGraph({ workspaceId, subjects: [{ ...extension, evidenceState: "verified", artifactSha256: null }] })).toThrow("requires an artifact SHA-256");
+    expect(() => buildCapabilityGraph({ workspaceId, subjects: [{ ...extension, evidenceState: "verified", source: "manual" }] })).toThrow("Manual capability imports");
+  });
+
+  it("validates relationship vocabulary and removes duplicate edges", () => {
+    const cli = { ...extension, id: "cli:guardrails", kind: "cli" as const, name: "GuardRails CLI", artifactSha256: null, evidenceState: "observed" as const };
+    expect(() => buildCapabilityGraph({ workspaceId, subjects: [extension, cli], relationships: [{ from: extension.id, to: cli.id, type: "unknown" as never }] })).toThrow("relationship type is invalid");
+    const graph = buildCapabilityGraph({ workspaceId, subjects: [extension, cli], relationships: [{ from: extension.id, to: cli.id, type: "uses" }, { from: extension.id, to: cli.id, type: "uses" }] });
+    expect(graph.relationships).toEqual([{ from: extension.id, to: cli.id, type: "uses" }]);
+  });
+
   it("fails closed when one observed capability lacks a grant", () => {
     const graph = buildCapabilityGraph({ workspaceId, generatedAt: observedAt, subjects: [extension] });
     const grants: CapabilityGrant[] = [{ id: "allow-network", principalId: "device:eng-1", workspaceId, capability: "network", actions: ["use"], resourcePattern: extension.id, effect: "allow", approval: "automatic" }];

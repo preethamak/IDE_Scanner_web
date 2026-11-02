@@ -26,7 +26,7 @@ export function extensionRelationships(inventory: unknown): ExtensionRelationshi
   for (const raw of resolutions) {
     const item = record(raw);
     const extensionId = text(item.extension_id).toLowerCase();
-    const relationship = text(item.relationship);
+    const relationship = normalizeRelationship(item.relationship);
     if (extensionId && RELATIONSHIPS.has(relationship as ExtensionRelationship["relationship"])) {
       resolutionByKey.set(key(extensionId, relationship), item);
     }
@@ -35,7 +35,7 @@ export function extensionRelationships(inventory: unknown): ExtensionRelationshi
   for (const raw of entries) {
     const item = record(raw);
     const extensionId = text(item.extension_id).toLowerCase();
-    const relationship = text(item.relationship);
+    const relationship = normalizeRelationship(item.relationship);
     if (!extensionId || !RELATIONSHIPS.has(relationship as ExtensionRelationship["relationship"])) continue;
     const resolved = resolutionByKey.get(key(extensionId, relationship));
     deduped.set(key(extensionId, relationship), {
@@ -64,6 +64,13 @@ export function relationshipResolutionLabel(status?: string): string {
 
 function key(extensionId: string, relationship: string) {
   return `${relationship}:${extensionId}`;
+}
+
+function normalizeRelationship(value: unknown): string {
+  const relationship = text(value);
+  if (relationship === "extension_pack") return "extensionPack";
+  if (relationship === "extension_dependency") return "extensionDependencies";
+  return relationship;
 }
 
 function record(value: unknown): UnknownRecord {

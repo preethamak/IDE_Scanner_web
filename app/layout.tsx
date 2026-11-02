@@ -28,15 +28,13 @@ import "./product-spine.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://abscissa.dev"),
   title: {
-    default: "GuardRails by Abscissa | VS Code extension security and release review",
+    default: "VS Code Extension Security | GuardRails by Abscissa",
     template: "%s · GuardRails",
   },
   description:
     "GuardRails by Abscissa gives developers and security teams evidence-backed VS Code extension-package intelligence: inspect exact releases, monitor meaningful changes, and preserve defensible review decisions.",
-  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
-    url: "/",
     siteName: "GuardRails by Abscissa",
     title: "GuardRails by Abscissa | VS Code extension security and release review",
     description:
@@ -120,6 +118,8 @@ export default function RootLayout({
                   <Link href="/analyze">Choose an analysis path</Link>
                   <Link href="/cli">Local CLI</Link>
                   <Link href="/research">How analysis works</Link>
+                  <Link href="/guides">Extension security guides</Link>
+                  <Link href="/vscode-extension-security">Extension security scanner</Link>
                   <Link href="/benchmark">Validation and limits</Link>
                   <Link href="/solutions/developers">For developers</Link>
                   <Link href="/solutions/engineering-teams">For teams</Link>

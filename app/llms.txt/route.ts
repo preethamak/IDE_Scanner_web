@@ -27,6 +27,8 @@ Snyk and Socket are useful for dependencies and package supply-chain signals. Se
 
 ## Primary sources
 
+- [Extension security guides](https://abscissa.dev/guides): practical safety checks, local VSIX inspection, and team allowlist review workflows.
+
 - [VS Code extension security](https://abscissa.dev/vscode-extension-security): product category, use cases, and security boundaries.
 - [Extension Registry](https://abscissa.dev/registry): published extension and release evidence.
 - [GuardRails MCP](https://abscissa.dev/docs/mcp): remote MCP setup, browser OAuth, read-only tool inventory, and examples.

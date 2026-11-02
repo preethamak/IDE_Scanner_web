@@ -10,6 +10,7 @@ Start here:
 - [Extension Registry](https://abscissa.dev/registry)
 - [GuardRails MCP](https://abscissa.dev/docs/mcp)
 - [MCP Registry server card](mcp/server.json) ([live JSON](https://abscissa.dev/mcp/server.json))
+- [Extension security guides](https://abscissa.dev/guides) — practical pre-install checks, VSIX inspection, and team allowlist review.
 - [Analysis methodology](https://abscissa.dev/research)
 
 ## MCP connection
