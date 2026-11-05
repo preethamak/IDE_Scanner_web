@@ -4,6 +4,8 @@ export type ScanEvidence = { scan: EvidenceRow | null; findings: EvidenceRow[]; 
 export function summarizeScan(version: string, data: ScanEvidence) {
   return {
     version,
+    scan_id: data.scan?.id,
+    analysis_status: data.scan?.analysis_status,
     decision: data.scan?.decision,
     severity: data.scan?.severity,
     coverage_percent: data.scan?.coverage_percent,
