@@ -475,6 +475,33 @@ export async function getCloudflareLatestScanProduct(extensionId: string, versio
   return row?.scan_id ? getCloudflareScanProduct(extensionId, version, String(row.scan_id), true) : null;
 }
 
+/** Resolve only reports the requester can already open, never a global latest scan. */
+export async function getCloudflareAuthorizedVersionProduct(
+  extensionId: string,
+  version: string,
+  userId?: string,
+  guestToken?: string,
+): Promise<Row | null> {
+  if (!cloudflarePrivateAvailable() || (!userId && !guestToken)) return null;
+  const accessJoin = userId
+    ? "JOIN app_scan_job_subscribers access ON access.job_id=job.id"
+    : "JOIN app_guest_scan_access access ON access.job_id=job.id";
+  const accessWhere = userId
+    ? "access.user_id=? AND job.scan_purpose IN ('user_request','guest_trial','team_badge')"
+    : "access.token_hash=? AND job.scan_purpose='guest_trial'";
+  const row = await privateDb().prepare(`
+    SELECT report.scan_id FROM app_scan_reports report
+    JOIN app_scan_jobs job ON job.id=report.job_id
+    ${accessJoin}
+    WHERE lower(report.extension_id)=lower(?) AND report.version=? AND ${accessWhere}
+      AND job.status='complete'
+    ORDER BY report.created_at DESC LIMIT 1
+  `).bind(extensionId, version, userId || sessionHash(guestToken || "")).first<Row>();
+  return row?.scan_id
+    ? getCloudflareAuthorizedScanProduct(extensionId, version, String(row.scan_id), userId, guestToken)
+    : null;
+}
+
 export async function getCloudflareScanSummary(extensionId: string, version: string): Promise<Row | null> {
   if (!cloudflarePrivateAvailable()) return null;
   const row = await privateDb().prepare(`

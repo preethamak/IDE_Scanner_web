@@ -6,7 +6,7 @@ import TeamDecisionAction from "@/app/TeamDecisionAction";
 import MonitorExtensionAction from "@/app/MonitorExtensionAction";
 
 export default function ReportActions({ extensionId, version, scanId }: { extensionId: string; version: string; scanId: string }) {
-  const exportUrl = `/api/extensions/${encodeURIComponent(extensionId)}/versions/${encodeURIComponent(version)}/export`;
+  const exportUrl = `/api/extensions/${encodeURIComponent(extensionId)}/versions/${encodeURIComponent(version)}/export?scanId=${encodeURIComponent(scanId)}`;
   const [copied, setCopied] = useState(false);
   async function copyLink() {
     try {

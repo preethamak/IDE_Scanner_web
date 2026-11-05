@@ -37,7 +37,7 @@ import {
 import BrandMark from "@/app/BrandMark";
 import ExtensionSearch from "@/app/ExtensionSearch";
 import NotificationCenter from "@/app/workspace/NotificationCenter";
-import PermissionPassport from "@/app/extensions/PermissionPassport";
+import DecisionPermissionPassport from "@/app/workspace/DecisionPermissionPassport";
 import PermissionDiffCard from "@/app/extensions/PermissionDiffCard";
 import NotificationSettings, {
   type ChannelInput,
@@ -60,7 +60,6 @@ import {
   type QueueDecision,
 } from "@/lib/teamDecisionQueue";
 import type { DiscoveryResult } from "@/lib/types";
-import { buildPermissionPassport } from "@/lib/permissionPassport";
 import styles from "@/app/workspace/teamWorkspace.module.css";
 
 type Team = { id: string; name: string; slug: string; role: string };
@@ -2050,7 +2049,7 @@ function ReviewInbox({
       ) : null}
       <section className={styles.inboxList}>
         {filteredDecisions.length ? (
-          filteredDecisions.map((decision, index) => (
+          filteredDecisions.map((decision) => (
             <article key={decision.id} className={styles.inboxCard}>
               <div className={styles.inboxIdentity}>
                 <div className={styles.extensionAvatar}>
@@ -2058,7 +2057,7 @@ function ReviewInbox({
                 </div>
                 <div>
                   <span>
-                    {index === 0 ? "High priority" : "Ready for review"}
+                    Ready for review
                   </span>
                   <h2>{decision.extension_id}</h2>
                   <code>Release @{decision.version}</code>
@@ -2067,9 +2066,7 @@ function ReviewInbox({
               <div className={styles.changeSummary}>
                 <span>Why it matters</span>
                 <strong>
-                  {index === 0
-                    ? "New behavior was detected in this release."
-                    : "The new package is ready for comparison."}
+                  A team review was requested for this exact release.
                 </strong>
                 <p>
                   Review files, commands, connections, and permission changes
@@ -2120,6 +2117,7 @@ function ReviewInbox({
       </section>
       {selected ? (
         <ReviewDecisionPanel
+          teamId={teamId}
           decision={selected}
           members={members}
           canDecide={canDecide}
@@ -2144,6 +2142,7 @@ function ReviewInbox({
 }
 
 function ReviewDecisionPanel({
+  teamId,
   decision,
   members,
   canDecide,
@@ -2151,6 +2150,7 @@ function ReviewDecisionPanel({
   onClose,
   onSave,
 }: {
+  teamId: string;
   decision: QueueDecision;
   members: Member[];
   canDecide: boolean;
@@ -2204,7 +2204,7 @@ function ReviewDecisionPanel({
             <div className={styles.reviewPanelBody}>
               <div className={styles.reviewWhy}>
                 <span>Why this needs attention</span>
-                <h3>Confirm the new package behavior before rollout.</h3>
+                <h3>Review the exact release before recording a decision.</h3>
                 <p>
                   GuardRails keeps this decision attached to version{" "}
                   {decision.version}. Future releases must be reviewed
@@ -2237,16 +2237,7 @@ function ReviewDecisionPanel({
                   {humanize(decision.decision)}
                 </span>
               </div>
-              <PermissionPassport
-                compact
-                passport={buildPermissionPassport({
-                  extensionId: decision.extension_id,
-                  version: decision.version,
-                  latestVersion: decision.version,
-                  scan: decisionScan(decision),
-                })}
-                reportHref={`/extensions/${encodeURIComponent(decision.extension_id)}/versions/${encodeURIComponent(decision.version)}`}
-              />
+              <DecisionPermissionPassport key={`${teamId}:${decision.id}`} teamId={teamId} decision={decision} />
               <PermissionDiffCard
                 compact
                 extensionId={decision.extension_id}
@@ -3278,11 +3269,4 @@ function memberLabel(members: Member[], id: string) {
       role: "viewer",
     },
   );
-}
-
-function decisionScan(decision: QueueDecision): Record<string, unknown> | null {
-  if (Array.isArray(decision.scans)) return decision.scans[0] || null;
-  return decision.scans && typeof decision.scans === "object"
-    ? decision.scans
-    : null;
 }

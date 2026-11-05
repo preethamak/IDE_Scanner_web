@@ -42,7 +42,7 @@ vi.mock("@/lib/marketplace", () => ({
 }));
 vi.mock("@/lib/cloudflareGithubDispatch", () => ({ dispatchGithubDeepScan: harness.githubDispatch }));
 
-import { claimCloudflareJob, failCloudflareScan, getCloudflareAuthorizedScanProduct, queueCloudflareDeepScan, saveCloudflareScanResult } from "@/lib/cloudflareDeepScan";
+import { claimCloudflareJob, failCloudflareScan, getCloudflareAuthorizedScanProduct, getCloudflareAuthorizedVersionProduct, queueCloudflareDeepScan, saveCloudflareScanResult } from "@/lib/cloudflareDeepScan";
 
 const build = "a".repeat(40);
 const artifactSha = "d".repeat(64);
@@ -202,6 +202,20 @@ describe("Cloudflare canonical scan callback", () => {
       scan: { id: "scan-1", extension_id: "publisher.extension", version: "1.0.0" },
     });
     expect(db.prepare).toHaveBeenCalledWith(expect.stringContaining("app_scan_job_subscribers"));
+  });
+
+  it.each([
+    ["owner", undefined, "app_scan_job_subscribers", "access.user_id=?", "owner"],
+    [undefined, "guest", "app_guest_scan_access", "access.token_hash=?", "session-hash"],
+  ])("resolves an owned version through its access relation", async (user, guest, join, predicate, identity) => {
+    const bind = vi.fn(() => ({ first: vi.fn().mockResolvedValue(null) }));
+    const db = { prepare: vi.fn(() => ({ bind })) };
+    harness.privateDb.mockReturnValue(db);
+    expect(await getCloudflareAuthorizedVersionProduct("publisher.extension", "1.0.0", user, guest)).toBeNull();
+    expect(db.prepare).toHaveBeenCalledWith(expect.stringContaining(String(join)));
+    expect(db.prepare).toHaveBeenCalledWith(expect.stringContaining(String(predicate)));
+    expect(db.prepare).toHaveBeenCalledWith(expect.stringContaining("job.status='complete'"));
+    expect(bind).toHaveBeenCalledWith("publisher.extension", "1.0.0", identity);
   });
 
   it("does not let a losing concurrent worker scan the same queued job", async () => {
