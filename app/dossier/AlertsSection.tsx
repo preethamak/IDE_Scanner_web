@@ -5,10 +5,10 @@ export type EvidenceGroupData = { rule: string; summary: string; severity: strin
 
 export default function AlertsSection({ actionableGroups, lowGroups, contextualGroups, analysisComplete = true }: { actionableGroups: EvidenceGroupData[]; lowGroups: EvidenceGroupData[]; contextualGroups: EvidenceGroupData[]; analysisComplete?: boolean }) {
   return <>
-    <DossierSectionHead eyebrow="Evidence" title="Evidence, grouped by behavior" detail="Repeated locations are one behavior group. Expand a group to inspect every recorded location and evidence class." />
-    {actionableGroups.length ? <div className="dossierRows">{actionableGroups.map((group) => <EvidenceGroup key={group.rule} group={group} />)}</div> : <Empty text={analysisComplete ? "No behavior group requires review under the completed policy." : "Analysis did not complete. An empty evidence list is not an approval result."} />}
+    <DossierSectionHead eyebrow="Findings" title="Findings, grouped by behavior" detail="Repeated findings are grouped together. Open a group to inspect its file locations and scanner details." />
+    {actionableGroups.length ? <div className="dossierRows">{actionableGroups.map((group) => <EvidenceGroup key={group.rule} group={group} />)}</div> : <Empty text={analysisComplete ? "No findings require review under this scan’s policy." : "Analysis did not complete. An empty findings list is not an approval result."} />}
     {lowGroups.length ? <details className="contextEvidence"><summary>{lowGroups.length} low-severity hardening note{lowGroups.length === 1 ? "" : "s"} — visible but non-blocking</summary><div className="dossierRows">{lowGroups.map((group) => <EvidenceGroup key={group.rule} group={group} />)}</div></details> : null}
-    {contextualGroups.length ? <details className="contextEvidence"><summary>{contextualGroups.length} contextual behavior group{contextualGroups.length === 1 ? "" : "s"} — not standalone security evidence</summary><div className="dossierRows">{contextualGroups.map((group) => <EvidenceGroup key={group.rule} group={group} />)}</div></details> : null}
+    {contextualGroups.length ? <details className="contextEvidence"><summary>{contextualGroups.length} contextual behavior group{contextualGroups.length === 1 ? "" : "s"} — did not independently trigger review</summary><div className="dossierRows">{contextualGroups.map((group) => <EvidenceGroup key={group.rule} group={group} />)}</div></details> : null}
   </>;
 }
 

@@ -4,13 +4,13 @@ import type { ReportScan } from "@/lib/reportContract";
 export default function ProvenanceSection({ scan }: { scan: ReportScan }) {
   const artifacts = object(scan.artifacts);
   return <>
-    <DossierSectionHead eyebrow="Provenance" title="Exact artifact identity" detail="This is the evidence boundary for the report. A publisher name or repository cannot substitute for it." />
+    <DossierSectionHead eyebrow="Scan details" title="Package and scanner details" detail="Use the package hash to identify the download that was scanned." />
     <div className="provenanceList">
-      <Fact label="Artifact SHA-256" value={scan.artifact_sha256} />
+      <Fact label="Package SHA-256" value={scan.artifact_sha256} />
       <Fact label="Scanner build" value={String(scan.scanner_build || "Not recorded")} />
       <Fact label="Ruleset" value={String(scan.ruleset_version || "Not recorded")} />
       <Fact label="Scanner profile" value={String(scan.profile || "deep")} />
-      <Fact label="VSIX signature" value={artifacts.vsix_signature ? "Recorded in artifact evidence" : "Not reported"} />
+      <Fact label="VSIX signature" value={artifacts.vsix_signature ? "Recorded by the scanner" : "Not reported"} />
     </div>
   </>;
 }

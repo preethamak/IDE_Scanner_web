@@ -24,9 +24,9 @@ const polling = readFileSync(
 describe("immutable Deep Scan product", () => {
   it("keeps exact reports public, identified, shareable, and exportable", () => {
     expect(page).not.toContain("redirect(");
-    expect(report).toContain("Immutable Deep Scan report");
+    expect(report).toContain("Saved scan report");
     expect(reportActions).toContain("Copy link");
-    expect(reportActions).toContain("Export evidence");
+    expect(reportActions).toContain("Export report");
     expect(report).toContain("artifact_sha256");
   });
 

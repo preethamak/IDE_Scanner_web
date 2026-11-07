@@ -170,6 +170,8 @@ function PermissionDiffContent({
         </p>
       ) : null}
       {state === "ready" && result?.comparable ? (
+        <>
+        {!result.attribution?.evidence_changes ? <p className={styles.state}>Scanner provenance is missing or differs. Treat capability differences as review context; release attribution is unavailable.</p> : null}
         <div className={styles.changeGrid}>
           <article className={added.length ? styles.changed : ""}>
             <span>
@@ -177,8 +179,8 @@ function PermissionDiffContent({
             </span>
             <strong>
               {added.length
-                ? `${added.length} access categories added`
-                : "No new access category"}
+                ? `${added.length} additional access categories observed`
+                : "No additional access category observed"}
             </strong>
             <p>
               {added.length
@@ -187,16 +189,16 @@ function PermissionDiffContent({
             </p>
           </article>
           <article>
-            <span>Reduced authority</span>
+            <span>Categories absent from the target analysis</span>
             <strong>
               {removed.length
-                ? `${removed.length} categories removed`
-                : "No category removed"}
+                ? `${removed.length} categories not observed`
+                : "No observed category missing"}
             </strong>
             <p>
               {removed.length
                 ? removed.join(" · ")
-                : "No previously observed category disappeared."}
+                : "Every category observed in the baseline also appears in the target analysis."}
             </p>
           </article>
           <article>
@@ -216,6 +218,7 @@ function PermissionDiffContent({
             </p>
           </article>
         </div>
+        </>
       ) : null}
     </section>
   );

@@ -9,7 +9,7 @@ export default function DossierNavigation<T extends string>({ items, active, cou
     ["Verify", ["versions", "publisher", "provenance", "coverage", "raw"]],
   ] as const;
   return <aside className="dossierRail" aria-label="Analysis Report index">
-    <header><span>Report index</span><strong>Evidence map</strong><small>Choose a section without leaving this exact release.</small></header>
+    <header><span>Report index</span><strong>Report sections</strong><small>Inspect this version without leaving the report.</small></header>
     {groups.map(([label, ids]) => <div className="dossierRailGroup" key={label}>
       <span>{label}</span>
       {ids.map((id) => {

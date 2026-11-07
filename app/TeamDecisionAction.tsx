@@ -66,10 +66,10 @@ export default function TeamDecisionAction({ scanId, extensionId, version }: { s
     } catch { setMessage("The connection failed. Your reason is still here; try saving again."); setState("error"); }
   }
   if (state === "hidden") return null;
-  const workspaceHref = `/workspace?view=inbox&intent=review&extension=${encodeURIComponent(extensionId)}&version=${encodeURIComponent(version)}&scanId=${encodeURIComponent(scanId)}${savedId ? `&review=${encodeURIComponent(savedId)}` : ""}`;
+  const workspaceHref = `/workspace?view=${decision === "review" ? "inbox" : "decisions"}&intent=review&extension=${encodeURIComponent(extensionId)}&version=${encodeURIComponent(version)}&scanId=${encodeURIComponent(scanId)}${savedId ? `&review=${encodeURIComponent(savedId)}` : ""}`;
   return <details className={styles.action}>
     <summary>Record a team decision</summary>
-    {state === "saved" ? <div className={styles.receipt} role="status"><strong>Team decision saved</strong><p>{extensionId}@{version} · {decision === "review" ? "Review open" : decision}. Your reason is attached to this exact scan.</p><Link href={workspaceHref}>Open workspace review →</Link></div> : <form className={styles.form} onSubmit={(event) => { event.preventDefault(); void save(); }}>
+    {state === "saved" ? <div className={styles.receipt} role="status"><strong>Team decision saved</strong><p>{extensionId}@{version} · {decision === "review" ? "Review open" : decision}. Your reason is saved with this scan.</p><Link href={workspaceHref}>{decision === "review" ? "Open workspace review →" : "Open team decisions →"}</Link></div> : <form className={styles.form} onSubmit={(event) => { event.preventDefault(); void save(); }}>
       <p>Record your team’s assessment of {extensionId}@{version}. Monitoring and approval are separate actions.</p>
       <div className={styles.fields}>
         <label>Workspace<select aria-label="Team" value={teamId} onChange={(event) => { setTeamId(event.target.value); setAssignee(""); setMembers([]); }} disabled={state === "saving"}>{teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}</select></label>
@@ -77,7 +77,7 @@ export default function TeamDecisionAction({ scanId, extensionId, version }: { s
         <label>Owner<select aria-label="Decision owner" value={assignee} onChange={(event) => setAssignee(event.target.value)} disabled={state === "saving"}><option value="">Unassigned</option>{members.map((member) => <option key={member.user_id} value={member.user_id}>{memberName(member)} · {member.role}</option>)}</select></label>
         <label>Due date<input aria-label="Review due date" type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} disabled={state === "saving"} /></label>
       </div>
-      <label>Reason<textarea aria-label="Decision rationale" value={rationale} onChange={(event) => setRationale(event.target.value)} placeholder="Explain which evidence supports this decision." maxLength={4000} required={decision !== "review"} disabled={state === "saving"} /></label>
+      <label>Reason<textarea aria-label="Decision rationale" value={rationale} onChange={(event) => setRationale(event.target.value)} placeholder="Explain what you checked and why your team should allow or block this version." maxLength={4000} required={decision !== "review"} disabled={state === "saving"} /></label>
       <button className="button buttonDark" type="submit" disabled={state === "saving"}><CheckSquare size={15}/>{state === "saving" ? "Saving…" : "Save team decision"}</button>
       {state === "error" ? <p className={styles.error} role="alert">{message}</p> : null}
     </form>}

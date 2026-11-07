@@ -69,7 +69,7 @@ const sections: Array<{ id: Section; label: string; icon: typeof Radar }> = [
   { id: "overview", label: "Overview", icon: Radar },
   { id: "readme", label: "README", icon: FileText },
   { id: "changes", label: "What changed", icon: GitCompareArrows },
-  { id: "alerts", label: "Evidence", icon: AlertTriangle },
+  { id: "alerts", label: "Findings", icon: AlertTriangle },
   { id: "capabilities", label: "Capabilities", icon: Waypoints },
   { id: "dependencies", label: "Dependencies", icon: Package },
   { id: "files", label: "Files", icon: FolderTree },
@@ -77,7 +77,7 @@ const sections: Array<{ id: Section; label: string; icon: typeof Radar }> = [
   { id: "publisher", label: "Publisher", icon: UserRound },
   { id: "provenance", label: "Provenance", icon: Fingerprint },
   { id: "coverage", label: "Coverage", icon: ShieldCheck },
-  { id: "raw", label: "Raw evidence", icon: Terminal },
+  { id: "raw", label: "Scanner data", icon: Terminal },
 ];
 
 export default function AnalysisReport({ data, signedIn = false }: Props & { signedIn?: boolean }) {
@@ -140,7 +140,7 @@ export default function AnalysisReport({ data, signedIn = false }: Props & { sig
         Back to extension profile
       </Link>
       <div className={`${reportStyles.mast} productReportMast`}><DossierHeader id={id} version={version} extension={extension} scan={scan} /></div>
-      <section className={`${reportStyles.pulse} productReportPulse`} aria-label="Report evidence snapshot">
+      <section className={`${reportStyles.pulse} productReportPulse`} aria-label="Scan summary">
         <article><span>Actionable findings</span><strong>{actionableGroups.length}</strong></article>
         <article><span>Contextual notes</span><strong>{lowGroups.length + contextualGroups.length}</strong></article>
         <article><span>Files analyzed</span><strong>{files.length}</strong></article>
@@ -148,9 +148,9 @@ export default function AnalysisReport({ data, signedIn = false }: Props & { sig
         <article><span>{coverage.label}</span><strong>{coverage.percent}%</strong></article>
       </section>
       <details className={`${immutableStyles.immutableBar} productReportImmutableBar`}>
-        <summary><LockKeyhole size={14} aria-hidden="true" /> Scan identity & analysis limits <span>Immutable Deep Scan report</span></summary>
-        <p>This report is locked to this exact artifact and scan. Future scans cannot replace the evidence on this URL. Static analysis does not establish runtime safety.</p>
-        <dl><div><dt>Scan ID</dt><dd><code>{String(scan.id || "Not reported")}</code></dd></div><div><dt>Artifact SHA-256</dt><dd><code>{String(scan.artifact_sha256 || "Not reported")}</code></dd></div><div><dt>Analysis</dt><dd>{scan.analysis_status} · {coverage.providerDetail}</dd></div></dl>
+        <summary><LockKeyhole size={14} aria-hidden="true" /> Scan details & limits <span>Saved scan report</span></summary>
+        <p>This report describes the package downloaded for this scan. Its results stay available here when later scans run. Static analysis cannot confirm how an extension behaves at runtime.</p>
+        <dl><div><dt>Scan ID</dt><dd><code>{String(scan.id || "Not reported")}</code></dd></div><div><dt>Package SHA-256</dt><dd><code>{String(scan.artifact_sha256 || "Not reported")}</code></dd></div><div><dt>Analysis</dt><dd>{scan.analysis_status} · {coverage.providerDetail}</dd></div></dl>
       </details>
       {validation ? (
         <Link className="dossierValidated" href="/benchmark">
@@ -158,14 +158,13 @@ export default function AnalysisReport({ data, signedIn = false }: Props & { sig
             <BadgeCheck aria-hidden="true" />
           </span>
           <div>
-            <span>Frozen regression fixture</span>
+            <span>Scanner regression test</span>
             <strong>
-              This exact artifact is in the GuardRails regression corpus.
+              This package is included in the scanner’s regression tests.
             </strong>
             <p>
-              Hash-pinned as a {validation.classification.replaceAll("-", " ")}{" "}
-              case. The exact artifact identity matches the frozen cohort; the
-              current decision above comes only from this scan&apos;s evidence.
+              The package hash matches a {validation.classification.replaceAll("-", " ")} test case.
+              The result above comes from this scan, not from its test label.
             </p>
           </div>
           <ChevronRight aria-hidden="true" />
@@ -249,7 +248,7 @@ export default function AnalysisReport({ data, signedIn = false }: Props & { sig
         </section>
       </div>
       <section id="report-workflow" className={reportStyles.workflow} aria-label="Continue this release review">
-        <div><span>Next step</span><h2>Keep this release under review</h2><p>Monitor for updates or record your team’s decision against this scan.</p></div>
+        <div><span>Next step</span><h2>Manage this extension for your team</h2><p>Choose whether your team can use this version, then monitor it for updates.</p></div>
         <ReportActions extensionId={id} version={version} scanId={scan.id} mode="workflow" />
       </section>
       <section className="productReportAssistant" aria-label="Optional reviewer guide">

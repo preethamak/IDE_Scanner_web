@@ -20,7 +20,7 @@ describe("task-first exact-release report", () => {
     expect(html).toContain("3 occurrences");
     expect(html.indexOf("A startup command")).toBeLessThan(html.indexOf("Capabilities in this package"));
     expect(html).toContain("network access");
-    expect(html).toContain("1 recorded evidence location");
+    expect(html).toContain("1 recorded location");
     expect(html).not.toContain("SeverityGauge");
   });
 
@@ -37,12 +37,12 @@ describe("task-first exact-release report", () => {
     expect(html).toContain("No actionable findings were recorded.");
     expect(html).toContain("1 contextual or hardening note");
     expect(html).toContain("Expected activation event");
-    expect(html).toContain("not probabilities or safety ratings");
+    expect(html).toContain("not probabilities or guarantees of safety");
   });
 
   it("keeps immutable identifiers, utility exports and workflow actions available without repeated summaries", () => {
     const dossier = read("../ExtensionDossier.tsx");
-    expect(dossier).toContain("Scan identity & analysis limits");
+    expect(dossier).toContain("Scan details & limits");
     expect(dossier).toContain("scan.artifact_sha256");
     expect(dossier).toContain('mode="workflow"');
     expect(dossier.indexOf("dossierLayout")).toBeLessThan(dossier.indexOf('id="report-workflow"'));

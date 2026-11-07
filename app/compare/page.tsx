@@ -193,7 +193,7 @@ function CompareWorkspace() {
         </div>
         <aside className="compareHeroNote">
           <span>GuardRails method</span>
-          <strong>Exact artifacts in sequence</strong>
+          <strong>Review what changed</strong>
           <p>Findings and capabilities are only attributed when both releases have completed evidence from the same scanner baseline.</p>
         </aside>
       </header>
@@ -271,6 +271,7 @@ function ComparisonResult({ extensionId, name, baseline, current, result, versio
       <ReleaseCard label="Decision release" version={current} data={to} extensionId={extensionId} versions={versions} current />
     </div>
     {comparable ? <>
+      {!result.attribution?.evidence_changes ? <p className="comparisonFootnote">Scanner provenance is missing or differs. Finding and capability differences are review context; they cannot be attributed to this update.</p> : null}
       <div className="deltaStrip">
         <Delta label="Decision" value={deltaValue(outcome.decision)} tone={Boolean(object(outcome.decision).changed) ? "attention" : "quiet"} />
         <Delta label="Severity" value={deltaValue(outcome.severity)} tone={Boolean(object(outcome.severity).changed) ? "attention" : "quiet"} />
@@ -278,11 +279,11 @@ function ComparisonResult({ extensionId, name, baseline, current, result, versio
         <Delta label="Evidence basis" value={result.attribution?.evidence_changes ? "Same scanner baseline" : result.attribution?.provenance_known === false ? "Scanner provenance unavailable" : "Mixed scanner baseline"} tone={result.attribution?.evidence_changes ? "good" : "attention"} />
       </div>
       <div className="deltaColumns">
-        <DeltaGroup title="Access surface" added={array(capabilities.added)} removed={array(capabilities.removed)} empty="No normalized capability changed." />
+        <DeltaGroup title="Observed access categories" added={array(capabilities.added)} removed={array(capabilities.removed)} empty="Both scans report the same normalized access categories." />
         <DeltaGroup title="Findings" added={array(findings.added)} removed={array(findings.removed)} total={changeCount(findings)} empty="No finding delta was recorded." />
         <DeltaGroup title="Package movement" added={[...array(dependencies.added), ...array(files.added)]} removed={[...array(dependencies.removed), ...array(files.removed)]} changed={array(files.changed)} total={changeCount(dependencies) + changeCount(files)} empty="No dependency or file delta was recorded." />
       </div>
-      <p className="comparisonFootnote">{String(result.attribution?.note || "File, dependency, finding, and capability changes are bounded to these exact artifacts.")}</p>
+      <p className="comparisonFootnote">{String(result.attribution?.note || "Changes shown are limited to the two packages analyzed.")}</p>
     </> : null}
   </section>;
 }

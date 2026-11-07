@@ -11,7 +11,7 @@ type Props = Pick<ExtensionDossierData, "id" | "version" | "extension" | "scan">
 export default function DossierHeader({ id, version, extension, scan }: Props) {
   const decision = displayedDecision(scan);
   const registry = String(extension.registry || "unknown").toLowerCase() === "openvsx" ? "Open VSX" : "VS Marketplace";
-  const nextTask = decision === "allow" ? "Monitor this release" : "Inspect the evidence";
+  const nextTask = decision === "allow" ? "Monitor this release" : "Review findings";
   return <header className="dossierMast">
     <section className="dossierIdentityPanel">
       <ExtensionIdentity size="lg" eyebrow="Extension release report" id={id} version={version} name={extension.display_name} iconUrl={extension.icon_url} publisher={extension.publisher} verified={extension.publisher_verified} />
@@ -20,7 +20,7 @@ export default function DossierHeader({ id, version, extension, scan }: Props) {
     </section>
     <section className={`dossierDecision ${decision}`} aria-label="Security outcome">
       <span>Scan result · {decisionLabel(decision)}</span>
-      <strong>{decision === "allow" ? "No actionable evidence found" : decision === "review" ? "Evidence needs review" : decision === "block" ? "Policy-relevant evidence found" : decisionLabel(decision)}</strong>
+      <strong>{decision === "allow" ? "No findings require review" : decision === "review" ? "Review flagged behavior" : decision === "block" ? "This version was flagged" : decisionLabel(decision)}</strong>
       <p>{String(scan.decision_reason || decisionExplanation(decision))}</p>
       <a className="button buttonDark" href={decision === "allow" ? "#report-workflow" : "#alerts"}>{nextTask} <ArrowDown size={15} aria-hidden="true" /></a>
     </section>

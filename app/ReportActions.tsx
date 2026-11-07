@@ -19,7 +19,7 @@ export default function ReportActions({ extensionId, version, scanId, mode = "al
   }
   return <div className="reportActions" aria-label="Report actions">
     {mode !== "utilities" ? <MonitorExtensionAction key={scanId} extensionId={extensionId} version={version} scanId={scanId}/> : null}
-    {mode !== "workflow" ? <><a className="button buttonQuiet" href={exportUrl}><Download size={15}/> Export evidence</a>
+    {mode !== "workflow" ? <><a className="button buttonQuiet" href={exportUrl}><Download size={15}/> Export report</a>
     <button className="button buttonQuiet" type="button" onClick={() => void copyLink()}>{copied ? <Check size={15}/> : <Copy size={15}/>} {copied ? "Copied" : "Copy link"}</button></> : null}
     {mode !== "utilities" ? <TeamDecisionAction key={scanId} scanId={scanId} extensionId={extensionId} version={version}/> : null}
   </div>;

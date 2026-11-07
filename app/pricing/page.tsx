@@ -5,15 +5,15 @@ import { ArrowRight, Check, Minus, ReceiptText, ShieldCheck } from "lucide-react
 import styles from "../marketing.module.css";
 
 export const metadata: Metadata = {
-  title: "Pricing",
+  title: "Abscissa pricing | Developer security for teams",
   description:
-    "Public reports are free. Team review is in pilot; proposed Monitoring and Teams plans are $19 and $99 per month. Billing is not open.",
+    "Start using Abscissa with free extension reports. Team workspaces are in pilot; proposed Monitoring and Teams plans are $19 and $99 per month. Billing is not open.",
   alternates: { canonical: "/pricing" },
 };
 
 type Cell = boolean | string;
 
-// Public evidence is available now. Paid-plan prices describe proposed plans,
+// Public extension reports are available now. Paid-plan prices describe proposed plans,
 // not a purchasable service or a guaranteed enterprise feature commitment.
 const plans = [
   {
@@ -25,7 +25,7 @@ const plans = [
     tableSuffix: "Free forever",
     later: "",
     description:
-      "Know what an extension does before you install it. Start with five Deep Scan trials without creating an account.",
+      "Check what an extension can access before adding it to your editor. Start with five Deep Scan trials without creating an account.",
     action: "Open the registry",
     href: "/registry",
     external: false,
@@ -34,7 +34,7 @@ const plans = [
     features: [
       "Per-version public reports",
       "Five no-account Deep Scan trials per 30 days",
-      "Permission Passport and release diff",
+      "File, command, and network access report",
       "Local analysis with the GuardRails CLI",
       "Personal watchlist for up to 3 extensions",
       "Team pilot available by request",
@@ -49,7 +49,7 @@ const plans = [
     tableSuffix: "$19/month",
     later: "Early access · billing not yet open",
     description:
-      "Keep a release baseline and check for new versions. Pending and failed analyses remain visible alongside completed evidence.",
+      "Follow the extensions your team uses and check new versions against the one you reviewed. See when a scan is pending or has failed.",
     action: "Join early access",
     href: "/design-partners",
     external: false,
@@ -66,13 +66,13 @@ const plans = [
   {
     id: "teams",
     name: "Teams",
-    audience: "For governed organizations",
+    audience: "For teams with approval policies",
     price: "$99",
     suffix: "per month, up to 25 seats",
     tableSuffix: "$99/month",
     later: "Early access · billing not yet open",
     description:
-      "Retain assigned reviews, release decisions, and audit exports. Organization requirements are scoped with design partners before a paid rollout.",
+      "Assign reviewers, keep approvals and exceptions, and export the team’s review history. Discuss organization requirements during the pilot.",
     action: "Talk to the founder",
     href: "/design-partners",
     external: false,
@@ -80,8 +80,8 @@ const plans = [
     badge: "",
     features: [
       "Monitoring and team review workflow",
-      "Allow, block, and exception rationale",
-      "Decision memory across releases",
+      "Allow, block, and exception decisions with reasons",
+      "Review history for each version",
       "Role-aware CSV and JSON audit export",
       "API keys and bulk gate checks for CI",
       "Planned: organization SSO and custom retention",
@@ -94,11 +94,11 @@ const comparison: Array<{
   rows: Array<[string, Cell, Cell, Cell]>;
 }> = [
   {
-    group: "Scanning and evidence",
+    group: "Extension scans and reports",
     rows: [
       ["Per-version public reports", true, true, true],
       ["No-account Deep Scan trial", "5 / 30 days", "5 / 30 days", "5 / 30 days"],
-      ["Permission Passport and capability diff", true, true, true],
+      ["Access reports and version comparison", true, true, true],
       ["GuardRails CLI local inventory", true, true, true],
       ["Guided human review of a release", "By arrangement", "By arrangement", "By arrangement"],
     ],
@@ -118,8 +118,8 @@ const comparison: Array<{
     rows: [
       ["Seats included", "1", "Up to 25", "Up to 25"],
       ["Shared review inbox and assignments", false, true, true],
-      ["Allow, block, and exception rationale", false, false, true],
-      ["Decision memory across releases", false, false, true],
+      ["Allow, block, and exception decisions with reasons", false, false, true],
+      ["Review history for each version", false, false, true],
       ["Role-aware CSV and JSON audit export", false, false, true],
       ["API keys and bulk gate checks (up to 200 releases/call)", false, true, true],
     ],
@@ -128,7 +128,7 @@ const comparison: Array<{
     group: "Organization",
     rows: [
       ["Organization SSO", false, false, "Planned · unavailable in pilot"],
-      ["Organization-wide policy direction", false, false, true],
+      ["Shared extension approval policy", false, false, true],
       ["Custom audit retention", false, false, "Planned · scope with founder"],
       ["Private extension workflow planning", false, false, "Design-partner discussion"],
       ["Direct line to the founder", false, false, true],
@@ -161,11 +161,11 @@ export default function PricingPage() {
             <ReceiptText /> Pricing
           </span>
           <h1>
-            Public reports now.<em> Team review in pilot.</em>
+            Start with your team’s extensions.<em> Review them with Abscissa.</em>
           </h1>
           <p>
-            Public reports, the registry, and the GuardRails CLI are free.
-            Try a release review before joining a team pilot. The proposed paid
+            Abscissa’s public extension reports, registry, and GuardRails CLI are free.
+            Use the team workspace to review extensions and follow updates during the pilot. The proposed paid
             plans are Monitoring at $19/month and Teams at $99/month for up to
             25 seats; neither plan can be purchased yet.
           </p>
@@ -228,8 +228,8 @@ export default function PricingPage() {
       <section className={styles.compareSection}>
         <header className={styles.sectionHead}>
           <span>Public access and proposed team plans</span>
-          <h2>Available workflows and planned services.</h2>
-          <p>Team features are offered through the pilot. Plan allocations are proposed; confirm limits during setup. Planned services are labelled below.</p>
+          <h2>What your team can use.</h2>
+          <p>Team workspaces are available through the pilot. Confirm limits during setup; planned services are labelled below.</p>
         </header>
         <div className={styles.compareScroll}>
           <table className={styles.compare}>
@@ -275,7 +275,7 @@ export default function PricingPage() {
       <section className={styles.honesty}>
         <div>
           <span>Teams and organizations</span>
-          <h2>Team plans are shaped with design partners.</h2>
+          <h2>Set up Abscissa with your team.</h2>
         </div>
         <ul>
           <li>
@@ -293,8 +293,8 @@ export default function PricingPage() {
 
       <section className={styles.cta}>
         <div>
-          <small>Choose your review path</small>
-          <h2>Inspect an extension first.</h2>
+          <small>Start with your development tools</small>
+          <h2>Check an extension your team already uses.</h2>
           <p>
             Public reports require no account. Want to talk it through? Ask for a
             20-minute call and the founder will reply directly.
