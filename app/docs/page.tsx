@@ -37,6 +37,9 @@ export default function DocsPage() {
             analyzed release; an unanalyzed release is reported as unreviewed,
             never as an approval.
           </p>
+          <p className={styles.note}>
+            Machine-readable integration contract: <a href="/openapi.json">OpenAPI 3.1</a>.
+          </p>
           <nav className={styles.toc} aria-label="Sections">
             <a href="#gate">CI release gate</a>
             <a href="#bulk">Bulk gate</a>
