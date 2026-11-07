@@ -50,6 +50,7 @@ describe("public MCP endpoint", () => {
       expect.objectContaining({ name: "find_reputable_alternatives", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "search_vscode_extensions", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "get_extension_release", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
+      expect.objectContaining({ name: "get_extension_release_evidence", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "list_published_extension_scans", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "get_guardrails_analysis_rules", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
       expect.objectContaining({ name: "get_workspace_extension_inventory", annotations: expect.objectContaining({ readOnlyHint: true }), outputSchema: expect.any(Object) }),
@@ -85,6 +86,20 @@ describe("public MCP endpoint", () => {
     const response = await POST(request({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "search_vscode_extensions", arguments: { query: "python" } } }));
     const body = await response.json();
     expect(body.result.structuredContent).toMatchObject({ query: "python", extensions: [expect.objectContaining({ extension: "ms-python.python" })] });
+  });
+
+  it("returns an exact-release evidence receipt without turning an unreviewed release into approval", async () => {
+    isValidGateCheck.mockReturnValue(true);
+    getVersionProduct.mockResolvedValue({
+      version: { version: "1.2.3" },
+      scan: { id: "scan-1", artifact_sha256: "a".repeat(64), scanner_build: "build-1", ruleset_version: "rules-1", scanned_at: "2026-10-21T00:00:00.000Z", analysis_status: "complete", coverage_percent: 100, decision: "allow", severity: "INFO", public_outcome: "clear", evidence_confidence: "high", decision_reason: "Complete analysis." },
+    });
+    const analyzed = await POST(request({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "get_extension_release_evidence", arguments: { extension: "ms-python.python", version: "1.2.3" } } }));
+    await expect(analyzed.json()).resolves.toMatchObject({ result: { structuredContent: { analysis_state: "analyzed", artifact: { sha256: "a".repeat(64) }, assessment: { decision: "allow", coverage_percent: 100 }, decision_boundary: expect.stringContaining("future releases") } } });
+
+    getVersionProduct.mockResolvedValue({ version: { version: "1.2.4" }, scan: null });
+    const unreviewed = await POST(request({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "get_extension_release_evidence", arguments: { extension: "ms-python.python", version: "1.2.4" } } }));
+    await expect(unreviewed.json()).resolves.toMatchObject({ result: { structuredContent: { analysis_state: "unreviewed", assessment: null, decision_boundary: expect.stringContaining("not approval") } } });
   });
 
   it("requires the configured early-access bearer token", async () => {

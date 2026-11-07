@@ -13,6 +13,7 @@ workspace data, or grants access beyond the signed-in user’s memberships.
 | `find_reputable_alternatives` | Find up to five analyzed alternatives when a candidate needs review or is blocked. |
 | `search_vscode_extensions` | Resolve a marketplace query to an exact `publisher.name` identifier. |
 | `get_extension_release` | Retrieve catalog and evidence for an exact published extension release. |
+| `get_extension_release_evidence` | Return a recommendation-ready, exact-release evidence receipt with identity, coverage, decision, and scope boundary. |
 | `list_published_extension_scans` / `get_extension_scan_history` | Research published analysis coverage without treating absence as approval. |
 | `get_guardrails_analysis_rules` / `get_guardrails_service_status` | Explain the active rules and confirm public service availability. |
 | `list_guardrails_workspaces` | List workspaces available to the signed-in MCP user. |
