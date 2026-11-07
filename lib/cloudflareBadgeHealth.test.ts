@@ -4,9 +4,11 @@ import { reconcileCloudflareBadgeHealth } from "./cloudflareBadgeHealth";
 function database({
   catalog = [{ id: "publisher.extension", latest_version: "1.2.4" }],
   watchlist = [{ extension_id: "Publisher.Extension", baseline_version: "1.2.3", last_observed_version: "1.2.3" }],
+  rawState,
 }: {
   catalog?: Array<Record<string, unknown>>;
   watchlist?: Array<Record<string, unknown>>;
+  rawState?: string;
 } = {}) {
   const run = vi.fn().mockResolvedValue({ success: true });
   const updates: string[] = [];
@@ -15,7 +17,7 @@ function database({
       bind: vi.fn((...values: unknown[]) => ({
         all: query.includes("registry_section_chunks")
           ? vi.fn().mockResolvedValue({ results: [{ payload: JSON.stringify(catalog) }] })
-          : vi.fn().mockResolvedValue({ results: [{ team_id: "team-1", state_json: JSON.stringify({
+          : vi.fn().mockResolvedValue({ results: [{ team_id: "team-1", state_json: rawState ?? JSON.stringify({
               watchlist,
               release_events: [],
               audit: [],
@@ -129,5 +131,11 @@ describe("Cloudflare badge health reconciliation", () => {
     const state = JSON.parse(updates[0]);
     expect(state.monitoring.status).toBe("degraded");
     expect(state.release_events).toEqual([expect.objectContaining({ extension_id: "publisher.extension", target_version: "1.2.4" })]);
+  });
+
+  it.each(["{", "null", "[]"])("does not overwrite invalid workspace state %s", async (rawState) => {
+    const { db, updates } = database({ rawState });
+    await expect(reconcileCloudflareBadgeHealth(db)).rejects.toThrow("Workspace state is invalid");
+    expect(updates).toEqual([]);
   });
 });
