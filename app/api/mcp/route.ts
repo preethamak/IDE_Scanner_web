@@ -395,7 +395,7 @@ async function handleToolCall(id: JsonRpcId, params: Record<string, unknown>, re
     if (name === "get_workspace_audit_history") return rpcResult(id, await getWorkspaceAuditHistory(args, userId));
     return rpcError(id, -32602, `Unknown tool: ${name || "(missing)"}`);
   } catch {
-    return rpcResult(id, toolError("The analysis backend is temporarily unavailable. Try again shortly."));
+    return rpcResult(id, toolError("The analysis backend is temporarily unavailable. Try again shortly.", "BACKEND_UNAVAILABLE", true));
   }
 }
 
@@ -416,7 +416,7 @@ async function checkExtensionRisk(args: Record<string, unknown>, origin: string)
     const check = { extension, version };
     if (!isValidGateCheck(check)) return toolError("Provide a valid version string, e.g. 1.2.3.");
     const db = publicDb();
-    if (!db) return toolError("The analysis backend is unavailable.");
+    if (!db) return toolError("The analysis backend is unavailable.", "BACKEND_UNAVAILABLE", true);
     const result = await lookupGateVerdict(db, check, false);
     return toolJson({
       extension,
@@ -730,8 +730,18 @@ function toolJson(payload: Record<string, unknown>) {
   };
 }
 
-function toolError(text: string) {
-  return { content: [{ type: "text", text }], isError: true };
+type ToolErrorCode = "INVALID_ARGUMENT" | "BACKEND_UNAVAILABLE";
+
+function toolError(
+  text: string,
+  code: ToolErrorCode = "INVALID_ARGUMENT",
+  retryable = false,
+) {
+  return {
+    content: [{ type: "text", text }],
+    structuredContent: { error: { code, message: text, retryable } },
+    isError: true,
+  };
 }
 
 function rpcResult(id: JsonRpcId, result: unknown) {
