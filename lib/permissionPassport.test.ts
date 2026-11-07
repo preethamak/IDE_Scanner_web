@@ -55,4 +55,32 @@ describe("permission passport", () => {
       }).freshness,
     ).toBe("current");
   });
+
+  it("keeps declared related extensions separate from the parent approval", () => {
+    const passport = buildPermissionPassport({
+      extensionId: "publisher.extension",
+      version: "1.0.0",
+      scan: {
+        id: "scan-1",
+        analysis_status: "complete",
+        artifact_inventory: {
+          extension_relationship_inventory: {
+            entries: [
+              { extension_id: "partner.reviewed", relationship: "extensionPack" },
+              { extension_id: "partner.unavailable", relationship: "extensionDependencies" },
+            ],
+            resolution: [
+              { extension_id: "partner.reviewed", relationship: "extensionPack", status: "scanned", resolved_version: "1.0.0", resolved_artifact_sha256: "a".repeat(64) },
+              { extension_id: "partner.unavailable", relationship: "extensionDependencies", status: "acquisition_failed", resolved_version: null, resolved_artifact_sha256: null },
+            ],
+          },
+        },
+      },
+    });
+    expect(passport.relationship_summary).toEqual({
+      declared: 2,
+      scanned: 1,
+      requires_separate_review: true,
+    });
+  });
 });
