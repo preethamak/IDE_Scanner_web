@@ -11,6 +11,7 @@ import {
   Search,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { chooseBaselineVersion } from "./versionSelection";
 
 type Version = {
   version?: string;
@@ -117,7 +118,7 @@ function CompareWorkspace() {
       setExtensionId(id);
       setProduct(nextProduct);
       setCurrent(nextCurrent);
-      setBaseline(chooseVersion(nextVersions, preferredFrom, 0, nextCurrent));
+      setBaseline(chooseBaselineVersion(nextVersions, preferredFrom, nextCurrent));
     } catch (cause) {
       if (sequence !== requestSequence.current || controller.signal.aborted) return;
       setError(cause instanceof Error ? cause.message : "The extension could not be loaded.");
@@ -316,7 +317,7 @@ async function fetchProduct(id: string, signal?: AbortSignal): Promise<Product> 
 }
 
 function chooseVersion(versions: Version[], preferred: string, index: number, exclude = "") {
-  if (preferred && versions.some((item) => String(item.version) === preferred && preferred !== exclude)) return preferred;
+  if (preferred) return versions.some((item) => String(item.version) === preferred && preferred !== exclude) ? preferred : "";
   const options = versions.map((item) => String(item.version)).filter((item) => item && item !== exclude);
   return options[index] || options[0] || "";
 }
