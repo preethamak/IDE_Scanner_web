@@ -1,5 +1,6 @@
 import type { PrivateDatabase } from "@/lib/cloudflarePrivate";
-import { cloudflareQueuedTarget } from "@/lib/cloudflareNotificationTarget";
+import { cloudflareTargetConfig } from "@/lib/cloudflareNotificationTarget";
+import { signedWebhookHeaders } from "@/lib/webhookSignature";
 
 export const MAX_NOTIFICATION_DELIVERY_ATTEMPTS = 6;
 
@@ -24,14 +25,18 @@ export async function deliverCloudflareNotifications(
     const attempts = Number(row.attempts || 0) + 1;
     try {
       const payload = JSON.parse(String(row.payload_json || "{}"));
-      const target = cloudflareQueuedTarget(String(row.target));
+      const target = cloudflareTargetConfig(String(row.target));
       const kind = String(row.kind || "generic_webhook");
-      const delivery = workerSafeDelivery(kind, target, payload);
+      const delivery = workerSafeDelivery(kind, target.url, payload);
+      const body = JSON.stringify(delivery.payload);
+      const headers = target.signingSecret && kind === "generic_webhook"
+        ? await signedWebhookHeaders(target.signingSecret, String(delivery.headers["X-GuardRails-Event"]), body)
+        : delivery.headers;
       const response = await fetch(delivery.destination, {
         method: "POST",
         redirect: "manual",
-        headers: { "Content-Type": "application/json", "User-Agent": "GuardRails-Notification-Delivery/1.0", ...delivery.headers },
-        body: JSON.stringify(delivery.payload),
+        headers: { "Content-Type": "application/json", "User-Agent": "GuardRails-Notification-Delivery/1.0", ...headers },
+        body,
         signal: AbortSignal.timeout(12_000),
       });
       if (!response.ok) throw new Error(`Notification endpoint returned ${response.status}`);

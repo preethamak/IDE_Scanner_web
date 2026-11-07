@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   cloudflareChannelTarget,
+  cloudflareChannelEncryptedTarget,
   cloudflareQueuedTarget,
   encryptedCloudflareTarget,
 } from "./cloudflareNotificationTarget";
@@ -16,6 +17,7 @@ describe("Cloudflare notification target encryption", () => {
     expect(encrypted).not.toContain("hooks.example.com");
     expect(cloudflareChannelTarget({ target_encrypted: encrypted })).toBe("https://hooks.example.com/guardrails");
     expect(cloudflareQueuedTarget(encrypted)).toBe("https://hooks.example.com/guardrails");
+    expect(cloudflareChannelEncryptedTarget({ target_encrypted: encrypted })).toBe(encrypted);
     expect(cloudflareChannelTarget({ target: "https://legacy.example.com/hook" })).toBe("https://legacy.example.com/hook");
     expect(cloudflareQueuedTarget("https://legacy.example.com/hook")).toBe("https://legacy.example.com/hook");
   });

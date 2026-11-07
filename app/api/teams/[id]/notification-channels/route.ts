@@ -124,6 +124,9 @@ export async function POST(request: Request, context: Context) {
     const email = String(body.email || "")
       .trim()
       .toLowerCase();
+    const signingSecret = String(body.webhook_signing_secret || "").trim();
+    if (signingSecret && (kind !== "generic_webhook" || signingSecret.length < 16 || signingSecret.length > 512))
+      return NextResponse.json({ error: "Webhook signing secrets require a generic webhook and must be 16 to 512 characters." }, { status: 400 });
     if (kind === "email_resend" && !emailDeliveryConfigured())
       return NextResponse.json(
         { error: "Email delivery is not configured by the service operator." },
@@ -154,7 +157,7 @@ export async function POST(request: Request, context: Context) {
     if (provider === "cloudflare") {
       const state = await getWorkspaceState(id);
       const createdAt = nowIso();
-      const channel = { id: newId(), kind, label, enabled: true, minimum_severity: severity, last_validated_at: createdAt, last_error: null, created_at: createdAt, target_encrypted: encryptedCloudflareTarget(target) };
+      const channel = { id: newId(), kind, label, enabled: true, minimum_severity: severity, last_validated_at: createdAt, last_error: null, created_at: createdAt, target_encrypted: encryptedCloudflareTarget(target, signingSecret) };
       state.channels.push(channel);
       await saveState(id, state);
       const safeChannel = Object.fromEntries(Object.entries(channel).filter(([key]) => key !== "target" && key !== "target_encrypted"));

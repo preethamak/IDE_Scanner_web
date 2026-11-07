@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { jsonValue, nowIso, saveWorkspaceState, type PrivateDatabase } from "@/lib/cloudflarePrivate";
-import { cloudflareChannelTarget, encryptedCloudflareTarget } from "@/lib/cloudflareNotificationTarget";
+import { cloudflareChannelEncryptedTarget, cloudflareChannelTarget } from "@/lib/cloudflareNotificationTarget";
 import type { CloudflareWorkspaceState } from "@/lib/cloudflareWorkspace";
 
 type Row = Record<string, unknown>;
@@ -44,7 +44,7 @@ export async function queueCloudflareTeamDigests(db: PrivateDatabase, now = nowI
         .bind(team.team_id, deliveryKey, `%${deliveryKey}%`).first<Row>();
       if (existingDelivery) continue;
       await db.prepare("INSERT OR IGNORE INTO app_notification_deliveries(id,team_id,kind,target,payload_json,status,attempts,next_attempt_at,created_at,delivery_key) VALUES(?,?,?,?,?,?,?,?,?,?)")
-        .bind(randomUUID(), team.team_id, String(channel.kind), encryptedCloudflareTarget(target), JSON.stringify({ ...(channel.kind === "slack_webhook" ? slackPayload(summary) : summary), provider: String(channel.kind), delivery_key: deliveryKey }), "pending", 0, now, now, deliveryKey).run();
+        .bind(randomUUID(), team.team_id, String(channel.kind), cloudflareChannelEncryptedTarget(channel), JSON.stringify({ ...(channel.kind === "slack_webhook" ? slackPayload(summary) : summary), provider: String(channel.kind), delivery_key: deliveryKey }), "pending", 0, now, now, deliveryKey).run();
       queuedForTeam += 1;
     }
     state.digest_deliveries.unshift({ id: randomUUID(), period_start: periodStart, period_end: periodEnd, status: "pending", channel_count: channels.length, created_at: now });

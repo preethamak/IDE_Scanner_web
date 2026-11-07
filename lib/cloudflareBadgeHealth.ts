@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { cloudflareChannelTarget, encryptedCloudflareTarget } from "@/lib/cloudflareNotificationTarget";
+import { cloudflareChannelEncryptedTarget, cloudflareChannelTarget } from "@/lib/cloudflareNotificationTarget";
 
 type JsonObject = Record<string, unknown>;
 type CatalogEntry = { id?: unknown; latest_version?: unknown };
@@ -181,7 +181,7 @@ export async function reconcileCloudflareBadgeHealth(
             .bind(team.team_id, deliveryKey, `%${deliveryKey}%`).first<Record<string, unknown>>();
           if (!existingDelivery) {
             await db.prepare("INSERT OR IGNORE INTO app_notification_deliveries(id,team_id,kind,target,payload_json,status,attempts,next_attempt_at,created_at,delivery_key) VALUES(?,?,?,?,?,?,?,?,?,?)")
-              .bind(randomUUID(), team.team_id, String(channel.kind || "generic_webhook"), encryptedCloudflareTarget(target), JSON.stringify({ ...payload, delivery_key: deliveryKey }), "pending", 0, now, now, deliveryKey).run();
+              .bind(randomUUID(), team.team_id, String(channel.kind || "generic_webhook"), cloudflareChannelEncryptedTarget(channel), JSON.stringify({ ...payload, delivery_key: deliveryKey }), "pending", 0, now, now, deliveryKey).run();
           }
         }
       }
