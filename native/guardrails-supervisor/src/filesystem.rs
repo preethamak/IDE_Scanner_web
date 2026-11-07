@@ -17,6 +17,7 @@ pub enum FilesystemError {
     NotFound,
     NotAFile,
     TooLarge,
+    SensitiveAuthorizationRequired,
     Io,
 }
 
@@ -30,6 +31,7 @@ impl fmt::Display for FilesystemError {
             Self::NotFound => "RESOURCE_NOT_FOUND",
             Self::NotAFile => "RESOURCE_NOT_A_FILE",
             Self::TooLarge => "RESOURCE_TOO_LARGE",
+            Self::SensitiveAuthorizationRequired => "SENSITIVE_RESOURCE_AUTHORIZATION_REQUIRED",
             Self::Io => "FILESYSTEM_BROKER_UNAVAILABLE",
         })
     }
@@ -74,6 +76,32 @@ impl FilesystemBroker {
     ) -> Result<Vec<u8>, FilesystemError> {
         authorize_read(request, decision)?;
         let resource = normalized_relative_resource(&request.resource)?;
+        if is_sensitive_resource(resource) {
+            return Err(FilesystemError::SensitiveAuthorizationRequired);
+        }
+        self.read_resource(resource)
+    }
+
+    /// Reads a classified credential-bearing file only when a separate
+    /// `secret/read` decision authorizes the same principal, workspace, policy
+    /// version, and resource. The filesystem decision alone is insufficient.
+    pub fn read_sensitive(
+        &self,
+        request: &PolicyRequest,
+        filesystem_decision: &Decision,
+        sensitive_request: &PolicyRequest,
+        sensitive_decision: &Decision,
+    ) -> Result<Vec<u8>, FilesystemError> {
+        authorize_read(request, filesystem_decision)?;
+        let resource = normalized_relative_resource(&request.resource)?;
+        if !is_sensitive_resource(resource) {
+            return Err(FilesystemError::AuthorizationMismatch);
+        }
+        authorize_sensitive_read(request, sensitive_request, sensitive_decision)?;
+        self.read_resource(resource)
+    }
+
+    fn read_resource(&self, resource: &str) -> Result<Vec<u8>, FilesystemError> {
         let resource = CString::new(resource).map_err(|_| FilesystemError::InvalidResource)?;
         // `open_how` is non-exhaustive; zeroing is the kernel-defined initialization.
         let mut how: libc::open_how = unsafe { std::mem::zeroed() };
@@ -126,6 +154,34 @@ fn authorize_read(request: &PolicyRequest, decision: &Decision) -> Result<(), Fi
     Ok(())
 }
 
+fn authorize_sensitive_read(
+    filesystem_request: &PolicyRequest,
+    sensitive_request: &PolicyRequest,
+    decision: &Decision,
+) -> Result<(), FilesystemError> {
+    if sensitive_request.workspace_id != filesystem_request.workspace_id
+        || sensitive_request.principal != filesystem_request.principal
+        || sensitive_request.delegation_chain != filesystem_request.delegation_chain
+        || sensitive_request.resource != filesystem_request.resource
+        || sensitive_request.policy_version != filesystem_request.policy_version
+        || sensitive_request.capability != Capability::Secret
+        || sensitive_request.action != "read"
+        || sensitive_request.request_id == filesystem_request.request_id
+    {
+        return Err(FilesystemError::AuthorizationMismatch);
+    }
+    if decision.request_id != sensitive_request.request_id
+        || decision.policy_version != sensitive_request.policy_version
+        || decision.audit_hash.is_none()
+    {
+        return Err(FilesystemError::AuthorizationMismatch);
+    }
+    if decision.outcome != DecisionOutcome::Allow {
+        return Err(FilesystemError::Denied);
+    }
+    Ok(())
+}
+
 fn normalized_relative_resource(resource: &str) -> Result<&str, FilesystemError> {
     let relative = resource
         .strip_prefix("workspace/")
@@ -141,6 +197,28 @@ fn normalized_relative_resource(resource: &str) -> Result<&str, FilesystemError>
         return Err(FilesystemError::InvalidResource);
     }
     Ok(relative)
+}
+
+fn is_sensitive_resource(resource: &str) -> bool {
+    let name = resource
+        .rsplit('/')
+        .next()
+        .unwrap_or(resource)
+        .to_ascii_lowercase();
+    name == ".env"
+        || (name.starts_with(".env.") && name != ".env.example")
+        || matches!(
+            name.as_str(),
+            ".npmrc"
+                | ".pypirc"
+                | ".netrc"
+                | "credentials.json"
+                | "id_rsa"
+                | "id_ecdsa"
+                | "id_ed25519"
+        )
+        || name.ends_with(".pem")
+        || name.ends_with(".key")
 }
 
 fn map_openat2(error: io::Error) -> FilesystemError {

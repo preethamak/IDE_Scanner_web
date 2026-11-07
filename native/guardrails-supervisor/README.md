@@ -8,7 +8,9 @@ It is **not a sandbox**. It does not launch untrusted processes, create Linux na
 
 `FilesystemBroker` opens a pinned workspace directory and uses one `openat2(2)` operation with `RESOLVE_BENEATH`, `RESOLVE_NO_MAGICLINKS`, and `RESOLVE_NO_SYMLINKS`. Reads require an exact filesystem/read allow decision bound to the same request ID and policy version, plus a successful audit receipt. Absolute paths, dot segments, backslashes, symlinks, non-files, missing files, and oversized reads fail closed with stable broker errors.
 
-This is deliberately narrower than the filesystem MVP acceptance criteria. Write grants, sensitive-file classification, mount namespaces, case-folding and alternate-stream conformance, lease revocation, and untrusted-process tests are not implemented.
+Credential-bearing resources have an independent authorization path. `.env` (other than `.env.example`), private keys, credential files, and common package-manager credential files deny through `read`; callers must use `read_sensitive` with an additional exact `secret/read` allow decision. Both decisions must carry an audit receipt and bind the same principal, workspace, resource, delegation chain, and policy version. This prevents a broad filesystem-read approval from silently authorizing credential access.
+
+This is deliberately narrower than the filesystem MVP acceptance criteria. Write grants, mount namespaces, case-folding and alternate-stream conformance, lease revocation, and untrusted-process tests are not implemented.
 
 ## Run
 
@@ -21,7 +23,7 @@ Send one JSON envelope per line. IPC version `1` is mandatory. The audit path mu
 ## Next security steps
 
 1. Authenticate the desktop-shell IPC peer.
-2. Add independent write and sensitive-file grants to the Linux filesystem broker.
+2. Add independent write grants to the Linux filesystem broker.
 3. Launch per-principal processes with an empty environment and an isolated network namespace.
 4. Bind approvals to executable, normalized arguments, working directory, and request digest.
 5. Move the audit writer behind a restricted identity and remote append-only sink.
