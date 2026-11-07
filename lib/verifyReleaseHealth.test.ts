@@ -24,6 +24,12 @@ describe("classifyReleaseHealth", () => {
     ).toMatchObject({ outcome: "fail" });
   });
 
+  it("warns catalog refresh when a recent sample is absent without treating it as a passing launch check", () => {
+    const body = { healthy: false, runner_status: "ready", current_report_count: 23, scan_failure_rate: null, notification_failure_rate: null, reasons: ["Scan failure rate is unavailable or invalid.", "Notification failure rate is unavailable or invalid."] };
+    expect(classifyReleaseHealth(503, body)).toMatchObject({ outcome: "warn" });
+    expect(classifyReleaseHealth(503, { ...body, reasons: [...body.reasons, "No active public classification release."] })).toMatchObject({ outcome: "fail" });
+  });
+
   it("warns when the runner and pipelines are healthy but an older publication manifest is stale", () => {
     expect(
       classifyReleaseHealth(503, {

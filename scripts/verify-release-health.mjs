@@ -16,6 +16,21 @@ export function classifyReleaseHealth(status, body) {
     return { outcome: "pass", message: "Public release health passed." };
   }
 
+  // Catalog refresh can legitimately run during an idle period. Preserve a
+  // warning here while the protected launch check remains strictly unhealthy.
+  const missingSamples = [
+    ...(body?.scan_failure_rate === null ? ["Scan failure rate is unavailable or invalid."] : []),
+    ...(body?.notification_failure_rate === null ? ["Notification failure rate is unavailable or invalid."] : []),
+  ];
+  const nonfatalReasons = [...missingSamples, RUNNER_DELAY_REASON, ...STALE_PUBLICATION_REASONS];
+  if (status === 503 && body?.healthy === false && ["ready", "runner_delayed"].includes(body?.runner_status) &&
+      Number(body?.current_report_count || 0) > 0 && missingSamples.length &&
+      [null, 0].includes(body?.scan_failure_rate) && [null, 0].includes(body?.notification_failure_rate) &&
+      Array.isArray(body?.reasons) && body.reasons.length > 0 &&
+      body.reasons.every((reason) => nonfatalReasons.includes(reason))) {
+    return { outcome: "warn", message: "Catalog refresh completed; scan or notification samples are unavailable. Launch health remains unverified." };
+  }
+
   if (
     status === 503 &&
     body?.healthy === false &&

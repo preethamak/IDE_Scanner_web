@@ -5,6 +5,7 @@ const harness = vi.hoisted(() => ({
   publicDb: vi.fn(),
   snapshot: vi.fn(),
   product: vi.fn(),
+  catalog: vi.fn(),
   calls: [] as Array<{ table: string; method: string; args: unknown[] }>,
 }));
 
@@ -21,7 +22,7 @@ vi.mock("@/lib/marketplace", () => ({
   searchMarketplace: vi.fn(async () => []),
 }));
 vi.mock("@/lib/cloudflareRegistry", () => ({
-  getCloudflareRegistryCatalogExtension: vi.fn(async () => null),
+  getCloudflareRegistryCatalogExtension: harness.catalog,
   getCloudflareRegistryProduct: vi.fn(async () => null),
   getCloudflareRegistrySection: vi.fn(async () => null),
 }));
@@ -188,6 +189,35 @@ describe("public publication boundaries", () => {
 
     await expect(getVersionScanProduct("publisher.extension", "1.0.0", "unpublished-scan")).resolves.toBeNull();
     expect(harness.calls.some((call) => call.table === "scans")).toBe(false);
+  });
+
+  it("resolves an older owned scan when a catalog entry and newer snapshot exist", async () => {
+    harness.product.mockReset().mockResolvedValue({ detail_state: "full", scans: [{ version: "1.0.0", scan: { id: "newer" } }], versions: [] });
+    harness.catalog.mockReset().mockResolvedValue({ id: "publisher.extension" });
+    harness.calls = [];
+    let canReadOlder = true;
+    harness.db.from.mockImplementation((table: string) => {
+      if (table === "scan_job_results") {
+        let requestedId: string | null = null;
+        const builder = query(table, { data: [{ scan_id: "older" }], error: null });
+        builder.eq = (field: string, value: string) => { if (field === "scan_id") requestedId = value; return builder; };
+        builder.then = (resolve: (value: unknown) => unknown) => Promise.resolve({ data: requestedId ? (canReadOlder ? [{ scan_id: "older" }] : []) : [{ scan: { id: "newer", version: "1.0.0" } }], error: null }).then(resolve);
+        return builder;
+      }
+      return query(table, {
+        extensions: { data: { id: "publisher.extension" }, error: null },
+        extension_versions: { data: { extension_id: "publisher.extension", version: "1.0.0" }, error: null },
+        scan_publication_releases: { data: null, error: null },
+        scans: { data: { id: "older", extension_id: "publisher.extension", version: "1.0.0" }, error: null },
+      }[table] || { data: [], error: null });
+    });
+    const result = await getVersionScanProduct("publisher.extension", "1.0.0", "older", harness.db as never, { includePreviews: false });
+    expect(result?.scan).toMatchObject({ id: "older" });
+    expect(harness.calls.some((call) => call.table === "scans" && call.method === "eq" && call.args[0] === "id" && call.args[1] === "older")).toBe(true);
+    canReadOlder = false;
+    harness.calls = [];
+    expect(await getVersionScanProduct("publisher.extension", "1.0.0", "older", harness.db as never, { includePreviews: false })).toBeNull();
+    expect(harness.calls.some((call) => call.table === "scans" && call.method === "eq" && call.args[0] === "id" && call.args[1] === "older")).toBe(false);
   });
 
   it("serves an attested registry snapshot when the private report is not on the active join", async () => {
