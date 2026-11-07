@@ -6,6 +6,8 @@ import { newId, nowIso } from "@/lib/cloudflarePrivate";
 import { getCloudflareAccessibleScanIdentity } from "@/lib/cloudflareScanAccess";
 import { requireTeamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
+import { getVersionScanProduct } from "@/lib/productData";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { teamApiError } from "@/lib/teamApiError";
 import {
   compareCapabilitySnapshots,
@@ -46,12 +48,12 @@ export async function GET(request: Request, context: Context) {
 
 export async function POST(request: Request, context: Context) {
   try {
-    const { user, provider } = await authenticated(request);
+    const { user, provider, db: userClient } = await authenticated(request);
     const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst"]);
     const body = await request.json().catch(() => ({})) as Record<string, unknown>;
     const action = String(body.action || "");
-    if (action === "approve") return await approve(id, user.id, provider, body);
+    if (action === "approve") return await approve(id, user.id, provider, body, userClient);
     if (action === "recall") return await recall(id, user.id, provider, body);
     return NextResponse.json({ error: "Action must be approve or recall." }, { status: 400 });
   } catch (error) {
@@ -96,12 +98,12 @@ export async function PATCH(request: Request, context: Context) {
   }
 }
 
-async function approve(teamId: string, userId: string, provider: string | undefined, body: Record<string, unknown>) {
+async function approve(teamId: string, userId: string, provider: string | undefined, body: Record<string, unknown>, userClient: SupabaseClient | null) {
   const scanId = text(body.scan_id);
   const rationale = text(body.rationale);
   if (!scanId) return NextResponse.json({ error: "A completed scan id is required." }, { status: 400 });
   if (rationale.length < 1 || rationale.length > 4000) return NextResponse.json({ error: "A rationale between 1 and 4,000 characters is required." }, { status: 400 });
-  const scan = provider === "cloudflare" ? await cloudflareScan(scanId, userId, teamId) : await supabaseScan(scanId);
+  const scan = provider === "cloudflare" ? await cloudflareScan(scanId, userId, teamId) : await supabaseScan(scanId, teamId, userClient);
   if (!scan) return NextResponse.json({ error: "The exact scan could not be found." }, { status: 404 });
   if (scan.analysis_status !== "complete" || scan.coverage_percent < 100) return NextResponse.json({ error: "Only a complete, 100% coverage scan can be approved." }, { status: 400 });
   let identity: ArtifactIdentity;
@@ -228,10 +230,17 @@ async function cloudflareScan(scanId: string, userId: string, teamId: string): P
   return { extension_id: String(row.extension_id), version: String(row.version), artifact_sha256: String(scan.artifact_sha256 || ""), analysis_status: String(scan.analysis_status || "incomplete"), coverage_percent: Number(scan.coverage_percent || 0), capabilities: object(scan.capabilities) };
 }
 
-async function supabaseScan(scanId: string): Promise<ScanEvidence | null> {
+async function supabaseScan(scanId: string, teamId: string, userClient: SupabaseClient | null): Promise<ScanEvidence | null> {
   const result = await serviceDb().from("scans").select("extension_id,version,artifact_sha256,analysis_status,coverage_percent,capabilities").eq("id", scanId).maybeSingle();
   if (result.error) throw result.error;
   if (!result.data) return null;
+  const shared = await serviceDb().from("team_decisions").select("scan_id").eq("team_id", teamId).eq("scan_id", scanId).maybeSingle();
+  if (shared.error) throw shared.error;
+  if (!shared.data) {
+    if (!userClient) return null;
+    const visible = await getVersionScanProduct(String(result.data.extension_id), String(result.data.version), scanId, userClient, { skipCloudflareCatalog: true });
+    if (String((visible?.scan as Record<string, unknown> | undefined)?.id || "") !== scanId) return null;
+  }
   return { extension_id: String(result.data.extension_id || ""), version: String(result.data.version || ""), artifact_sha256: String(result.data.artifact_sha256 || ""), analysis_status: String(result.data.analysis_status || "incomplete"), coverage_percent: Number(result.data.coverage_percent || 0), capabilities: object(result.data.capabilities) };
 }
 

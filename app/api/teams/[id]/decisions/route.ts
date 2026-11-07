@@ -6,6 +6,7 @@ import { serviceDb } from "@/lib/supabase";
 import { getWorkspaceState, saveState } from "@/lib/cloudflareWorkspace";
 import { newId, nowIso, privateDb } from "@/lib/cloudflarePrivate";
 import { getCloudflareAccessibleScanIdentity } from "@/lib/cloudflareScanAccess";
+import { getVersionScanProduct } from "@/lib/productData";
 
 export async function GET(
   request: Request,
@@ -37,7 +38,7 @@ export async function POST(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { user, provider } = await authenticated(request);
+    const { user, provider, db: userClient } = await authenticated(request);
     const { id } = await context.params;
     await requireTeamRole(id, user.id, ["owner", "admin", "analyst"]);
     const body = await request.json();
@@ -90,6 +91,13 @@ export async function POST(
     if (scanError) throw scanError;
     if (!scan)
       return NextResponse.json({ error: "Scan not found." }, { status: 404 });
+    const shared = await db.from("team_decisions").select("scan_id").eq("team_id", id).eq("scan_id", scanId).maybeSingle();
+    if (shared.error) throw shared.error;
+    if (!shared.data) {
+      if (!userClient) return NextResponse.json({ error: "Scan not found." }, { status: 404 });
+      const visible = await getVersionScanProduct(String(scan.extension_id), String(scan.version), scanId, userClient, { skipCloudflareCatalog: true });
+      if (String((visible?.scan as Record<string, unknown> | undefined)?.id || "") !== scanId) return NextResponse.json({ error: "Scan not found." }, { status: 404 });
+    }
     const assignedTo =
       body.assigned_to == null ? null : asUuid(body.assigned_to);
     const dueAt = body.due_at == null ? null : new Date(String(body.due_at));

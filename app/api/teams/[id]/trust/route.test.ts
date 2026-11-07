@@ -8,12 +8,15 @@ const mocks = vi.hoisted(() => ({
   scanProduct: vi.fn(),
   privateDb: vi.fn(),
   accessible: vi.fn(),
+  service: vi.fn(),
+  visible: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({ authenticated: mocks.authenticated }));
 vi.mock("@/lib/teams", () => ({ requireTeamRole: mocks.role }));
 vi.mock("@/lib/teamApiError", () => ({ teamApiError: (_error: unknown, message: string) => ({ error: message, status: 500 }) }));
-vi.mock("@/lib/supabase", () => ({ serviceDb: vi.fn() }));
+vi.mock("@/lib/supabase", () => ({ serviceDb: mocks.service }));
+vi.mock("@/lib/productData", () => ({ getVersionScanProduct: mocks.visible }));
 vi.mock("@/lib/cloudflareDeepScan", () => ({ getCloudflareScanProduct: mocks.scanProduct }));
 vi.mock("@/lib/cloudflarePrivate", () => ({ newId: vi.fn(() => "generated-id"), nowIso: vi.fn(() => "2026-10-01T00:00:00.000Z"), privateDb: mocks.privateDb }));
 vi.mock("@/lib/cloudflareWorkspace", () => ({ getWorkspaceState: mocks.workspace, saveState: mocks.save }));
@@ -112,4 +115,15 @@ describe("artifact trust ledger API", () => {
     expect(body.idempotent).toBe(true);
     expect(state.recall_events).toHaveLength(1);
   });
+  it("rejects another user's private Supabase scan before creating a trust record", async () => {
+    const rpc = vi.fn();
+    mocks.authenticated.mockResolvedValue({ user: { id: "owner-1" }, provider: "supabase", db: { userScoped: true } });
+    mocks.service.mockReturnValue({ from: (table: string) => ({ select: () => ({ eq: () => table === "scans" ? { maybeSingle: async () => ({ data: scan.scan, error: null }) } : { eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) } }) }), rpc });
+    mocks.visible.mockResolvedValue(null);
+    const response = await POST(new Request("http://localhost", { method: "POST", body: JSON.stringify({ action: "approve", scan_id: "private-scan", rationale: "Review" }) }), context);
+    expect(response.status).toBe(404);
+    expect(rpc).not.toHaveBeenCalled();
+    expect(mocks.visible).toHaveBeenCalledWith("Publisher.Extension", "1.2.3", "private-scan", { userScoped: true }, { skipCloudflareCatalog: true });
+  });
+
 });
