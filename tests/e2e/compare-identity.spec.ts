@@ -43,6 +43,19 @@ test("comparison defaults to the nearest prior release and clears stale evidence
   await expect(page.getByLabel("Comparison baseline")).toHaveCount(0);
 });
 
+test("a historical target never defaults to a newer baseline", async ({ page }) => {
+  await page.route("**/api/extensions/example.first", (route) => route.fulfill({ json: product() }));
+  await page.goto("/compare?extension=example.first&to=2.0.0");
+  await expect(page.getByLabel("Release to inspect")).toHaveValue("2.0.0");
+  await expect(page.getByLabel("Comparison baseline")).toHaveValue("1.0.0");
+  await page.goto("/compare?extension=example.first&to=1.0.0");
+  await expect(page.getByLabel("Comparison baseline")).toHaveValue("");
+  await expect(page.getByRole("button", { name: "Compare releases", exact: true })).toBeDisabled();
+  await page.goto("/compare?extension=example.first&to=0.1.0");
+  await expect(page.getByLabel("Release to inspect")).toHaveValue("");
+  await expect(page.getByRole("button", { name: "Compare releases", exact: true })).toBeDisabled();
+});
+
 test("a slow comparison cannot replace evidence requested after a version edit", async ({ page }) => {
   let releaseOld: (() => void) | undefined;
   let oldStarted = false;
