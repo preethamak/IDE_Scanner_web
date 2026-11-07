@@ -12,6 +12,8 @@ Credential-bearing resources have an independent authorization path. `.env` (oth
 
 `create` is an intentionally narrow write primitive. It needs an exact `filesystem/write` allow decision with an audit receipt, creates only a previously absent non-sensitive file beneath the pinned workspace, limits content to the broker byte limit, writes with mode `0600`, and calls `fsync`. It will not replace existing files or create classified credential resources.
 
+`delete` is an intentionally narrow cleanup primitive. It needs an exact `filesystem/delete` allow decision with an audit receipt and removes only one existing regular, non-sensitive file below the pinned workspace. Its parent directory is opened through `openat2` before the final unlink, and the broker refuses directories and symlinks. It does not recurse and it does not authorize secret deletion.
+
 This is deliberately narrower than the filesystem MVP acceptance criteria. Write grants, mount namespaces, case-folding and alternate-stream conformance, lease revocation, and untrusted-process tests are not implemented.
 
 ## Run

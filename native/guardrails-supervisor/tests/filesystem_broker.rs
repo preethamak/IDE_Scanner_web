@@ -71,6 +71,20 @@ fn write_allowed() -> Decision {
     decision
 }
 
+fn delete_request(resource: &str) -> PolicyRequest {
+    let mut request = request(resource);
+    request.request_id = "request:delete-file".into();
+    request.action = "delete".into();
+    request
+}
+
+fn delete_allowed() -> Decision {
+    let mut decision = allowed();
+    decision.request_id = "request:delete-file".into();
+    decision.matching_grant_id = Some("grant:file-delete".into());
+    decision
+}
+
 #[test]
 fn reads_only_an_exact_authorized_workspace_file() {
     let workspace = tempdir().unwrap();
@@ -253,4 +267,51 @@ fn denies_mismatched_or_oversized_write_requests_before_creating_a_file() {
         Err(FilesystemError::TooLarge)
     );
     assert!(!workspace.path().join("out.txt").exists());
+}
+
+#[test]
+fn deletes_only_an_exact_authorized_regular_workspace_file() {
+    let workspace = tempdir().unwrap();
+    fs::create_dir(workspace.path().join("reports")).unwrap();
+    fs::write(workspace.path().join("reports/stale.json"), b"obsolete").unwrap();
+    let broker = FilesystemBroker::open(workspace.path(), 1024).unwrap();
+
+    broker
+        .delete(
+            &delete_request("workspace/reports/stale.json"),
+            &delete_allowed(),
+        )
+        .unwrap();
+    assert!(!workspace.path().join("reports/stale.json").exists());
+}
+
+#[test]
+fn delete_refuses_sensitive_files_directories_symlinks_and_mismatched_decisions() {
+    let workspace = tempdir().unwrap();
+    let outside = tempdir().unwrap();
+    fs::write(workspace.path().join(".env"), b"TOKEN=value").unwrap();
+    fs::create_dir(workspace.path().join("reports")).unwrap();
+    fs::write(outside.path().join("outside.txt"), b"host data").unwrap();
+    symlink(outside.path().join("outside.txt"), workspace.path().join("link.txt")).unwrap();
+    let broker = FilesystemBroker::open(workspace.path(), 1024).unwrap();
+
+    assert_eq!(
+        broker.delete(&delete_request("workspace/.env"), &delete_allowed()),
+        Err(FilesystemError::SensitiveAuthorizationRequired)
+    );
+    assert_eq!(
+        broker.delete(&delete_request("workspace/reports"), &delete_allowed()),
+        Err(FilesystemError::NotAFile)
+    );
+    assert_eq!(
+        broker.delete(&delete_request("workspace/link.txt"), &delete_allowed()),
+        Err(FilesystemError::EscapeRejected)
+    );
+    let mut mismatched = delete_allowed();
+    mismatched.request_id = "request:other".into();
+    assert_eq!(
+        broker.delete(&delete_request("workspace/link.txt"), &mismatched),
+        Err(FilesystemError::AuthorizationMismatch)
+    );
+    assert!(outside.path().join("outside.txt").exists());
 }

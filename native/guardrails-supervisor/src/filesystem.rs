@@ -147,6 +147,82 @@ impl FilesystemBroker {
         file.sync_all().map_err(|_| FilesystemError::Io)
     }
 
+    /// Deletes one existing, non-sensitive regular file after an exact
+    /// `filesystem/delete` decision. It never recurses, follows symlinks, or
+    /// removes directories.
+    pub fn delete(
+        &self,
+        request: &PolicyRequest,
+        decision: &Decision,
+    ) -> Result<(), FilesystemError> {
+        authorize_delete(request, decision)?;
+        let resource = normalized_relative_resource(&request.resource)?;
+        if is_sensitive_resource(resource) {
+            return Err(FilesystemError::SensitiveAuthorizationRequired);
+        }
+        let (parent, name) = resource
+            .rsplit_once('/')
+            .map_or((".", resource), |(parent, name)| (parent, name));
+        let parent = self.open_directory(parent)?;
+        let name = CString::new(name).map_err(|_| FilesystemError::InvalidResource)?;
+        let mut metadata: libc::stat = unsafe { std::mem::zeroed() };
+        // SAFETY: parent is a live directory descriptor, and name is a
+        // NUL-terminated path component validated by normalized_resource.
+        let stat_result = unsafe {
+            libc::fstatat(
+                parent.as_raw_fd(),
+                name.as_ptr(),
+                &mut metadata,
+                libc::AT_SYMLINK_NOFOLLOW,
+            )
+        };
+        if stat_result < 0 {
+            return Err(map_openat2(io::Error::last_os_error()));
+        }
+        if metadata.st_mode & libc::S_IFMT != libc::S_IFREG {
+            return Err(if metadata.st_mode & libc::S_IFMT == libc::S_IFLNK {
+                FilesystemError::EscapeRejected
+            } else {
+                FilesystemError::NotAFile
+            });
+        }
+        // SAFETY: the path component is resolved against the pinned parent
+        // descriptor, and `0` prevents directory removal.
+        let unlink_result = unsafe { libc::unlinkat(parent.as_raw_fd(), name.as_ptr(), 0) };
+        if unlink_result < 0 {
+            return Err(map_openat2(io::Error::last_os_error()));
+        }
+        // Persist the directory entry change before reporting success.
+        let sync_result = unsafe { libc::fsync(parent.as_raw_fd()) };
+        if sync_result < 0 {
+            return Err(FilesystemError::Io);
+        }
+        Ok(())
+    }
+
+    fn open_directory(&self, resource: &str) -> Result<OwnedFd, FilesystemError> {
+        let resource = CString::new(resource).map_err(|_| FilesystemError::InvalidResource)?;
+        let mut how: libc::open_how = unsafe { std::mem::zeroed() };
+        how.flags = (libc::O_RDONLY | libc::O_DIRECTORY | libc::O_CLOEXEC | libc::O_NOFOLLOW) as u64;
+        how.resolve =
+            libc::RESOLVE_BENEATH | libc::RESOLVE_NO_MAGICLINKS | libc::RESOLVE_NO_SYMLINKS;
+        // SAFETY: arguments point to initialized values for the duration of the syscall.
+        let fd = unsafe {
+            libc::syscall(
+                libc::SYS_openat2,
+                self.root.as_raw_fd(),
+                resource.as_ptr(),
+                &how,
+                size_of::<libc::open_how>(),
+            ) as libc::c_int
+        };
+        if fd < 0 {
+            return Err(map_openat2(io::Error::last_os_error()));
+        }
+        // SAFETY: openat2 returned a new owned descriptor.
+        Ok(unsafe { OwnedFd::from_raw_fd(fd) })
+    }
+
     fn read_resource(&self, resource: &str) -> Result<Vec<u8>, FilesystemError> {
         let resource = CString::new(resource).map_err(|_| FilesystemError::InvalidResource)?;
         // `open_how` is non-exhaustive; zeroing is the kernel-defined initialization.
@@ -208,6 +284,22 @@ fn authorize_write(request: &PolicyRequest, decision: &Decision) -> Result<(), F
         return Err(FilesystemError::AuthorizationMismatch);
     }
     if request.capability != Capability::Filesystem || request.action != "write" {
+        return Err(FilesystemError::AuthorizationMismatch);
+    }
+    if decision.outcome != DecisionOutcome::Allow {
+        return Err(FilesystemError::Denied);
+    }
+    Ok(())
+}
+
+fn authorize_delete(request: &PolicyRequest, decision: &Decision) -> Result<(), FilesystemError> {
+    if request.request_id != decision.request_id
+        || request.policy_version != decision.policy_version
+        || decision.audit_hash.is_none()
+    {
+        return Err(FilesystemError::AuthorizationMismatch);
+    }
+    if request.capability != Capability::Filesystem || request.action != "delete" {
         return Err(FilesystemError::AuthorizationMismatch);
     }
     if decision.outcome != DecisionOutcome::Allow {
