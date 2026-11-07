@@ -8,6 +8,10 @@ import { getWorkspaceState, saveState } from "@/lib/cloudflareWorkspace";
 import { getCloudflareRegistryCatalogExtension, getCloudflareRegistryProduct } from "@/lib/cloudflareRegistry";
 import { resolveMarketplaceExtension } from "@/lib/marketplace";
 import { nowIso } from "@/lib/cloudflarePrivate";
+import { getCloudflareAccessibleScanIdentity } from "@/lib/cloudflareScanAccess";
+import { getVersionScanProduct } from "@/lib/productData";
+import { serverDb } from "@/lib/supabaseServer";
+import { teamApiError } from "@/lib/teamApiError";
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
@@ -60,11 +64,30 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
           return NextResponse.json({ error: "Add this extension to the registry before monitoring it." }, { status: 404 });
         }
       }
+      let baseline: Record<string, unknown> | null = null;
+      if (baselineScanId) {
+        const identity = await getCloudflareAccessibleScanIdentity(baselineScanId, user.id);
+        const version = requestedVersion || String(identity?.version || "");
+        const accessible = version ? await getVersionScanProduct(extensionId, version, baselineScanId, undefined, { authorizedUserId: user.id }) : null;
+        const report = accessible?.scan as Record<string, unknown> | undefined;
+        if (!report || String(report.id) !== baselineScanId || (identity && String(identity.extension_id).toLowerCase() !== extensionId.toLowerCase())) return NextResponse.json({ error: "This baseline report is not available to you." }, { status: 404 });
+        baseline = report;
+        if (!baselineEligible(baseline)) return NextResponse.json({ error: "This report is not a complete exact-artifact baseline yet." }, { status: 400 });
+        if (requestedVersion && String(baseline.version) !== requestedVersion) return NextResponse.json({ error: "The baseline scan does not match the selected version." }, { status: 400 });
+      }
       const state = await getWorkspaceState(id);
       const existing = state.watchlist.find((item) => String(item.extension_id).toLowerCase() === extensionId.toLowerCase());
-      if (existing) return NextResponse.json(existing, { status: 200 });
-      const selected = requestedVersion || String((versions.find((version) => version.is_latest) || versions[0])?.version || "");
-      const item = { extension_id: extensionId, registry, created_at: nowIso(), baseline_version: selected || null, monitoring_state: "monitoring", last_observed_version: selected || null, last_event_at: nowIso(), extensions: { display_name: String(extension.display_name || extensionId), icon_url: String(extension.icon_url || "") } };
+      if (existing) {
+        const existingVersion = existing.baseline_version || existing.requested_baseline_version;
+        if ((baselineScanId && existing.baseline_scan_id && existing.baseline_scan_id !== baselineScanId) || (requestedVersion && existingVersion && existingVersion !== requestedVersion)) return NextResponse.json({ error: "This extension is already monitored from another baseline. Review the existing watch before changing it." }, { status: 409 });
+        if (baseline && !existing.baseline_scan_id) {
+          Object.assign(existing, { baseline_scan_id: baselineScanId, baseline_version: baseline.version, baseline_artifact_sha256: baseline.artifact_sha256, monitoring_state: "monitoring" });
+          await saveState(id, state);
+        }
+        return NextResponse.json(existing, { status: 200 });
+      }
+      const selected = String(baseline?.version || requestedVersion || (versions.find((version) => version.is_latest) || versions[0])?.version || "");
+      const item = { extension_id: extensionId, registry, created_at: nowIso(), baseline_scan_id: baseline ? baselineScanId : null, baseline_version: baseline ? selected : null, requested_baseline_version: selected || null, baseline_artifact_sha256: baseline?.artifact_sha256 || null, monitoring_state: baseline ? "monitoring" : "baseline_pending", last_observed_version: selected || null, last_event_at: nowIso(), extensions: { display_name: String(extension.display_name || extensionId), icon_url: String(extension.icon_url || "") } };
       state.watchlist.unshift(item);
       await saveState(id, state);
       return NextResponse.json(item, { status: 201 });
@@ -91,7 +114,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       if (registered.error) throw registered.error;
       extension = { id: marketplace.extension_id };
     }
-    const existing = await db.from("team_watchlist_items").select("extension_id").eq("team_id", id).eq("extension_id", extension.id).maybeSingle();
+    const existing = await db.from("team_watchlist_items").select("extension_id,baseline_scan_id,baseline_version").eq("team_id", id).eq("extension_id", extension.id).maybeSingle();
     if (existing.error) throw existing.error;
     if (!existing.data) await requireEntitlement(id, "monitored_extensions", 1);
     let baseline: { id: string; version: string; artifact_sha256: string | null; analysis_status: string; coverage_percent: number | null } | null = null;
@@ -100,14 +123,18 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       if (result.error) throw result.error;
       baseline = result.data;
       if (!baselineEligible(baseline || {})) return NextResponse.json({ error: "This report is not a complete exact-artifact baseline yet." }, { status: 400 });
+      if (requestedVersion && baseline?.version !== requestedVersion) return NextResponse.json({ error: "The baseline scan does not match the selected version." }, { status: 400 });
+      const visible = baseline ? await getVersionScanProduct(extension.id, baseline.version, baselineScanId, await serverDb(), { authorizedUserId: user.id }) : null;
+      if (!visible || String((visible.scan as Record<string, unknown> | undefined)?.id) !== baselineScanId) return NextResponse.json({ error: "This baseline report is not available to you." }, { status: 404 });
     }
+    if (existing.data && ((baselineScanId && existing.data.baseline_scan_id && existing.data.baseline_scan_id !== baselineScanId) || (requestedVersion && existing.data.baseline_version && existing.data.baseline_version !== requestedVersion))) return NextResponse.json({ error: "This extension is already monitored from another baseline. Review the existing watch before changing it." }, { status: 409 });
     const write = baseline
       ? db.from("team_watchlist_items").upsert({ team_id: id, extension_id: extension.id, created_by: user.id, baseline_scan_id: baseline.id, baseline_version: baseline.version, baseline_artifact_sha256: baseline.artifact_sha256, monitoring_state: "monitoring", last_observed_version: baseline.version, last_event_at: new Date().toISOString() }, { onConflict: "team_id,extension_id" })
       : db.from("team_watchlist_items").upsert({ team_id: id, extension_id: extension.id, created_by: user.id }, { onConflict: "team_id,extension_id" });
-    const { data, error } = await write.select("extension_id,created_at,baseline_version,baseline_artifact_sha256,monitoring_state").single();
+    const { data, error } = await write.select("extension_id,created_at,baseline_scan_id,baseline_version,baseline_artifact_sha256,monitoring_state").single();
     if (error) throw error;
     return NextResponse.json(data, { status: 201 });
-  } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Team watchlist update failed." }, { status: 403 }); }
+  } catch (error) { const failure = teamApiError(error, "Team watchlist update failed."); return NextResponse.json({ error: failure.error }, { status: failure.status }); }
 }
 
 export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {

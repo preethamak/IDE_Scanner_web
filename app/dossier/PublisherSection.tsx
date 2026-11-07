@@ -6,7 +6,7 @@ import type { ReportExtension, ReportFile } from "@/lib/reportContract";
 export default function PublisherSection({ extension, files }: { extension: ReportExtension; files: ReportFile[] }) {
   const readme = selectPackagedReadme(files);
   return <>
-    <DossierSectionHead eyebrow="Package information" title="Publisher and package context" detail="Identity and popularity establish context. They do not override artifact evidence." />
+    <DossierSectionHead eyebrow="Package information" title="Publisher and package context" detail="Publisher details and install counts provide context. They do not change the scan results." />
     <div className="publisherGrid">
       <article><UserRound/><span>Publisher</span><strong>{extension.publisher}</strong><p>{extension.publisher_verified ? "Registry reports a verified publisher." : "Registry does not report publisher verification."}</p></article>
       <article><Package/><span>Package</span><strong>{extension.id}</strong><p>{extension.registry}</p></article>

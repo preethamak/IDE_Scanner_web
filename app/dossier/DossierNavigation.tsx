@@ -9,14 +9,14 @@ export default function DossierNavigation<T extends string>({ items, active, cou
     ["Verify", ["versions", "publisher", "provenance", "coverage", "raw"]],
   ] as const;
   return <aside className="dossierRail" aria-label="Analysis Report index">
-    <header><span>Report index</span><strong>Evidence map</strong><small>Choose a section without leaving this exact release.</small></header>
+    <header><span>Report index</span><strong>Report sections</strong><small>Inspect this version without leaving the report.</small></header>
     {groups.map(([label, ids]) => <div className="dossierRailGroup" key={label}>
       <span>{label}</span>
       {ids.map((id) => {
         const item = items.find((candidate) => candidate.id === id);
         if (!item) return null;
         const Icon = item.icon;
-        return <a key={item.id} href={`#${item.id}`} className={active === item.id ? "active" : ""} aria-current={active === item.id ? "page" : undefined} title={item.label} onClick={() => onSelect(item.id)}><Icon aria-hidden="true"/><span>{item.label}</span>{count(item.id) ? <b>{count(item.id)}</b> : null}</a>;
+        return <a key={item.id} href={`#${item.id}`} className={active === item.id ? "active" : ""} aria-current={active === item.id ? "location" : undefined} title={item.label} onClick={(event) => { event.preventDefault(); onSelect(item.id); }}><Icon aria-hidden="true"/><span>{item.label}</span>{count(item.id) ? <b>{count(item.id)}</b> : null}</a>;
       })}
     </div>)}
   </aside>;

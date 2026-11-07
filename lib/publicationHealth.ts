@@ -31,12 +31,19 @@ export function hasAccuracyGateAttestation(release: {
 export function evaluatePublicationHealth(input: Omit<PublicationHealth, "healthy" | "reasons">): PublicationHealth {
   const reasons: string[] = [];
   if (!input.active_release) reasons.push("No active public classification release.");
-  else if (input.active_release.accuracy_gate_verified === false) reasons.push("Active public classification release has no accuracy-gate attestation.");
-  else if (input.current_report_count < input.active_release.expected_reports) reasons.push("Active release is missing published reports.");
-  if (!input.newest_scan_at || Date.now() - new Date(input.newest_scan_at).getTime() > 30 * 60 * 60 * 1000) reasons.push("Public scan corpus is older than 30 hours.");
+  else {
+    if (input.active_release.accuracy_gate_verified !== true) reasons.push("Active public classification release has no accuracy-gate attestation.");
+    if (!Number.isSafeInteger(input.active_release.expected_reports) || input.active_release.expected_reports <= 0 || !Number.isSafeInteger(input.current_report_count) || input.current_report_count < 0) reasons.push("Public release report counts are invalid.");
+    else if (input.current_report_count < input.active_release.expected_reports) reasons.push("Active release is missing published reports.");
+  }
+  const newestScanAt = input.newest_scan_at ? Date.parse(input.newest_scan_at) : NaN;
+  if (!Number.isFinite(newestScanAt) || newestScanAt > Date.now() + 5 * 60 * 1000) reasons.push("Public scan corpus timestamp is missing or invalid.");
+  else if (Date.now() - newestScanAt > 30 * 60 * 60 * 1000) reasons.push("Public scan corpus is older than 30 hours.");
   if (input.runner_status !== "ready") reasons.push(`Deep Scan runner is ${input.runner_status}.`);
-  if (input.scan_failure_rate > 0.1) reasons.push("Scan failure rate exceeds 10 percent.");
-  if (input.notification_failure_rate > 0.1) reasons.push("Notification failure rate exceeds 10 percent.");
+  if (!Number.isFinite(input.scan_failure_rate) || input.scan_failure_rate < 0 || input.scan_failure_rate > 1) reasons.push("Scan failure rate is unavailable or invalid.");
+  else if (input.scan_failure_rate > 0.1) reasons.push("Scan failure rate exceeds 10 percent.");
+  if (!Number.isFinite(input.notification_failure_rate) || input.notification_failure_rate < 0 || input.notification_failure_rate > 1) reasons.push("Notification failure rate is unavailable or invalid.");
+  else if (input.notification_failure_rate > 0.1) reasons.push("Notification failure rate exceeds 10 percent.");
   return { ...input, healthy: reasons.length === 0, reasons };
 }
 

@@ -13,13 +13,13 @@ describe("GuardRails landing surface", () => {
     expect(landing()).toContain("<ReleaseReviewFilm />");
     expect(landing()).toContain("<IdeCompatibility />");
     expect(landing()).toContain('aria-labelledby="positioning-heading"');
-    expect(landing()).toContain("Registry and Deep Scans");
+    expect(landing()).toContain("Check what it can access");
     expect(landing()).toContain("GuardRails CLI");
-    expect(landing()).toContain("Release monitoring");
-    expect(landing()).toContain("Team workspace");
+    expect(landing()).toContain("Review the next update");
+    expect(landing()).toContain("Save the team’s decision");
     expect(landing()).toContain("Reports, exports, and badges");
-    expect(landing()).toContain("AI and API access");
-    expect(landing()).toContain("Product boundary");
+    expect(landing()).toContain("MCP and API access");
+    expect(landing()).toContain("What the scan covers");
     expect(landing()).not.toContain("<SecurityBento />");
     expect(landing()).not.toContain("<ReleaseWorkflow />");
   });

@@ -5,17 +5,16 @@ import { ArrowRight, Check, Minus, ReceiptText, ShieldCheck } from "lucide-react
 import styles from "../marketing.module.css";
 
 export const metadata: Metadata = {
-  title: "Pricing",
+  title: "Abscissa pricing | Developer security for teams",
   description:
-    "Scan is free forever. Monitoring is $19/month and Teams is $99/month for up to 25 seats — billing has not opened yet, and early access locks those prices in.",
+    "Start using Abscissa with free extension reports. Team workspaces are in pilot; proposed Monitoring and Teams plans are $19 and $99 per month. Billing is not open.",
   alternates: { canonical: "/pricing" },
 };
 
 type Cell = boolean | string;
 
-// One price story, stated once: `price`/`suffix` is what you pay TODAY, `later`
-// is the published price that early-access users lock in. Nothing on this page
-// may imply a plan can be purchased while billing is off.
+// Public extension reports are available now. Paid-plan prices describe proposed plans,
+// not a purchasable service or a guaranteed enterprise feature commitment.
 const plans = [
   {
     id: "scan",
@@ -26,7 +25,7 @@ const plans = [
     tableSuffix: "Free forever",
     later: "",
     description:
-      "Know what an extension does before you install it. Start with five Deep Scan trials without creating an account.",
+      "Check what an extension can access before adding it to your editor. Start with five Deep Scan trials without creating an account.",
     action: "Open the registry",
     href: "/registry",
     external: false,
@@ -35,10 +34,10 @@ const plans = [
     features: [
       "Per-version public reports",
       "Five no-account Deep Scan trials per 30 days",
-      "Permission Passport and release diff",
+      "File, command, and network access report",
       "Local analysis with the GuardRails CLI",
       "Personal watchlist for up to 3 extensions",
-      "Guided human reviews during launch",
+      "Team pilot available by request",
     ],
   },
   {
@@ -50,15 +49,15 @@ const plans = [
     tableSuffix: "$19/month",
     later: "Early access · billing not yet open",
     description:
-      "Stop re-reviewing releases from scratch. Every update arrives analyzed, with only meaningful capability changes surfaced.",
+      "Follow the extensions your team uses and check new versions against the one you reviewed. See when a scan is pending or has failed.",
     action: "Join early access",
     href: "/design-partners",
     external: false,
     featured: true,
     badge: "",
     features: [
-      "Everything in Scan, unlimited watchlist",
-      "Notifications on meaningful changes only",
+      "Public reports and a shared watchlist",
+      "Release-change notification settings",
       "Email and Slack delivery targets",
       "Weekly digest and scan history",
       "Shared review inbox, decisions with owners",
@@ -67,25 +66,25 @@ const plans = [
   {
     id: "teams",
     name: "Teams",
-    audience: "For governed organizations",
+    audience: "For teams with approval policies",
     price: "$99",
     suffix: "per month, up to 25 seats",
     tableSuffix: "$99/month",
     later: "Early access · billing not yet open",
     description:
-      "Roll extension policy out organization-wide, with decisions your auditor can read and a direct line to the founder.",
+      "Assign reviewers, keep approvals and exceptions, and export the team’s review history. Discuss organization requirements during the pilot.",
     action: "Talk to the founder",
     href: "/design-partners",
     external: false,
     featured: false,
     badge: "",
     features: [
-      "Everything in Monitoring",
-      "Allow, block, and exception rationale",
-      "Decision memory across releases",
+      "Monitoring and team review workflow",
+      "Allow, block, and exception decisions with reasons",
+      "Review history for each version",
       "Role-aware CSV and JSON audit export",
       "API keys and bulk gate checks for CI",
-      "SSO, policy direction, extended retention",
+      "Planned: organization SSO and custom retention",
     ],
   },
 ] as const;
@@ -95,21 +94,21 @@ const comparison: Array<{
   rows: Array<[string, Cell, Cell, Cell]>;
 }> = [
   {
-    group: "Scanning and evidence",
+    group: "Extension scans and reports",
     rows: [
       ["Per-version public reports", true, true, true],
       ["No-account Deep Scan trial", "5 / 30 days", "5 / 30 days", "5 / 30 days"],
-      ["Permission Passport and capability diff", true, true, true],
+      ["Access reports and version comparison", true, true, true],
       ["GuardRails CLI local inventory", true, true, true],
-      ["Guided human review of a release", "Launch period", true, true],
+      ["Guided human review of a release", "By arrangement", "By arrangement", "By arrangement"],
     ],
   },
   {
     group: "Monitoring",
     rows: [
-      ["Watchlist size", "3 extensions", "Unlimited", "Unlimited"],
-      ["Automatic analysis of new releases", false, true, true],
-      ["Notifications on meaningful changes only", false, true, true],
+      ["Watchlist size", "3 extensions", "Pilot limits agreed at setup", "Pilot limits agreed at setup"],
+      ["Scheduled release checks and scan status", false, true, true],
+      ["Release-change notification settings", false, true, true],
       ["Email and Slack delivery", false, true, true],
       ["Weekly digest and scan history", false, true, true],
     ],
@@ -119,8 +118,8 @@ const comparison: Array<{
     rows: [
       ["Seats included", "1", "Up to 25", "Up to 25"],
       ["Shared review inbox and assignments", false, true, true],
-      ["Allow, block, and exception rationale", false, false, true],
-      ["Decision memory across releases", false, false, true],
+      ["Allow, block, and exception decisions with reasons", false, false, true],
+      ["Review history for each version", false, false, true],
       ["Role-aware CSV and JSON audit export", false, false, true],
       ["API keys and bulk gate checks (up to 200 releases/call)", false, true, true],
     ],
@@ -128,10 +127,10 @@ const comparison: Array<{
   {
     group: "Organization",
     rows: [
-      ["SSO and procurement support", false, false, true],
-      ["Organization-wide policy direction", false, false, true],
-      ["Extended audit retention", false, false, true],
-      ["Private extension workflow planning", false, false, true],
+      ["Organization SSO", false, false, "Planned · unavailable in pilot"],
+      ["Shared extension approval policy", false, false, true],
+      ["Custom audit retention", false, false, "Planned · scope with founder"],
+      ["Private extension workflow planning", false, false, "Design-partner discussion"],
       ["Direct line to the founder", false, false, true],
     ],
   },
@@ -162,24 +161,22 @@ export default function PricingPage() {
             <ReceiptText /> Pricing
           </span>
           <h1>
-            Scan free, forever.<em> Lock in your plan price before billing opens.</em>
+            Start with your team’s extensions.<em> Review them with Abscissa.</em>
           </h1>
           <p>
-            Public reports, the registry, and the GuardRails CLI are free
-            permanently. Monitoring is $19/month and Teams is $99/month for up
-            to 25 seats; billing has not opened yet, and early-access users
-            keep those prices.
+            Abscissa’s public extension reports, registry, and GuardRails CLI are free.
+            Use the team workspace to review extensions and follow updates during the pilot. The proposed paid
+            plans are Monitoring at $19/month and Teams at $99/month for up to
+            25 seats; neither plan can be purchased yet.
           </p>
         </div>
         <aside>
           <ShieldCheck />
           <strong>No payment is possible yet.</strong>
           <p>
-            Billing is not enabled, so nothing on this page can be purchased
-            today. When it opens, Monitoring is $19/month and Teams is $99/month
-            for up to 25 seats. Anyone who joins early access before then keeps
-            those prices, gets two months off on annual billing, and is covered
-            by a 30-day money-back guarantee.
+            Billing is not enabled. Pilot access and its limits are confirmed
+            with your team before setup. Organization SSO and custom retention
+            are planned work, not services available in the pilot.
           </p>
         </aside>
       </section>
@@ -208,7 +205,7 @@ export default function PricingPage() {
             <ul>
               {plan.features.map((feature) => (
                 <li key={feature}>
-                  <Check />
+                  {feature.startsWith("Planned:") ? <Minus /> : <Check />}
                   {feature}
                 </li>
               ))}
@@ -230,8 +227,9 @@ export default function PricingPage() {
 
       <section className={styles.compareSection}>
         <header className={styles.sectionHead}>
-          <span>Compare every detail</span>
-          <h2>What you get on each plan.</h2>
+          <span>Public access and proposed team plans</span>
+          <h2>What your team can use.</h2>
+          <p>Team workspaces are available through the pilot. Confirm limits during setup; planned services are labelled below.</p>
         </header>
         <div className={styles.compareScroll}>
           <table className={styles.compare}>
@@ -268,16 +266,16 @@ export default function PricingPage() {
           </table>
         </div>
         <p className={styles.compareNote}>
-          Scan stays free. Monitoring and Teams prices apply when billing
-          opens; early-access users keep them. Larger organizations are quoted
-          on a call.
+          Public reports stay free. Monitoring and Teams show proposed prices
+          for a future paid launch. No checkout is available; joining the pilot
+          does not start a subscription.
         </p>
       </section>
 
       <section className={styles.honesty}>
         <div>
           <span>Teams and organizations</span>
-          <h2>Team plans are shaped with design partners.</h2>
+          <h2>Set up Abscissa with your team.</h2>
         </div>
         <ul>
           <li>
@@ -286,16 +284,17 @@ export default function PricingPage() {
             <Link href="/design-partners">design-partner program</Link>.
           </li>
           <li>
-            Organizations above 25 seats, procurement, or custom retention needs
-            are priced on a short call with the founder.
+            Organization SSO, custom retention, and private extension requirements
+            are discussed separately. Requesting them does not imply delivery
+            is already available.
           </li>
         </ul>
       </section>
 
       <section className={styles.cta}>
         <div>
-          <small>Choose your review path</small>
-          <h2>Inspect an extension first.</h2>
+          <small>Start with your development tools</small>
+          <h2>Check an extension your team already uses.</h2>
           <p>
             Public reports require no account. Want to talk it through? Ask for a
             20-minute call and the founder will reply directly.

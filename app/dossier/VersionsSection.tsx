@@ -3,7 +3,7 @@ import type { ReportVersion } from "@/lib/reportContract";
 
 export default function VersionsSection({ versions, current }: { versions: ReportVersion[]; current: string }) {
   return <>
-    <DossierSectionHead eyebrow="Release history" title="Published versions" detail="Each decision belongs to an immutable version and exact artifact hash." />
+    <DossierSectionHead eyebrow="Release history" title="Published versions" detail="Open a version to see its scan results and package hash." />
     <div className="dossierTable versionTable">
       <div><span>Version</span><span>Artifact scope</span><span>Decision</span><span /></div>
       {versions.map((item) => {

@@ -13,8 +13,8 @@ export function normalizeCapabilities(value: unknown): Record<string, Capability
 export default function CapabilitiesSection({ capabilities }: { capabilities: Record<string, CapabilityRecord> }) {
   const entries = Object.entries(capabilities);
   return <>
-    <DossierSectionHead eyebrow="Capability map" title="What this extension can access" detail="Capabilities describe power, not malicious intent. Compare each one to the extension's stated purpose." />
-    {entries.length ? <div className="dossierCapabilityGrid">{entries.map(([key, value]) => <article key={key}>{capabilityIcon(key)}<div><strong>{key.replaceAll("_", " ")}</strong><p>{Array.isArray(value.evidence) ? `${value.evidence.length} evidence location(s)` : "Declared or detected capability"}</p></div></article>)}</div> : <div className="dossierEmpty"><p>No capability families were recorded by this scan.</p></div>}
+    <DossierSectionHead eyebrow="Capabilities" title="What this extension can access" detail="Check whether the access this package requests makes sense for what the extension does." />
+    {entries.length ? <div className="dossierCapabilityGrid">{entries.map(([key, value]) => <article key={key}>{capabilityIcon(key)}<div><strong>{key.replaceAll("_", " ")}</strong><p>{Array.isArray(value.evidence) ? `${value.evidence.length} recorded location(s)` : "Declared or detected capability"}</p></div></article>)}</div> : <div className="dossierEmpty"><p>This scan did not record any capabilities.</p></div>}
   </>;
 }
 

@@ -30,4 +30,24 @@ describe("immutable scan comparison", () => {
     expect(evidenceAttribution(baseline, target)).toMatchObject({ artifact_changes: true, evidence_changes: false, same_scanner_build: false });
     expect(summarizeScan("2.0.0", baseline)).toMatchObject({ version: "2.0.0", capabilities: 1, findings: 1 });
   });
+
+  it.each([undefined, null, "", "   ", "unknown", " UNKNOWN ", "unavailable", "none", "n/a", "null", "undefined"])("never treats missing scanner provenance (%s) as a shared baseline", (missing) => {
+    const unknown = { ...baseline, scan: { ...baseline.scan, scanner_build: missing, ruleset_version: missing } };
+    expect(evidenceAttribution(unknown, unknown)).toMatchObject({ provenance_known: false, evidence_changes: false, same_scanner_build: false, same_ruleset: false });
+    expect(evidenceAttribution(unknown, unknown).note).toContain("provenance is missing");
+  });
+
+  it("keeps unscanned evidence unavailable rather than displaying zero findings", () => {
+    expect(summarizeScan("1.0.0", { scan: null, findings: [], files: [], dependencies: [] })).toMatchObject({ findings: null, files: null, dependencies: null, capabilities: null });
+  });
+
+  it("reports the full changed-file count when response rows are bounded", () => {
+    const files = Array.from({ length: 205 }, (_, index) => ({ path: `file-${index}.js`, sha256: "old" }));
+    const left = { ...baseline, files };
+    const right = { ...baseline, files: files.map((file) => ({ ...file, sha256: "new" })) };
+    const changes = compareScanEvidence(left, right);
+    expect(changes.files.changed).toHaveLength(200);
+    expect(changes.files.total_changed).toBe(205);
+    expect(changes.files.total_added).toBe(0);
+  });
 });

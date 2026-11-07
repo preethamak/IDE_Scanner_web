@@ -18,6 +18,7 @@ import {
   UserRound,
   Waypoints,
 } from "lucide-react";
+import ReportActions from "@/app/ReportActions";
 import DossierHeader from "@/app/dossier/DossierHeader";
 import DossierNavigation from "@/app/dossier/DossierNavigation";
 import DependenciesSection from "@/app/dossier/DependenciesSection";
@@ -68,7 +69,7 @@ const sections: Array<{ id: Section; label: string; icon: typeof Radar }> = [
   { id: "overview", label: "Overview", icon: Radar },
   { id: "readme", label: "README", icon: FileText },
   { id: "changes", label: "What changed", icon: GitCompareArrows },
-  { id: "alerts", label: "Evidence", icon: AlertTriangle },
+  { id: "alerts", label: "Findings", icon: AlertTriangle },
   { id: "capabilities", label: "Capabilities", icon: Waypoints },
   { id: "dependencies", label: "Dependencies", icon: Package },
   { id: "files", label: "Files", icon: FolderTree },
@@ -76,7 +77,7 @@ const sections: Array<{ id: Section; label: string; icon: typeof Radar }> = [
   { id: "publisher", label: "Publisher", icon: UserRound },
   { id: "provenance", label: "Provenance", icon: Fingerprint },
   { id: "coverage", label: "Coverage", icon: ShieldCheck },
-  { id: "raw", label: "Raw evidence", icon: Terminal },
+  { id: "raw", label: "Scanner data", icon: Terminal },
 ];
 
 export default function AnalysisReport({ data, signedIn = false }: Props & { signedIn?: boolean }) {
@@ -121,7 +122,10 @@ export default function AnalysisReport({ data, signedIn = false }: Props & { sig
   useEffect(() => {
     const selectHash = () => {
       const section = window.location.hash.slice(1) as Section;
-      if (sections.some((item) => item.id === section)) setActive(section);
+      if (sections.some((item) => item.id === section)) {
+        setActive(section);
+        window.requestAnimationFrame(focusEvidencePanel);
+      }
     };
     selectHash();
     window.addEventListener("hashchange", selectHash);
@@ -135,82 +139,49 @@ export default function AnalysisReport({ data, signedIn = false }: Props & { sig
       >
         Back to extension profile
       </Link>
-      <section
-        className={`${immutableStyles.immutableBar} productReportImmutableBar`}
-        aria-label="Immutable report identity"
-      >
-        <span className={immutableStyles.lock}>
-          <LockKeyhole aria-hidden="true" />
-        </span>
-        <div>
-          <span>Immutable Deep Scan report</span>
-          <strong>Evidence is locked to this exact artifact and scan.</strong>
-          <details><summary>About immutable reports</summary><p>Future scans cannot replace the findings, coverage, ruleset, or artifact hash shown on this URL.</p></details>
-        </div>
-        <dl>
-          <div>
-            <dt>Scan</dt>
-            <dd>
-              <code>{String(scan.id || "Not reported")}</code>
-            </dd>
-          </div>
-          <div>
-            <dt>Artifact</dt>
-            <dd>
-              <code>
-                {shortHash(String(scan.artifact_sha256 || "Not reported"))}
-              </code>
-            </dd>
-          </div>
-        </dl>
+      <div className={`${reportStyles.mast} productReportMast`}><DossierHeader id={id} version={version} extension={extension} scan={scan} /></div>
+      <section className={`${reportStyles.pulse} productReportPulse`} aria-label="Scan summary">
+        <article><span>Actionable findings</span><strong>{actionableGroups.length}</strong></article>
+        <article><span>Contextual notes</span><strong>{lowGroups.length + contextualGroups.length}</strong></article>
+        <article><span>Files analyzed</span><strong>{files.length}</strong></article>
+        <article><span>Dependencies</span><strong>{dependencies.length}</strong></article>
+        <article><span>{coverage.label}</span><strong>{coverage.percent}%</strong></article>
       </section>
-      <div className={`${reportStyles.mast} productReportMast`}><DossierHeader
-          id={id}
-          version={version}
-          extension={extension}
-          scan={scan}
-          fileCount={files.length}
-          dependencyCount={dependencies.length}
-        /></div>
-      <section className={`${reportStyles.pulse} productReportPulse`} aria-label="Report evidence snapshot">
-        <article><span>Decision now</span><strong>{String(scan.decision_reason || "Evidence is scoped to this exact release.")}</strong><small>Exact artifact only</small></article>
-        <article><span>Actionable evidence</span><strong>{actionableGroups.length}</strong><small>{lowGroups.length + contextualGroups.length} contextual notes</small></article>
-        <article><span>Capabilities</span><strong>{Object.keys(capabilities).length}</strong><small>Observed powers, not intent</small></article>
-        <article><span>Coverage</span><strong>{coverage.percent}%</strong><small>{coverage.label}</small></article>
-        <article><span>Package scope</span><strong>{files.length}</strong><small>{dependencies.length} dependencies</small></article>
-      </section>
+      <details className={`${immutableStyles.immutableBar} productReportImmutableBar`}>
+        <summary><LockKeyhole size={14} aria-hidden="true" /> Scan details & limits <span>Saved scan report</span></summary>
+        <p>This report describes the package downloaded for this scan. Its results stay available here when later scans run. Static analysis cannot confirm how an extension behaves at runtime.</p>
+        <dl><div><dt>Scan ID</dt><dd><code>{String(scan.id || "Not reported")}</code></dd></div><div><dt>Package SHA-256</dt><dd><code>{String(scan.artifact_sha256 || "Not reported")}</code></dd></div><div><dt>Analysis</dt><dd>{scan.analysis_status} · {coverage.providerDetail}</dd></div></dl>
+      </details>
       {validation ? (
         <Link className="dossierValidated" href="/benchmark">
           <span className="dossierValidatedMark">
             <BadgeCheck aria-hidden="true" />
           </span>
           <div>
-            <span>Frozen regression fixture</span>
+            <span>Scanner regression test</span>
             <strong>
-              This exact artifact is in the GuardRails regression corpus.
+              This package is included in the scanner’s regression tests.
             </strong>
             <p>
-              Hash-pinned as a {validation.classification.replaceAll("-", " ")}{" "}
-              case. The exact artifact identity matches the frozen cohort; the
-              current decision above comes only from this scan&apos;s evidence.
+              The package hash matches a {validation.classification.replaceAll("-", " ")} test case.
+              The result above comes from this scan, not from its test label.
             </p>
           </div>
           <ChevronRight aria-hidden="true" />
         </Link>
       ) : null}
-      <div className={`dossierMeta ${reportStyles.meta}`}>
-        <span>{String(extension.publisher || "Not reported")}</span>
-        <span>{String(extension.registry || "Registry not reported")}</span>
-        <span>Version {version}</span>
-      </div>
       <div className={`dossierLayout ${reportStyles.layout}`}>
         <DossierNavigation
           items={sections}
           active={active}
           count={badgeCount}
-          onSelect={setActive}
+          onSelect={(section) => {
+            setActive(section);
+            window.history.pushState(null, "", `#${section}`);
+            window.requestAnimationFrame(focusEvidencePanel);
+          }}
         />
-        <section className="dossierContent">
+        <section id="report-evidence" className="dossierContent" tabIndex={-1} aria-label={sections.find((section) => section.id === active)?.label}>
           {active === "overview" ? (
             <OverviewSection
               decision={decision}
@@ -221,6 +192,12 @@ export default function AnalysisReport({ data, signedIn = false }: Props & { sig
               onOpenAlerts={() => {
                 setActive("alerts");
                 window.history.pushState(null, "", "#alerts");
+                window.requestAnimationFrame(focusEvidencePanel);
+              }}
+              onOpenCapabilities={() => {
+                setActive("capabilities");
+                window.history.pushState(null, "", "#capabilities");
+                window.requestAnimationFrame(focusEvidencePanel);
               }}
             />
           ) : null}
@@ -237,6 +214,7 @@ export default function AnalysisReport({ data, signedIn = false }: Props & { sig
           ) : null}
           {active === "alerts" ? (
             <AlertsSection
+              analysisComplete={scan.analysis_status === "complete"}
               actionableGroups={actionableGroups}
               lowGroups={lowGroups}
               contextualGroups={contextualGroups}
@@ -269,6 +247,10 @@ export default function AnalysisReport({ data, signedIn = false }: Props & { sig
           ) : null}
         </section>
       </div>
+      <section id="report-workflow" className={reportStyles.workflow} aria-label="Continue this release review">
+        <div><span>Next step</span><h2>Manage this extension for your team</h2><p>Choose whether your team can use this version, then monitor it for updates.</p></div>
+        <ReportActions extensionId={id} version={version} scanId={scan.id} mode="workflow" />
+      </section>
       <section className="productReportAssistant" aria-label="Optional reviewer guide">
         <EvidenceIntelligenceReport
           extensionId={id}
@@ -281,8 +263,10 @@ export default function AnalysisReport({ data, signedIn = false }: Props & { sig
   );
 }
 
-function shortHash(value: string) {
-  return value.length > 22 ? `${value.slice(0, 12)}…${value.slice(-8)}` : value;
+function focusEvidencePanel() {
+  const panel = document.getElementById("report-evidence");
+  panel?.focus({ preventScroll: true });
+  panel?.scrollIntoView({ block: "start" });
 }
 
 type Group = {

@@ -1,5 +1,7 @@
+import { verifyLaunchHealth } from "./verify-launch-health.mjs";
+
 const baseUrl = (process.env.GUARDRAILS_DEPLOYMENT_URL || "https://abscissa.dev").replace(/\/$/, "");
-const paths = ["/", "/registry", "/status", "/guides", "/guides/check-vscode-extension-safety", "/guides/scan-vsix-file", "/guides/vscode-extension-allowlist"];
+const paths = ["/", "/registry", "/compare", "/workspace", "/pricing", "/status", "/guides", "/guides/check-vscode-extension-safety", "/guides/scan-vsix-file", "/guides/vscode-extension-allowlist"];
 
 async function request(url) {
   let lastError;
@@ -32,3 +34,5 @@ for (const path of paths) {
   }
   console.log(`Verified ${baseUrl}${path}`);
 }
+
+await verifyLaunchHealth(process.env.LAUNCH_HEALTH_URL || baseUrl, process.env.LAUNCH_HEALTH_SECRET);

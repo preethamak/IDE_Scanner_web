@@ -66,9 +66,10 @@ describe("extension product profile", () => {
     expect(page).toContain("PermissionDiffCard");
     expect(page).toContain("Compare releases");
     expect(workspace).toContain("PermissionDiffCard");
-    expect(permissionDiff).toContain("/compare?from=");
+    expect(permissionDiff).toContain('new URLSearchParams({ from: baseline, to: currentVersion })');
+    expect(permissionDiff).toContain('query.set("toScanId", currentScanId)');
     expect(permissionDiff).toContain(
-      "What changed since the reviewed release.",
+      "Compare analyzed release capabilities.",
     );
     expect(permissionDiff).toContain("Same scanner baseline");
     expect(permissionDiff).toContain("Both releases need completed analysis");

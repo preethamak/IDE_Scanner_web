@@ -11,7 +11,7 @@ describe("hasAccuracyGateAttestation", () => {
 
 describe("evaluatePublicationHealth", () => {
   it("requires an active, complete, current release", () => {
-    const health = evaluatePublicationHealth({ active_release: { id: "release", expected_reports: 10, activated_at: "2026-07-30T00:00:00.000Z" }, current_report_count: 10, newest_scan_at: new Date().toISOString(), runner_status: "ready", runner_last_seen_at: new Date().toISOString(), scan_failure_rate: 0, notification_failure_rate: 0 });
+    const health = evaluatePublicationHealth({ active_release: { id: "release", expected_reports: 10, activated_at: "2026-07-30T00:00:00.000Z", accuracy_gate_verified: true }, current_report_count: 10, newest_scan_at: new Date().toISOString(), runner_status: "ready", runner_last_seen_at: new Date().toISOString(), scan_failure_rate: 0, notification_failure_rate: 0 });
     expect(health.healthy).toBe(true);
   });
 
@@ -25,10 +25,23 @@ describe("evaluatePublicationHealth", () => {
     expect(health.reasons).toHaveLength(5);
   });
   it("fails closed when the runner heartbeat is degraded", () => {
-    const health = evaluatePublicationHealth({ active_release: { id: "release", expected_reports: 1, activated_at: "2026-07-30T00:00:00.000Z" }, current_report_count: 1, newest_scan_at: new Date().toISOString(), runner_status: "runner_delayed", runner_last_seen_at: "2026-07-30T00:00:00.000Z", scan_failure_rate: 0, notification_failure_rate: 0 });
+    const health = evaluatePublicationHealth({ active_release: { id: "release", expected_reports: 1, activated_at: "2026-07-30T00:00:00.000Z", accuracy_gate_verified: true }, current_report_count: 1, newest_scan_at: new Date().toISOString(), runner_status: "runner_delayed", runner_last_seen_at: "2026-07-30T00:00:00.000Z", scan_failure_rate: 0, notification_failure_rate: 0 });
     expect(health).toMatchObject({ healthy: false, runner_last_seen_at: "2026-07-30T00:00:00.000Z" });
     expect(health.reasons).toContain("Deep Scan runner is runner_delayed.");
   });
+  it.each([
+    { newest_scan_at: "invalid" },
+    { newest_scan_at: new Date(Date.now() + 60 * 60 * 1000).toISOString() },
+    { current_report_count: NaN },
+    { scan_failure_rate: NaN },
+    { notification_failure_rate: -1 },
+    { active_release: { id: "release", expected_reports: 0, activated_at: "", accuracy_gate_verified: true } },
+    { active_release: { id: "release", expected_reports: 1, activated_at: "" } },
+  ])("rejects invalid or unverified publication evidence: %j", (override) => {
+    const health = evaluatePublicationHealth({ active_release: { id: "release", expected_reports: 1, activated_at: new Date().toISOString(), accuracy_gate_verified: true }, current_report_count: 1, newest_scan_at: new Date().toISOString(), runner_status: "ready", runner_last_seen_at: new Date().toISOString(), scan_failure_rate: 0, notification_failure_rate: 0, ...override });
+    expect(health.healthy).toBe(false);
+  });
+
   it("uses immutable release members instead of mutable release metadata", () => {
     expect(summarizeReleaseMemberScans([
       { id: "scan-a", scanned_at: "2026-08-01T00:00:00.000Z" },

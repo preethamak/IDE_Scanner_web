@@ -11,14 +11,14 @@ type NavItem = readonly [string, string, string, ComponentType];
 // A deliberately small top row; everything secondary lives in one grouped menu.
 const topLinks: readonly (readonly [string, string])[] = [
   ["/registry", "Registry"],
-  ["/monitor", "Monitor"],
+  ["/compare", "Compare"],
+  ["/workspace", "Workspace"],
   ["/docs", "Docs"],
   ["/pricing", "Pricing"],
 ];
 
 const moreGroups: readonly { label: string; items: readonly NavItem[] }[] = [
   { label: "Product", items: [
-    ["/workspace", "Team Workspace", "Assign decisions and preserve the evidence", Users],
     ["/docs/mcp", "MCP for AI", "Connect an AI assistant to extension intelligence", Bot],
     ["/cli", "Local CLI", "Inspect extensions installed on your machine", TerminalSquare],
     ["/ide", "GuardRails IDE", "Preview explicit authority for agents and tools", ShieldCheck],
@@ -67,6 +67,8 @@ export default function SiteNav() {
     <div className={`mobileNavPanel ${open === "mobile" ? "isOpen" : ""}`}>
       <div className="mobileNavGroup"><span>Explore</span>
         {menuLink(["/registry", "Extension Registry", "Inspect exact releases before installation", Boxes])}
+        {menuLink(["/compare", "Compare releases", "Inspect changes between exact extension releases", Boxes])}
+        {menuLink(["/workspace", "Team Workspace", "Review releases and keep the decision with its evidence", Users])}
         {menuLink(["/docs", "Docs and API", "Gate releases in CI and from AI agents", BookOpen])}
         {menuLink(["/pricing", "Pricing", "Plans and product availability", History])}
       </div>

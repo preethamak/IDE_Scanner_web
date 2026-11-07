@@ -28,8 +28,10 @@ import {
   initials,
   memberLabel,
 } from "@/app/workspace/format";
+import { exactReleaseReportHref } from "@/lib/releaseReviewIntent";
 import PageTitle from "@/app/workspace/views/PageTitle";
 import { EmptyReview } from "@/app/workspace/views/Overview";
+import { useDialogFocus } from "@/lib/useDialogFocus";
 import styles from "@/app/workspace/teamWorkspace.module.css";
 
 type ReviewFilter = "open" | "mine" | "unassigned" | "overdue";
@@ -167,6 +169,7 @@ function ReviewDecisionPanel({
   onClose: () => void;
   onSave: (value: string, rationale: string) => Promise<DecisionSaveResult>;
 }) {
+  const dialogRef = useDialogFocus(onClose);
   const [rationale, setRationale] = useState(decision.rationale || "");
   const [attempt, setAttempt] = useState<{
     value: string;
@@ -192,6 +195,8 @@ function ReviewDecisionPanel({
     >
       <section
         className={styles.reviewPanel}
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="review-panel-heading"
@@ -220,7 +225,7 @@ function ReviewDecisionPanel({
                   separately.
                 </p>
                 <Link
-                  href={`/extensions/${encodeURIComponent(decision.extension_id)}/versions/${encodeURIComponent(decision.version)}`}
+                  href={exactReleaseReportHref({ extensionId: decision.extension_id, version: decision.version, scanId: decision.scan_id })}
                 >
                   Open files, commands, and network evidence <ArrowRight />
                 </Link>
@@ -251,6 +256,7 @@ function ReviewDecisionPanel({
                 compact
                 extensionId={decision.extension_id}
                 currentVersion={decision.version}
+                currentScanId={decision.scan_id}
               />
               {canDecide ? (
                 <label className={styles.rationaleField}>
@@ -491,7 +497,7 @@ export default function ReviewInbox({
                   Review release <ArrowRight />
                 </button>
                 <Link
-                  href={`/extensions/${encodeURIComponent(decision.extension_id)}/versions/${encodeURIComponent(decision.version)}`}
+                  href={exactReleaseReportHref({ extensionId: decision.extension_id, version: decision.version, scanId: decision.scan_id })}
                 >
                   Open full evidence
                 </Link>

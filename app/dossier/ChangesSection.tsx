@@ -37,7 +37,7 @@ export default function ChangesSection({ id, current, versions }: { id: string; 
   }, [baseline, current, id]);
 
   if (!candidates.length) return <>
-    <DossierSectionHead eyebrow="Release changes" title="No second analyzed version yet" detail="A comparison appears only after two exact versions have normalized Deep Scan evidence." />
+    <DossierSectionHead eyebrow="Release changes" title="No second analyzed version yet" detail="A comparison appears only after both versions have completed scans." />
     <Empty text="Monitor this extension to analyze and compare its next release." />
   </>;
 
@@ -49,12 +49,12 @@ export default function ChangesSection({ id, current, versions }: { id: string; 
   return <>
     <DossierSectionHead eyebrow="Why this changed" title={`What changed in ${current}`} detail="Plain-language summary of the difference from the last reviewed release, computed from two stored scan records — not inferred from version numbers or marketing copy." />
     <label className="comparisonPicker"><span>Compare against last reviewed</span><select value={baseline} onChange={(event) => setBaseline(event.target.value)}>{candidates.map((item) => <option value={item} key={item}>{item}</option>)}</select></label>
-    {state === "loading" ? <div className="dossierEmpty"><p>Computing normalized evidence changes…</p></div> : null}
+    {state === "loading" ? <div className="dossierEmpty"><p>Comparing the stored scan results…</p></div> : null}
     {state === "error" ? <div className="previewError">The comparison could not be generated.</div> : null}
-    {result && result.comparable === false ? <Unavailable detail={String(result.reason || "Both versions require completed Deep Scan evidence.")} /> : null}
+    {result && result.comparable === false ? <Unavailable detail={String(result.reason || "Both versions need completed scans.")} /> : null}
     {result?.comparable ? <div className="changeDashboard">
       <ChangeStory story={story} baseline={baseline} current={current} />
-      {!evidenceComparable ? <Unavailable title="Mixed analysis baseline" detail={String(attribution.note || "Comparable evidence is unavailable for one release.")} /> : null}
+      {!evidenceComparable ? <Unavailable title="Mixed analysis baseline" detail={String(attribution.note || "One version does not have a comparable scan.")} /> : null}
       <div className="changeSummary"><Fact label="Current outcome" value={String(side.decision || "unknown").toUpperCase()} /><Fact label="Coverage" value={`${Number(side.coverage_percent || 0)}%`} /><Fact label="Findings" value={String(side.findings || 0)} /><Fact label="Files" value={String(side.files || 0)} /></div>
       {evidenceComparable ? <><ChangeGroup title="Findings" value={changes.findings} /><ChangeGroup title="Capabilities" value={changes.capabilities} /></> : null}
       <ChangeGroup title="Dependencies" value={changes.dependencies} /><ChangeGroup title="Files" value={changes.files} />
@@ -112,7 +112,7 @@ function addDependencyAndFileLines(lines: WhyLine[], changes: ReportObject) {
   const counts = ["added", "removed", "changed"].map((kind) => [kind, array(files[kind]).length] as const).filter(([, count]) => count);
   if (counts.length) {
     const total = counts.reduce((sum, [, count]) => sum + count, 0);
-    lines.push({ text: `The packaged artifact differs: ${humanList(counts.map(([kind, count]) => `${count} ${kind}`))} file${total === 1 ? "" : "s"}.`, tone: "flat" });
+    lines.push({ text: `The package files changed: ${humanList(counts.map(([kind, count]) => `${count} ${kind}`))} file${total === 1 ? "" : "s"}.`, tone: "flat" });
   }
 }
 

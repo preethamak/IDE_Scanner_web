@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     template: "%s · GuardRails",
   },
   description:
-    "GuardRails by Abscissa gives developers and security teams evidence-backed VS Code extension-package intelligence: inspect exact releases, monitor meaningful changes, and preserve defensible review decisions.",
+    "Abscissa helps teams understand what runs in their development environment, review VS Code extensions, and manage updates together.",
   openGraph: {
     type: "website",
     siteName: "GuardRails by Abscissa",
@@ -51,7 +51,7 @@ export default function RootLayout({
     "@context": "https://schema.org",
     "@graph": [
       { "@type": "Organization", name: "Abscissa", url: "https://abscissa.dev", description: "Builder of GuardRails, an independent VS Code extension security product for developers and security teams.", email: "hello@abscissa.dev" },
-      { "@type": "SoftwareApplication", name: "GuardRails", alternateName: "Abscissa GuardRails", applicationCategory: "SecurityApplication", operatingSystem: "Web, macOS, Windows, Linux", url: "https://abscissa.dev", description: "Evidence-backed VS Code extension-package intelligence: exact-release reports, local inspection, release monitoring, team review, and a read-only MCP integration for AI assistants.", featureList: ["Published VS Code extension-package analysis", "Exact release and artifact evidence", "Local CLI inspection", "Release-change monitoring", "Team evidence and decision history", "Read-only MCP intelligence for AI assistants"] },
+      { "@type": "SoftwareApplication", name: "GuardRails", alternateName: "Abscissa GuardRails", applicationCategory: "SecurityApplication", operatingSystem: "Web, macOS, Windows, Linux", url: "https://abscissa.dev", description: "A developer security environment for teams to inspect editor extensions, review changes, and manage approvals.", featureList: ["Published VS Code extension-package analysis", "Extension package inspection", "Local CLI inspection", "Release-change monitoring", "Team reviews and decision history", "Read-only MCP integration"] },
     ],
   };
   return (

@@ -12,12 +12,12 @@ export default function CoverageSection({ scan }: { scan: ReportScan }) {
   const executable = arrayLength(coverage.executable_candidates);
   const files = Number(inventory.file_count || arrayLength(inventory.files));
   return <>
-    <DossierSectionHead eyebrow="Analysis boundary" title="What was actually assessed" detail="Coverage shows the artifact scope behind this report. It is not a claim that the extension is safe." />
+    <DossierSectionHead eyebrow="Analysis boundary" title="What was actually assessed" detail="See which files and analyzers completed. Coverage does not establish that an extension is safe." />
     <div className="coverageGrid coverageExplained">
       <Fact label={presentation.label} value={`${presentation.percent}%`} detail={presentation.providerDetail} />
       <Fact label="Declared entrypoints" value={String(declared)} detail={declared ? "Declared by the extension manifest" : "No launch entrypoints were declared"} />
-      <Fact label="Resolved entrypoints" value={String(resolved)} detail={resolved ? "Entrypoints found in this exact artifact" : "No declared entrypoint resolved to a file"} />
-      <Fact label="Executable candidates" value={String(executable)} detail={executable ? "Files selected for executable analysis" : files ? "No executable candidate was recorded by this scanner" : "Artifact file inventory was not emitted"} />
+      <Fact label="Resolved entrypoints" value={String(resolved)} detail={resolved ? "Entrypoints found in this package" : "No declared entrypoint resolved to a file"} />
+      <Fact label="Executable candidates" value={String(executable)} detail={executable ? "Files selected for executable analysis" : files ? "No executable candidate was recorded by this scanner" : "The scanner did not record a file inventory"} />
     </div>
     <div className="providerGrid coverageProviders">{Object.entries(providers).map(([name, value]) => <article key={name}><span>{name.replaceAll("_", " ")}</span><strong>{String(value.status || "not assessed")}</strong><p>{Number(value.finding_count || 0)} normalized finding{Number(value.finding_count || 0) === 1 ? "" : "s"}</p></article>)}</div>
     {!Object.keys(providers).length ? <div className="coverageNoProviders">No analyzer-provider records were supplied with this report.</div> : null}
