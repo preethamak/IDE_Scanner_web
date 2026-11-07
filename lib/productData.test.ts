@@ -1,5 +1,23 @@
-import { describe, expect, it } from "vitest";
-import { dominantPublicClassification, selectVisibleScans } from "@/lib/productData";
+import { describe, expect, it, vi } from "vitest";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { dominantPublicClassification, hasVisibleScanLink, selectVisibleScans } from "@/lib/productData";
+
+describe("owned scan links", () => {
+  it("checks the requested scan through the caller-scoped client", async () => {
+    const limit = vi.fn().mockResolvedValue({ data: [{ scan_id: "older" }], error: null });
+    const eq = vi.fn().mockReturnValue({ limit });
+    const from = vi.fn().mockReturnValue({ select: () => ({ eq }) });
+    expect(await hasVisibleScanLink({ from } as unknown as SupabaseClient, "older")).toBe(true);
+    expect(from).toHaveBeenCalledWith("scan_job_results");
+    expect(eq).toHaveBeenCalledWith("scan_id", "older");
+  });
+  it("fails closed when the link is hidden, different, or the query fails", async () => {
+    for (const result of [{ data: [], error: null }, { data: [{ scan_id: "another" }], error: null }, { data: null, error: { message: "denied" } }]) {
+      const db = { from: () => ({ select: () => ({ eq: () => ({ limit: async () => result }) }) }) } as unknown as SupabaseClient;
+      expect(await hasVisibleScanLink(db, "older")).toBe(false);
+    }
+  });
+});
 
 describe("public classification rollout selection", () => {
   const build1 = "a".repeat(40);

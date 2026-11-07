@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import BrandMark from "@/app/BrandMark";
 import ExtensionSearch from "@/app/ExtensionSearch";
+import ReleaseEventQueue from "@/app/ReleaseEventQueue";
 import NotificationCenter from "@/app/workspace/NotificationCenter";
 import DecisionPermissionPassport from "@/app/workspace/DecisionPermissionPassport";
 import PermissionDiffCard from "@/app/extensions/PermissionDiffCard";
@@ -1575,10 +1576,10 @@ function WorkspaceSetup({
                     <CheckCircle2 /> {pinnedRelease?.extensionId || selected?.display_name} monitored
                   </strong>
                   <strong>
-                    <CheckCircle2 />{" "}
+                    {baseline?.state === "current" ? <CheckCircle2 /> : <CircleAlert />}{" "}
                     {baseline?.state === "current"
-                      ? "Exact baseline established"
-                      : "Baseline queued"}
+                      ? "Baseline established"
+                      : "A scan is needed before you can compare updates"}
                   </strong>
                   <strong>
                     <CheckCircle2 /> Invite reviewers from Settings when you are ready
@@ -1586,6 +1587,11 @@ function WorkspaceSetup({
                 </div>
               </div>
               <footer>
+                {baseline?.state === "pending" && selected?.extension_id && baseline.version ? (
+                  <Link href={`/extensions/${encodeURIComponent(selected.extension_id)}/versions/${encodeURIComponent(baseline.version)}`}>
+                    Open this version to run a scan <ArrowRight />
+                  </Link>
+                ) : null}
                 <button onClick={() => void onComplete()}>
                   Open workspace <ArrowRight />
                 </button>
@@ -2202,6 +2208,7 @@ function ReviewInbox({
           <EmptyReview />
         )}
       </section>
+      <ReleaseEventQueue teamId={teamId} />
       {selected ? (
         <ReviewDecisionPanel
           teamId={teamId}
