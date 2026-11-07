@@ -198,3 +198,45 @@ test("a delayed response from the previous workspace cannot replace the selected
   await expect(page.getByRole("heading", { name: "qa.other-team", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: extensionId, exact: true })).toHaveCount(0);
 });
+
+test("a late release queue response cannot cross workspace boundaries", async ({ page }) => {
+  await installWorkspace(page);
+  await page.route("**/api/teams", (route) => route.fulfill({ json: { teams: [
+    { id: "team-1", name: "Release reviewers", slug: "reviewers", role: "owner" },
+    { id: "team-2", name: "Other reviewers", slug: "other-reviewers", role: "owner" },
+  ] } }));
+  let oldRequestStarted = false;
+  let releaseOld!: () => void;
+  let oldRequestFinished!: () => void;
+  const oldGate = new Promise<void>((resolve) => { releaseOld = resolve; });
+  const oldFinished = new Promise<void>((resolve) => { oldRequestFinished = resolve; });
+  await page.route("**/api/teams/team-1/release-events", async (route) => {
+    oldRequestStarted = true;
+    await oldGate;
+    try {
+      await route.fulfill({ json: { events: [{ id: "old-event", extension_id: "qa.private-team-one", baseline_version: "1.0.0", target_version: "1.1.0", state: "release_detected", error: null }] } });
+    } catch {
+      // Cancellation also prevents the previous workspace's response from showing.
+    } finally {
+      oldRequestFinished();
+    }
+  });
+  await page.route("**/api/teams/team-2/**", (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const body = path.endsWith("/release-events") ? { events: [{ id: "new-event", extension_id: "qa.team-two", baseline_version: "2.0.0", target_version: "2.1.0", state: "release_detected", error: null }] }
+      : path.endsWith("/watchlist") ? { items: [], health: { status: "unknown", last_checked_at: null, next_check_at: null, cadence_hours: 6, error: null } }
+        : path.endsWith("/notification-channels") ? { channels: [], deliveries: [], digest_deliveries: [], configured: false }
+          : { alerts: [], decisions: [], members: [], badges: [] };
+    return route.fulfill({ json: body });
+  });
+  await page.goto("/workspace?view=inbox");
+  await expect.poll(() => oldRequestStarted).toBe(true);
+  await page.getByRole("button", { name: /Release reviewers/ }).click();
+  await page.getByRole("option", { name: /Other reviewers/ }).click();
+  const queue = page.locator(".releaseQueue");
+  await expect(queue.getByText("qa.team-two", { exact: true })).toBeVisible();
+  releaseOld();
+  await oldFinished;
+  await expect(queue.getByText("qa.team-two", { exact: true })).toBeVisible();
+  await expect(queue.getByText("qa.private-team-one", { exact: true })).toHaveCount(0);
+});

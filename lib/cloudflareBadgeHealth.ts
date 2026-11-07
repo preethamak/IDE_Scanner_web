@@ -78,6 +78,20 @@ export async function reconcileCloudflareBadgeHealth(
     const state = parseState(team.state_json);
     const watchlist = array(state.watchlist);
     if (!watchlist.length) continue;
+    // A populated catalog is not enough: each workspace's watched entries
+    // must have a resolved version from their own registry.
+    const unavailable = watchlist.filter((watch) => {
+      const id = stringValue(watch.extension_id).toLowerCase();
+      const versions = stringValue(watch.registry) === "openvsx" ? openVsxVersions : latestByExtension;
+      return !id || !versions.get(id);
+    });
+    const monitoring = {
+      status: unavailable.length ? "degraded" : "healthy",
+      last_checked_at: now,
+      next_check_at: new Date(new Date(now).getTime() + 6 * 60 * 60 * 1000).toISOString(),
+      cadence_hours: 6,
+      error: unavailable.length ? `Could not check ${unavailable.length} monitored extension${unavailable.length === 1 ? "" : "s"} during the last registry check.` : null,
+    };
     const releaseEvents = array(state.release_events);
     const audit = array(state.audit);
     const alerts = array(state.alerts);
@@ -191,13 +205,7 @@ export async function reconcileCloudflareBadgeHealth(
       // A successful scheduled check is useful evidence even when the catalog
       // has no newer release. Keep the workspace health timestamp current so
       // the UI does not report a healthy-but-stale monitor.
-      state.monitoring = {
-        status: "healthy",
-        last_checked_at: now,
-        next_check_at: new Date(new Date(now).getTime() + 6 * 60 * 60 * 1000).toISOString(),
-        cadence_hours: 6,
-        error: null,
-      };
+      state.monitoring = monitoring;
       await db
         .prepare("UPDATE app_team_state SET state_json=?,updated_at=? WHERE team_id=? AND state_json=?")
         .bind(JSON.stringify(state), now, team.team_id, team.state_json)
@@ -208,7 +216,7 @@ export async function reconcileCloudflareBadgeHealth(
     state.release_events = releaseEvents.slice(0, 200);
     state.alerts = alerts.slice(0, 200);
     state.audit = audit.slice(0, 500);
-    state.monitoring = { status: "healthy", last_checked_at: now, next_check_at: new Date(new Date(now).getTime() + 6 * 60 * 60 * 1000).toISOString(), cadence_hours: 6, error: null };
+    state.monitoring = monitoring;
     const saved = await db
       .prepare("UPDATE app_team_state SET state_json=?,updated_at=? WHERE team_id=? AND state_json=?")
       .bind(JSON.stringify(state), now, team.team_id, team.state_json)
@@ -284,11 +292,10 @@ function latestCatalogVersions(payload: string): Map<string, string> {
 function parseState(value: string): JsonObject {
   try {
     const parsed = JSON.parse(value);
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-      ? parsed as JsonObject
-      : {};
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Invalid workspace document");
+    return parsed as JsonObject;
   } catch {
-    return {};
+    throw new Error("Workspace state is invalid; refusing to replace it during monitoring.");
   }
 }
 

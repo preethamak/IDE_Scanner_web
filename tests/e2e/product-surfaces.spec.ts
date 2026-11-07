@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const surfaces = [
-  ["/", /Know what an extension can do before you let it in/i],
+  ["/", /Know what runs in your team.s editors/i],
   ["/registry", /Know what runs\s+in your editor/i],
   ["/analyze", /Start with what\s+you actually have/i],
   ["/cli", /Audit every VS Code-based editor on your machine/i],
@@ -24,7 +24,7 @@ test("Registry search is the primary public route", async ({ page }) => {
   await page.route("**/api/marketplace/search?q=vyper%20guard", (route) => route.fulfill({ json: { query: "vyper guard", exact_match: { extension_id: "acme.vyper-guard", version: "1.0.0", display_name: "Vyper Guard", publisher: "Acme", publisher_verified: true, registry: "vs-marketplace", match_reason: "exact_identity" }, matching_extensions: [], related_extensions: [] } }));
   await page.goto("/");
   await page.getByRole("textbox", { name: "Find an extension" }).first().fill("vyper guard");
-  await page.getByRole("button", { name: "Check extension" }).first().click({ noWaitAfter: true });
+  await page.getByRole("button", { name: "Find extension" }).first().click({ noWaitAfter: true });
   const profile = page.getByRole("link", { name: "Open Vyper Guard extension profile" });
   await expect(profile).toHaveAttribute("href", "/extensions/acme.vyper-guard");
 });
@@ -65,7 +65,7 @@ test("public security summary stays concise and immutable reports remain shareab
   const next = new URL(await action.getAttribute("href") || "", "http://localhost").searchParams.get("next");
   expect(next).toMatch(/^\/extensions\/GitHub\.copilot\/versions\/1\.388\.0\/scans\/[^/]+$/);
   await page.goto(next!);
-  await expect(page.getByText("Immutable Deep Scan report", { exact: true })).toBeVisible();
+  await expect(page.getByText("Saved scan report", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Copy link", exact: true })).toBeVisible();
 });
 

@@ -12,8 +12,8 @@ export type PublicationHealth = {
   newest_scan_at: string | null;
   runner_status: string;
   runner_last_seen_at: string | null;
-  scan_failure_rate: number;
-  notification_failure_rate: number;
+  scan_failure_rate: number | null;
+  notification_failure_rate: number | null;
 };
 
 export function hasAccuracyGateAttestation(release: {
@@ -40,11 +40,26 @@ export function evaluatePublicationHealth(input: Omit<PublicationHealth, "health
   if (!Number.isFinite(newestScanAt) || newestScanAt > Date.now() + 5 * 60 * 1000) reasons.push("Public scan corpus timestamp is missing or invalid.");
   else if (Date.now() - newestScanAt > 30 * 60 * 60 * 1000) reasons.push("Public scan corpus is older than 30 hours.");
   if (input.runner_status !== "ready") reasons.push(`Deep Scan runner is ${input.runner_status}.`);
-  if (!Number.isFinite(input.scan_failure_rate) || input.scan_failure_rate < 0 || input.scan_failure_rate > 1) reasons.push("Scan failure rate is unavailable or invalid.");
+  if (typeof input.scan_failure_rate !== "number" || !Number.isFinite(input.scan_failure_rate) || input.scan_failure_rate < 0 || input.scan_failure_rate > 1) reasons.push("Scan failure rate is unavailable or invalid.");
   else if (input.scan_failure_rate > 0.1) reasons.push("Scan failure rate exceeds 10 percent.");
-  if (!Number.isFinite(input.notification_failure_rate) || input.notification_failure_rate < 0 || input.notification_failure_rate > 1) reasons.push("Notification failure rate is unavailable or invalid.");
+  if (typeof input.notification_failure_rate !== "number" || !Number.isFinite(input.notification_failure_rate) || input.notification_failure_rate < 0 || input.notification_failure_rate > 1) reasons.push("Notification failure rate is unavailable or invalid.");
   else if (input.notification_failure_rate > 0.1) reasons.push("Notification failure rate exceeds 10 percent.");
   return { ...input, healthy: reasons.length === 0, reasons };
+}
+
+/** Count only finished attempts; queued and skipped work is not a success. */
+export function failureRateFromCounts(rows: Array<{ status: unknown; count: unknown }>, success: string, failures: string[]): number | null {
+  let total = 0;
+  let failed = 0;
+  for (const row of rows) {
+    const status = String(row.status);
+    if (status !== success && !failures.includes(status)) continue;
+    const count = Number(row.count);
+    if (!Number.isSafeInteger(count) || count < 0) return null;
+    total += count;
+    if (failures.includes(status)) failed += count;
+  }
+  return total ? failed / total : null;
 }
 
 type ReleaseMemberScan = { id: string; scanned_at: string | null };
@@ -95,8 +110,8 @@ export async function getPublicationHealth(): Promise<PublicationHealth> {
   const release = releaseResult.data;
   const [runner, deliveries, scans] = await Promise.all([
     getDeepScanHealth(),
-    db.from("team_notification_deliveries").select("status").in("status", ["sent", "failed", "skipped"]).gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()).limit(1000),
-    db.from("scans").select("analysis_status").in("scan_purpose", ["public_intelligence", "benchmark", "user_request"]).gte("scanned_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()).limit(1000),
+    db.from("team_notification_deliveries").select("status").in("status", ["sent", "failed"]).gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()).limit(1000),
+    db.from("scans").select("analysis_status").in("analysis_status", ["complete", "failed"]).in("scan_purpose", ["public_intelligence", "benchmark", "user_request"]).gte("scanned_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()).limit(1000),
   ]);
   if (deliveries.error) throw deliveries.error;
   if (scans.error) throw scans.error;
@@ -111,11 +126,11 @@ export async function getPublicationHealth(): Promise<PublicationHealth> {
       ({ current_report_count: currentReportCount, newest_scan_at: newestScanAt } = summarizeReleaseMemberScans((memberScans.data || []).map((scan) => ({ id: String(scan.id), scanned_at: scan.scanned_at ? String(scan.scanned_at) : null }))));
     }
   }
-  const completed = deliveries.data || [];
+  const completed = (deliveries.data || []).filter((item) => item.status === "sent" || item.status === "failed");
   const failures = completed.filter((item) => item.status === "failed").length;
-  const recentScans = scans.data || [];
+  const recentScans = (scans.data || []).filter((item) => item.analysis_status === "complete" || item.analysis_status === "failed");
   const scanFailures = recentScans.filter((item) => item.analysis_status === "failed").length;
-  return evaluatePublicationHealth({ active_release: release ? { id: String(release.id), expected_reports: Number(release.expected_reports), activated_at: String(release.activated_at || ""), accuracy_gate_verified: hasAccuracyGateAttestation(release) } : null, current_report_count: currentReportCount, newest_scan_at: newestScanAt, runner_status: runner.status, runner_last_seen_at: runner.last_seen_at, scan_failure_rate: recentScans.length ? scanFailures / recentScans.length : 0, notification_failure_rate: completed.length ? failures / completed.length : 0 });
+  return evaluatePublicationHealth({ active_release: release ? { id: String(release.id), expected_reports: Number(release.expected_reports), activated_at: String(release.activated_at || ""), accuracy_gate_verified: hasAccuracyGateAttestation(release) } : null, current_report_count: currentReportCount, newest_scan_at: newestScanAt, runner_status: runner.status, runner_last_seen_at: runner.last_seen_at, scan_failure_rate: recentScans.length ? scanFailures / recentScans.length : null, notification_failure_rate: completed.length ? failures / completed.length : null });
 }
 
 async function getCloudflarePublicationHealth(): Promise<PublicationHealth> {
@@ -152,10 +167,6 @@ async function getCloudflarePublicationHealth(): Promise<PublicationHealth> {
     : registryFallback?.newest_scan_at || null;
   const jobRows = jobs.results || [];
   const deliveryRows = deliveries.results || [];
-  const jobCount = jobRows.reduce((sum, row) => sum + Number(row.count || 0), 0);
-  const failedJobs = jobRows.filter((row) => String(row.status) === "failed").reduce((sum, row) => sum + Number(row.count || 0), 0);
-  const deliveryCount = deliveryRows.reduce((sum, row) => sum + Number(row.count || 0), 0);
-  const failedDeliveries = deliveryRows.filter((row) => ["failed", "dead_letter"].includes(String(row.status))).reduce((sum, row) => sum + Number(row.count || 0), 0);
   return evaluatePublicationHealth({
     active_release: release ? {
       id: String(release.id),
@@ -167,7 +178,7 @@ async function getCloudflarePublicationHealth(): Promise<PublicationHealth> {
     newest_scan_at: newestScanAt,
     runner_status: runner.status,
     runner_last_seen_at: runner.last_seen_at,
-    scan_failure_rate: jobCount ? failedJobs / jobCount : 0,
-    notification_failure_rate: deliveryCount ? failedDeliveries / deliveryCount : 0,
+    scan_failure_rate: failureRateFromCounts(jobRows.map((row) => ({ status: row.status, count: row.count })), "complete", ["failed"]),
+    notification_failure_rate: failureRateFromCounts(deliveryRows.map((row) => ({ status: row.status, count: row.count })), "sent", ["failed", "dead_letter"]),
   });
 }

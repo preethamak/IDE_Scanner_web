@@ -21,7 +21,10 @@ jobs:
       - name: Require Cloudflare credentials
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: test -n "$CLOUDFLARE_API_TOKEN"
+          LAUNCH_HEALTH_SECRET: ${{ secrets.LAUNCH_HEALTH_SECRET }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "CLOUDFLARE_API_TOKEN is required for a production deployment."; exit 1; }
+          test -n "$LAUNCH_HEALTH_SECRET" || { echo "LAUNCH_HEALTH_SECRET is required before a production deployment."; exit 1; }
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -48,4 +51,8 @@ jobs:
       - name: Verify deployed routes and protected health
         env:
           LAUNCH_HEALTH_SECRET: ${{ secrets.LAUNCH_HEALTH_SECRET }}
-        run: node scripts/verify-production-deployment.mjs
+        run: |
+          if ! node scripts/verify-production-deployment.mjs; then
+            echo "::error::Deployment completed but production verification failed. Check the live service before retrying."
+            exit 1
+          fi

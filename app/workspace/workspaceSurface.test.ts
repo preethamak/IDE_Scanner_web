@@ -97,6 +97,14 @@ describe("GuardRails workspace product surface", () => {
   it("places monitored release comparisons beside the review queue", () => {
     expect(reviewInbox).toContain('import ReleaseEventQueue from "@/app/ReleaseEventQueue"');
     expect(reviewInbox).toContain("<ReleaseEventQueue teamId={teamId} />");
+    expect(workspace).toContain('import ReleaseEventQueue from "@/app/ReleaseEventQueue"');
+    expect(workspace).toContain("<ReleaseEventQueue teamId={teamId} />");
+  });
+
+  it("directs users to scan a pending baseline without claiming it was queued", () => {
+    expect(workspace).toContain("A scan is needed before you can compare updates");
+    expect(workspace).toContain("Open this version to run a scan");
+    expect(workspace).not.toContain("Baseline queued");
   });
 
   it("makes monitoring health and the review queue visible", () => {

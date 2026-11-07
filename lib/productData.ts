@@ -403,9 +403,11 @@ export async function getVersionScanProduct(id: string, version: string, scanId:
         dependencies: scan.dependencies || [],
       };
     }
-    if (cloudflareProduct.detail_state !== "summary_only") return null;
+    // A public registry snapshot lists only one scan per version. An
+    // authenticated caller may also own an older scan of the same version.
+    if (cloudflareProduct.detail_state !== "summary_only" && !client) return null;
   }
-  if (!options.skipCloudflareCatalog && await getCloudflareRegistryCatalogExtension<Record<string, unknown>>(id)) return null;
+  if (!client && !options.skipCloudflareCatalog && await getCloudflareRegistryCatalogExtension<Record<string, unknown>>(id)) return null;
   const db = client || publicDb();
   if (!db) return null;
   try {
@@ -418,7 +420,7 @@ export async function getVersionScanProduct(id: string, version: string, scanId:
         // membership (or the caller's RLS-protected owned scan) first.
         const visible = await getVisibleScansByVersion(db, storedId, version);
         const visibleScan = visible.get(version);
-        if (!visibleScan || String(visibleScan.id || "") !== scanId) return null;
+        if ((!visibleScan || String(visibleScan.id || "") !== scanId) && !(await hasVisibleScanLink(db, scanId))) return null;
         return loadVersionScan(db, storedId, version, scanId, versionRow, options);
       }
     }
@@ -426,6 +428,13 @@ export async function getVersionScanProduct(id: string, version: string, scanId:
     // Fall through to the read-only mirror.
   }
   return mirroredScanProduct(id, version, scanId);
+}
+
+/** scan_job_results RLS grants a link only to the user who requested its job. */
+export async function hasVisibleScanLink(db: SupabaseClient, scanId: string): Promise<boolean> {
+  const { data, error } = await db.from("scan_job_results").select("scan_id").eq("scan_id", scanId).limit(1);
+  if (error) return false;
+  return Array.isArray(data) && data.some((row) => String(row.scan_id) === scanId);
 }
 
 async function loadVersionScan(db: SupabaseClient, id: string, version: string, scanId: string, versionRow: Record<string, unknown>, options: VersionScanProductOptions = {}): Promise<Record<string, unknown> | null> {

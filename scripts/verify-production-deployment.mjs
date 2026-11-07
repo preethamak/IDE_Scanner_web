@@ -35,4 +35,4 @@ for (const path of paths) {
   console.log(`Verified ${baseUrl}${path}`);
 }
 
-await verifyLaunchHealth(process.env.LAUNCH_HEALTH_URL || baseUrl, process.env.LAUNCH_HEALTH_SECRET);
+await verifyLaunchHealth(process.env.LAUNCH_HEALTH_URL || baseUrl, process.env.LAUNCH_HEALTH_SECRET, { allowMissingSamples: true });

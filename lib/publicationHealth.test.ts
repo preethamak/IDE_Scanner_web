@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluatePublicationHealth, hasAccuracyGateAttestation, summarizeRegistryPublication, summarizeReleaseMemberScans } from "@/lib/publicationHealth";
+import { evaluatePublicationHealth, failureRateFromCounts, hasAccuracyGateAttestation, summarizeRegistryPublication, summarizeReleaseMemberScans } from "@/lib/publicationHealth";
 
 describe("hasAccuracyGateAttestation", () => {
   it("requires corpus identity and a full gate digest", () => {
@@ -19,6 +19,18 @@ describe("evaluatePublicationHealth", () => {
     const health = evaluatePublicationHealth({ active_release: { id: "release", expected_reports: 10, activated_at: "2026-07-30T00:00:00.000Z", accuracy_gate_verified: false }, current_report_count: 10, newest_scan_at: new Date().toISOString(), runner_status: "ready", runner_last_seen_at: new Date().toISOString(), scan_failure_rate: 0, notification_failure_rate: 0 });
     expect(health.healthy).toBe(false);
     expect(health.reasons).toContain("Active public classification release has no accuracy-gate attestation.");
+  });
+  it("reports missing scan and delivery samples as unavailable rather than zero failures", () => {
+    const health = evaluatePublicationHealth({ active_release: { id: "release", expected_reports: 1, activated_at: new Date().toISOString(), accuracy_gate_verified: true }, current_report_count: 1, newest_scan_at: new Date().toISOString(), runner_status: "ready", runner_last_seen_at: new Date().toISOString(), scan_failure_rate: null, notification_failure_rate: null });
+    expect(health.healthy).toBe(false);
+    expect(health.scan_failure_rate).toBeNull();
+    expect(health.notification_failure_rate).toBeNull();
+    expect(health.reasons).toEqual(expect.arrayContaining(["Scan failure rate is unavailable or invalid.", "Notification failure rate is unavailable or invalid."]));
+  });
+  it("excludes queued and skipped attempts from operational samples", () => {
+    expect(failureRateFromCounts([{ status: "queued", count: 2 }, { status: "skipped", count: 3 }], "sent", ["failed"])).toBeNull();
+    expect(failureRateFromCounts([{ status: "sent", count: 3 }, { status: "failed", count: 1 }, { status: "skipped", count: 9 }], "sent", ["failed"])).toBe(0.25);
+    expect(failureRateFromCounts([{ status: "complete", count: "invalid" }], "complete", ["failed"])).toBeNull();
   });
   it("reports each failed launch dependency", () => {
     const health = evaluatePublicationHealth({ active_release: null, current_report_count: 0, newest_scan_at: null, runner_status: "configuration_unavailable", runner_last_seen_at: null, scan_failure_rate: 0.2, notification_failure_rate: 0.2 });
