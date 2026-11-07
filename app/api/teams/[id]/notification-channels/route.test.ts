@@ -89,6 +89,40 @@ describe("team notification channel configuration", () => {
     );
   });
 
+  it("encrypts generic webhook signing material and signs the validation body", async () => {
+    const response = await POST(
+      new Request("http://localhost", {
+        method: "POST",
+        body: JSON.stringify({
+          kind: "generic_webhook",
+          webhook_url: "https://hooks.example.com/guardrails",
+          webhook_signing_secret: "1234567890123456",
+          label: "Signed security relay",
+          minimum_severity: "HIGH",
+        }),
+      }),
+      { params: Promise.resolve({ id: "team-1" }) },
+    );
+    expect(response.status).toBe(201);
+    expect(mocks.encrypt).toHaveBeenCalledWith(
+      JSON.stringify({
+        url: "https://hooks.example.com/guardrails",
+        signing_secret: "1234567890123456",
+      }),
+    );
+    const options = vi.mocked(fetch).mock.calls[0][1];
+    expect(options?.headers).toMatchObject({
+      "X-GuardRails-Event": "channel_verified",
+      "X-GuardRails-Signature": expect.stringMatching(/^v1=/),
+    });
+    expect(options?.body).toBe(
+      JSON.stringify({
+        event: "guardrails.channel_verified",
+        message: "GuardRails team notifications connected.",
+      }),
+    );
+  });
+
   it("loads channel health and recent delivery outcomes without returning targets", async () => {
     mocks.from.mockImplementation((table: string) =>
       table === "team_notification_channels"

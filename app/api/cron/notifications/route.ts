@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { decryptTarget } from "@/lib/notificationCrypto";
+import { decryptTarget, notificationTargetConfig } from "@/lib/notificationCrypto";
 import {
   alertEvent,
   retryDisposition,
@@ -22,6 +22,7 @@ import { privateDb, nowIso } from "@/lib/cloudflarePrivate";
 import { runtimeEnv } from "@/lib/runtimeEnv";
 import { queueCloudflareTeamDigests } from "@/lib/cloudflareTeamDigest";
 import { deliverCloudflareNotifications } from "@/lib/cloudflareNotificationQueue";
+import { signedWebhookHeaders } from "@/lib/webhookSignature";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -240,8 +241,9 @@ async function deliverTeamNotifications(db: Db, now: string) {
     try {
       const kind = String(channel.kind || "slack_webhook");
       const target = decryptTarget(String(channel.target_encrypted));
+      const targetConfig = notificationTargetConfig(target);
       const releaseEvent = metadata.release_event === true;
-      let destination = target;
+      let destination = targetConfig.url;
       let payload: unknown =
         kind === "generic_webhook"
           ? genericWebhookMessage(alert)
@@ -250,7 +252,7 @@ async function deliverTeamNotifications(db: Db, now: string) {
             : slackMessage(alert);
       let authorization: string | null = null;
       if (kind === "jira_cloud") {
-        const jira = parseJiraTarget(target);
+        const jira = parseJiraTarget(targetConfig.url);
         destination = `${jira.site}/rest/api/3/issue`;
         payload = jiraIssuePayload(alert, jira.project_key);
         authorization = jiraAuthorization(jira);
@@ -261,9 +263,10 @@ async function deliverTeamNotifications(db: Db, now: string) {
             "Email delivery is not configured by the service operator.",
           );
         destination = "https://api.resend.com/emails";
-        payload = emailPayload(alert, target);
+        payload = emailPayload(alert, targetConfig.url);
         authorization = `Bearer ${process.env.RESEND_API_KEY}`;
       }
+      const body = JSON.stringify(payload);
       const response = await fetch(destination, {
         method: "POST",
         redirect: "manual",
@@ -271,13 +274,19 @@ async function deliverTeamNotifications(db: Db, now: string) {
           "Content-Type": "application/json",
           "User-Agent": "GuardRails-Notification-Delivery/1.0",
           ...(kind === "generic_webhook"
-            ? { "X-GuardRails-Event": "monitoring_alert" }
+            ? targetConfig.signingSecret
+              ? await signedWebhookHeaders(
+                  targetConfig.signingSecret,
+                  "monitoring_alert",
+                  body,
+                )
+              : { "X-GuardRails-Event": "monitoring_alert" }
             : {}),
           ...(authorization
             ? { Authorization: authorization, Accept: "application/json" }
             : {}),
         },
-        body: JSON.stringify(payload),
+        body,
         signal: AbortSignal.timeout(12_000),
       });
       if (!response.ok) throw new Error(`Slack returned ${response.status}`);

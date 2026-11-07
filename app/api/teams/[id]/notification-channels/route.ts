@@ -17,6 +17,7 @@ import { requireEntitlement } from "@/lib/entitlements";
 import { getWorkspaceState, saveState } from "@/lib/cloudflareWorkspace";
 import { newId, nowIso } from "@/lib/cloudflarePrivate";
 import { encryptedCloudflareTarget } from "@/lib/cloudflareNotificationTarget";
+import { signedWebhookHeaders } from "@/lib/webhookSignature";
 
 const severities = new Set([
   "CRITICAL",
@@ -142,7 +143,7 @@ export async function POST(request: Request, context: Context) {
         { status: 400 },
       );
 
-    const response = await validateProvider(kind, url, jira);
+    const response = await validateProvider(kind, url, jira, signingSecret);
     if (!response.ok)
       return NextResponse.json(
         { error: "The notification endpoint rejected validation." },
@@ -169,7 +170,11 @@ export async function POST(request: Request, context: Context) {
         team_id: id,
         kind,
         label,
-        target_encrypted: encryptTarget(target),
+        target_encrypted: encryptTarget(
+          signingSecret
+            ? JSON.stringify({ url: target, signing_secret: signingSecret })
+            : target,
+        ),
         minimum_severity: severity,
         last_validated_at: new Date().toISOString(),
       })
@@ -256,10 +261,11 @@ function validateTarget(
   return false;
 }
 
-function validateProvider(
+async function validateProvider(
   kind: string,
   url: string,
   jira: { site: string; email: string; api_token: string },
+  signingSecret: string,
 ) {
   if (kind === "email_resend")
     return Promise.resolve(new Response(null, { status: 204 }));
@@ -275,21 +281,27 @@ function validateProvider(
       },
       signal: AbortSignal.timeout(10_000),
     });
+  const body = JSON.stringify(
+    kind === "slack_webhook"
+      ? { text: "GuardRails team notifications connected." }
+      : {
+          event: "guardrails.channel_verified",
+          message: "GuardRails team notifications connected.",
+        },
+  );
   return fetch(url, {
     method: "POST",
     redirect: "manual",
     headers: {
       "Content-Type": "application/json",
       "User-Agent": "GuardRails-Notification-Validator/1.0",
+      ...(kind === "generic_webhook"
+        ? signingSecret
+          ? await signedWebhookHeaders(signingSecret, "channel_verified", body)
+          : { "X-GuardRails-Event": "channel_verified" }
+        : {}),
     },
-    body: JSON.stringify(
-      kind === "slack_webhook"
-        ? { text: "GuardRails team notifications connected." }
-        : {
-            event: "guardrails.channel_verified",
-            message: "GuardRails team notifications connected.",
-          },
-    ),
+    body,
     signal: AbortSignal.timeout(10_000),
   });
 }

@@ -4,12 +4,13 @@ import {
   jiraIssuePayload,
   parseJiraTarget,
 } from "@/lib/jiraNotification";
-import { decryptTarget } from "@/lib/notificationCrypto";
+import { decryptTarget, notificationTargetConfig } from "@/lib/notificationCrypto";
 import { runtimeEnv } from "@/lib/runtimeEnv";
 import {
   genericWebhookMessage,
   isSafeWebhookUrl,
 } from "@/lib/teamNotificationPayload";
+import { signedWebhookHeaders } from "@/lib/webhookSignature";
 
 export type DeliverableTeamChannel = {
   kind: string;
@@ -21,7 +22,8 @@ export async function deliverTeamChannelTest(channel: DeliverableTeamChannel) {
 }
 
 export async function deliverTeamChannelTestTarget(channel: { kind: string; target: string }) {
-  const target = channel.target;
+  const targetConfig = notificationTargetConfig(channel.target);
+  const target = targetConfig.url;
   const alert = testAlert();
   let destination = target;
   let payload: unknown;
@@ -54,6 +56,7 @@ export async function deliverTeamChannelTestTarget(channel: { kind: string; targ
     throw new Error("This notification provider is not supported.");
   }
 
+  const body = JSON.stringify(payload);
   const response = await fetch(destination, {
     method: "POST",
     // Cloudflare Workers supports only "follow" and "manual". Manual keeps
@@ -63,13 +66,19 @@ export async function deliverTeamChannelTestTarget(channel: { kind: string; targ
       "Content-Type": "application/json",
       "User-Agent": "GuardRails-Notification-Test/1.0",
       ...(channel.kind === "generic_webhook"
-        ? { "X-GuardRails-Event": "integration_test" }
+        ? targetConfig.signingSecret
+          ? await signedWebhookHeaders(
+              targetConfig.signingSecret,
+              "integration_test",
+              body,
+            )
+          : { "X-GuardRails-Event": "integration_test" }
         : {}),
       ...(authorization
         ? { Authorization: authorization, Accept: "application/json" }
         : {}),
     },
-    body: JSON.stringify(payload),
+    body,
     signal: AbortSignal.timeout(12_000),
   });
   if (!response.ok) {

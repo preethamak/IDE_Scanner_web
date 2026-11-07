@@ -24,6 +24,28 @@ export function decryptTarget(value: string): string {
   return Buffer.concat([decipher.update(Buffer.from(encrypted, "base64url")), decipher.final()]).toString("utf8");
 }
 
+export function notificationTargetConfig(value: string): {
+  url: string;
+  signingSecret: string;
+} {
+  const raw = value.startsWith("v1.") ? decryptTarget(value) : value;
+  try {
+    const parsed = JSON.parse(raw) as { url?: unknown; signing_secret?: unknown };
+    if (typeof parsed.url === "string") {
+      return {
+        url: parsed.url,
+        signingSecret:
+          typeof parsed.signing_secret === "string"
+            ? parsed.signing_secret
+            : "",
+      };
+    }
+  } catch {
+    // Legacy channels store the target directly rather than as an envelope.
+  }
+  return { url: raw, signingSecret: "" };
+}
+
 export function outboundNotificationsConfigured(): boolean {
   return Boolean(runtimeEnv("MONITORING_ENCRYPTION_KEY") && runtimeEnv("NOTIFICATION_CRON_SECRET"));
 }

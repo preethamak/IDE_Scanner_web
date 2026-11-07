@@ -4,7 +4,27 @@ const mocks = vi.hoisted(() => ({
   decrypt: vi.fn(),
   emailConfigured: vi.fn(),
 }));
-vi.mock("@/lib/notificationCrypto", () => ({ decryptTarget: mocks.decrypt }));
+vi.mock("@/lib/notificationCrypto", () => ({
+  decryptTarget: mocks.decrypt,
+  notificationTargetConfig: (value: string) => {
+    const raw = value.startsWith("v1.") ? mocks.decrypt(value) : value;
+    try {
+      const parsed = JSON.parse(raw) as { url?: unknown; signing_secret?: unknown };
+      if (typeof parsed.url === "string") {
+        return {
+          url: parsed.url,
+          signingSecret:
+            typeof parsed.signing_secret === "string"
+              ? parsed.signing_secret
+              : "",
+        };
+      }
+    } catch {
+      // Legacy URL target.
+    }
+    return { url: raw, signingSecret: "" };
+  },
+}));
 vi.mock("@/lib/emailNotification", async () => {
   const actual = await vi.importActual<
     typeof import("@/lib/emailNotification")
@@ -44,6 +64,25 @@ describe("provider test delivery", () => {
       event: "guardrails.integration_test",
       test: true,
     });
+  });
+
+  it("signs the exact generic test body when the encrypted target has a signing secret", async () => {
+    mocks.decrypt.mockReturnValue(
+      JSON.stringify({
+        url: "https://hooks.example.com/guardrails",
+        signing_secret: "1234567890123456",
+      }),
+    );
+    await deliverTeamChannelTest({
+      kind: "generic_webhook",
+      target_encrypted: "secret",
+    });
+    const options = vi.mocked(fetch).mock.calls[0][1];
+    expect(options?.headers).toMatchObject({
+      "X-GuardRails-Event": "integration_test",
+      "X-GuardRails-Signature": expect.stringMatching(/^v1=/),
+    });
+    expect(options?.body).toContain("guardrails.integration_test");
   });
 
   it("reports the actual provider without returning its decrypted destination", async () => {
