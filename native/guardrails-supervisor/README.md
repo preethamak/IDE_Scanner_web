@@ -22,6 +22,12 @@ GUARDRAILS_AUDIT_PATH=/tmp/guardrails-audit.jsonl cargo run --manifest-path nati
 
 Send one JSON envelope per line. IPC version `1` is mandatory. The audit path must not already exist; refusing to append to an unknown pre-existing chain avoids silently trusting an unauthenticated prefix.
 
+To run with grants, set `GUARDRAILS_GRANTS_PATH` to a JSON array of exact
+`Grant` records. The supervisor rejects symlinks, files larger than 1 MiB, files
+with more than 10,000 grants, malformed JSON, and (on Unix) files writable by
+group or other users. Omitting the variable starts with no grants and denies by
+default.
+
 ## Next security steps
 
 1. Authenticate the desktop-shell IPC peer.

@@ -1,4 +1,4 @@
-use guardrails_supervisor::{AuditWriter, IpcEnvelope, PolicyRequest, Supervisor};
+use guardrails_supervisor::{AuditWriter, IpcEnvelope, PolicyRequest, Supervisor, load_grants};
 use std::{
     env,
     io::{self, BufRead, Write},
@@ -12,7 +12,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(PathBuf::from)
         .ok_or("GUARDRAILS_AUDIT_PATH is required")?;
     let audit = AuditWriter::create(audit_path)?;
-    let mut supervisor = Supervisor::new(Vec::new(), audit);
+    let grants = match env::var_os("GUARDRAILS_GRANTS_PATH") {
+        Some(path) => load_grants(PathBuf::from(path))?,
+        None => Vec::new(),
+    };
+    let mut supervisor = Supervisor::new(grants, audit);
     let stdin = io::stdin();
     let mut stdout = io::stdout().lock();
     for line in stdin.lock().lines() {
