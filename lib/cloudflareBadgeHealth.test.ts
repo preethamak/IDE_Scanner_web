@@ -105,4 +105,29 @@ describe("Cloudflare badge health reconciliation", () => {
     const state = JSON.parse(updates[0]) as Record<string, unknown>;
     expect(state.watchlist).toEqual([expect.objectContaining({ last_observed_version: "3.0.0" })]);
   });
+
+  it("marks a team degraded when its provider lookup fails despite another catalog entry", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("registry unavailable")));
+    const { db, updates } = database({
+      catalog: [{ id: "other.extension", latest_version: "1.0.0" }],
+      watchlist: [{ extension_id: "eclipse.assistant", registry: "openvsx", baseline_version: "2.0.0", last_observed_version: "2.0.0" }],
+    });
+    await reconcileCloudflareBadgeHealth(db, "2026-09-16T10:00:00.000Z");
+    expect(JSON.parse(updates[0]).monitoring).toMatchObject({ status: "degraded", error: "Could not check 1 monitored extension during the last registry check." });
+  });
+
+  it("keeps detected changes while reporting unresolved watched extensions", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("registry unavailable")));
+    const { db, updates } = database({
+      catalog: [{ id: "publisher.extension", latest_version: "1.2.4" }],
+      watchlist: [
+        { extension_id: "publisher.extension", baseline_version: "1.2.3", last_observed_version: "1.2.3" },
+        { extension_id: "eclipse.assistant", registry: "openvsx", baseline_version: "2.0.0", last_observed_version: "2.0.0" },
+      ],
+    });
+    await expect(reconcileCloudflareBadgeHealth(db, "2026-09-16T10:00:00.000Z")).resolves.toMatchObject({ releases_detected: 1 });
+    const state = JSON.parse(updates[0]);
+    expect(state.monitoring.status).toBe("degraded");
+    expect(state.release_events).toEqual([expect.objectContaining({ extension_id: "publisher.extension", target_version: "1.2.4" })]);
+  });
 });

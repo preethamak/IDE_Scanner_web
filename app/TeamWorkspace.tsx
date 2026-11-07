@@ -2208,7 +2208,7 @@ function ReviewInbox({
           <EmptyReview />
         )}
       </section>
-      <ReleaseEventQueue teamId={teamId} />
+      <ReleaseEventQueue key={teamId} teamId={teamId} />
       {selected ? (
         <ReviewDecisionPanel
           teamId={teamId}
