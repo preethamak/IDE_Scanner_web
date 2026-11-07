@@ -107,6 +107,10 @@ const events: Array<[EventPreference, string, string]> = [
   ],
 ];
 
+function isTerminalDelivery(status: string | null | undefined) {
+  return status === "dead_letter";
+}
+
 export default function NotificationSettings({
   configured,
   channels,
@@ -312,6 +316,13 @@ export default function NotificationSettings({
                     <p className={styles.channelError}>
                       <CircleAlert />
                       {channel.last_error}
+                    </p>
+                  ) : null}
+                  {isTerminalDelivery(latest?.status) ? (
+                    <p className={styles.terminalDelivery}>
+                      <CircleAlert />
+                      Delivery stopped after {latest.attempts} attempts. Validate
+                      this destination, then send a new test or replace the channel.
                     </p>
                   ) : null}
                   {result[channel.id] ? (

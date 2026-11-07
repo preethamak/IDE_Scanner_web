@@ -830,7 +830,7 @@ export default function TeamWorkspace(
   ).length;
   const failedDeliveries = alerts.filter((alert) =>
     alert.team_notification_deliveries?.some(
-      (delivery) => delivery.status === "failed",
+      (delivery) => delivery.status === "failed" || delivery.status === "dead_letter",
     ),
   ).length;
 

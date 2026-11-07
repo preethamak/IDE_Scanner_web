@@ -22,6 +22,7 @@ describe("workspace notifications product surface", () => {
     expect(workspace).toContain("aria-expanded={notificationOpen}");
     expect(center).toContain("Release changes awaiting your team.");
     expect(center).toContain("Delivery needs attention");
+    expect(center).toContain("Delivery stopped; validate the channel");
   });
 
   it("supports provider health, test delivery, removal, and explicit empty states", () => {
@@ -31,6 +32,7 @@ describe("workspace notifications product surface", () => {
       "Remove this channel?",
       "No delivery channel yet.",
       "Latest delivery",
+      "Delivery stopped after",
     ])
       expect(settings).toContain(copy);
   });
