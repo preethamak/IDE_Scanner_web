@@ -10,6 +10,8 @@ It is **not a sandbox**. It does not launch untrusted processes, create Linux na
 
 Credential-bearing resources have an independent authorization path. `.env` (other than `.env.example`), private keys, credential files, and common package-manager credential files deny through `read`; callers must use `read_sensitive` with an additional exact `secret/read` allow decision. Both decisions must carry an audit receipt and bind the same principal, workspace, resource, delegation chain, and policy version. This prevents a broad filesystem-read approval from silently authorizing credential access.
 
+`create` is an intentionally narrow write primitive. It needs an exact `filesystem/write` allow decision with an audit receipt, creates only a previously absent non-sensitive file beneath the pinned workspace, limits content to the broker byte limit, writes with mode `0600`, and calls `fsync`. It will not replace existing files or create classified credential resources.
+
 This is deliberately narrower than the filesystem MVP acceptance criteria. Write grants, mount namespaces, case-folding and alternate-stream conformance, lease revocation, and untrusted-process tests are not implemented.
 
 ## Run
@@ -23,7 +25,7 @@ Send one JSON envelope per line. IPC version `1` is mandatory. The audit path mu
 ## Next security steps
 
 1. Authenticate the desktop-shell IPC peer.
-2. Add independent write grants to the Linux filesystem broker.
+2. Add atomic replacement, sensitive-file write grants, and scoped directory creation to the Linux filesystem broker.
 3. Launch per-principal processes with an empty environment and an isolated network namespace.
 4. Bind approvals to executable, normalized arguments, working directory, and request digest.
 5. Move the audit writer behind a restricted identity and remote append-only sink.

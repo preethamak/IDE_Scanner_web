@@ -57,6 +57,20 @@ fn sensitive_allowed() -> Decision {
     }
 }
 
+fn write_request(resource: &str) -> PolicyRequest {
+    let mut request = request(resource);
+    request.request_id = "request:create-file".into();
+    request.action = "write".into();
+    request
+}
+
+fn write_allowed() -> Decision {
+    let mut decision = allowed();
+    decision.request_id = "request:create-file".into();
+    decision.matching_grant_id = Some("grant:file-write".into());
+    decision
+}
+
 #[test]
 fn reads_only_an_exact_authorized_workspace_file() {
     let workspace = tempdir().unwrap();
@@ -177,4 +191,66 @@ fn allows_an_env_example_through_the_normal_source_read_path() {
             .unwrap(),
         b"TOKEN="
     );
+}
+
+#[test]
+fn creates_a_new_file_only_after_an_exact_audited_write_allow() {
+    let workspace = tempdir().unwrap();
+    let broker = FilesystemBroker::open(workspace.path(), 1024).unwrap();
+    let request = write_request("workspace/review-output.json");
+
+    broker
+        .create(&request, &write_allowed(), b"{\"decision\":\"allow\"}")
+        .unwrap();
+    assert_eq!(
+        fs::read(workspace.path().join("review-output.json")).unwrap(),
+        b"{\"decision\":\"allow\"}"
+    );
+}
+
+#[test]
+fn never_overwrites_existing_files_or_creates_sensitive_resources() {
+    let workspace = tempdir().unwrap();
+    fs::write(workspace.path().join("existing.txt"), b"original").unwrap();
+    let broker = FilesystemBroker::open(workspace.path(), 1024).unwrap();
+
+    assert_eq!(
+        broker.create(
+            &write_request("workspace/existing.txt"),
+            &write_allowed(),
+            b"replacement"
+        ),
+        Err(FilesystemError::AlreadyExists)
+    );
+    assert_eq!(
+        fs::read(workspace.path().join("existing.txt")).unwrap(),
+        b"original"
+    );
+    assert_eq!(
+        broker.create(
+            &write_request("workspace/.env"),
+            &write_allowed(),
+            b"TOKEN=value"
+        ),
+        Err(FilesystemError::SensitiveAuthorizationRequired)
+    );
+}
+
+#[test]
+fn denies_mismatched_or_oversized_write_requests_before_creating_a_file() {
+    let workspace = tempdir().unwrap();
+    let broker = FilesystemBroker::open(workspace.path(), 3).unwrap();
+    let request = write_request("workspace/out.txt");
+    let mut mismatched = write_allowed();
+    mismatched.request_id = "request:other".into();
+
+    assert_eq!(
+        broker.create(&request, &mismatched, b"ok"),
+        Err(FilesystemError::AuthorizationMismatch)
+    );
+    assert_eq!(
+        broker.create(&request, &write_allowed(), b"long"),
+        Err(FilesystemError::TooLarge)
+    );
+    assert!(!workspace.path().join("out.txt").exists());
 }
