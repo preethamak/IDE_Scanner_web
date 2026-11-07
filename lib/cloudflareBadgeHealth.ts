@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { cloudflareChannelTarget, encryptedCloudflareTarget } from "@/lib/cloudflareNotificationTarget";
 
 type JsonObject = Record<string, unknown>;
 type CatalogEntry = { id?: unknown; latest_version?: unknown };
@@ -163,7 +164,8 @@ export async function reconcileCloudflareBadgeHealth(
         const existingAlert = alerts.some((item) => String(item.dedupe_key) === alert.dedupe_key);
         if (!existingAlert) alerts.unshift(alert);
         for (const channel of array(state.channels)) {
-          if (channel.enabled === false || !stringValue(channel.target)) continue;
+          const target = cloudflareChannelTarget(channel);
+          if (channel.enabled === false || !target) continue;
           const payload = {
             provider: String(channel.kind || "generic_webhook"),
             event: "guardrails.badge_refresh_recommended",
@@ -179,7 +181,7 @@ export async function reconcileCloudflareBadgeHealth(
             .bind(team.team_id, deliveryKey, `%${deliveryKey}%`).first<Record<string, unknown>>();
           if (!existingDelivery) {
             await db.prepare("INSERT OR IGNORE INTO app_notification_deliveries(id,team_id,kind,target,payload_json,status,attempts,next_attempt_at,created_at,delivery_key) VALUES(?,?,?,?,?,?,?,?,?,?)")
-              .bind(randomUUID(), team.team_id, String(channel.kind || "generic_webhook"), String(channel.target), JSON.stringify({ ...payload, delivery_key: deliveryKey }), "pending", 0, now, now, deliveryKey).run();
+              .bind(randomUUID(), team.team_id, String(channel.kind || "generic_webhook"), encryptedCloudflareTarget(target), JSON.stringify({ ...payload, delivery_key: deliveryKey }), "pending", 0, now, now, deliveryKey).run();
           }
         }
       }

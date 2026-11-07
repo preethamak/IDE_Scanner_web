@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const save = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/cloudflarePrivate", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/lib/cloudflarePrivate")>()), saveWorkspaceState: save }));
@@ -6,7 +6,11 @@ vi.mock("@/lib/cloudflarePrivate", async (importOriginal) => ({ ...(await import
 import { queueCloudflareTeamDigests } from "./cloudflareTeamDigest";
 
 describe("Cloudflare team digest queue", () => {
-  beforeEach(() => save.mockReset().mockResolvedValue(undefined));
+  beforeEach(() => {
+    save.mockReset().mockResolvedValue(undefined);
+    vi.stubEnv("MONITORING_ENCRYPTION_KEY", "test-encryption-key");
+  });
+  afterEach(() => vi.unstubAllEnvs());
 
   it("queues one opt-in digest per channel and records the period", async () => {
     const inserts: unknown[][] = [];

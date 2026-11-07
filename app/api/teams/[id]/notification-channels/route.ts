@@ -16,6 +16,7 @@ import { isSafeWebhookUrl } from "@/lib/teamNotificationPayload";
 import { requireEntitlement } from "@/lib/entitlements";
 import { getWorkspaceState, saveState } from "@/lib/cloudflareWorkspace";
 import { newId, nowIso } from "@/lib/cloudflarePrivate";
+import { encryptedCloudflareTarget } from "@/lib/cloudflareNotificationTarget";
 
 const severities = new Set([
   "CRITICAL",
@@ -153,10 +154,10 @@ export async function POST(request: Request, context: Context) {
     if (provider === "cloudflare") {
       const state = await getWorkspaceState(id);
       const createdAt = nowIso();
-      const channel = { id: newId(), kind, label, enabled: true, minimum_severity: severity, last_validated_at: createdAt, last_error: null, created_at: createdAt, target };
+      const channel = { id: newId(), kind, label, enabled: true, minimum_severity: severity, last_validated_at: createdAt, last_error: null, created_at: createdAt, target_encrypted: encryptedCloudflareTarget(target) };
       state.channels.push(channel);
       await saveState(id, state);
-      const safeChannel = Object.fromEntries(Object.entries(channel).filter(([key]) => key !== "target"));
+      const safeChannel = Object.fromEntries(Object.entries(channel).filter(([key]) => key !== "target" && key !== "target_encrypted"));
       return NextResponse.json(safeChannel, { status: 201 });
     }
     const { data, error } = await serviceDb()
