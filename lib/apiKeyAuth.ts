@@ -1,26 +1,33 @@
 import { hashApiKey } from "@/lib/apiKeys";
+import { hasApiKeyScopes, type ApiKeyScope } from "@/lib/apiKeyScopes";
 import { AuthenticationError } from "@/lib/auth";
 import { EntitlementError, workspaceEntitlements } from "@/lib/entitlements";
 import { serviceDb } from "@/lib/supabase";
 
-export type ApiKeyAuth = { teamId: string; keyId: string };
+export type ApiKeyAuth = { teamId: string; keyId: string; scopes: ApiKeyScope[] };
 
 /**
  * Authenticates a request against a workspace `api_keys` row (distinct from
  * `authenticated()` in lib/auth.ts, which only accepts Supabase session
  * JWTs). Bulk, machine-to-machine endpoints use this instead.
  */
-export async function authenticatedByApiKey(request: Request): Promise<ApiKeyAuth> {
+export async function authenticatedByApiKey(
+  request: Request,
+  options: { requiredScopes?: readonly ApiKeyScope[] } = {},
+): Promise<ApiKeyAuth> {
   const raw = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim() || "";
   if (!raw) throw new AuthenticationError("Provide an API key as: Authorization: Bearer <key>.");
   const db = serviceDb();
   const { data, error } = await db
     .from("api_keys")
-    .select("id,team_id,revoked_at")
+    .select("id,team_id,revoked_at,scopes")
     .eq("key_hash", hashApiKey(raw))
     .maybeSingle();
   if (error) throw error;
   if (!data || data.revoked_at) throw new AuthenticationError("This API key is invalid or has been revoked.");
+  if (!hasApiKeyScopes(data.scopes, options.requiredScopes || [])) {
+    throw new AuthenticationError("This API key does not have the scope required for this operation.");
+  }
 
   const entitlements = await workspaceEntitlements(data.team_id);
   if (entitlements.plan === "free") {
@@ -32,5 +39,5 @@ export async function authenticatedByApiKey(request: Request): Promise<ApiKeyAut
     () => {},
   );
 
-  return { teamId: data.team_id, keyId: data.id };
+  return { teamId: data.team_id, keyId: data.id, scopes: data.scopes as ApiKeyScope[] };
 }

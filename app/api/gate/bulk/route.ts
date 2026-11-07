@@ -22,7 +22,7 @@ const MAX_CONCURRENT_LOOKUPS = 8;
 export async function POST(request: Request) {
   let auth;
   try {
-    auth = await authenticatedByApiKey(request);
+    auth = await authenticatedByApiKey(request, { requiredScopes: ["gate:read"] });
   } catch (error) {
     if (error instanceof AuthenticationError) return NextResponse.json({ error: error.message }, { status: 401 });
     if (error instanceof EntitlementError) return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
