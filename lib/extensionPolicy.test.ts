@@ -135,4 +135,35 @@ describe("enterprise extension policy bundles", () => {
     expect(bundle.entries).toHaveLength(1);
     expect(bundle.entries[0].decision_id).toBe("complete");
   });
+
+  it("keeps declared related packages outside a parent approval and flags unresolved children", () => {
+    const bundle = buildExtensionPolicyBundle("team-1", [{
+      id: "related-release",
+      scan_id: "scan-1",
+      extension_id: "publisher.parent",
+      version: "1.0.0",
+      decision: "allow",
+      artifact_sha256: "a".repeat(64),
+      analysis_status: "complete",
+      relationship_inventory: {
+        entries: [
+          { extension_id: "publisher.scanned", relationship: "extensionPack" },
+          { extension_id: "publisher.unresolved", relationship: "extensionDependencies" },
+        ],
+        resolution: [
+          { extension_id: "publisher.scanned", relationship: "extensionPack", status: "scanned", resolved_version: "2.0.0", resolved_artifact_sha256: "b".repeat(64) },
+          { extension_id: "publisher.unresolved", relationship: "extensionDependencies", status: "acquisition_failed" },
+        ],
+      },
+    }]);
+
+    expect(bundle.entries).toHaveLength(1);
+    expect(bundle.entries[0].relationship_contract).toEqual({
+      declared: [
+        { extension_id: "publisher.unresolved", relationship: "extensionDependencies", status: "acquisition_failed", resolved_version: null, resolved_artifact_sha256: null },
+        { extension_id: "publisher.scanned", relationship: "extensionPack", status: "scanned", resolved_version: "2.0.0", resolved_artifact_sha256: "b".repeat(64) },
+      ],
+      requires_separate_review: true,
+    });
+  });
 });
