@@ -5,6 +5,7 @@ import { teamApiError } from "@/lib/teamApiError";
 import { serviceDb } from "@/lib/supabase";
 import { getWorkspaceState, saveState } from "@/lib/cloudflareWorkspace";
 import { newId, nowIso, privateDb } from "@/lib/cloudflarePrivate";
+import { getCloudflareAccessibleScanIdentity } from "@/lib/cloudflareScanAccess";
 
 export async function GET(
   request: Request,
@@ -47,21 +48,38 @@ export async function POST(
         { error: "A scan id and valid decision are required." },
         { status: 400 },
       );
+    const rationale = typeof body.rationale === "string" ? body.rationale.trim() : "";
+    if (rationale.length > 4000) return NextResponse.json({ error: "The decision reason must be 4,000 characters or fewer." }, { status: 400 });
+    if (decision !== "review" && !rationale) return NextResponse.json({ error: "Add a reason before allowing, blocking, or excepting this release." }, { status: 400 });
     if (provider === "cloudflare") {
-      const scan = await privateDb().prepare("SELECT extension_id,version FROM app_scan_reports WHERE scan_id=?").bind(scanId).first<Record<string, unknown>>();
-      if (!scan) return NextResponse.json({ error: "Scan not found." }, { status: 404 });
-      const rationale = typeof body.rationale === "string" ? body.rationale.trim().slice(0, 4000) : "";
-      const dueAt = body.due_at == null ? null : new Date(String(body.due_at));
-      if (dueAt && Number.isNaN(dueAt.getTime())) return NextResponse.json({ error: "Invalid due date." }, { status: 400 });
       const workspace = await getWorkspaceState(id);
       const existing = workspace.decisions.find((item) => String(item.scan_id) === scanId);
+      // A saved decision is a workspace-scoped evidence grant. A new binding
+      // must come from the requester's own scan or an attested public release.
+      const scan = existing || await getCloudflareAccessibleScanIdentity(scanId, user.id);
+      if (!scan) return NextResponse.json({ error: "Scan not found." }, { status: 404 });
+      const assignedTo = body.assigned_to == null ? null : asUuid(body.assigned_to);
+      if (body.assigned_to != null && !assignedTo) return NextResponse.json({ error: "Invalid assignee." }, { status: 400 });
+      if (assignedTo) {
+        const assignee = await privateDb().prepare("SELECT user_id FROM app_team_members WHERE team_id=? AND user_id=?").bind(id, assignedTo).first<Record<string, unknown>>();
+        if (!assignee) return NextResponse.json({ error: "The assignee must be a member of this team." }, { status: 400 });
+      }
+      const dueAt = body.due_at == null ? null : new Date(String(body.due_at));
+      if (dueAt && Number.isNaN(dueAt.getTime())) return NextResponse.json({ error: "Invalid due date." }, { status: 400 });
       const now = nowIso();
-      const record = existing || { id: newId(), scan_id: scanId, extension_id: String(scan.extension_id), version: String(scan.version), assigned_to: body.assigned_to || null, created_at: now };
-      Object.assign(record, { decision, rationale, due_at: dueAt?.toISOString() || null, resolved_at: decision === "review" ? null : now, updated_at: now, team_id: id });
+      const before = existing ? decisionState(existing) : null;
+      const after = { decision, rationale, assigned_to: assignedTo, due_at: dueAt?.toISOString() || null, resolved_at: decision === "review" ? null : existing?.resolved_at || now };
+      const priorEvent = existing ? workspace.audit.find((event) => event.object_type === "decision" && event.object_id === existing.id) : null;
+      if (existing && priorEvent && JSON.stringify(before) === JSON.stringify(after)) {
+        return NextResponse.json({ ...existing, audit_receipt: decisionReceipt(priorEvent) });
+      }
+      const record = existing || { id: newId(), scan_id: scanId, extension_id: String(scan.extension_id), version: String(scan.version), created_at: now, created_by: user.id };
+      Object.assign(record, after, { updated_at: now, updated_by: user.id, team_id: id });
       workspace.decisions = [record, ...workspace.decisions.filter((item) => item !== existing)];
-      workspace.audit.unshift({ event_id: newId(), workspace_id: id, actor_id: user.id, action: "decision_updated", object_type: "decision", object_id: String(record.id), extension_id: record.extension_id, version: record.version, previous_state: null, resulting_state: { decision, rationale }, rationale, risk_level: null, receipt_id: newId(), occurred_at: now });
+      const event = { event_id: newId(), workspace_id: id, actor_id: user.id, action: "decision_updated", object_type: "decision", object_id: String(record.id), extension_id: record.extension_id, version: record.version, previous_state: before, resulting_state: after, rationale, risk_level: null, receipt_id: newId(), occurred_at: now };
+      workspace.audit.unshift(event);
       await saveState(id, workspace);
-      return NextResponse.json({ ...record, audit_receipt: { id: String(record.id), action: "decision_updated", recorded_at: now } }, { status: existing ? 200 : 201 });
+      return NextResponse.json({ ...record, audit_receipt: decisionReceipt(event) }, { status: existing ? 200 : 201 });
     }
     const db = serviceDb();
     const { data: scan, error: scanError } = await db
@@ -72,10 +90,6 @@ export async function POST(
     if (scanError) throw scanError;
     if (!scan)
       return NextResponse.json({ error: "Scan not found." }, { status: 404 });
-    const rationale =
-      typeof body.rationale === "string"
-        ? body.rationale.trim().slice(0, 4000)
-        : "";
     const assignedTo =
       body.assigned_to == null ? null : asUuid(body.assigned_to);
     const dueAt = body.due_at == null ? null : new Date(String(body.due_at));
@@ -119,6 +133,14 @@ export async function POST(
     const failure = teamApiError(error, "Decision update failed.");
     return NextResponse.json({ error: failure.error }, { status: failure.status });
   }
+}
+
+function decisionState(record: Record<string, unknown>) {
+  return { decision: record.decision, rationale: record.rationale || "", assigned_to: record.assigned_to || null, due_at: record.due_at || null, resolved_at: record.resolved_at || null };
+}
+
+function decisionReceipt(event: Record<string, unknown>) {
+  return { id: event.receipt_id, event_id: event.event_id, actor_id: event.actor_id, action: event.action, recorded_at: event.occurred_at };
 }
 
 function atomicDecisionMutation(value: unknown) {

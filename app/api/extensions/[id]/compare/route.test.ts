@@ -18,6 +18,17 @@ describe("exact release comparison", () => {
     mocks.read.mockImplementation(async (_id, version) => version === "2.0.0" ? product(version) : null);
     expect(await (await GET(request(), context)).json()).toMatchObject({ comparable: false, missing: ["1.0.0"], to: { scan_id: "scan-2.0.0", decision: "allow", coverage_percent: 100 } });
   });
+  it("pins a workspace decision to the requested immutable target scan", async () => {
+    mocks.read.mockImplementation(async (_id, version, scanId) => ({ ...product(version), scan: { ...product(version).scan, id: scanId || `latest-${version}` } }));
+    const response = await GET(new Request("https://example.test/compare?from=1.0.0&to=2.0.0&toScanId=decision-scan"), context);
+    expect(mocks.read).toHaveBeenCalledWith("publisher.extension", "2.0.0", "decision-scan");
+    expect(await response.json()).toMatchObject({ comparable: true, to: { scan_id: "decision-scan" } });
+  });
+  it("does not fall back to another scan if the requested immutable scan is unavailable", async () => {
+    mocks.read.mockImplementation(async (_id, version, scanId) => scanId ? null : product(version));
+    const response = await GET(new Request("https://example.test/compare?from=1.0.0&to=2.0.0&toScanId=unavailable"), context);
+    expect(await response.json()).toMatchObject({ comparable: false, missing: ["2.0.0"], to: { findings: null, files: null } });
+  });
   it("does not compare incomplete scans", async () => {
     mocks.read.mockResolvedValue({ scan: { id: "incomplete", analysis_status: "partial" } });
     expect(await (await GET(request(), context)).json()).toMatchObject({ comparable: false, missing: ["1.0.0", "2.0.0"] });

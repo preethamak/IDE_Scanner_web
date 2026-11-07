@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   ArrowRight,
@@ -60,6 +60,8 @@ import {
   type QueueDecision,
 } from "@/lib/teamDecisionQueue";
 import type { DiscoveryResult } from "@/lib/types";
+import { assertExactWatchBaseline, exactReleaseReportHref, monitoringStatus, readExactReleaseIntent, type ExactReleaseIntent } from "@/lib/releaseReviewIntent";
+import { useDialogFocus } from "@/lib/useDialogFocus";
 import styles from "@/app/workspace/teamWorkspace.module.css";
 
 type Team = { id: string; name: string; slug: string; role: string };
@@ -228,10 +230,22 @@ export default function TeamWorkspace(
   const registryHref = props.initialExtension
     ? `/extensions/${encodeURIComponent(props.initialExtension)}`
     : "/registry";
+  const [entry, setEntry] = useState(() => {
+    const search = typeof window === "undefined" ? "" : window.location.search;
+    const params = new URLSearchParams(search);
+    return { release: readExactReleaseIntent(search), intent: params.get("intent"), view: params.get("view"), scanId: params.get("scanId") || "" };
+  });
+  const pinnedRelease = entry.intent === "monitor" ? entry.release : null;
+  const [monitorState, setMonitorState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [monitorError, setMonitorError] = useState("");
+  const [reviewScanId, setReviewScanId] = useState(entry.intent === "review" || entry.view === "inbox" ? entry.scanId : "");
+  const teamScope = useRef(0);
+  const workspaceRequest = useRef(0);
+  const workspaceAbort = useRef<AbortController | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
   const [activeTeamId, setActiveTeamId] = useState("");
   const [view, setView] = useState<View>(
-    props.focus === "monitor" ? "extensions" : "overview",
+    entry.view === "inbox" ? "inbox" : entry.view === "decisions" ? "decisions" : props.focus === "monitor" ? "extensions" : "overview",
   );
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState("");
@@ -310,14 +324,15 @@ export default function TeamWorkspace(
       const pending =
         (requestedSetup && available.some((team) => team.id === requestedSetup)
           ? requestedSetup
-          : available.find((team) =>
-                window.localStorage.getItem(`guardrails:setup:${team.id}`),
-              )?.id) ||
+          : available.find((team) => {
+              try { return Boolean(window.localStorage.getItem(`guardrails:setup:${team.id}`)); }
+              catch { return false; }
+            })?.id) ||
         "";
       setUserEmail(cloudflareSession.user?.email || supabaseUser?.email || "Signed-in user");
       setUserId(cloudflareSession.user?.id || supabaseUser?.id || "");
       setTeams(available);
-      setActiveTeamId((current) => current || pending || first);
+      setActiveTeamId((current) => available.some((team) => team.id === current) ? current : pending || first);
       setSetupTeamId(pending);
       setState("ready");
     } catch (cause) {
@@ -334,6 +349,10 @@ export default function TeamWorkspace(
   }, [loadTeams]);
   const loadWorkspace = useCallback(async () => {
     if (!activeTeamId) return;
+    const requestId = ++workspaceRequest.current;
+    workspaceAbort.current?.abort();
+    const controller = new AbortController();
+    workspaceAbort.current = controller;
     setDataState("loading");
     setAlerts([]);
     setDecisions([]);
@@ -343,22 +362,30 @@ export default function TeamWorkspace(
     setNotificationChannels([]);
     setNotificationDeliveries([]);
     setDigestDeliveries([]);
+    setNotificationsConfigured(false);
+    setNotificationPreferences(defaultNotificationPreferences);
+    setMonitoringHealth({ status: "unknown", last_checked_at: null, next_check_at: null, cadence_hours: 6, error: null });
+    setSaveState("idle");
+    setPolicyExportState("idle");
+    setSampleMode(false);
+    setNotificationOpen(false);
     try {
       const headers = await getAuthHeaders();
       if (!headers.Authorization) throw new Error("Your session expired. Sign in again.");
       const base = `/api/teams/${encodeURIComponent(activeTeamId)}`;
       const responses = await Promise.all([
-        fetch(`${base}/alerts`, { headers }),
-        fetch(`${base}/decisions`, { headers }),
-        fetch(`${base}/members`, { headers }),
-        fetch(`${base}/watchlist`, { headers }),
-        fetch(`${base}/notification-channels`, { headers }),
-        fetch(`${base}/monitoring-preferences`, { headers }),
-        fetch(`${base}/badges`, { headers }),
+        fetch(`${base}/alerts`, { headers, signal: controller.signal }),
+        fetch(`${base}/decisions`, { headers, signal: controller.signal }),
+        fetch(`${base}/members`, { headers, signal: controller.signal }),
+        fetch(`${base}/watchlist`, { headers, signal: controller.signal }),
+        fetch(`${base}/notification-channels`, { headers, signal: controller.signal }),
+        fetch(`${base}/monitoring-preferences`, { headers, signal: controller.signal }),
+        fetch(`${base}/badges`, { headers, signal: controller.signal }),
       ]);
       const bodies = await Promise.all(
         responses.map((response) => response.json().catch(() => ({}))),
       );
+      if (requestId !== workspaceRequest.current || controller.signal.aborted) return;
       if (responses.some((response) => response.status === 401)) {
         const next = `${window.location.pathname}${window.location.search}`;
         router.replace(`/account?next=${encodeURIComponent(next)}`);
@@ -395,13 +422,42 @@ export default function TeamWorkspace(
       setBadgeItems(responses[6].ok && Array.isArray(bodies[6]?.badges) ? bodies[6].badges : []);
       setDataState("ready");
     } catch {
+      if (requestId !== workspaceRequest.current || controller.signal.aborted) return;
       setDataState("error");
     }
   }, [activeTeamId, getAuthHeaders, router]);
   useEffect(() => {
     const timer = window.setTimeout(() => void loadWorkspace(), 0);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      workspaceRequest.current += 1;
+      workspaceAbort.current?.abort();
+    };
   }, [loadWorkspace]);
+
+  async function monitorPinnedRelease() {
+    if (!pinnedRelease || !activeTeamId || monitorState === "saving") return;
+    setMonitorState("saving"); setMonitorError("");
+    const scope = teamScope.current;
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/teams/${encodeURIComponent(activeTeamId)}/watchlist`, {
+        method: "POST", headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ extension_id: pinnedRelease.extensionId, version: pinnedRelease.version, baseline_scan_id: pinnedRelease.scanId }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(String(body.error || "Monitoring could not be started."));
+      assertExactWatchBaseline(body, pinnedRelease);
+      if (scope !== teamScope.current) return;
+      trackProductEvent({ name: "watch_created", source_route: window.location.pathname, scope: "team" });
+      await loadWorkspace();
+      if (scope === teamScope.current) setMonitorState("saved");
+    } catch (cause) {
+      if (scope !== teamScope.current) return;
+      setMonitorError(cause instanceof Error ? cause.message : "Monitoring could not be started.");
+      setMonitorState("error");
+    }
+  }
 
   async function downloadEnterprisePolicy() {
     if (!activeTeamId || policyExportState === "loading") return;
@@ -442,10 +498,11 @@ export default function TeamWorkspace(
     const body = await response.json().catch(() => ({}));
     if (!response.ok)
       throw new Error(String(body.error || "Workspace creation failed."));
-    window.localStorage.setItem(
-      `guardrails:setup:${body.id}`,
-      "workspace-created",
-    );
+    try { window.localStorage.setItem(`guardrails:setup:${body.id}`, "workspace-created"); }
+    catch { /* Setup also persists in the URL when browser storage is unavailable. */ }
+    const setupParams = new URLSearchParams(window.location.search);
+    setupParams.set("setup", String(body.id));
+    window.history.replaceState(null, "", `${window.location.pathname}?${setupParams}`);
     setTeams((current) => [body, ...current]);
     setActiveTeamId(body.id);
     setSetupTeamId(body.id);
@@ -455,6 +512,7 @@ export default function TeamWorkspace(
     nextDecision: string,
     rationale = decision.rationale || "",
   ) {
+    const scope = teamScope.current;
     setSaveState("saving");
     try {
       const headers = await getAuthHeaders();
@@ -487,6 +545,7 @@ export default function TeamWorkspace(
             body.error || "The decision service did not accept this update.",
           ),
         );
+      if (scope !== teamScope.current) return { ok: false, error: "The active workspace changed. Reopen this release in its workspace to verify the recorded decision." } satisfies DecisionSaveResult;
       const audit =
         body.audit_receipt && typeof body.audit_receipt === "object"
           ? (body.audit_receipt as Record<string, unknown>)
@@ -510,12 +569,12 @@ export default function TeamWorkspace(
         ),
       );
       setSaveState("saved");
-      window.setTimeout(() => setSaveState("idle"), 2200);
+      window.setTimeout(() => { if (scope === teamScope.current) setSaveState("idle"); }, 2200);
       return { ok: true, receipt } satisfies DecisionSaveResult;
     } catch (cause) {
       const message =
         cause instanceof Error ? cause.message : "Decision could not be saved.";
-      setSaveState("error");
+      if (scope === teamScope.current) setSaveState("error");
       return { ok: false, error: message } satisfies DecisionSaveResult;
     }
   }
@@ -838,6 +897,7 @@ export default function TeamWorkspace(
       <WorkspaceSetup
         team={activeTeam}
         email={userEmail}
+        pinnedRelease={pinnedRelease}
         initialExtension={
           props.initialExtension ||
           (typeof window === "undefined"
@@ -847,8 +907,9 @@ export default function TeamWorkspace(
         getAuthHeaders={getAuthHeaders}
         onSignOut={signOut}
         onComplete={async () => {
-          window.localStorage.removeItem(`guardrails:setup:${activeTeam.id}`);
+          try { window.localStorage.removeItem(`guardrails:setup:${activeTeam.id}`); } catch { /* The completed setup no longer depends on storage. */ }
           setSetupTeamId("");
+          setEntry((current) => ({ ...current, release: null, intent: null }));
           await loadWorkspace();
           window.history.replaceState(null, "", "/workspace");
         }}
@@ -873,7 +934,18 @@ export default function TeamWorkspace(
         <WorkspaceSwitcher
           teams={teams}
           active={activeTeam}
-          onChange={setActiveTeamId}
+          onChange={(id) => {
+            teamScope.current += 1;
+            workspaceRequest.current += 1;
+            workspaceAbort.current?.abort();
+            setAlerts([]); setDecisions([]); setMembers([]); setWatchItems([]); setBadgeItems([]);
+            setNotificationChannels([]); setNotificationDeliveries([]); setDigestDeliveries([]);
+            setNotificationPreferences(defaultNotificationPreferences); setNotificationsConfigured(false);
+            setMonitoringHealth({ status: "unknown", last_checked_at: null, next_check_at: null, cadence_hours: 6, error: null });
+            setSampleMode(false); setNotificationOpen(false); setMonitorState("idle"); setMonitorError("");
+            setSaveState("idle"); setPolicyExportState("idle"); setReviewScanId(""); setDataState("loading");
+            setActiveTeamId(id);
+          }}
         />
         <nav aria-label="Workspace navigation">
           {nav.map(([id, label, Icon]) => (
@@ -980,6 +1052,18 @@ export default function TeamWorkspace(
           />
         ) : null}
         <div className={styles.content}>
+          {pinnedRelease ? <section className="monitorPrompt" aria-label="Selected release monitoring">
+            <Radar />
+            <div><span>Selected report</span><strong>{pinnedRelease.extensionId}@{pinnedRelease.version}</strong>
+              <p>{monitorState === "saved" ? "This exact scan is now the monitoring baseline." : "Start monitoring from the exact report you selected. Scheduled checks surface new releases; their evidence must be analyzed before comparison."}</p>
+              <code>Scan {pinnedRelease.scanId}</code>
+              <div className="monitorPromptControls">
+                <Link href={exactReleaseReportHref(pinnedRelease)}>Open selected report</Link>
+                {canDecide ? <button className="button buttonDark" disabled={monitorState === "saving" || monitorState === "saved" || dataState === "idle" || dataState === "loading"} onClick={() => void monitorPinnedRelease()}>{monitorState === "saving" ? "Starting monitoring…" : monitorState === "saved" ? "Monitoring is on" : "Monitor this release"}</button> : <small>A workspace analyst or admin can start monitoring.</small>}
+              </div>
+              {monitorError ? <p role="alert">{monitorError}</p> : null}
+            </div>
+          </section> : null}
           {dataState === "error" ? (
             <div className={styles.dataError}>
               <CircleAlert />
@@ -1014,15 +1098,17 @@ export default function TeamWorkspace(
                     ? 1
                     : 0)
               }
-              loading={dataState === "loading"}
+              loading={dataState !== "ready"}
               sampleMode={sampleMode}
               onSample={setSampleMode}
               onNavigate={setView}
+              onReview={(decision) => { setReviewScanId(decision.scan_id); setView("inbox"); }}
             />
           ) : null}
           {view === "inbox" ? (
             <ReviewInbox
               key={`${activeTeam.id}:${userId}`}
+              initialScanId={reviewScanId}
               decisions={openDecisions}
               members={members}
               currentUserId={userId}
@@ -1050,6 +1136,7 @@ export default function TeamWorkspace(
           ) : null}
           {view === "capabilities" ? (
             <CapabilityGraphPanel
+              key={activeTeam.id}
               teamId={activeTeamId}
               role={activeTeam?.role || "viewer"}
               getAuthHeaders={getAuthHeaders}
@@ -1057,6 +1144,7 @@ export default function TeamWorkspace(
           ) : null}
           {view === "extensions" ? (
             <ExtensionsView
+              key={activeTeam.id}
               watches={watchItems}
               badges={badgeItems}
               health={monitoringHealth}
@@ -1084,6 +1172,7 @@ export default function TeamWorkspace(
           ) : null}
           {view === "activity" ? (
             <ActivityView
+              key={activeTeam.id}
               alerts={alerts}
               decisions={decisions}
               members={members}
@@ -1094,6 +1183,7 @@ export default function TeamWorkspace(
           ) : null}
           {view === "settings" ? (
             <SettingsView
+              key={activeTeam.id}
               team={activeTeam}
               members={members}
               currentUserId={userId}
@@ -1286,6 +1376,7 @@ function WorkspaceSetup({
   team,
   email,
   initialExtension = "",
+  pinnedRelease,
   getAuthHeaders,
   onSignOut,
   onComplete,
@@ -1293,6 +1384,7 @@ function WorkspaceSetup({
   team: Team;
   email: string;
   initialExtension?: string;
+  pinnedRelease: ExactReleaseIntent | null;
   getAuthHeaders: () => Promise<Record<string, string>>;
   onSignOut: () => Promise<void>;
   onComplete: () => Promise<void>;
@@ -1306,7 +1398,7 @@ function WorkspaceSetup({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   async function addExtension() {
-    if (!selected) return;
+    if (!selected && !pinnedRelease) return;
     setSaving(true);
     setError("");
     try {
@@ -1315,7 +1407,8 @@ function WorkspaceSetup({
       // A public Marketplace result is sufficient to start a watch. A
       // cataloged scan is optional here and only upgrades the initial baseline
       // when one is already available.
-      let scan: Record<string, unknown> | null = null;
+      let scan: Record<string, unknown> | null = pinnedRelease ? { id: pinnedRelease.scanId } : null;
+      if (!pinnedRelease && selected) {
       try {
         const productResponse = await fetch(
           `/api/extensions/${encodeURIComponent(selected.extension_id)}`,
@@ -1327,10 +1420,11 @@ function WorkspaceSetup({
       } catch {
         // The watchlist endpoint resolves Marketplace extensions directly.
       }
+      }
       const payload: Record<string, string> = {
-        extension_id: selected.extension_id,
-        version: selected.version,
-        registry: selected.registry || "vs-marketplace",
+        extension_id: pinnedRelease?.extensionId || selected!.extension_id,
+        version: pinnedRelease?.version || selected!.version,
+        registry: selected?.registry || "vs-marketplace",
       };
       if (scan?.id) payload.baseline_scan_id = String(scan.id);
       let response = await fetch(
@@ -1344,7 +1438,7 @@ function WorkspaceSetup({
           body: JSON.stringify(payload),
         },
       );
-      if (!response.ok && payload.baseline_scan_id) {
+      if (!response.ok && payload.baseline_scan_id && !pinnedRelease) {
         delete payload.baseline_scan_id;
         response = await fetch(
           `/api/teams/${encodeURIComponent(team.id)}/watchlist`,
@@ -1365,8 +1459,9 @@ function WorkspaceSetup({
             body.error || "This extension could not be added to monitoring.",
           ),
         );
+      if (pinnedRelease) assertExactWatchBaseline(body, pinnedRelease);
       setBaseline({
-        version: String(body.baseline_version || selected.version),
+        version: String(body.baseline_version || pinnedRelease?.version || selected?.version),
         state: body.monitoring_state === "monitoring" ? "current" : "pending",
       });
       trackProductEvent({
@@ -1374,10 +1469,8 @@ function WorkspaceSetup({
         source_route: window.location.pathname,
         scope: "team",
       });
-      window.localStorage.setItem(
-        `guardrails:setup:${team.id}`,
-        "extension-added",
-      );
+      try { window.localStorage.setItem(`guardrails:setup:${team.id}`, "extension-added"); }
+      catch { /* Monitoring has been saved; storage is optional. */ }
       setStep(2);
     } catch (cause) {
       setError(
@@ -1428,17 +1521,20 @@ function WorkspaceSetup({
             <>
               <SetupHeading
                 number="01"
-                title="Choose your first extension."
-                body="Search for an extension your team already uses. GuardRails will attach monitoring to the exact available report."
+                title={pinnedRelease ? "Monitor your selected release." : "Choose your first extension."}
+                body={pinnedRelease ? "The extension, version, and scan below came from your selected report. This setup will not substitute the latest release." : "Search for an extension your team already uses. GuardRails will attach monitoring to the exact available report."}
               />
-              <div className={styles.setupSearch}>
+              {pinnedRelease ? <div className={styles.selectedSetupExtension}>
+                <CheckCircle2 /><div><strong>{pinnedRelease.extensionId}</strong><code>{pinnedRelease.version} · Scan {pinnedRelease.scanId}</code><Link href={exactReleaseReportHref(pinnedRelease)}>Open selected report</Link></div>
+              </div> : <div className={styles.setupSearch}>
                 <ExtensionSearch
                   initialQuery={initialExtension}
                   onSelect={setSelected}
                   submitLabel="Find extension"
                 />
               </div>
-              {selected ? (
+              }
+              {selected && !pinnedRelease ? (
                 <div className={styles.selectedSetupExtension}>
                   <span>{initials(selected.display_name)}</span>
                   <div>
@@ -1453,7 +1549,7 @@ function WorkspaceSetup({
               <SetupError error={error} />
               <footer>
                 <button
-                  disabled={!selected || saving}
+                  disabled={(!selected && !pinnedRelease) || saving}
                   onClick={() => void addExtension()}
                 >
                   {saving ? "Starting monitoring…" : "Start monitoring"}
@@ -1471,12 +1567,12 @@ function WorkspaceSetup({
                 <small>Monitoring started</small>
                 <h1>{team.name} is monitoring its first extension.</h1>
                 <p>
-                  GuardRails will return new releases to your review inbox only
-                  when there is a decision to make.
+                  Scheduled registry checks will surface new releases. Analyze a new
+                  release to compare its evidence before recording another decision.
                 </p>
                 <div>
                   <strong>
-                    <CheckCircle2 /> {selected?.display_name} monitored
+                    <CheckCircle2 /> {pinnedRelease?.extensionId || selected?.display_name} monitored
                   </strong>
                   <strong>
                     <CheckCircle2 />{" "}
@@ -1563,6 +1659,7 @@ function Overview({
   sampleMode,
   onSample,
   onNavigate,
+  onReview,
 }: {
   team: Team;
   decisions: QueueDecision[];
@@ -1576,6 +1673,7 @@ function Overview({
   sampleMode: boolean;
   onSample: (value: boolean) => void;
   onNavigate: (view: View) => void;
+  onReview: (decision: QueueDecision) => void;
 }) {
   const watchedExtensions = new Set(
     watches.map((watch) => watch.extension_id.toLowerCase()),
@@ -1607,11 +1705,11 @@ function Overview({
         <div className={styles.focusGlow} aria-hidden="true"><i /><i /><i /></div>
         <PageTitle
           eyebrow="Release pulse"
-          title={decisions.length ? `${decisions.length} ${decisions.length === 1 ? "release needs" : "releases need"} a decision.` : "Nothing urgent. Keep shipping."}
+          title={loading ? "Loading release reviews." : decisions.length ? `${decisions.length} ${decisions.length === 1 ? "release needs" : "releases need"} a decision.` : !watches.length ? "Monitor your first extension." : "Nothing urgent. Keep shipping."}
           copy={`Good ${greeting()}, ${team.name}. Exact releases stay attached to every call.`}
           action={
             <div className={styles.overviewActions}>
-              {!sampleMode && !decisions.length && !watches.length ? (
+              {!loading && !sampleMode && !decisions.length && !watches.length ? (
                 <button
                   className={styles.sampleButton}
                   onClick={() => onSample(true)}
@@ -1629,30 +1727,30 @@ function Overview({
           }
         />
         <div className={styles.signalConstellation} aria-label="Workspace signal summary">
-          <span><Radar /><b>{watches.length}</b><small>watched</small></span>
+          <span><Radar /><b>{loading ? "—" : watches.length}</b><small>watched</small></span>
           <i />
-          <span><ClipboardCheck /><b>{decisions.length}</b><small>to decide</small></span>
+          <span><ClipboardCheck /><b>{loading ? "—" : decisions.length}</b><small>to decide</small></span>
           <i />
-          <span><ShieldCheck /><b>{failed ? "Check" : "Clear"}</b><small>delivery</small></span>
+          <span><ShieldCheck /><b>{failed ? "Check" : health.status === "healthy" ? "Current" : "Waiting"}</b><small>monitoring</small></span>
         </div>
       </section>
       <section className={styles.metrics} aria-label="Workspace measurements">
         <Metric
           label="Needs review"
-          value={decisions.length}
+          value={loading ? "—" : decisions.length}
           detail="Meaningful release changes"
           tone="amber"
           onClick={sampleMode ? undefined : () => onNavigate("inbox")}
         />
         <Metric
           label="Overdue"
-          value={overdue}
+          value={loading ? "—" : overdue}
           detail={overdue ? "Ownership needs attention" : "No late decisions"}
           tone={overdue ? "red" : "green"}
         />
         <Metric
           label="Monitoring"
-          value={watches.length}
+          value={loading ? "—" : watches.length}
           detail="Extension baselines"
           tone="green"
           onClick={sampleMode ? undefined : () => onNavigate("extensions")}
@@ -1660,7 +1758,7 @@ function Overview({
         <Metric
           label="Workspace health"
           value={
-            failed ? `${failed} issue${failed === 1 ? "" : "s"}` : health.status === "healthy" ? "Healthy" : health.status === "degraded" ? "Degraded" : "Waiting"
+            loading ? "Awaiting data" : failed ? `${failed} issue${failed === 1 ? "" : "s"}` : monitoringStatus(health, watches.length)
           }
           detail={
             failed ? "Delivery needs attention" : health.status === "healthy" ? "Monitoring is operational" : health.status === "degraded" ? (health.error || "Monitoring needs attention") : "Awaiting the first scheduled check"
@@ -1669,7 +1767,7 @@ function Overview({
         />
         <Metric
           label="Badge coverage"
-          value={`${coveredExtensions}/${watchedExtensions.size}`}
+          value={loading ? "—" : `${coveredExtensions}/${watchedExtensions.size}`}
           detail={staleBadge ? "A release needs refresh" : uncoveredExtensions ? `${uncoveredExtensions} watched release${uncoveredExtensions === 1 ? " needs" : "s need"} a badge` : "Every watched release is covered"}
           tone={staleBadge || uncoveredExtensions ? "amber" : "green"}
           onClick={sampleMode ? undefined : () => onNavigate("badges")}
@@ -1691,11 +1789,11 @@ function Overview({
           ) : decisions.length ? (
             decisions
               .slice(0, 4)
-              .map((decision, index) => (
+              .map((decision) => (
                 <ReviewRow
                   key={decision.id}
                   decision={decision}
-                  priority={index === 0}
+                  onOpen={sampleMode ? undefined : () => onReview(decision)}
                 />
               ))
           ) : (
@@ -1704,9 +1802,9 @@ function Overview({
         </section>
         <aside className={styles.health}>
           <span>Monitoring health</span>
-          <div className={styles.healthRing}>
-            <b>{watches.length ? Math.max(90, 100 - failed * 5) : 0}%</b>
-            <small>current</small>
+          <div className={styles.monitoringStatus}>
+            <b>{loading ? "Awaiting data" : monitoringStatus(health, watches.length)}</b>
+            <small>{watches.length} monitored extensions</small>
           </div>
           <ul>
             <li>
@@ -1764,7 +1862,7 @@ function Overview({
               <time>Recent</time>
             </article>
           ))}
-          {!alerts.length ? (
+          {!alerts.length && !loading ? (
             <article>
               <span>
                 <CheckCircle2 />
@@ -1809,38 +1907,17 @@ function Metric({
     </button>
   );
 }
-function ReviewRow({
-  decision,
-  priority,
-}: {
-  decision: QueueDecision;
-  priority?: boolean;
-}) {
-  return (
-    <article className={styles.reviewRow}>
-      <span className={priority ? styles.riskHigh : styles.riskMedium}>
-        {priority ? "High" : "Review"}
-      </span>
-      <div className={styles.extensionAvatar}>
-        {initials(decision.extension_id)}
-      </div>
-      <div>
-        <strong>{decision.extension_id}</strong>
-        <small>
-          Exact release <code>@{decision.version}</code>
-        </small>
-      </div>
-      <p>
-        {priority
-          ? "New capabilities require a team decision"
-          : "Release evidence is ready for review"}
-      </p>
-      <span className={styles.owner}>
-        <UserRound /> {decision.assigned_to ? "Assigned" : "Unassigned"}
-      </span>
-      <ArrowRight />
-    </article>
-  );
+function ReviewRow({ decision, onOpen }: { decision: QueueDecision; onOpen?: () => void }) {
+  const [reviewedAt] = useState(() => Date.now());
+  const overdue = Boolean(decision.due_at && new Date(decision.due_at).getTime() < reviewedAt);
+  return <article className={styles.reviewRow}>
+    <span className={overdue ? styles.riskHigh : styles.riskMedium}>{overdue ? "Overdue" : "Review"}</span>
+    <div className={styles.extensionAvatar}>{initials(decision.extension_id)}</div>
+    <div><strong>{decision.extension_id}</strong><small>Exact release <code>@{decision.version}</code></small></div>
+    <p>{overdue ? "The review due date has passed" : "Release evidence is ready for review"}</p>
+    <span className={styles.owner}><UserRound /> {decision.assigned_to ? "Assigned" : "Unassigned"}</span>
+    {onOpen ? <button className={styles.reviewButton} onClick={onOpen} aria-label={`Review ${decision.extension_id} ${decision.version}`}>Review <ArrowRight /></button> : <span>Sample</span>}
+  </article>;
 }
 function EmptyReview() {
   return (
@@ -1933,6 +2010,7 @@ function readReviewFilters(key: string): {
 }
 
 function ReviewInbox({
+  initialScanId = "",
   decisions,
   members,
   currentUserId,
@@ -1941,6 +2019,7 @@ function ReviewInbox({
   saveState,
   onSave,
 }: {
+  initialScanId?: string;
   decisions: QueueDecision[];
   members: Member[];
   currentUserId: string;
@@ -1954,6 +2033,14 @@ function ReviewInbox({
   ) => Promise<DecisionSaveResult>;
 }) {
   const [selected, setSelected] = useState<QueueDecision | null>(null);
+  const openedScan = useRef("");
+  useEffect(() => {
+    if (!initialScanId || openedScan.current === initialScanId) return;
+    const decision = decisions.find((item) => item.scan_id === initialScanId);
+    if (!decision) return;
+    const timer = window.setTimeout(() => { openedScan.current = initialScanId; setSelected(decision); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [initialScanId, decisions]);
   const storageKey = `guardrails:review-filters:${teamId}:${currentUserId}`;
   const [filterState, setFilterState] = useState<{
     active: ReviewFilter;
@@ -2092,7 +2179,7 @@ function ReviewInbox({
                   Review release <ArrowRight />
                 </button>
                 <Link
-                  href={`/extensions/${encodeURIComponent(decision.extension_id)}/versions/${encodeURIComponent(decision.version)}`}
+                  href={exactReleaseReportHref({ extensionId: decision.extension_id, version: decision.version, scanId: decision.scan_id })}
                 >
                   Open full evidence
                 </Link>
@@ -2158,6 +2245,7 @@ function ReviewDecisionPanel({
   onClose: () => void;
   onSave: (value: string, rationale: string) => Promise<DecisionSaveResult>;
 }) {
+  const dialogRef = useDialogFocus(onClose);
   const [rationale, setRationale] = useState(decision.rationale || "");
   const [attempt, setAttempt] = useState<{
     value: string;
@@ -2183,6 +2271,8 @@ function ReviewDecisionPanel({
     >
       <section
         className={styles.reviewPanel}
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="review-panel-heading"
@@ -2211,7 +2301,7 @@ function ReviewDecisionPanel({
                   separately.
                 </p>
                 <Link
-                  href={`/extensions/${encodeURIComponent(decision.extension_id)}/versions/${encodeURIComponent(decision.version)}`}
+                  href={exactReleaseReportHref({ extensionId: decision.extension_id, version: decision.version, scanId: decision.scan_id })}
                 >
                   Open files, commands, and network evidence <ArrowRight />
                 </Link>
@@ -2237,11 +2327,13 @@ function ReviewDecisionPanel({
                   {humanize(decision.decision)}
                 </span>
               </div>
+              <p className={styles.receiptIds}>Decision evidence scan <code>{decision.scan_id}</code></p>
               <DecisionPermissionPassport key={`${teamId}:${decision.id}`} teamId={teamId} decision={decision} />
               <PermissionDiffCard
                 compact
                 extensionId={decision.extension_id}
                 currentVersion={decision.version}
+                currentScanId={decision.scan_id}
               />
               {canDecide ? (
                 <label className={styles.rationaleField}>

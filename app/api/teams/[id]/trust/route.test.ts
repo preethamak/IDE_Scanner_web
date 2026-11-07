@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   save: vi.fn(),
   scanProduct: vi.fn(),
   privateDb: vi.fn(),
+  accessible: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({ authenticated: mocks.authenticated }));
@@ -16,6 +17,7 @@ vi.mock("@/lib/supabase", () => ({ serviceDb: vi.fn() }));
 vi.mock("@/lib/cloudflareDeepScan", () => ({ getCloudflareScanProduct: mocks.scanProduct }));
 vi.mock("@/lib/cloudflarePrivate", () => ({ newId: vi.fn(() => "generated-id"), nowIso: vi.fn(() => "2026-10-01T00:00:00.000Z"), privateDb: mocks.privateDb }));
 vi.mock("@/lib/cloudflareWorkspace", () => ({ getWorkspaceState: mocks.workspace, saveState: mocks.save }));
+vi.mock("@/lib/cloudflareScanAccess", () => ({ getCloudflareAccessibleScanIdentity: mocks.accessible }));
 
 import { PATCH, POST } from "./route";
 
@@ -37,6 +39,7 @@ describe("artifact trust ledger API", () => {
     mocks.role.mockReset().mockResolvedValue("owner");
     mocks.save.mockReset().mockResolvedValue(undefined);
     mocks.scanProduct.mockReset().mockResolvedValue(scan);
+    mocks.accessible.mockReset().mockResolvedValue({ extension_id: "Publisher.Extension", version: "1.2.3" });
     mocks.privateDb.mockReset().mockReturnValue({ prepare: () => ({ bind: () => ({ first: () => Promise.resolve({ extension_id: "Publisher.Extension", version: "1.2.3" }) }) }) });
   });
 
@@ -47,6 +50,22 @@ describe("artifact trust ledger API", () => {
     expect(response.status).toBe(201);
     expect(body.record).toMatchObject({ extension_id: "Publisher.Extension", version: "1.2.3", artifact_sha256: "a".repeat(64), scan_id: "scan-1", status: "approved" });
     expect(mocks.save).toHaveBeenCalled();
+    expect(mocks.accessible).toHaveBeenCalledWith("scan-1", "owner-1");
+  });
+
+  it("cannot approve another user's unshared private artifact", async () => {
+    mocks.workspace.mockResolvedValue({ decisions: [], trust_records: [] });
+    mocks.accessible.mockResolvedValue(null);
+    const response = await POST(new Request("http://localhost", { method: "POST", body: JSON.stringify({ action: "approve", scan_id: "private-scan", rationale: "Attempted approval" }) }), context);
+    expect(response.status).toBe(404); expect(mocks.scanProduct).not.toHaveBeenCalled(); expect(mocks.save).not.toHaveBeenCalled();
+  });
+
+  it("permits team reviewers to use evidence already bound to their workspace", async () => {
+    mocks.accessible.mockResolvedValue(null);
+    mocks.workspace.mockResolvedValue({ decisions: [{ scan_id: "shared-scan", extension_id: "Publisher.Extension", version: "1.2.3" }], trust_records: [], audit: [] });
+    const response = await POST(new Request("http://localhost", { method: "POST", body: JSON.stringify({ action: "approve", scan_id: "shared-scan", registry: "vs-marketplace", rationale: "Reviewed shared team evidence" }) }), context);
+    expect(response.status).toBe(201);
+    expect(mocks.scanProduct).toHaveBeenCalledWith("Publisher.Extension", "1.2.3", "shared-scan"); expect(mocks.accessible).not.toHaveBeenCalled();
   });
 
   it("creates a recall with exact and version-only inventory impact", async () => {

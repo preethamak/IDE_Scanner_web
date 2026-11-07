@@ -66,8 +66,8 @@ export async function reconcileCloudflareBadgeHealth(
     for (const team of teams.results) {
       const state = parseState(team.state_json);
       state.monitoring = { status: "degraded", last_checked_at: now, next_check_at: null, cadence_hours: 6, error: "The registry catalog was unavailable during the last monitoring check." };
-      await db.prepare("UPDATE app_team_state SET state_json=?,updated_at=? WHERE team_id=?")
-        .bind(JSON.stringify(state), now, team.team_id).run();
+      await db.prepare("UPDATE app_team_state SET state_json=?,updated_at=? WHERE team_id=? AND state_json=?")
+        .bind(JSON.stringify(state), now, team.team_id, team.state_json).run();
     }
     return { teams_checked: teams.results.length, teams_changed: 0, releases_detected: 0 };
   }
@@ -82,6 +82,7 @@ export async function reconcileCloudflareBadgeHealth(
     const audit = array(state.audit);
     const alerts = array(state.alerts);
     let changed = false;
+    let teamReleasesDetected = 0;
 
     for (const watch of watchlist) {
       const extensionId = stringValue(watch.extension_id);
@@ -183,7 +184,7 @@ export async function reconcileCloudflareBadgeHealth(
           }
         }
       }
-      releasesDetected += 1;
+      teamReleasesDetected += 1;
     }
 
     if (!changed) {
@@ -198,21 +199,25 @@ export async function reconcileCloudflareBadgeHealth(
         error: null,
       };
       await db
-        .prepare("UPDATE app_team_state SET state_json=?,updated_at=? WHERE team_id=?")
-        .bind(JSON.stringify(state), now, team.team_id)
+        .prepare("UPDATE app_team_state SET state_json=?,updated_at=? WHERE team_id=? AND state_json=?")
+        .bind(JSON.stringify(state), now, team.team_id, team.state_json)
         .run();
       continue;
     }
-    teamsChanged += 1;
     state.watchlist = watchlist;
     state.release_events = releaseEvents.slice(0, 200);
     state.alerts = alerts.slice(0, 200);
     state.audit = audit.slice(0, 500);
     state.monitoring = { status: "healthy", last_checked_at: now, next_check_at: new Date(new Date(now).getTime() + 6 * 60 * 60 * 1000).toISOString(), cadence_hours: 6, error: null };
-    await db
-      .prepare("UPDATE app_team_state SET state_json=?,updated_at=? WHERE team_id=?")
-      .bind(JSON.stringify(state), now, team.team_id)
-      .run();
+    const saved = await db
+      .prepare("UPDATE app_team_state SET state_json=?,updated_at=? WHERE team_id=? AND state_json=?")
+      .bind(JSON.stringify(state), now, team.team_id, team.state_json)
+      .run() as { meta?: { changes?: number } };
+    // A concurrent user mutation won. Leave that document intact; the next
+    // scheduled check retries this release using its deduplicated delivery key.
+    if (saved.meta?.changes === 0) continue;
+    teamsChanged += 1;
+    releasesDetected += teamReleasesDetected;
   }
 
   return { teams_checked: teams.results.length, teams_changed: teamsChanged, releases_detected: releasesDetected };

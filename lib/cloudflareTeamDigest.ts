@@ -48,7 +48,7 @@ export async function queueCloudflareTeamDigests(db: PrivateDatabase, now = nowI
     }
     state.digest_deliveries.unshift({ id: randomUUID(), period_start: periodStart, period_end: periodEnd, status: "pending", channel_count: channels.length, created_at: now });
     state.digest_deliveries = state.digest_deliveries.slice(0, 25);
-    await saveWorkspaceState(team.team_id, state as unknown as Record<string, unknown>);
+    await saveWorkspaceState(team.team_id, state as unknown as Record<string, unknown>, team.state_json);
     queued += queuedForTeam;
   }
   return { teams_checked: teams.results.length, queued };
@@ -58,6 +58,7 @@ function stateFrom(value: string): CloudflareWorkspaceState {
   let raw: Row = {};
   try { raw = JSON.parse(value || "{}") as Row; } catch { /* a corrupt workspace is treated as empty for this retryable job */ }
   return {
+    ...raw,
     watchlist: list(raw.watchlist), alerts: list(raw.alerts), decisions: list(raw.decisions), members: list(raw.members), channels: list(raw.channels), deliveries: list(raw.deliveries), digest_deliveries: list(raw.digest_deliveries), policies: list(raw.policies), release_events: list(raw.release_events), trust_records: list(raw.trust_records), recall_events: list(raw.recall_events), audit: list(raw.audit), invitations: list(raw.invitations), inventory: { devices: list(jsonValue(raw.inventory).devices), installations: list(jsonValue(raw.inventory).installations), last_import_at: typeof jsonValue(raw.inventory).last_import_at === "string" ? jsonValue(raw.inventory).last_import_at as string : null }, preferences: { ...jsonValue(raw.preferences) },
   };
 }

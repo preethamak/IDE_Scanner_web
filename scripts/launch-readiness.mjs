@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
 import "./verify-node-runtime.mjs";
+import { verifyLaunchHealth } from "./verify-launch-health.mjs";
 
 const commands = [
   ["npm", ["run", "lint"]],
@@ -22,16 +23,7 @@ if (process.argv.includes("--with-health")) {
     console.error("LAUNCH_HEALTH_URL and LAUNCH_HEALTH_SECRET are required with --with-health.");
     process.exit(1);
   }
-  const headers = { "x-guardrails-health-token": secret };
-  if (process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
-    headers["x-vercel-protection-bypass"] = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
-  }
-  const response = await fetch(`${baseUrl.replace(/\/$/, "")}/api/internal/launch-health`, { headers });
-  const body = await response.json().catch(() => null);
-  if (!response.ok || !body?.healthy) {
-    console.error(`Launch health failed: ${response.status} ${JSON.stringify(body)}`);
-    process.exit(1);
-  }
+  await verifyLaunchHealth(baseUrl, secret);
 }
 
-console.log("Launch readiness checks passed.");
+console.log(process.argv.includes("--with-health") ? "Local quality checks and protected production health passed." : "Local quality checks passed. Production health was not checked; run with --with-health before launch.");

@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { WorkspaceConflictError } from "@/lib/workspaceConflict";
 
 type PrivateRow = Record<string, unknown>;
 type PrivateResult<T extends PrivateRow = PrivateRow> = {
@@ -246,24 +247,33 @@ export function safeNext(value: string | null | undefined): string {
 }
 
 export async function workspaceState(teamId: string): Promise<Record<string, unknown>> {
+  return (await workspaceStateWithSnapshot(teamId)).state;
+}
+
+export async function workspaceStateWithSnapshot(teamId: string): Promise<{ state: Record<string, unknown>; snapshot: string | null }> {
   const row = await privateDb().prepare("SELECT state_json FROM app_team_state WHERE team_id=?").bind(teamId).first<PrivateRow>();
-  if (!row?.state_json) return {};
+  if (!row?.state_json) return { state: {}, snapshot: null };
+  const snapshot = String(row.state_json);
   try {
-    const value = JSON.parse(String(row.state_json));
-    return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+    const value = JSON.parse(snapshot);
+    if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid workspace document.");
+    return { state: value as Record<string, unknown>, snapshot };
   } catch {
-    return {};
+    throw new Error("Workspace state is invalid; refusing to replace its evidence.");
   }
 }
 
-export async function saveWorkspaceState(teamId: string, state: Record<string, unknown>): Promise<void> {
-  await privateDb()
-    .prepare(
-      `INSERT INTO app_team_state(team_id,state_json,updated_at) VALUES(?,?,?)
-       ON CONFLICT(team_id) DO UPDATE SET state_json=excluded.state_json,updated_at=excluded.updated_at`,
-    )
-    .bind(teamId, JSON.stringify(state), nowIso())
-    .run();
+/** Compare the exact document read, so concurrent writes cannot erase evidence. */
+export async function saveWorkspaceState(teamId: string, state: Record<string, unknown>, expectedSnapshot: string | null): Promise<string> {
+  const next = JSON.stringify(state);
+  const db = privateDb();
+  const row = expectedSnapshot === null
+    ? await db.prepare("INSERT OR IGNORE INTO app_team_state(team_id,state_json,updated_at) VALUES(?,?,?) RETURNING team_id")
+      .bind(teamId, next, nowIso()).first<PrivateRow>()
+    : await db.prepare("UPDATE app_team_state SET state_json=?,updated_at=? WHERE team_id=? AND state_json=? RETURNING team_id")
+      .bind(next, nowIso(), teamId, expectedSnapshot).first<PrivateRow>();
+  if (!row) throw new WorkspaceConflictError();
+  return next;
 }
 
 export function jsonValue(value: unknown): Record<string, unknown> {

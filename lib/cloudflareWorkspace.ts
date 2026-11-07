@@ -1,6 +1,6 @@
 import "server-only";
 
-import { privateDb, jsonValue, newId, nowIso, saveWorkspaceState, workspaceState, type AppAuthUser } from "@/lib/cloudflarePrivate";
+import { privateDb, jsonValue, newId, nowIso, saveWorkspaceState, workspaceStateWithSnapshot, type AppAuthUser } from "@/lib/cloudflarePrivate";
 import { getCloudflareRegistryProduct } from "@/lib/cloudflareRegistry";
 import type { CapabilityGraph } from "@/lib/capabilityGraph";
 import type { StoredCapabilityPolicy } from "@/lib/capabilityPolicyBundle";
@@ -39,16 +39,22 @@ export const defaultWorkspaceState: CloudflareWorkspaceState = {
   capability_policy_history: [],
 };
 
+const workspaceSnapshots = new WeakMap<CloudflareWorkspaceState, string | null>();
+
 export async function getWorkspaceState(teamId: string): Promise<CloudflareWorkspaceState> {
-  const raw = await workspaceState(teamId);
-  return {
+  const { state: raw, snapshot } = await workspaceStateWithSnapshot(teamId);
+  const state: CloudflareWorkspaceState = {
     ...defaultWorkspaceState,
     ...raw,
     watchlist: array(raw.watchlist), alerts: array(raw.alerts), decisions: array(raw.decisions), members: array(raw.members), channels: array(raw.channels), deliveries: array(raw.deliveries), digest_deliveries: array(raw.digest_deliveries), policies: array(raw.policies), release_events: array(raw.release_events), trust_records: array(raw.trust_records), recall_events: array(raw.recall_events), audit: array(raw.audit), invitations: array(raw.invitations), monitoring: jsonValue(raw.monitoring), inventory: inventory(raw.inventory), preferences: { ...defaultWorkspaceState.preferences, ...jsonValue(raw.preferences) }, capability_policy_history: Array.isArray(raw.capability_policy_history) ? raw.capability_policy_history.filter((item): item is StoredCapabilityPolicy => Boolean(item && typeof item === "object")) : [],
   };
+  workspaceSnapshots.set(state, snapshot);
+  return state;
 }
 export async function saveState(teamId: string, state: CloudflareWorkspaceState): Promise<void> {
-  await saveWorkspaceState(teamId, state as unknown as Record<string, unknown>);
+  if (!workspaceSnapshots.has(state)) throw new Error("Read the workspace before saving its state.");
+  const snapshot = await saveWorkspaceState(teamId, state as unknown as Record<string, unknown>, workspaceSnapshots.get(state)!);
+  workspaceSnapshots.set(state, snapshot);
 }
 
 export async function ensureOwnerMember(teamId: string, user: AppAuthUser, state: CloudflareWorkspaceState): Promise<CloudflareWorkspaceState> {

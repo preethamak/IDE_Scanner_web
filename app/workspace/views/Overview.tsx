@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -20,6 +21,7 @@ import type {
   WatchItem,
 } from "@/app/workspace/types";
 import { formatWorkspaceTime, greeting, initials } from "@/app/workspace/format";
+import { monitoringStatus } from "@/lib/releaseReviewIntent";
 import PageTitle from "@/app/workspace/views/PageTitle";
 import styles from "@/app/workspace/teamWorkspace.module.css";
 
@@ -80,38 +82,17 @@ function Metric({
   );
 }
 
-function ReviewRow({
-  decision,
-  priority,
-}: {
-  decision: QueueDecision;
-  priority?: boolean;
-}) {
-  return (
-    <article className={styles.reviewRow}>
-      <span className={priority ? styles.riskHigh : styles.riskMedium}>
-        {priority ? "High" : "Review"}
-      </span>
-      <div className={styles.extensionAvatar}>
-        {initials(decision.extension_id)}
-      </div>
-      <div>
-        <strong>{decision.extension_id}</strong>
-        <small>
-          Exact release <code>@{decision.version}</code>
-        </small>
-      </div>
-      <p>
-        {priority
-          ? "New capabilities require a team decision"
-          : "Release evidence is ready for review"}
-      </p>
-      <span className={styles.owner}>
-        <UserRound /> {decision.assigned_to ? "Assigned" : "Unassigned"}
-      </span>
-      <ArrowRight />
-    </article>
-  );
+function ReviewRow({ decision, onOpen }: { decision: QueueDecision; onOpen?: () => void }) {
+  const [reviewedAt] = useState(() => Date.now());
+  const overdue = Boolean(decision.due_at && new Date(decision.due_at).getTime() < reviewedAt);
+  return <article className={styles.reviewRow}>
+    <span className={overdue ? styles.riskHigh : styles.riskMedium}>{overdue ? "Overdue" : "Review"}</span>
+    <div className={styles.extensionAvatar}>{initials(decision.extension_id)}</div>
+    <div><strong>{decision.extension_id}</strong><small>Exact release <code>@{decision.version}</code></small></div>
+    <p>{overdue ? "The review due date has passed" : "Release evidence is ready for review"}</p>
+    <span className={styles.owner}><UserRound /> {decision.assigned_to ? "Assigned" : "Unassigned"}</span>
+    {onOpen ? <button className={styles.reviewButton} onClick={onOpen} aria-label={`Review ${decision.extension_id} ${decision.version}`}>Review <ArrowRight /></button> : <Link href={`/workspace?view=inbox&scanId=${encodeURIComponent(decision.scan_id)}`}>Review <ArrowRight /></Link>}
+  </article>;
 }
 
 export default function Overview({
@@ -127,6 +108,7 @@ export default function Overview({
   sampleMode,
   onSample,
   onNavigate,
+  onReview,
 }: {
   team: Team;
   decisions: QueueDecision[];
@@ -140,6 +122,7 @@ export default function Overview({
   sampleMode: boolean;
   onSample: (value: boolean) => void;
   onNavigate: (view: View) => void;
+  onReview?: (decision: QueueDecision) => void;
 }) {
   return (
     <>
@@ -157,7 +140,7 @@ export default function Overview({
         <div className={styles.focusGlow} aria-hidden="true"><i /><i /><i /></div>
         <PageTitle
           eyebrow="Release pulse"
-          title={decisions.length ? `${decisions.length} ${decisions.length === 1 ? "release needs" : "releases need"} a decision.` : "Nothing urgent. Keep shipping."}
+          title={decisions.length ? `${decisions.length} ${decisions.length === 1 ? "release needs" : "releases need"} a decision.` : !watches.length ? "Monitor your first extension." : "Nothing urgent. Keep shipping."}
           copy={`Good ${greeting()}, ${team.name}. Exact releases stay attached to every call.`}
           action={
             <div className={styles.overviewActions}>
@@ -210,10 +193,10 @@ export default function Overview({
         <Metric
           label="Workspace health"
           value={
-            failed ? `${failed} issue${failed === 1 ? "" : "s"}` : "Healthy"
+            failed ? `${failed} issue${failed === 1 ? "" : "s"}` : monitoringStatus(health, watches.length)
           }
           detail={
-            failed ? "Delivery needs attention" : "Monitoring is operational"
+            failed ? "Delivery needs attention" : health.status === "healthy" ? "Monitoring is operational" : "Awaiting the first scheduled check"
           }
           tone={failed ? "red" : "green"}
         />
@@ -241,11 +224,11 @@ export default function Overview({
           ) : decisions.length ? (
             decisions
               .slice(0, 4)
-              .map((decision, index) => (
+              .map((decision) => (
                 <ReviewRow
                   key={decision.id}
                   decision={decision}
-                  priority={index === 0}
+                  onOpen={sampleMode ? undefined : () => onReview ? onReview(decision) : onNavigate("inbox")}
                 />
               ))
           ) : (
@@ -254,9 +237,9 @@ export default function Overview({
         </section>
         <aside className={styles.health}>
           <span>Monitoring health</span>
-          <div className={styles.healthRing}>
-            <b>{watches.length ? Math.max(90, 100 - failed * 5) : 0}%</b>
-            <small>current</small>
+          <div className={styles.monitoringStatus}>
+            <b>{monitoringStatus(health, watches.length)}</b>
+            <small>{watches.length} monitored extensions</small>
           </div>
           <ul>
             <li>

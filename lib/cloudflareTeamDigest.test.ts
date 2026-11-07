@@ -15,6 +15,13 @@ describe("Cloudflare team digest queue", () => {
     expect(result).toEqual({ teams_checked: 1, queued: 1 });
     expect(inserts[0]).toContain("generic_webhook");
     expect(String(inserts[0]?.[4])).toContain('"provider":"generic_webhook"');
-    expect(save).toHaveBeenCalledWith("team-1", expect.objectContaining({ digest_deliveries: [expect.objectContaining({ status: "pending" })] }));
+    expect(save).toHaveBeenCalledWith("team-1", expect.objectContaining({ digest_deliveries: [expect.objectContaining({ status: "pending" })] }), expect.any(String));
+  });
+
+  it("retains monitoring and policy evidence when recording a digest", async () => {
+    const original = JSON.stringify({ preferences: { weekly_digest: true, digest_weekday: 1, digest_hour_utc: 9 }, channels: [{ id: "email-1", kind: "email_resend", target: "reviewer@example.test" }], monitoring: { status: "healthy", last_checked_at: "2026-09-14T09:00:00Z" }, capability_policy: { version: 7 }, capability_graph: { id: "graph-1" } });
+    const db = { prepare: () => ({ all: async () => ({ results: [{ team_id: "team-1", state_json: original }] }), bind: () => ({ first: async () => null, run: async () => ({ success: true }) }) }) } as never;
+    await queueCloudflareTeamDigests(db, "2026-09-14T10:00:00.000Z");
+    expect(save).toHaveBeenCalledWith("team-1", expect.objectContaining({ monitoring: { status: "healthy", last_checked_at: "2026-09-14T09:00:00Z" }, capability_policy: { version: 7 }, capability_graph: { id: "graph-1" } }), original);
   });
 });

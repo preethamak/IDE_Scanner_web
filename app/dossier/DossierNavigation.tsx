@@ -16,7 +16,7 @@ export default function DossierNavigation<T extends string>({ items, active, cou
         const item = items.find((candidate) => candidate.id === id);
         if (!item) return null;
         const Icon = item.icon;
-        return <a key={item.id} href={`#${item.id}`} className={active === item.id ? "active" : ""} aria-current={active === item.id ? "page" : undefined} title={item.label} onClick={() => onSelect(item.id)}><Icon aria-hidden="true"/><span>{item.label}</span>{count(item.id) ? <b>{count(item.id)}</b> : null}</a>;
+        return <a key={item.id} href={`#${item.id}`} className={active === item.id ? "active" : ""} aria-current={active === item.id ? "location" : undefined} title={item.label} onClick={(event) => { event.preventDefault(); onSelect(item.id); }}><Icon aria-hidden="true"/><span>{item.label}</span>{count(item.id) ? <b>{count(item.id)}</b> : null}</a>;
       })}
     </div>)}
   </aside>;

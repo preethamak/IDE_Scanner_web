@@ -18,7 +18,7 @@ type VersionRow = {
 type CompareResult = {
   comparable?: boolean;
   reason?: string;
-  attribution?: { evidence_changes?: boolean; note?: string };
+  attribution?: { evidence_changes?: boolean; provenance_known?: boolean; note?: string };
   changes?: {
     capabilities?: { added?: string[]; removed?: string[] };
     outcome?: {
@@ -27,17 +27,25 @@ type CompareResult = {
   };
 };
 
-export default function PermissionDiffCard({
-  extensionId,
-  currentVersion,
-  versions: suppliedVersions,
-  compact = false,
-}: {
+type PermissionDiffProps = {
   extensionId: string;
   currentVersion: string;
+  currentScanId?: string | null;
   versions?: VersionRow[];
   compact?: boolean;
-}) {
+};
+
+export default function PermissionDiffCard(props: PermissionDiffProps) {
+  return <PermissionDiffContent key={`${props.extensionId}:${props.currentVersion}:${props.currentScanId || "latest"}`} {...props} />;
+}
+
+function PermissionDiffContent({
+  extensionId,
+  currentVersion,
+  currentScanId,
+  versions: suppliedVersions,
+  compact = false,
+}: PermissionDiffProps) {
   const [versions, setVersions] = useState<VersionRow[]>(
     suppliedVersions || [],
   );
@@ -56,16 +64,19 @@ export default function PermissionDiffCard({
 
   useEffect(() => {
     if (suppliedVersions?.length) return;
+    const controller = new AbortController();
     const timer = window.setTimeout(() => {
-      void fetch(`/api/extensions/${encodeURIComponent(extensionId)}/versions`)
+      void fetch(`/api/extensions/${encodeURIComponent(extensionId)}/versions`, { signal: controller.signal })
         .then(async (response) => {
           const body = await response.json();
+          if (controller.signal.aborted) return;
           if (!response.ok) throw new Error("Versions unavailable");
           setVersions(Array.isArray(body.versions) ? body.versions : []);
+          setState("ready");
         })
-        .catch(() => setState("error"));
+        .catch(() => { if (!controller.signal.aborted) setState("error"); });
     }, 0);
-    return () => window.clearTimeout(timer);
+    return () => { window.clearTimeout(timer); controller.abort(); };
   }, [extensionId, suppliedVersions]);
   useEffect(() => {
     if (baseline || !candidates[0]?.version) return;
@@ -82,23 +93,30 @@ export default function PermissionDiffCard({
       return () => window.clearTimeout(timer);
     }
     const controller = new AbortController();
-    void fetch(
-      `/api/extensions/${encodeURIComponent(extensionId)}/compare?from=${encodeURIComponent(baseline)}&to=${encodeURIComponent(currentVersion)}`,
-      { signal: controller.signal },
-    )
-      .then(async (response) => {
-        const body = (await response.json()) as CompareResult;
-        if (!response.ok) throw new Error(body.reason || "Comparison failed");
-        setResult(body);
-        setState("ready");
-      })
-      .catch((error) => {
-        if (error instanceof DOMException && error.name === "AbortError")
-          return;
-        setState("error");
-      });
-    return () => controller.abort();
-  }, [baseline, currentVersion, extensionId, versions.length]);
+    const timer = window.setTimeout(() => {
+      setState("loading");
+      setResult(null);
+      const query = new URLSearchParams({ from: baseline, to: currentVersion });
+      if (currentScanId) query.set("toScanId", currentScanId);
+      void fetch(
+        `/api/extensions/${encodeURIComponent(extensionId)}/compare?${query}`,
+        { signal: controller.signal },
+      )
+        .then(async (response) => {
+          const body = (await response.json()) as CompareResult;
+          if (controller.signal.aborted) return;
+          if (!response.ok) throw new Error(body.reason || "Comparison failed");
+          setResult(body);
+          setState("ready");
+        })
+        .catch((error) => {
+          if (controller.signal.aborted || (error instanceof DOMException && error.name === "AbortError"))
+            return;
+          setState("error");
+        });
+    }, 0);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [baseline, currentVersion, currentScanId, extensionId, versions.length]);
 
   const capabilities = result?.changes?.capabilities;
   const added = summarize(capabilities?.added || []);
@@ -110,7 +128,7 @@ export default function PermissionDiffCard({
           <span>
             <GitCompareArrows /> Permission Diff
           </span>
-          <h3>What changed since the reviewed release.</h3>
+          <h3>Compare analyzed release capabilities.</h3>
         </div>
         {candidates.length ? (
           <label>
@@ -119,6 +137,7 @@ export default function PermissionDiffCard({
               value={baseline}
               onChange={(event) => {
                 setState("loading");
+                setResult(null);
                 setBaseline(event.target.value);
               }}
             >
@@ -188,7 +207,7 @@ export default function PermissionDiffCard({
                   <Check /> Same scanner baseline
                 </>
               ) : (
-                "Mixed scanner baseline"
+                result.attribution?.provenance_known === false ? "Scanner provenance unavailable" : "Mixed scanner baseline"
               )}
             </strong>
             <p>

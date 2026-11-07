@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { authenticated } from "@/lib/auth";
 import { getCloudflareScanProduct } from "@/lib/cloudflareDeepScan";
 import { getWorkspaceState, saveState } from "@/lib/cloudflareWorkspace";
-import { newId, nowIso, privateDb } from "@/lib/cloudflarePrivate";
+import { newId, nowIso } from "@/lib/cloudflarePrivate";
+import { getCloudflareAccessibleScanIdentity } from "@/lib/cloudflareScanAccess";
 import { requireTeamRole } from "@/lib/teams";
 import { serviceDb } from "@/lib/supabase";
 import { teamApiError } from "@/lib/teamApiError";
@@ -100,7 +101,7 @@ async function approve(teamId: string, userId: string, provider: string | undefi
   const rationale = text(body.rationale);
   if (!scanId) return NextResponse.json({ error: "A completed scan id is required." }, { status: 400 });
   if (rationale.length < 1 || rationale.length > 4000) return NextResponse.json({ error: "A rationale between 1 and 4,000 characters is required." }, { status: 400 });
-  const scan = provider === "cloudflare" ? await cloudflareScan(scanId) : await supabaseScan(scanId);
+  const scan = provider === "cloudflare" ? await cloudflareScan(scanId, userId, teamId) : await supabaseScan(scanId);
   if (!scan) return NextResponse.json({ error: "The exact scan could not be found." }, { status: 404 });
   if (scan.analysis_status !== "complete" || scan.coverage_percent < 100) return NextResponse.json({ error: "Only a complete, 100% coverage scan can be approved." }, { status: 400 });
   let identity: ArtifactIdentity;
@@ -216,8 +217,10 @@ async function recallSupabase(teamId: string, userId: string, recordId: string, 
   return NextResponse.json({ record: update.data, recall: inserted.data, impact }, { status: 201 });
 }
 
-async function cloudflareScan(scanId: string): Promise<ScanEvidence | null> {
-  const row = await privateDb().prepare("SELECT extension_id,version FROM app_scan_reports WHERE scan_id=? LIMIT 1").bind(scanId).first<{ extension_id?: unknown; version?: unknown }>();
+async function cloudflareScan(scanId: string, userId: string, teamId: string): Promise<ScanEvidence | null> {
+  const workspace = await getWorkspaceState(teamId);
+  const saved = [...(workspace.decisions || []), ...(workspace.trust_records || [])].find((record) => String(record.scan_id) === scanId);
+  const row = saved || await getCloudflareAccessibleScanIdentity(scanId, userId);
   if (!row?.extension_id || !row.version) return null;
   const product = await getCloudflareScanProduct(String(row.extension_id), String(row.version), scanId);
   const scan = product?.scan as Record<string, unknown> | undefined;

@@ -6,10 +6,28 @@ import ReleaseReviewFilm from "./ReleaseReviewFilm";
 import TrustProof from "./TrustProof";
 import IdeCompatibility from "./IdeCompatibility";
 import ExtensionSignalBoard from "./ExtensionSignalBoard";
-import { getPublicInventory } from "@/lib/productData";
+import { getPublicInventory, type PublicInventoryItem } from "@/lib/productData";
+import { decisionLabel } from "@/lib/dossierPresentation";
+
+// Only an addressable exact artifact can stand in for the product on the homepage.
+// An empty publication remains an empty state, never an invented security result.
+export function selectPublicReview(items: PublicInventoryItem[]) {
+  const complete = items.filter((item) => item.scan_id && item.extension_id &&
+    item.version.trim() && !["latest", "unknown"].includes(item.version.trim().toLowerCase()) &&
+    /^[a-f0-9]{64}$/i.test(item.artifact_sha256) && ["allow", "review", "block"].includes(item.decision) &&
+    Number.isFinite(item.coverage_percent) && item.coverage_percent >= 0 && item.coverage_percent <= 100);
+  return complete.find((item) => item.extension_id === "dbaeumer.vscode-eslint") || complete[0] || null;
+}
+
+export function publicReviewHref(item: PublicInventoryItem) {
+  return `/extensions/${encodeURIComponent(item.extension_id)}/versions/${encodeURIComponent(item.version)}/scans/${encodeURIComponent(item.scan_id)}`;
+}
 
 export default async function AuthorityLanding() {
   const inventory = await getPublicInventory(8);
+  const review = selectPublicReview(inventory.items);
+  const reviewHref = review ? publicReviewHref(review) : "/registry";
+  const outcome = review ? decisionLabel(review.decision) : "Analysis unavailable";
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
@@ -22,44 +40,50 @@ export default async function AuthorityLanding() {
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />
     <section className={`${styles.hero} productLandingHero`}>
       <div className={styles.heroTopline}>
-        <span className={styles.heroKicker}><i /> Extension intelligence for the software you install</span>
-        <span className={styles.heroIssue}>Issue 01 <b>·</b> Before install</span>
+        <span className={styles.heroKicker}><i /> For teams reviewing VS Code extensions</span>
+        <span className={styles.heroIssue}>Exact release <b>·</b> Team decision</span>
       </div>
       <div className={`${styles.heroLayout} productLandingHeroGrid`}>
         <div className={`${styles.heroCopy} productLandingCopy`}>
-          <h1>Know what an extension can do <em>before you let it in.</em></h1>
-          <p className={styles.heroLead}>GuardRails turns every release into a clear install decision: what changed, what it can reach, and whether the evidence supports a yes.</p>
+          <h1>Review extension releases.<em> Keep the decision.</em></h1>
+          <p className={styles.heroLead}>Inspect the published VS Code package, record why your team allows or blocks that version, and review the next update against the evidence you kept.</p>
           <div className={styles.heroSearch}>
             <span className={styles.heroSearchLabel}>Search Marketplace / Open VSX</span>
-            <ExtensionSearch submitLabel="Check extension" />
+            <ExtensionSearch submitLabel="Find extension" />
             <p className={styles.trialHint}>Five Deep Scans per 30 days. No account required.</p>
             <div className={styles.searchExamples} aria-label="Example extension searches">
               <span>Try:</span>{["GitHub Copilot", "Cline", "ESLint"].map((name) => <Link key={name} href={`/registry?q=${encodeURIComponent(name)}`}>{name}</Link>)}
             </div>
           </div>
-          <div className={styles.actions}><Link className={styles.heroTextLink} href="#how">See how it works <ArrowUpRight /></Link></div>
+          <div className={styles.actions}><Link className={styles.heroTextLink} href="/workspace">Open a team review <ArrowUpRight /></Link><Link className={styles.heroTextLink} href="#how">Try the review workflow <ArrowRight /></Link></div>
         </div>
-        <aside className={styles.reportExample} aria-label="Illustrative extension report">
-          <span className={styles.sectionKicker}>Illustrative report · fictional extension</span>
-          <h2>Workspace Assistant</h2>
-          <p>Example release <code>2.9.0</code></p>
-          <strong className={styles.exampleOutcome}>Needs review</strong>
-          <dl>
-            <div><dt>Finding</dt><dd>This update adds terminal execution.</dd></div>
-            <div><dt>Access</dt><dd>Workspace files, terminal, outbound network.</dd></div>
-            <div><dt>Coverage</dt><dd>Static package analysis shown. Runtime behavior unverified.</dd></div>
-          </dl>
-          <p>This demonstrates the report layout. It is not a real scan or security decision.</p>
-          <Link href="#how">Explore the review example <ArrowRight /></Link>
+        <aside className={styles.reportExample} aria-label="Public exact-release evidence">
+          <span className={styles.sectionKicker}>From the public scan corpus</span>
+          {review ? <>
+            <h2>{review.display_name}</h2>
+            <p><code>{review.extension_id}@{review.version}</code></p>
+            <strong className={styles.exampleOutcome}>{outcome}</strong>
+            <dl>
+              <div><dt>Evidence</dt><dd>{review.decision_reason || "Open the package evidence and analysis limits."}</dd></div>
+              <div><dt>Executable-file coverage</dt><dd>{review.coverage_percent}%</dd></div>
+              <div><dt>Artifact SHA-256</dt><dd><code className={styles.artifactHash}>{review.artifact_sha256}</code></dd></div>
+            </dl>
+            <p>Scanner evidence for this artifact. Your team records its approval separately.</p>
+            <Link href={reviewHref}>Inspect this exact release <ArrowRight /></Link>
+          </> : <>
+            <h2>Start with a release your team uses.</h2>
+            <p>A verified public artifact is not available in this preview. Search for a package to inspect its current scan status.</p>
+            <Link href="/registry">Find an extension <ArrowRight /></Link>
+          </>}
         </aside>
       </div>
       <nav className="productPath" aria-label="GuardRails review path">
-        <span className="productPathLabel">A review, not a tour</span>
+        <span className="productPathLabel">The review record</span>
         <ol>
-          <li className="isCurrent"><b>01</b><strong>Discover</strong><small>Find the package you are considering.</small></li>
-          <li><b>02</b><strong>Inspect</strong><small>See the exact release and observed access.</small></li>
-          <li><b>03</b><strong>Compare</strong><small>Measure what changed from the baseline.</small></li>
-          <li><b>04</b><strong>Decide</strong><small>Keep the evidence with the decision.</small></li>
+          <li className="isCurrent"><b>01</b><strong>Choose a release</strong><small>Pin the package, version, and scan.</small></li>
+          <li><b>02</b><strong>Inspect evidence</strong><small>Check capabilities, findings, and gaps.</small></li>
+          <li><b>03</b><strong>Record a decision</strong><small>Keep the reviewer, reason, and evidence.</small></li>
+          <li><b>04</b><strong>Review the update</strong><small>Compare it with the retained baseline.</small></li>
         </ol>
       </nav>
       <div className={`${styles.heroMovie} productLandingProof`}>
@@ -78,9 +102,9 @@ export default async function AuthorityLanding() {
       <div className={styles.liveHeader}>
         <div>
           <span className={styles.sectionKicker}>02 / The public view</span>
-          <h2 id="live-evidence-heading">The useful answer is<br /><em>what changed.</em></h2>
+          <h2 id="live-evidence-heading">Start with<br /><em>an actual package.</em></h2>
         </div>
-        <div className={styles.liveHeaderAside}><p>See a release the way a reviewer sees it: exact version, observed surfaces, evidence coverage, and the decision that follows.</p><Link href="/registry">Browse the release index <ArrowRight /></Link></div>
+        <div className={styles.liveHeaderAside}><p>Open public package evidence before creating a workspace. A scan result describes the analyzed artifact; a team approval is a separate record.</p><Link href="/registry">Browse the release index <ArrowRight /></Link></div>
       </div>
       <div className={styles.liveBoard}>
         <div className={styles.liveBoardLabel}><span>Live release index</span><span>{inventory.totals.releases.toLocaleString()} releases</span></div>
@@ -113,18 +137,21 @@ export default async function AuthorityLanding() {
 
     <section className={styles.positioning} aria-labelledby="positioning-heading">
       <header className={styles.positioningHeader}>
-        <div><span className={styles.sectionKicker}>The complete GuardRails product</span><h2 id="positioning-heading">One evidence system for <em>every extension decision.</em></h2></div>
-        <p>GuardRails connects the public registry, Deep Scans, local inspection, monitoring, team review, portable evidence, and automation around the same exact-release record.</p>
+        <div><span className={styles.sectionKicker}>One review, from package to receipt</span><h2 id="positioning-heading">What did we approve,<em> and why?</em></h2></div>
+        <p>The useful output is a release-specific review record: the package evidence, the person who decided, and the reason the next reviewer can revisit.</p>
       </header>
       <div className={styles.positioningGrid}>
-        <article><span>01 / Public intelligence</span><h3>Registry and Deep Scans</h3><p>Inspect published packages, exact versions, observed capabilities, coverage, and the evidence behind a release before installation.</p><Link href="/registry">Browse the registry <ArrowUpRight /></Link></article>
-        <article><span>02 / Local inspection</span><h3>GuardRails CLI</h3><p>Inspect extensions already installed on a machine and keep portable report bundles under your own control.</p><Link href="/cli">Explore local inspection <ArrowUpRight /></Link></article>
-        <article><span>03 / Change awareness</span><h3>Release monitoring</h3><p>Watch the extensions your team depends on and return meaningful access or behavior changes to review.</p><Link href="/monitor">See release monitoring <ArrowUpRight /></Link></article>
-        <article><span>04 / Shared decisions</span><h3>Team workspace</h3><p>Assign reviews, preserve the rationale, and keep the approved baseline visible when the next version arrives.</p><Link href="/workspace">Open the workspace <ArrowUpRight /></Link></article>
-        <article><span>05 / Verifiable records</span><h3>Reports, exports, and badges</h3><p>Share exact-release evidence in reports, audit exports, public inventory, and version-pinned trust badges.</p><Link href="/badge">Build a trust badge <ArrowUpRight /></Link></article>
-        <article><span>06 / Assisted research</span><h3>AI and API access</h3><p>Connect an MCP-compatible assistant or a pipeline to check evidence and alternatives before a software recommendation is made.</p><Link href="/docs/mcp">Connect an assistant <ArrowUpRight /></Link></article>
+        <article><span>01 / Package evidence</span><h3>Inspect the exact release</h3><p>Open the version, artifact hash, observed capabilities, findings, and coverage limits. Missing evidence stays visible.</p><Link href={reviewHref}>Open a public report <ArrowUpRight /></Link></article>
+        <article><span>02 / Team decision</span><h3>Leave a review receipt</h3><p>Assign a reviewer and record allow, block, or an exception with a reason. The approval belongs to the team, not the scanner.</p><Link href="/workspace">Open the team workspace <ArrowUpRight /></Link></article>
+        <article><span>03 / Next update</span><h3>Revisit the baseline</h3><p>Monitor the extension and compare the next available release evidence. Pending scans and unavailable baselines remain explicit.</p><Link href="/monitor">Set up release monitoring <ArrowUpRight /></Link></article>
       </div>
-      <div className={styles.positioningRead}><strong>Product boundary</strong><p>Every capability reads from the same evidence model. GuardRails is not a safety guarantee; it makes the artifact, coverage, findings, and decision history visible enough to act on.</p><Link href="/about">Read how GuardRails works <ArrowRight /></Link></div>
+      <div className={styles.positioningRead}><strong>Product boundary</strong><p>Static package evidence supports a human review. It cannot guarantee runtime safety or approve future versions.</p><Link href="/research">Inspect the methodology <ArrowRight /></Link></div>
+      <nav className={styles.integrationLinks} aria-label="Other ways to use release evidence">
+        <span>Use the same evidence in your workflow</span>
+        <Link href="/cli">GuardRails CLI <ArrowUpRight /></Link>
+        <Link href="/badge">Reports, exports, and badges <ArrowUpRight /></Link>
+        <Link href="/docs/mcp">AI and API access <ArrowUpRight /></Link>
+      </nav>
     </section>
 
     <section className={styles.researchLink}><p>Research note</p><div><h2>What an extension can reach is a supply-chain question.</h2><Link href="/research/solidity-pro">Read the Solidity Pro case study <ArrowUpRight /></Link></div></section>
