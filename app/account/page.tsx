@@ -87,6 +87,9 @@ export default function AccountPage() {
     typeof window === "undefined"
       ? "/workspace"
       : new URLSearchParams(window.location.search).get("next") || "/workspace";
+  const isHackathonEntry =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("source") === "hackathon";
   const sourceExtension = extensionFromDestination(destination);
   const entryPoint = destination.startsWith("/monitor")
     ? "monitor"
@@ -146,6 +149,11 @@ export default function AccountPage() {
     clean.searchParams.delete("error");
     window.history.replaceState(null, "", clean);
   }, []);
+  useEffect(() => {
+    if (isHackathonEntry && account?.profile?.onboarding_completed) {
+      router.replace(safeDestination(destination));
+    }
+  }, [account, destination, isHackathonEntry, router]);
   async function oauth(provider: "google" | "github") {
     trackProductEvent({
       name: "workspace_signup_started",
@@ -154,7 +162,10 @@ export default function AccountPage() {
     });
     const next = new URLSearchParams(window.location.search).get("next") || "/workspace";
     const route = provider === "google" ? "/api/auth/google" : "/api/auth/github";
-    window.location.assign(new URL(`${route}?next=${encodeURIComponent(next)}`, window.location.origin).toString());
+    const returnTo = isHackathonEntry
+      ? `/account?source=hackathon&next=${encodeURIComponent(next)}`
+      : next;
+    window.location.assign(new URL(`${route}?next=${encodeURIComponent(returnTo)}`, window.location.origin).toString());
   }
   async function sendEmailLink() {
     const address = normalizeEmail(email);
@@ -167,7 +178,10 @@ export default function AccountPage() {
     setEmailAuthPending(true);
     try {
       const next = new URLSearchParams(window.location.search).get("next") || "/workspace";
-      const response = await fetch(`/api/auth/email/request?next=${encodeURIComponent(next)}`, {
+      const returnTo = isHackathonEntry
+        ? `/account?source=hackathon&next=${encodeURIComponent(next)}`
+        : next;
+      const response = await fetch(`/api/auth/email/request?next=${encodeURIComponent(returnTo)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: address }),
@@ -294,7 +308,7 @@ export default function AccountPage() {
             delivery channels later, when they are useful. Your free plan starts
             immediately with no payment details.
           </p>
-          <p>Five Deep Scans are free. No card is required.</p>
+          <p>{isHackathonEntry ? "The Hackathon Builder Pass can extend the free allowance to 10 scans in the current 30-day scan window. No card is required." : "Five Deep Scans are free. No card is required."}</p>
           <ul className={styles.benefits}>
             <li>Your reviewed version becomes a clear monitoring baseline</li>
             <li>
@@ -401,7 +415,7 @@ export default function AccountPage() {
           </p>
           <ul>
             <li>
-              <Check /> Five Deep Scans free — no card required
+              <Check /> {isHackathonEntry ? "10 Deep Scans in the current 30-day window — no card required" : "Five Deep Scans free — no card required"}
             </li>
             <li>
               <Check /> Public catalog and exact-version intelligence
@@ -413,7 +427,7 @@ export default function AccountPage() {
               <Check /> Version-change monitoring
             </li>
             <li>
-              <Check /> Five free Deep Scans before workspace setup
+              <Check /> {isHackathonEntry ? "Five additional Hackathon Pass scans" : "Five free Deep Scans before workspace setup"}
             </li>
             <li>
               <Check /> Personal review history
