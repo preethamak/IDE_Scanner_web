@@ -11,11 +11,10 @@ import { markCloudflareRunnerClaimed, markCloudflareRunnerCompleted, markCloudfl
 import { dispatchGithubDeepScan } from "@/lib/cloudflareGithubDispatch";
 import { publicCanonicalError } from "@/lib/publicCanonicalContract";
 import { hasAccuracyGateAttestation } from "@/lib/publicationHealth";
+import { GUEST_TRIAL_LIMIT, GUEST_TRIAL_WINDOW_DAYS, guestTrialLimit } from "@/lib/guestTrialOffer";
 
 type Row = Record<string, unknown>;
 type Bundle = { metadata?: Row; extensions?: Row | Row[] };
-const GUEST_TRIAL_LIMIT = 5;
-const GUEST_TRIAL_WINDOW_DAYS = 30;
 const GUEST_TRIAL_COOKIE = "gr_trial";
 const MAX_STORED_PREVIEWS = 4;
 const MAX_STORED_PREVIEW_CHARS = 8_192;
@@ -51,7 +50,8 @@ export async function cloudflareGuestTrialStatus(request: Request): Promise<Gues
   const row = await db.prepare("SELECT scan_count,window_started_at FROM app_guest_scan_trials WHERE trial_key=? LIMIT 1").bind(trialKey).first<Row>();
   const expired = !row || !withinGuestTrialWindow(String(row.window_started_at || ""));
   const used = expired ? 0 : Number(row?.scan_count || 0);
-  return { available: used < GUEST_TRIAL_LIMIT, remaining: Math.max(0, GUEST_TRIAL_LIMIT - used), limit: GUEST_TRIAL_LIMIT, window_days: GUEST_TRIAL_WINDOW_DAYS };
+  const limit = guestTrialLimit(request);
+  return { available: used < limit, remaining: Math.max(0, limit - used), limit, window_days: GUEST_TRIAL_WINDOW_DAYS };
 }
 
 export async function getCloudflareGuestJob(jobId: string, token: string): Promise<Row | null> {
@@ -148,8 +148,8 @@ export async function queueCloudflareDeepScan(extensionId: string, requestedVers
 }
 
 export class GuestTrialLimitError extends Error {
-  constructor() {
-    super("Your 5-scan free trial is used up. Create a free GuardRails workspace to keep scanning and save your history.");
+  constructor(limit = GUEST_TRIAL_LIMIT) {
+    super(`Your ${limit}-scan free trial is used up. Create a free GuardRails workspace to save your history and monitor releases.`);
     this.name = "GuestTrialLimitError";
   }
 }
@@ -168,13 +168,13 @@ export async function queueCloudflareGuestDeepScan(extensionId: string, requeste
   if (!version) throw new Error("No published version is available for this extension.");
   const scanId = !force ? await reusableCloudflareScanId(db, canonicalExtensionId, version) : null;
   if (scanId) return withCloudflareReportUrl({ status: "complete", scan_id: scanId, reused: true, extension_id: canonicalExtensionId, version, trial_remaining: trial.remaining });
-  if (!trial.available) throw new GuestTrialLimitError();
+  if (!trial.available) throw new GuestTrialLimitError(trial.limit);
   const tokenHash = sessionHash(trialToken);
   const active = await db.prepare("SELECT j.* FROM app_scan_jobs j WHERE j.extension_id=? AND j.version=? AND j.profile='deep' AND j.status IN ('queued','running') AND EXISTS (SELECT 1 FROM app_guest_scan_access a WHERE a.job_id=j.id AND a.token_hash=?) ORDER BY j.created_at DESC LIMIT 1").bind(canonicalExtensionId, version, tokenHash).first<Row>();
   if (active) return withCloudflareReportUrl({ ...active, deduplicated: true, trial_remaining: trial.remaining });
   const id = newId();
   const createdAt = nowIso();
-  await consumeGuestTrial(trialKey, createdAt);
+  await consumeGuestTrial(trialKey, createdAt, guestTrialLimit(request));
   await db.batch([
     db.prepare("INSERT INTO app_scan_jobs(id,extension_id,version,profile,status,lifecycle_stage,requester_hash,scan_purpose,created_at,updated_at,last_event_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)").bind(id, canonicalExtensionId, version, "deep", "queued", "queued", trialKey, "guest_trial", createdAt, createdAt, createdAt),
     db.prepare("INSERT INTO app_guest_scan_access(job_id,token_hash,trial_key,created_at) VALUES(?,?,?,?)").bind(id, tokenHash, trialKey, createdAt),
@@ -810,14 +810,14 @@ function withinGuestTrialWindow(start: string): boolean {
   return Number.isFinite(timestamp) && Date.now() - timestamp < GUEST_TRIAL_WINDOW_DAYS * 24 * 60 * 60 * 1000;
 }
 
-async function consumeGuestTrial(trialKey: string, now: string): Promise<void> {
+async function consumeGuestTrial(trialKey: string, now: string, limit: number): Promise<void> {
   const db = privateDb();
   const existing = await db.prepare("SELECT scan_count,window_started_at FROM app_guest_scan_trials WHERE trial_key=? LIMIT 1").bind(trialKey).first<Row>();
   if (!existing || !withinGuestTrialWindow(String(existing.window_started_at || ""))) {
     await db.prepare("INSERT INTO app_guest_scan_trials(trial_key,scan_count,window_started_at,last_scan_at,created_at) VALUES(?,?,?,?,?) ON CONFLICT(trial_key) DO UPDATE SET scan_count=1,window_started_at=excluded.window_started_at,last_scan_at=excluded.last_scan_at").bind(trialKey, 1, now, now, now).run();
     return;
   }
-  const update = await db.prepare("UPDATE app_guest_scan_trials SET scan_count=scan_count+1,last_scan_at=? WHERE trial_key=? AND scan_count<?").bind(now, trialKey, GUEST_TRIAL_LIMIT).run();
+  const update = await db.prepare("UPDATE app_guest_scan_trials SET scan_count=scan_count+1,last_scan_at=? WHERE trial_key=? AND scan_count<?").bind(now, trialKey, limit).run();
   const changes = Number(update.meta?.changes || 0);
   if (changes === 0) throw new GuestTrialLimitError();
 }

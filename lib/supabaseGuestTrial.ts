@@ -1,9 +1,8 @@
 import { createHash, randomBytes } from "node:crypto";
 import { serviceDb } from "@/lib/supabase";
 import { runtimeEnv } from "@/lib/runtimeEnv";
+import { GUEST_TRIAL_WINDOW_DAYS, guestTrialLimit } from "@/lib/guestTrialOffer";
 
-export const GUEST_TRIAL_LIMIT = 5;
-export const GUEST_TRIAL_WINDOW_DAYS = 30;
 const GUEST_TRIAL_COOKIE = "gr_trial";
 
 type TrialRow = {
@@ -61,15 +60,16 @@ export async function supabaseGuestTrialStatus(
     .maybeSingle<TrialRow>();
   if (result.error) throw result.error;
   const row = result.data;
+  const limit = guestTrialLimit(request);
   const started = row?.window_started_at
     ? Date.parse(String(row.window_started_at))
     : NaN;
   const expired = !Number.isFinite(started) || Date.now() - started >= GUEST_TRIAL_WINDOW_DAYS * 86_400_000;
   const used = expired ? 0 : Number(row?.scan_count || 0);
   return {
-    available: used < GUEST_TRIAL_LIMIT,
-    remaining: Math.max(0, GUEST_TRIAL_LIMIT - used),
-    limit: GUEST_TRIAL_LIMIT,
+    available: used < limit,
+    remaining: Math.max(0, limit - used),
+    limit,
     window_days: GUEST_TRIAL_WINDOW_DAYS,
   };
 }
@@ -77,9 +77,10 @@ export async function supabaseGuestTrialStatus(
 export async function consumeSupabaseGuestTrial(
   request: Request,
 ): Promise<GuestTrialStatus> {
+  const limit = guestTrialLimit(request);
   const result = await serviceDb().rpc("consume_guest_deep_scan_trial", {
     p_trial_key: guestTrialKey(request),
-    p_limit: GUEST_TRIAL_LIMIT,
+    p_limit: limit,
     p_window_days: GUEST_TRIAL_WINDOW_DAYS,
   });
   if (result.error) throw result.error;
@@ -89,7 +90,7 @@ export async function consumeSupabaseGuestTrial(
   if (!Number.isFinite(remaining)) throw new Error("Guest trial response was invalid.");
   if (remaining < 0) {
     const error = new Error(
-      "Your five free scans are used up. Create a free GuardRails workspace to keep scanning and save your history.",
+      `Your ${limit} free scans are used up. Create a free GuardRails workspace to save your history and monitor releases.`,
     );
     error.name = "GuestTrialLimitError";
     throw error;
@@ -97,7 +98,7 @@ export async function consumeSupabaseGuestTrial(
   return {
     available: remaining > 0,
     remaining: Math.max(0, remaining),
-    limit: GUEST_TRIAL_LIMIT,
+    limit,
     window_days: GUEST_TRIAL_WINDOW_DAYS,
   };
 }
