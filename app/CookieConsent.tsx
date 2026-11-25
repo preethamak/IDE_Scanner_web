@@ -57,6 +57,7 @@ export default function CookieConsent() {
     setVisible(false);
     setGoogleAnalyticsEnabled(choice === "granted");
     if (choice === "granted") loadGoogleAnalytics();
+    window.dispatchEvent(new Event("guardrails:consent-changed"));
   }
 
   if (!visible) return null;

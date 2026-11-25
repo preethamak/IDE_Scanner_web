@@ -10,6 +10,9 @@ interface D1Database {
 }
 
 interface CloudflareEnv {
+  ABSCISSA_ADMIN_USER_IDS?: string;
+  ABSCISSA_ANALYTICS_ENABLED?: string;
+  ANALYTICS_HASH_SECRET?: string;
   ABSCISSA_REGISTRY: D1Database;
   ABSCISSA_SCAN_DATA: D1Database;
   AUTH_EMAIL?: {

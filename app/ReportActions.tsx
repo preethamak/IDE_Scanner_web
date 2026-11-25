@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { sendFirstPartyEvent } from "@/lib/firstPartyAnalytics";
 import { Check, Copy, Download } from "lucide-react";
 import TeamDecisionAction from "@/app/TeamDecisionAction";
 import MonitorExtensionAction from "@/app/MonitorExtensionAction";
@@ -12,6 +13,7 @@ export default function ReportActions({ extensionId, version, scanId, mode = "al
     try {
       await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
+      sendFirstPartyEvent("share_copied", window.location.pathname);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
       setCopied(false);

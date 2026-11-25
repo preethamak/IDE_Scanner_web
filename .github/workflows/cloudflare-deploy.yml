@@ -83,6 +83,15 @@ jobs:
           else
             echo "::warning::OAUTH_GITHUB_CLIENT_SECRET is not configured; GitHub sign-in will remain unavailable after authorization."
           fi
+      - name: Configure first-party analytics hashing
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 26e873c5d55e5e386df482c9dbe8bcd7
+          ANALYTICS_HASH_SECRET: ${{ secrets.ANALYTICS_HASH_SECRET }}
+        run: |
+          # Never print the value. Without a supplied stable secret, rotate
+          # pseudonyms on deployment rather than collecting with a public salt.
+          node -e 'const value = process.env.ANALYTICS_HASH_SECRET || require("node:crypto").randomBytes(32).toString("hex"); if (value.length < 32) throw new Error("ANALYTICS_HASH_SECRET must contain at least 32 characters"); process.stdout.write(value)' | npx wrangler secret put ANALYTICS_HASH_SECRET --config wrangler.jsonc
       - name: Detect D1 migration changes
         id: schema_changes
         run: |

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { privateDb, nowIso } from "@/lib/cloudflarePrivate";
 import { sendAuthLink } from "@/lib/cloudflareEmail";
 import { safeNext } from "@/lib/cloudflarePrivate";
-import { runtimeEnv } from "@/lib/runtimeEnv";
+import { codeHash } from "@/lib/emailAuthHash";
 import { runtimeSupabase } from "@/lib/supabaseRuntime";
 
 export const runtime = "nodejs";
@@ -68,9 +68,4 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ error: "Email sign-in is not available right now. Use Google or GitHub instead." }, { status: 503 });
   }
-}
-
-export function codeHash(email: string, code: string): string {
-  const secret = runtimeEnv("MONITORING_ENCRYPTION_KEY") || runtimeEnv("SCAN_RATE_LIMIT_SECRET") || "guardrails-email-auth";
-  return createHash("sha256").update(`${secret}:${email}:${code}`).digest("hex");
 }

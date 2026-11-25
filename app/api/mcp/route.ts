@@ -1,3 +1,4 @@
+import { recordOperationalEvent } from "@/lib/admin/telemetry";
 import { NextResponse } from "next/server";
 import { rankAlternatives } from "@/lib/alternatives";
 import { isValidGateCheck, lookupGateVerdict } from "@/lib/gateLookup";
@@ -308,6 +309,17 @@ export function OPTIONS() {
 }
 
 export async function POST(request: Request) {
+  const start = Date.now(); let status = 500; let operation = "invalid_request";
+  try {
+    const response = await handleMcpRequest(request, value => { operation = value; });
+    status = response.status;
+    return response;
+  } finally {
+    await recordOperationalEvent({ name: "mcp_request", operation, status, duration_ms: Date.now() - start });
+  }
+}
+
+async function handleMcpRequest(request: Request, onMethod: (value: string) => void) {
   const oauth = await mcpOAuthToken(request).catch(() => null);
   const authorization = authorize(request, oauth);
   if (authorization) return authorization;
@@ -329,6 +341,8 @@ export async function POST(request: Request) {
   const method = typeof message.method === "string" ? message.method : "";
   const params = (message.params && typeof message.params === "object" ? message.params : {}) as Record<string, unknown>;
   const toolName = method === "tools/call" ? String(params.name || "") : "";
+  const knownMethods = new Set(["initialize", "notifications/initialized", "notifications/cancelled", "ping", "tools/list", "resources/list", "resources/templates/list", "resources/read", "prompts/list", "prompts/get"]);
+  onMethod(method === "tools/call" ? (TOOLS.some(tool => tool.name === toolName) ? toolName : "unknown_tool") : knownMethods.has(method) ? method : "unknown_method");
   if (WORKSPACE_TOOLS.has(toolName) && (!oauth || !oauth.scopes.includes("workspace:read"))) return oauthRequired();
 
   switch (method) {

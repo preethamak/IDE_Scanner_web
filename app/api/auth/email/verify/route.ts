@@ -8,7 +8,7 @@ import {
   sessionCookie,
   upsertEmailUser,
 } from "@/lib/cloudflarePrivate";
-import { codeHash } from "@/app/api/auth/email/request/route";
+import { codeHash } from "@/lib/emailAuthHash";
 import { runtimeSupabase } from "@/lib/supabaseRuntime";
 
 export const runtime = "nodejs";

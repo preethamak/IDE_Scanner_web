@@ -8,6 +8,8 @@ import BrandMark from "./BrandMark";
 import FooterNewsletter from "./FooterNewsletter";
 import CookieConsent from "./CookieConsent";
 import FeedbackWidget from "./FeedbackWidget";
+import FirstPartyAnalytics from "./FirstPartyAnalytics";
+import PublicSiteTools from "./PublicSiteTools";
 import { socialLinks } from "../lib/socialLinks";
 import "@fontsource-variable/ibm-plex-sans";
 import "@fontsource/ibm-plex-mono/400.css";
@@ -130,6 +132,7 @@ export default function RootLayout({
                   <Link href="/about#sarvam-ai">Sarvam AI program</Link>
                   <Link href="/contact">Contact</Link>
                   <Link href="/changelog">Changelog</Link>
+                  <Link href="/blog">Journal</Link>
                   <Link href="/faq">FAQ</Link>
                   <Link href="/integrations">Integrations</Link>
                   <Link href="/badge">Publisher Badge</Link>
@@ -162,9 +165,12 @@ export default function RootLayout({
             </div>
           </footer>
         </div>
-        <Analytics />
-        <CookieConsent />
-        <FeedbackWidget />
+        <FirstPartyAnalytics />
+        <PublicSiteTools>
+          <Analytics />
+          <CookieConsent />
+          <FeedbackWidget />
+        </PublicSiteTools>
       </body>
     </html>
   );
