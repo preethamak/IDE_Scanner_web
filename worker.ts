@@ -8,6 +8,7 @@ import { reconcileCloudflareBadgeHealth } from "./lib/cloudflareBadgeHealth";
 import { dispatchQueuedCloudflareScan } from "./lib/cloudflareScheduledScan";
 import { deliverCloudflareNotifications } from "./lib/cloudflareNotificationQueue";
 import type { PrivateDatabase } from "./lib/cloudflarePrivate";
+import { cleanupAnalytics } from "./lib/admin/retention";
 import { isPublicRoutePath, isRscPrefetch } from "./lib/publicRequestPolicy";
 
 type WorkerEnvironment = Record<string, unknown> & {
@@ -168,6 +169,8 @@ const worker = {
       }
       return;
     }
+    try { await cleanupAnalytics(scanData as unknown as PrivateDatabase); }
+    catch { console.error("[scheduled-analytics] retention cleanup failed"); }
     await reconcileCloudflareBadgeHealth(scanData);
   },
 };

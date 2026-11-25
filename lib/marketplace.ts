@@ -1,3 +1,4 @@
+import { observedFetch } from "@/lib/admin/telemetry";
 import type { MarketplaceSearchResult } from "@/lib/types";
 import { DEFAULT_DEEP_SCAN_SUPPORT_REASON } from "@/lib/deepScanSupport";
 
@@ -251,5 +252,6 @@ const REGISTRY_TIMEOUT_MS = 3_500;
 
 async function registryFetch(input: RequestInfo | URL, init: RequestInit): Promise<Response> {
   const signal = AbortSignal.timeout(REGISTRY_TIMEOUT_MS);
-  return fetch(input, { ...init, signal });
+  const provider = String(input).startsWith("https://open-vsx.org/") ? "openvsx" : "marketplace";
+  return observedFetch(provider, "registry_lookup", input, { ...init, signal });
 }

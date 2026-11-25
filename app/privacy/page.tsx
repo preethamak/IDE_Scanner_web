@@ -219,8 +219,9 @@ export default function PrivacyPage() {
             </div>
           </header>
           <p>
-            Supabase stores account, workspace, and newsletter data and provides
-            authentication. Vercel hosts the site and provides cookieless
+            Cloudflare hosts the site and stores account, workspace, and
+            first-party analytics records in D1. Supabase provides compatibility
+            authentication and newsletter storage. Vercel provides cookieless
             aggregate analytics. Google Analytics runs only with your consent.
             Stripe processes payments only once billing is enabled. Rate
             limiting and abuse prevention store a salted hash derived from your
@@ -243,7 +244,9 @@ export default function PrivacyPage() {
             <code>guardrails-consent</code>, your Supabase session tokens when
             you sign in, and any report bundles you import (until you remove
             them on the Reports page). Google Analytics sets its own cookies
-            only after consent. There are no advertising cookies.
+            only after consent. First-party analytics sets a separate HttpOnly
+            cookie, gr_analytics, after consent; it expires after 30 minutes of
+            inactivity. There are no advertising cookies.
           </p>
         </article>
         <article>
@@ -281,6 +284,15 @@ export default function PrivacyPage() {
               Google Analytics loads only after you allow it in the banner or
               here; declining leaves the site fully functional. Already-sent
               hits cannot be recalled, but turning analytics off stops new ones.
+              Optional first-party analytics follows the same choice and records
+              normalized routes, broad browser/device categories, country, network
+              number, campaign labels, and referring hostnames. It excludes raw
+              IP addresses, search text, report content, and full referrer URLs.
+              Consenting visits may be linked to a signed-in account. Login and
+              provider-health records are operational data collected independently
+              of this choice. Analytics records expire after 90 days through a
+              scheduled purge; backlog is removed in bounded batches. IP-derived
+              rate-limit hashes expire after one day. No device fingerprint is used.
             </p>
             <ConsentResetButton />
           </div>

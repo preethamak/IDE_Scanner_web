@@ -3,6 +3,7 @@ import "server-only";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { WorkspaceConflictError } from "@/lib/workspaceConflict";
+import { recordOperationalEvent } from "@/lib/admin/telemetry";
 
 type PrivateRow = Record<string, unknown>;
 type PrivateResult<T extends PrivateRow = PrivateRow> = {
@@ -215,6 +216,7 @@ export async function createSession(userId: string): Promise<string> {
     .prepare("INSERT INTO app_sessions(token_hash,user_id,expires_at,created_at) VALUES(?,?,?,?)")
     .bind(sessionHash(token), userId, expires, now)
     .run();
+  await recordOperationalEvent({ name: "login", user_id: userId });
   return token;
 }
 

@@ -1,4 +1,5 @@
 import "server-only";
+import { observedFetch } from "@/lib/admin/telemetry";
 
 import {
   assembleEvidenceIntelligenceReport,
@@ -330,7 +331,7 @@ export async function createEvidenceReviewBrief(
     : model === "gemma4"
       ? {}
       : { extra_body: { chat_template_kwargs: { enable_thinking: false } } };
-  const response = await fetch(`${SARVAM_ORIGIN}${SARVAM_REASONING_MODELS[model].endpoint}`, {
+  const response = await observedFetch("sarvam", model, `${SARVAM_ORIGIN}${SARVAM_REASONING_MODELS[model].endpoint}`, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -540,7 +541,7 @@ async function requestIntelligenceResponse({
     ...(repairHint ? [`Repair the previous draft using this category-level correction: ${repairHint}`] : []),
     "Do not emit HTML, Markdown tables, SVG, CSS, links, code, chain-of-thought, or hidden reasoning. Return only JSON matching the supplied schema.",
   ].join("\n");
-  const response = await fetch(`${SARVAM_ORIGIN}${SARVAM_REASONING_MODELS[model].endpoint}`, {
+  const response = await observedFetch("sarvam", model, `${SARVAM_ORIGIN}${SARVAM_REASONING_MODELS[model].endpoint}`, {
     method: "POST",
     headers: {
       Accept: "application/json",

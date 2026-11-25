@@ -16,6 +16,8 @@
     "crons": ["*/5 * * * *", "23 */6 * * *"]
   },
   "vars": {
+    "ABSCISSA_ADMIN_USER_IDS": "github:167765989",
+    "ABSCISSA_ANALYTICS_ENABLED": "true",
     "GITHUB_OAUTH_CLIENT_ID": "Ov23liWQ5kElxVniE4tx",
     "GOOGLE_OAUTH_CLIENT_ID": "539877495650-9nrcag73os1umpgdi03lc2j4f9qien4s.apps.googleusercontent.com",
     "GOOGLE_OAUTH_REDIRECT_URI": "https://abscissa.dev/api/auth/callback/google",
