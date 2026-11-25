@@ -1,3 +1,4 @@
+import { ADMIN_HOST } from "@/lib/admin/domains";
 import { NextResponse, type NextRequest } from "next/server";
 import { refreshSession } from "@/lib/supabaseProxy";
 
@@ -35,7 +36,7 @@ export async function proxy(request: NextRequest) {
   const hostName = host.split(":", 1)[0].toLowerCase();
   const isCloudflarePreview = hostName.endsWith(".workers.dev");
   const isProduction = !process.env.VERCEL_ENV || process.env.VERCEL_ENV === "production";
-  if (isProduction && canonicalHost && host && host !== canonicalHost && !host.startsWith("localhost") && !host.startsWith("127.0.0.1") && !isCloudflarePreview) {
+  if (isProduction && canonicalHost && host && host !== canonicalHost && !host.startsWith("localhost") && !host.startsWith("127.0.0.1") && !isCloudflarePreview && hostName !== ADMIN_HOST) {
     const url = request.nextUrl.clone();
     url.host = canonicalHost;
     url.protocol = "https:";

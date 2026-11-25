@@ -1,3 +1,5 @@
+import type { ReportNotice } from "@/lib/admin/reportNotices";
+import ReportNoticeBanner from "@/app/ReportNoticeBanner";
 import { notFound } from "next/navigation";
 import AnalysisReport from "@/app/ExtensionDossier";
 import { getExtensionProduct, getVersionScanProduct } from "@/lib/productData";
@@ -65,5 +67,5 @@ export default async function ImmutableScanPage({
       </main>
     );
   }
-  return <AnalysisReport data={data} signedIn={claims} />;
+  return <><ReportNoticeBanner scanId={scanId} initial={((versionProduct.scan as Record<string,unknown>).report_notice||null) as ReportNotice|null}/><AnalysisReport data={data} signedIn={claims} /></>;
 }

@@ -390,6 +390,7 @@ export default function DeepScanButton({
       );
       return;
     }
+    trackProductEvent({ name: "deep_scan_requested", source_route: window.location.pathname });
     setJobId(String(body.id));
     setState(body.status === "running" ? "running" : "queued");
     setMessage(

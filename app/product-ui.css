@@ -160,3 +160,5 @@
   .dossierPage .dossierIdentityPanel .xid-icon { width: 56px; height: 56px; }
   .dossierPage .dossierIdentityPanel .xid-name { font-size: 27px; }
 }
+
+.reportNotice{margin:20px auto;padding:20px 24px;max-width:1200px;border:1px solid #b08845;background:#fff8e9;color:#503e22;border-radius:4px}.reportNotice p{margin:10px 0}.reportNotice small{display:block;line-height:1.6}

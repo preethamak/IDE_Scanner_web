@@ -28,13 +28,15 @@ beforeEach(() => {
   state.user = { id: 'github:167765989', email: 'owner@example.test' };
   sqlite = new DatabaseSync(':memory:');
   sqlite.exec(readFileSync('d1/migrations/0003_private_guardrails.sql', 'utf8'));
+  sqlite.exec(readFileSync('d1/migrations/0018_workspace_api_keys.sql', 'utf8'));
   sqlite.exec(readFileSync('d1/migrations/0019_admin_analytics.sql', 'utf8'));
+  sqlite.exec(readFileSync('d1/migrations/0020_admin_operations.sql', 'utf8'));
   function statement(query, values = []) {
     return {
       bind: (...bound) => statement(query, bound),
       first: async () => sqlite.prepare(query).get(...values) || null,
       all: async () => ({ results: sqlite.prepare(query).all(...values) }),
-      run: async () => sqlite.prepare(query).run(...values),
+      run: async () => {const result=sqlite.prepare(query).run(...values);return{meta:{changes:Number(result.changes)}};},
     };
   }
   state.db = { prepare: statement, batch: async statements => Promise.all(statements.map(query => query.run())) };

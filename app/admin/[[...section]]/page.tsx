@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowDownToLine, Database } from "lucide-react";
 import { requireAdminPage } from "@/lib/admin/access";
+import { sectionPermission } from "@/lib/admin/permissions";
 import { sectionByKey } from "@/lib/admin/catalog";
 import { adminFilters, readAdminData, type AdminData } from "@/lib/admin/data";
 import AdminTable from "../AdminTable";
@@ -10,9 +11,9 @@ import ContentEditor from "../ContentEditor";
 export const dynamic = "force-dynamic";
 type Props = { params: Promise<{ section?: string[] }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 export default async function AdminPage({ params, searchParams }: Props) {
-  await requireAdminPage();
   const key = (await params).section?.join("/") || "users";
   const section = sectionByKey(key); if (!section) notFound();
+  await requireAdminPage(sectionPermission(key));
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(await searchParams)) if (typeof value === "string") query.set(key, value);
   const filters = adminFilters(query); query.set("from", filters.from); query.set("to", filters.to); query.set("q", filters.q); query.set("page", String(filters.page));

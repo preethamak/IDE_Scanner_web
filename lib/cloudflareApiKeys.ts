@@ -5,10 +5,10 @@ import { newId, nowIso, privateDb } from "@/lib/cloudflarePrivate";
 
 export const API_KEY_SCOPES = ["gate:read", "collector:write"] as const;
 export type ApiKeyScope = (typeof API_KEY_SCOPES)[number];
-export type CloudflareApiKey = { id: string; team_id: string; label: string; key_prefix: string; scopes: ApiKeyScope[]; last_used_at: string | null; revoked_at: string | null; created_at: string };
+export type CloudflareApiKey = { id: string; team_id: string; label: string; key_prefix: string; scopes: ApiKeyScope[]; last_used_at: string | null; expires_at?: string | null; revoked_at: string | null; created_at: string };
 
 export async function listCloudflareApiKeys(teamId: string): Promise<CloudflareApiKey[]> {
-  const rows = await privateDb().prepare("SELECT id,team_id,label,key_prefix,scopes_json,last_used_at,revoked_at,created_at FROM app_workspace_api_keys WHERE team_id=? ORDER BY created_at DESC").bind(teamId).all<Record<string, unknown>>();
+  const rows = await privateDb().prepare("SELECT id,team_id,label,key_prefix,scopes_json,last_used_at,expires_at,revoked_at,created_at FROM app_workspace_api_keys WHERE team_id=? ORDER BY created_at DESC").bind(teamId).all<Record<string, unknown>>();
   return rows.results.map(toApiKey);
 }
 
@@ -30,12 +30,16 @@ export async function revokeCloudflareApiKey(teamId: string, keyId: string): Pro
 }
 
 export async function authenticateCloudflareApiKey(raw: string): Promise<{ teamId: string; keyId: string; scopes: ApiKeyScope[] } | null> {
-  const row = await privateDb().prepare("SELECT id,team_id,scopes_json FROM app_workspace_api_keys WHERE key_hash=? AND revoked_at IS NULL LIMIT 1").bind(hashApiKey(raw)).first<Record<string, unknown>>();
+  const row = await privateDb().prepare("SELECT id,team_id,scopes_json FROM app_workspace_api_keys WHERE key_hash=? AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>?) LIMIT 1").bind(hashApiKey(raw),nowIso()).first<Record<string, unknown>>();
   if (!row) return null;
   const scopes = parseScopes(row.scopes_json);
   const id = String(row.id || "");
   if (!id || !String(row.team_id || "")) return null;
-  await privateDb().prepare("UPDATE app_workspace_api_keys SET last_used_at=? WHERE id=?").bind(nowIso(), id).run();
+  const now=nowIso(),db=privateDb();
+  await db.batch([
+    db.prepare("UPDATE app_workspace_api_keys SET last_used_at=? WHERE id=?").bind(now,id),
+    db.prepare("INSERT INTO app_api_key_usage(key_id,day,requests) VALUES(?,?,1) ON CONFLICT(key_id,day) DO UPDATE SET requests=requests+1").bind(id,now.slice(0,10)),
+  ]);
   return { teamId: String(row.team_id), keyId: id, scopes };
 }
 
@@ -49,5 +53,5 @@ export function parseScopes(value: unknown): ApiKeyScope[] {
 }
 
 function toApiKey(row: Record<string, unknown>): CloudflareApiKey {
-  return { id: String(row.id), team_id: String(row.team_id), label: String(row.label), key_prefix: String(row.key_prefix), scopes: parseScopes(row.scopes_json), last_used_at: row.last_used_at ? String(row.last_used_at) : null, revoked_at: row.revoked_at ? String(row.revoked_at) : null, created_at: String(row.created_at) };
+  return { id: String(row.id), team_id: String(row.team_id), label: String(row.label), key_prefix: String(row.key_prefix), scopes: parseScopes(row.scopes_json), last_used_at: row.last_used_at ? String(row.last_used_at) : null, expires_at: row.expires_at ? String(row.expires_at) : null, revoked_at: row.revoked_at ? String(row.revoked_at) : null, created_at: String(row.created_at) };
 }

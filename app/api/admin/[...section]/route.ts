@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { AdminAccessError, requireAdmin } from "@/lib/admin/access";
+import { sectionPermission } from "@/lib/admin/permissions";
 import { privateResponseHeaders, sectionByKey } from "@/lib/admin/catalog";
 import { adminFilters, readAdminData } from "@/lib/admin/data";
 import { ContentError, savePost } from "@/lib/admin/content";
@@ -11,8 +12,8 @@ const headers = privateResponseHeaders;
 type Context = { params: Promise<{ section: string[] }> };
 export async function GET(request: Request, context: Context) {
   try {
-    await requireAdmin(request);
     const key = (await context.params).section.join("/"); const url = new URL(request.url);
+    await requireAdmin(request, sectionPermission(key));
     if (!sectionByKey(key)) return NextResponse.json({ error: "Not found." }, { status: 404, headers });
     if (key === "content" && url.searchParams.get("id")) {
       const post = await privateDb().prepare("SELECT * FROM app_blog_posts WHERE id=?").bind(url.searchParams.get("id")).first();
@@ -28,7 +29,7 @@ export async function GET(request: Request, context: Context) {
 }
 export async function POST(request: Request, context: Context) {
   try {
-    const user = await requireAdmin(request);
+    const user = await requireAdmin(request, "content:write");
     if (!sameOrigin(request)) return NextResponse.json({ error: "Origin rejected." }, { status: 403, headers });
     if ((await context.params).section.join("/") !== "content") return NextResponse.json({ error: "Method not allowed." }, { status: 405, headers });
     let body;

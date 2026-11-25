@@ -1,3 +1,6 @@
+import { publishScheduledPosts } from "./lib/admin/publishingWorker";
+import { adminHostRedirect, ADMIN_HOST } from "./lib/admin/domains";
+import { evaluateAdminHealth } from "./lib/admin/healthWorker";
 // OpenNext generates this module during `cf:build`; it is intentionally not
 // checked into source control. Keep the wrapper typed below without making
 // the repository-wide TypeScript check depend on a generated build artifact.
@@ -114,6 +117,9 @@ const worker = {
     env: WorkerEnvironment,
     ctx: WorkerContext,
   ): Promise<Response> {
+    const adminRedirect = adminHostRedirect(request);
+    if (adminRedirect) return Response.redirect(adminRedirect, 302);
+    if (new URL(request.url).hostname === ADMIN_HOST) return nextWorker.fetch(request, env, ctx);
     if (isRscPrefetch(request)) {
       return new Response(null, {
         status: 204,
@@ -127,6 +133,15 @@ const worker = {
       return nextWorker.fetch(request, env, ctx);
     }
 
+    // A current correction must bypass the independent HTML edge cache.
+    if (new URL(request.url).pathname.startsWith("/extensions/")) {
+      const db = env.ABSCISSA_SCAN_DATA || env.ABSCISSA_REGISTRY;
+      try {
+        const extensionId = decodeURIComponent(new URL(request.url).pathname.split("/")[2]);
+        const notice = db && await db.prepare("SELECT scan_id FROM app_report_notices WHERE extension_id=? COLLATE NOCASE AND state!='resolved' LIMIT 1").bind(extensionId).first();
+        if (!db || notice) return nextWorker.fetch(request, env, ctx);
+      } catch { return nextWorker.fetch(request, env, ctx); }
+    }
     const key = cacheKey(request);
     const cached = await edgeCache.match(key);
     if (cached) return withEdgeCacheHeaders(cached, "HIT");
@@ -167,6 +182,8 @@ const worker = {
           error instanceof Error ? error.message : String(error),
         );
       }
+      try { await publishScheduledPosts(scanData as unknown as PrivateDatabase, env); } catch { console.error("[admin-publishing] scheduled operation failed"); }
+      try { await evaluateAdminHealth(scanData as unknown as PrivateDatabase, env); } catch { console.error("[admin-health] evaluation failed"); }
       return;
     }
     try { await cleanupAnalytics(scanData as unknown as PrivateDatabase); }

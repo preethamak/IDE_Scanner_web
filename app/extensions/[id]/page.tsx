@@ -1,3 +1,5 @@
+import type { ReportNotice } from "@/lib/admin/reportNotices";
+import ReportNoticeBanner from "@/app/ReportNoticeBanner";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -85,6 +87,7 @@ export default async function ExtensionPage({
       : `https://marketplace.visualstudio.com/items?itemName=${encodeURIComponent(product.extension.id)}`;
   return (
     <main className="extensionProfile productExtensionProfile">
+      {scan?.id ? <ReportNoticeBanner scanId={String(scan.id)} initial={(scan.report_notice||null) as ReportNotice|null}/> : null}
       <header className="profileHeader productProfileHeader">
         <div className="profileIdentity">
           <ExtensionIcon

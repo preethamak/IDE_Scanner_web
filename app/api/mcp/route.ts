@@ -650,7 +650,7 @@ function releaseComparisonSide(extension: string, version: string, product: Reco
 function omitFindingIds(side: ReturnType<typeof releaseComparisonSide>) { const { finding_ids: _findingIds, ...result } = side; return result; }
 
 function compactScan(scan: Record<string, unknown>) {
-  const keys = ["id", "extension_id", "version", "decision", "severity", "public_outcome", "decision_reason", "evidence_confidence", "coverage_percent", "artifact_sha256", "scanned_at", "scanner_build", "ruleset_version", "analysis_status"];
+  const keys = ["id", "extension_id", "version", "decision", "severity", "public_outcome", "decision_reason", "evidence_confidence", "coverage_percent", "artifact_sha256", "scanned_at", "scanner_build", "ruleset_version", "analysis_status", "report_notice", "report_notice_availability", "assessment_current"];
   return Object.fromEntries(keys.filter((key) => scan[key] !== undefined).map((key) => [key, scan[key]]));
 }
 

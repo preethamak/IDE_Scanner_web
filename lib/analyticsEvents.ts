@@ -12,6 +12,7 @@ export type ProductEvent =
   | (BaseEvent & { name: "public_report_viewed"; public_outcome: string })
   | (BaseEvent & { name: "workspace_signup_started"; entry_point: "deep_scan" | "monitor" | "report" | "account" })
   | (BaseEvent & { name: "workspace_created" })
+  | (BaseEvent & { name: "deep_scan_requested" })
   | (BaseEvent & { name: "watch_created"; scope: "personal" | "team" })
   | (BaseEvent & { name: "report_monitor_setup_opened" })
   | (BaseEvent & { name: "report_monitor_completed" })

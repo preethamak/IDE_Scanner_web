@@ -1,4 +1,5 @@
 import "server-only";
+import { auditedMutation, OperationError } from "./mutations";
 import { randomUUID } from "node:crypto";
 import { privateDb } from "@/lib/cloudflarePrivate";
 export type BlogPost = { id: string; slug: string; title: string; summary: string; body: string; status: string; version: number; updated_at: string; published_at: string | null; created_at: string; created_by: string };
@@ -22,13 +23,15 @@ export async function savePost(input: Record<string, unknown>, userId: string) {
   try {
     if (input.id) {
       if (!Number.isSafeInteger(input.version) || Number(input.version) < 1) throw new ContentError("A current version is required.");
-      const row = await db.prepare(`UPDATE app_blog_posts SET slug=?,title=?,summary=?,body=?,status=?,version=version+1,updated_at=?,published_at=CASE WHEN ?='published' THEN coalesce(published_at,?) ELSE NULL END WHERE id=? AND version=? RETURNING id`).bind(post.slug, post.title, post.summary, post.body, post.status, now, post.status, now, id, input.version).first();
-      if (!row) throw new ContentError("This article changed in another session. Reload it before saving.", 409);
+      const statement = db.prepare(`UPDATE app_blog_posts SET slug=?,title=?,summary=?,body=?,status=?,version=version+1,updated_at=?,published_at=CASE WHEN ?='published' THEN coalesce(published_at,?) ELSE NULL END WHERE id=? AND version=?`).bind(post.slug, post.title, post.summary, post.body, post.status, now, post.status, now, id, input.version);
+      await auditedMutation(statement,userId,"blog.update",id,{status:post.status});
     } else {
-      await db.prepare("INSERT INTO app_blog_posts(id,slug,title,summary,body,status,created_by,created_at,updated_at,published_at) VALUES(?,?,?,?,?,?,?,?,?,?)").bind(id, post.slug, post.title, post.summary, post.body, post.status, userId, now, now, post.status === "published" ? now : null).run();
+      const statement = db.prepare("INSERT INTO app_blog_posts(id,slug,title,summary,body,status,created_by,created_at,updated_at,published_at) VALUES(?,?,?,?,?,?,?,?,?,?)").bind(id, post.slug, post.title, post.summary, post.body, post.status, userId, now, now, post.status === "published" ? now : null);
+      await auditedMutation(statement,userId,"blog.create",id,{status:post.status});
     }
   } catch (error) {
     if (error instanceof ContentError) throw error;
+    if (error instanceof OperationError) throw new ContentError(error.message,error.status);
     if (/unique/i.test(String(error))) throw new ContentError("That slug is already in use.", 409);
     throw error;
   }
