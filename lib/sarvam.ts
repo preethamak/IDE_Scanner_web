@@ -1,4 +1,5 @@
 import "server-only";
+import { recordModelUsage } from "@/lib/admin/modelUsage";
 import { observedFetch } from "@/lib/admin/telemetry";
 
 import {
@@ -401,6 +402,7 @@ export async function createEvidenceReviewBrief(
     throw new SarvamProviderError(response.status);
   }
   const payload = await response.json().catch(() => null);
+  await recordModelUsage("sarvam", model, payload);
   const content = extractMessageContent(payload);
   if (!content) {
     console.warn("[sarvam-evidence-brief] empty structured output", providerPayloadShape(response.status, payload));
@@ -594,6 +596,7 @@ async function requestIntelligenceResponse({
     throw new SarvamProviderError(response.status);
   }
   const streamed = await readStructuredResponse(response);
+  await recordModelUsage("sarvam", model, streamed.payload);
   return { response, payload: streamed.payload, content: streamed.content };
 }
 
@@ -656,6 +659,7 @@ async function readStructuredResponse(response: Response): Promise<{ payload: un
   let finishReason: string | null = null;
   let model: string | null = null;
   let choices = 0;
+  let usage: unknown;
 
   for (const event of raw.split(/\r?\n\r?\n/)) {
     const data = event.split(/\r?\n/).find((line) => line.startsWith("data:"))?.slice(5).trimStart() || "";
@@ -664,6 +668,7 @@ async function readStructuredResponse(response: Response): Promise<{ payload: un
     try { payload = JSON.parse(data) as Record<string, unknown>; }
     catch { continue; }
     if (typeof payload.model === "string") model = payload.model.slice(0, 80);
+    if (payload.usage && typeof payload.usage === "object") usage = payload.usage;
     const streamChoices = Array.isArray(payload.choices) ? payload.choices : [];
     choices = Math.max(choices, streamChoices.length);
     const first = objectValue(streamChoices[0]);
@@ -672,7 +677,7 @@ async function readStructuredResponse(response: Response): Promise<{ payload: un
     if (typeof delta.content === "string") content += delta.content;
   }
   return {
-    payload: { model, choices: Array.from({ length: choices }, (_, index) => ({ index, finish_reason: finishReason, message: { content } })) },
+    payload: { model, usage, choices: Array.from({ length: choices }, (_, index) => ({ index, finish_reason: finishReason, message: { content } })) },
     content: content.trim(),
   };
 }

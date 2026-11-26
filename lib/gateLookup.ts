@@ -1,3 +1,4 @@
+import { attachReportNotice } from "@/lib/admin/reportNotices";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type GateCheck = { extension: string; version: string };
@@ -52,7 +53,9 @@ export function formatGateResult(check: GateCheck, scan: ScanRow, failOnUnreview
   const decision = String(scan.decision || "incomplete");
   const relationshipReview = relationshipReviewForScan(scan);
   const requiresRelationshipReview = relationshipReview.required;
-  const verdict = decision === "allow" && !requiresRelationshipReview ? "pass" : "fail";
+  const notice=objectValue(scan.report_notice);
+  const noticeBlocks=scan.report_notice_availability==='unavailable'||Boolean(notice.state&&notice.state!=='resolved');
+  const verdict = decision === "allow" && !requiresRelationshipReview && !noticeBlocks ? "pass" : "fail";
   return {
     extension,
     version,
@@ -61,7 +64,7 @@ export function formatGateResult(check: GateCheck, scan: ScanRow, failOnUnreview
     severity: scan.severity ?? null,
     public_outcome: scan.public_outcome ?? null,
     coverage_percent: Number(scan.coverage_percent || 0),
-    reason: requiresRelationshipReview
+    reason: noticeBlocks ? "The historical assessment has an active report notice or its current notice status could not be verified. Human review is required." : requiresRelationshipReview
       ? "The parent release is allowed, but one or more declared related extensions lack completed exact-release evidence. The gate fails until each related release is reviewed."
       : decision === "allow"
       ? "Latest completed public analysis allows this exact release."
@@ -120,5 +123,6 @@ function validSha256(value: unknown) {
 /** Shared by the single (`/api/gate`) and bulk (`/api/gate/bulk`) endpoints so the verdict logic never drifts between them. */
 export async function lookupGateVerdict(db: SupabaseClient, check: GateCheck, failOnUnreviewed: boolean): Promise<GateResult> {
   const scan = await fetchLatestScan(db, check);
-  return formatGateResult(check, scan, failOnUnreviewed);
+  const product = scan ? await attachReportNotice({scan}) : null;
+  return formatGateResult(check, product?.scan as ScanRow, failOnUnreviewed);
 }

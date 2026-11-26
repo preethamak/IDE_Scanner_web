@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { readFileSync, writeFileSync } from "node:fs";
 import { adminSections } from "@/lib/admin/catalog";
 const mocks = vi.hoisted(() => ({ read: vi.fn() }));
-vi.mock("@/lib/admin/access", () => ({ requireAdminPage: async () => ({ id: "operator", email: "operator@example.test" }) }));
+vi.mock("@/lib/admin/access", () => ({ adminRole: async () => "owner", requireAdminPage: async () => ({ id: "operator", email: "operator@example.test" }) }));
 vi.mock("@/lib/admin/data", async importOriginal => ({ ...await importOriginal<typeof import("@/lib/admin/data")>(), readAdminData: mocks.read }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/admin/users", useRouter: () => ({ refresh() {} }), notFound: () => { throw new Error("not found"); } }));
 import AdminPage from "./[[...section]]/page";

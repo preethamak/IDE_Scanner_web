@@ -8,16 +8,18 @@ export async function GET(request: Request) {
   const extension = (url.searchParams.get("extension") || "").trim();
   const version = (url.searchParams.get("version") || "").trim() || null;
   if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+$/.test(extension)) {
-    return renderPendingBadgeSvg("not analyzed");
+    return uncachedBadge(renderPendingBadgeSvg("not analyzed"));
   }
   let decision;
   try {
     decision = version ? await getVersionBadgeDecision(extension, version) : await getBadgeDecision(extension);
   } catch {
-    return renderPendingBadgeSvg("unavailable");
+    return uncachedBadge(renderPendingBadgeSvg("unavailable"));
   }
   if (!decision.found || !decision.decision) {
-    return renderPendingBadgeSvg(decision.extension_id ? "no completed analysis" : "not analyzed");
+    return uncachedBadge(renderPendingBadgeSvg(decision.extension_id ? "no completed analysis" : "not analyzed"));
   }
-  return renderTrustBadgeSvg(decision);
+  return uncachedBadge(renderTrustBadgeSvg(decision));
 }
+
+function uncachedBadge(response:Response) { response.headers.set("Cache-Control","no-store"); return response; }

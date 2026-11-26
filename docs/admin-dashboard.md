@@ -4,13 +4,15 @@ Open `https://abscissa.dev/admin` and sign in with the operator's GitHub account
 This implementation uses Abscissa's own components and services. It does not
 embed, import code from, contact, or send events to another company's dashboard.
 
+See [Admin operations and publishing](admin-operations.md) for the expanded tools,
+role delegation, current report notices, company publishing and admin subdomain.
+
 ## Access and deployment
 
 - The server verifies the existing account session, then checks its immutable
-  user ID against `ABSCISSA_ADMIN_USER_IDS`. This is a comma-separated allowlist,
+  user ID against `ABSCISSA_ADMIN_USER_IDS` or an active delegated admin role. This is a comma-separated allowlist,
   not a workspace role or an email match. The production Wrangler configuration
-  allows `github:167765989`, the repository owner's GitHub identity. An empty
-  allowlist denies everyone. If this account was originally created under a
+  allows `github:167765989`, the repository owner's GitHub identity. Without a bootstrap owner or active delegated role, access is denied. If this account was originally created under a
   different provider, inspect `/api/auth/session` while signed in and explicitly
   configure that existing user ID before use. Never add a client-provided ID.
 - Both page rendering and every admin API read/write verify access independently.

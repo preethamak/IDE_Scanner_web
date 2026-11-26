@@ -5,7 +5,7 @@ import { runtimeEnv } from "@/lib/runtimeEnv";
 import { analyticsPath, boundedJson, campaignValue, referrerHost, sameOrigin } from "@/lib/admin/validation";
 import { edgeDimensions, insertAnalyticsEvent, telemetryHash } from "@/lib/admin/telemetry";
 
-const accepted = new Set(["page_view", "public_search_submitted", "catalog_result_opened", "public_report_viewed", "workspace_signup_started", "workspace_created", "watch_created", "report_monitor_setup_opened", "report_monitor_completed", "decision_created", "alert_acknowledged", "team_badge_studio_opened", "team_badge_scan_requested", "team_badge_created", "team_badge_copied", "team_badge_report_opened", "team_badge_refresh_intent", "share_copied"]);
+const accepted = new Set(["page_view", "public_search_submitted", "catalog_result_opened", "public_report_viewed", "workspace_signup_started", "workspace_created", "deep_scan_requested", "watch_created", "report_monitor_setup_opened", "report_monitor_completed", "decision_created", "alert_acknowledged", "team_badge_studio_opened", "team_badge_scan_requested", "team_badge_created", "team_badge_copied", "team_badge_report_opened", "team_badge_refresh_intent", "share_copied"]);
 const headers = { "Cache-Control": "no-store" };
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return NextResponse.json({ error: "Origin rejected." }, { status: 403, headers });

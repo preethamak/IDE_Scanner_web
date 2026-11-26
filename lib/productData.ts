@@ -1,3 +1,4 @@
+import { attachReportNotice, reportNotice } from "@/lib/admin/reportNotices";
 import { publicDb, serviceDb } from "@/lib/supabase";
 import { isConcreteVersion, listMarketplaceVersions, resolveMarketplaceExtension, searchMarketplace } from "@/lib/marketplace";
 import { getPublicRegistryProduct, getPublicRegistrySnapshot } from "@/lib/publicRegistrySnapshot";
@@ -226,7 +227,7 @@ async function fetchCatalog(query = "", limit = 50): Promise<CatalogExtension[]>
   return registry.map((item, index) => ({ id: item.extension_id, name: item.extension_id.split(".").slice(1).join("."), display_name: item.display_name, publisher: item.publisher, description: item.short_description, registry: item.registry || "vs-marketplace", publisher_verified: item.publisher_verified, installs: item.install_count, rating: item.rating_average, icon_url: item.icon_url, repository_url: "", last_published_at: item.last_updated || null, catalog_rank: index + 1, latest_version: item.version, latest_scan: null, scan_supported: item.scan_supported, scan_support_reason: item.scan_support_reason }));
 }
 
-export async function getExtensionProduct(id: string, client?: SupabaseClient): Promise<{ extension: CatalogExtension; versions: Array<Record<string, unknown>>; scan: Record<string, unknown> | null } | null> {
+async function getExtensionProductWithoutNotice(id: string, client?: SupabaseClient): Promise<{ extension: CatalogExtension; versions: Array<Record<string, unknown>>; scan: Record<string, unknown> | null } | null> {
   const cloudflareProduct = await getPublicRegistryProduct(id);
   if (cloudflareProduct?.extension) {
     const latestVersion = String(cloudflareProduct.extension.latest_version || cloudflareProduct.versions.find((item) => item.is_latest)?.version || "");
@@ -315,7 +316,7 @@ async function registryProduct(id: string): Promise<{ extension: CatalogExtensio
   }
 }
 
-export async function getVersionProduct(id: string, version: string, client?: SupabaseClient): Promise<Record<string, unknown> | null> {
+async function getVersionProductWithoutNotice(id: string, version: string, client?: SupabaseClient): Promise<Record<string, unknown> | null> {
   // Version pages only need the exact release summary. Parsing the complete
   // report here duplicates work with the immutable report route and can push
   // a large VSIX report over Cloudflare Worker's CPU limit. The full report is
@@ -376,7 +377,7 @@ export type VersionScanProductOptions = {
   guestTrialToken?: string;
 };
 
-export async function getVersionScanProduct(id: string, version: string, scanId: string, client?: SupabaseClient, options: VersionScanProductOptions = {}): Promise<Record<string, unknown> | null> {
+async function getVersionScanProductWithoutNotice(id: string, version: string, scanId: string, client?: SupabaseClient, options: VersionScanProductOptions = {}): Promise<Record<string, unknown> | null> {
   const cloudflareReport = await getCloudflareScanProduct(id, version, scanId, true).catch(() => null);
   if (cloudflareReport) return cloudflareReport;
   if (cloudflarePrivateAvailable() && (options.authorizedUserId || options.guestTrialToken)) {
@@ -747,6 +748,7 @@ export type BadgeDecision = {
   risk_score: number | null;
   malware_score: number | null;
   scanned_at: string | null;
+  scan_id?: string | null;
 };
 
 const emptyBadgeDecision = (found = false): BadgeDecision => ({
@@ -767,13 +769,20 @@ const emptyBadgeDecision = (found = false): BadgeDecision => ({
 const cachedBadgeDecision=unstable_cache(async(id:string)=>fetchBadgeDecision(id, null),["public-badge-v3"],{revalidate:300,tags:["public-intel"]});
 const cachedVersionBadgeDecision=unstable_cache(async(id:string,version:string)=>fetchBadgeDecision(id, version),["public-badge-version-v1"],{revalidate:300,tags:["public-intel"]});
 
-export function getBadgeDecision(id: string): Promise<BadgeDecision> { return cachedBadgeDecision(id.toLowerCase()); }
+async function currentBadgeDecision(result: BadgeDecision): Promise<BadgeDecision> {
+  if(!result.found||!result.decision)return result;
+  try { const notice=result.scan_id?await reportNotice(result.scan_id):null;
+    if(!notice||notice.state==='resolved')return result;
+    return{...result,decision:'review',verdict:'review',analysis_status:'incomplete'};
+  } catch { return{...result,decision:'review',verdict:'review',analysis_status:'incomplete'}; }
+}
+export async function getBadgeDecision(id: string): Promise<BadgeDecision> { return currentBadgeDecision(await cachedBadgeDecision(id.toLowerCase())); }
 
 /** Exact-version badge lookup; the seal is pinned to the analyzed artifact. */
-export function getVersionBadgeDecision(id: string, version: string): Promise<BadgeDecision> {
+export async function getVersionBadgeDecision(id: string, version: string): Promise<BadgeDecision> {
   const normalized = version.replace(/^v/, "").trim();
   if (!normalized) return getBadgeDecision(id);
-  return cachedVersionBadgeDecision(id.toLowerCase(), normalized);
+  return currentBadgeDecision(await cachedVersionBadgeDecision(id.toLowerCase(), normalized));
 }
 
 async function fetchBadgeDecision(rawId: string, version: string | null): Promise<BadgeDecision> {
@@ -820,6 +829,7 @@ async function fetchBadgeDecision(rawId: string, version: string | null): Promis
     const decision = normalizeDecision(row.decision);
     return {
       found: true,
+      scan_id: String(row.id||""),
       extension_id: storedId,
       version: String(row.version || ""),
       decision: decision === "incomplete" ? null : decision,
@@ -852,6 +862,7 @@ function badgeDecisionFromScan(id: string, row: Record<string, unknown>, fallbac
   const decision = normalizeDecision(row.decision);
   return {
     found: true,
+    scan_id: String(row.id||""),
     extension_id: String(row.extension_id || id),
     version: String(row.version || fallbackVersion),
     decision: decision === "incomplete" ? null : decision,
@@ -879,3 +890,8 @@ function numberOrNull(value: unknown): number | null {
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 }
+
+export async function getVersionProduct(...args: Parameters<typeof getVersionProductWithoutNotice>) { return attachReportNotice(await getVersionProductWithoutNotice(...args)); }
+export async function getVersionScanProduct(...args: Parameters<typeof getVersionScanProductWithoutNotice>) { return attachReportNotice(await getVersionScanProductWithoutNotice(...args)); }
+
+export async function getExtensionProduct(...args: Parameters<typeof getExtensionProductWithoutNotice>) { const product=await getExtensionProductWithoutNotice(...args); return await attachReportNotice(product) as typeof product; }

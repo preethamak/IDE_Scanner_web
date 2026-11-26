@@ -28,6 +28,7 @@
     "NOTIFICATION_FROM_EMAIL": "hello@abscissa.dev"
   },
   "routes": [
+    { "pattern": "admin.abscissa.dev", "custom_domain": true },
     {
       "pattern": "abscissa.dev/*",
       "zone_name": "abscissa.dev"

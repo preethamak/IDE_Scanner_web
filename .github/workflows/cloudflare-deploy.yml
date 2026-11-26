@@ -92,6 +92,21 @@ jobs:
           # Never print the value. Without a supplied stable secret, rotate
           # pseudonyms on deployment rather than collecting with a public salt.
           node -e 'const value = process.env.ANALYTICS_HASH_SECRET || require("node:crypto").randomBytes(32).toString("hex"); if (value.length < 32) throw new Error("ANALYTICS_HASH_SECRET must contain at least 32 characters"); process.stdout.write(value)' | npx wrangler secret put ANALYTICS_HASH_SECRET --config wrangler.jsonc
+      - name: Sync optional administration integrations
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 26e873c5d55e5e386df482c9dbe8bcd7
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_ORGANIZATION_URN: ${{ secrets.LINKEDIN_ORGANIZATION_URN }}
+          LINKEDIN_API_VERSION: ${{ secrets.LINKEDIN_API_VERSION }}
+          LINKEDIN_TOKEN_EXPIRES_AT: ${{ secrets.LINKEDIN_TOKEN_EXPIRES_AT }}
+          ADMIN_ALERT_WEBHOOK_URL: ${{ secrets.ADMIN_ALERT_WEBHOOK_URL }}
+        run: |
+          for setting in LINKEDIN_ACCESS_TOKEN LINKEDIN_ORGANIZATION_URN LINKEDIN_API_VERSION LINKEDIN_TOKEN_EXPIRES_AT ADMIN_ALERT_WEBHOOK_URL; do
+            if [ -n "${!setting}" ]; then
+              printf '%s' "${!setting}" | npx wrangler secret put "$setting" --config wrangler.jsonc
+            fi
+          done
       - name: Detect D1 migration changes
         id: schema_changes
         run: |
